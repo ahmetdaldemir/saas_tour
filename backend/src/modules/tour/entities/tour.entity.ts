@@ -4,6 +4,18 @@ import { Tenant } from '../../tenants/entities/tenant.entity';
 import { Destination } from '../../shared/entities/destination.entity';
 import { Language } from '../../shared/entities/language.entity';
 import { TourSession } from './tour-session.entity';
+import { TourFeature } from './tour-feature.entity';
+import { TourTranslation } from './tour-translation.entity';
+import { TourInfoItem } from './tour-info-item.entity';
+import { TourImage } from './tour-image.entity';
+import { TourTimeSlot } from './tour-time-slot.entity';
+import { TourPricing } from './tour-pricing.entity';
+
+export enum DurationUnit {
+  MINUTE = 'minute',
+  HOUR = 'hour',
+  DAY = 'day',
+}
 
 @Entity({ name: 'tours' })
 export class Tour extends BaseEntity {
@@ -42,6 +54,21 @@ export class Tour extends BaseEntity {
   @Column({ name: 'duration_hours', type: 'int', default: 24 })
   durationHours!: number;
 
+  @Column({ type: 'int', nullable: true })
+  duration?: number;
+
+  @Column({ name: 'duration_unit', type: 'enum', enum: DurationUnit, default: DurationUnit.HOUR })
+  durationUnit!: DurationUnit;
+
+  @Column({ name: 'max_capacity', type: 'int', default: 0 })
+  maxCapacity!: number; // 0 = unlimited
+
+  @Column({ type: 'simple-array', nullable: true })
+  days?: string[]; // ['monday', 'tuesday', etc.]
+
+  @Column({ length: 500, nullable: true })
+  video?: string;
+
   @Column({ type: 'simple-array', nullable: true })
   tags?: string[];
 
@@ -56,6 +83,36 @@ export class Tour extends BaseEntity {
   })
   languages!: Language[];
 
+  @ManyToOne(() => Language, { nullable: true })
+  @JoinColumn({ name: 'default_language_id' })
+  defaultLanguage?: Language | null;
+
+  @Column({ name: 'default_language_id', nullable: true })
+  defaultLanguageId?: string | null;
+
+  @ManyToMany(() => TourFeature)
+  @JoinTable({
+    name: 'tour_feature_assignments',
+    joinColumn: { name: 'tour_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'feature_id', referencedColumnName: 'id' },
+  })
+  features!: TourFeature[];
+
   @OneToMany(() => TourSession, (session) => session.tour)
   sessions!: TourSession[];
+
+  @OneToMany(() => TourTranslation, (translation) => translation.tour, { cascade: true })
+  translations!: TourTranslation[];
+
+  @OneToMany(() => TourInfoItem, (item) => item.tour, { cascade: true })
+  infoItems!: TourInfoItem[];
+
+  @OneToMany(() => TourImage, (image) => image.tour, { cascade: true })
+  images!: TourImage[];
+
+  @OneToMany(() => TourTimeSlot, (slot) => slot.tour, { cascade: true })
+  timeSlots!: TourTimeSlot[];
+
+  @OneToMany(() => TourPricing, (pricing) => pricing.tour, { cascade: true })
+  pricing!: TourPricing[];
 }

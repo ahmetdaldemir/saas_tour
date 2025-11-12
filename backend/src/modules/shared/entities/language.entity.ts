@@ -1,8 +1,9 @@
-import { Column, Entity, Unique } from 'typeorm';
+import { Column, Entity, Index, Unique } from 'typeorm';
 import { BaseEntity } from './base.entity';
 
 @Entity({ name: 'languages' })
 @Unique(['code'])
+@Index(['isDefault']) // Index for faster queries on default language
 export class Language extends BaseEntity {
   @Column({ length: 8 })
   code!: string;
@@ -12,4 +13,7 @@ export class Language extends BaseEntity {
 
   @Column({ default: true })
   isActive!: boolean;
+
+  @Column({ name: 'is_default', default: false })
+  isDefault!: boolean;
 }

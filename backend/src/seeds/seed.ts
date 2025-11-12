@@ -185,20 +185,26 @@ const seed = async () => {
   }
 
   // Vehicles for rentacar tenant
+  // Note: Vehicles now require brand and model entities, so we'll skip vehicle seeding
+  // or create brands/models first if needed
+  // For now, we'll just create vehicles with legacy brand/model fields
   let suvVehicle = await vehicleRepo.findOne({
-    where: { tenantId: rentacarTenant.id, brand: 'Audi', model: 'Q7' },
+    where: { tenantId: rentacarTenant.id, brandName: 'Audi', modelName: 'Q7' },
   });
   if (!suvVehicle) {
     suvVehicle = vehicleRepo.create({
-      tenant: rentacarTenant,
+      tenantId: rentacarTenant.id,
       name: 'Premium SUV',
-      brand: 'Audi',
-      model: 'Q7',
+      brandName: 'Audi',
+      modelName: 'Q7',
       year: 2023,
       transmission: TransmissionType.AUTOMATIC,
       fuelType: FuelType.GASOLINE,
       seats: 5,
       luggage: 4,
+      largeLuggage: 2,
+      smallLuggage: 2,
+      doors: 5,
       description: 'Lüks SUV, 4x4 çekiş, panoramik cam tavan.',
       baseRate: 120,
       currencyCode: 'EUR',
@@ -207,19 +213,22 @@ const seed = async () => {
   }
 
   let cityCar = await vehicleRepo.findOne({
-    where: { tenantId: rentacarTenant.id, brand: 'Renault', model: 'Clio' },
+    where: { tenantId: rentacarTenant.id, brandName: 'Renault', modelName: 'Clio' },
   });
   if (!cityCar) {
     cityCar = vehicleRepo.create({
-      tenant: rentacarTenant,
+      tenantId: rentacarTenant.id,
       name: 'City Car',
-      brand: 'Renault',
-      model: 'Clio',
+      brandName: 'Renault',
+      modelName: 'Clio',
       year: 2022,
       transmission: TransmissionType.MANUAL,
       fuelType: FuelType.DIESEL,
       seats: 5,
       luggage: 2,
+      largeLuggage: 1,
+      smallLuggage: 1,
+      doors: 5,
       description: 'Ekonomik şehir içi araç.',
       baseRate: 45,
       currencyCode: 'EUR',

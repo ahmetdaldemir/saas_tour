@@ -11,10 +11,21 @@ import { Operation } from '../modules/shared/entities/operation.entity';
 import { Language } from '../modules/shared/entities/language.entity';
 import { Tour } from '../modules/tour/entities/tour.entity';
 import { TourSession } from '../modules/tour/entities/tour-session.entity';
+import { TourFeature } from '../modules/tour/entities/tour-feature.entity';
+import { TourFeatureTranslation } from '../modules/tour/entities/tour-feature-translation.entity';
+import { TourTranslation } from '../modules/tour/entities/tour-translation.entity';
+import { TourInfoItem } from '../modules/tour/entities/tour-info-item.entity';
+import { TourImage } from '../modules/tour/entities/tour-image.entity';
+import { TourTimeSlot } from '../modules/tour/entities/tour-time-slot.entity';
+import { TourPricing } from '../modules/tour/entities/tour-pricing.entity';
 import { Vehicle } from '../modules/rentacar/entities/vehicle.entity';
 import { VehiclePlate } from '../modules/rentacar/entities/vehicle-plate.entity';
 import { VehiclePricingPeriod } from '../modules/rentacar/entities/vehicle-pricing-period.entity';
 import { VehicleReservationAssignment } from '../modules/rentacar/entities/vehicle-reservation-assignment.entity';
+import { VehicleCategory } from '../modules/rentacar/entities/vehicle-category.entity';
+import { VehicleCategoryTranslation } from '../modules/rentacar/entities/vehicle-category-translation.entity';
+import { VehicleBrand } from '../modules/rentacar/entities/vehicle-brand.entity';
+import { VehicleModel } from '../modules/rentacar/entities/vehicle-model.entity';
 import { TenantUser } from '../modules/tenants/entities/tenant-user.entity';
 
 const env = loadEnv();
@@ -40,11 +51,22 @@ export const AppDataSource = new DataSource({
     Language,
     Tour,
     TourSession,
-    Vehicle,
-    VehiclePlate,
-    VehiclePricingPeriod,
-    VehicleReservationAssignment,
-    TenantUser,
+    TourFeature,
+    TourFeatureTranslation,
+    TourTranslation,
+    TourInfoItem,
+    TourImage,
+    TourTimeSlot,
+    TourPricing,
+          Vehicle,
+          VehiclePlate,
+          VehiclePricingPeriod,
+          VehicleReservationAssignment,
+          VehicleCategory,
+          VehicleCategoryTranslation,
+          VehicleBrand,
+          VehicleModel,
+          TenantUser,
   ],
   migrations: ['dist/migrations/*.js'],
 });

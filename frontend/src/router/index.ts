@@ -7,6 +7,7 @@ import LoginView from '../views/LoginView.vue';
 import RegisterView from '../views/RegisterView.vue';
 import DashboardView from '../views/DashboardView.vue';
 import ToursView from '../views/ToursView.vue';
+import TourDetailView from '../views/TourDetailView.vue';
 import RentacarView from '../views/RentacarView.vue';
 import LanguagesView from '../views/LanguagesView.vue';
 import DestinationsView from '../views/DestinationsView.vue';
@@ -76,6 +77,12 @@ const routes: RouteRecordRaw[] = [
     path: '/app/tours',
     name: 'tours',
     component: ToursView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/tours/:id',
+    name: 'tour-detail',
+    component: TourDetailView,
     meta: { requiresAuth: true, layout: 'admin' },
   },
   {

@@ -6,6 +6,7 @@ export type CreateLanguageDto = {
   code: string;
   name: string;
   isActive?: boolean;
+  isDefault?: boolean;
 };
 
 export type UpdateLanguageDto = Partial<CreateLanguageDto>;
@@ -16,7 +17,11 @@ export class LanguageService {
   }
 
   static list(): Promise<Language[]> {
-    return this.repo().find({ order: { name: 'ASC' } });
+    return this.repo().find({ order: { isDefault: 'DESC', name: 'ASC' } });
+  }
+
+  static async getDefault(): Promise<Language | null> {
+    return this.repo().findOne({ where: { isDefault: true } });
   }
 
   static async create(input: CreateLanguageDto): Promise<Language> {
@@ -25,10 +30,16 @@ export class LanguageService {
       throw new Error('Language code already exists');
     }
 
+    // If setting as default, unset other defaults
+    if (input.isDefault) {
+      await this.repo().update({ isDefault: true }, { isDefault: false });
+    }
+
     const language = this.repo().create({
       code: input.code,
       name: input.name,
       isActive: input.isActive ?? true,
+      isDefault: input.isDefault ?? false,
     });
 
     return this.repo().save(language);
@@ -56,6 +67,32 @@ export class LanguageService {
       language.isActive = input.isActive;
     }
 
+    // Handle default language change
+    if (typeof input.isDefault === 'boolean') {
+      if (input.isDefault && !language.isDefault) {
+        // Setting this language as default: unset all other defaults
+        await this.repo().update({ isDefault: true }, { isDefault: false });
+        language.isDefault = true;
+      } else if (!input.isDefault && language.isDefault) {
+        // Unsetting default: just set to false
+        language.isDefault = false;
+      }
+    }
+
+    return this.repo().save(language);
+  }
+
+  static async setDefault(id: string): Promise<Language> {
+    const language = await this.repo().findOne({ where: { id } });
+    if (!language) {
+      throw new Error('Language not found');
+    }
+
+    // Unset all other defaults
+    await this.repo().update({ isDefault: true }, { isDefault: false });
+
+    // Set this language as default
+    language.isDefault = true;
     return this.repo().save(language);
   }
 
