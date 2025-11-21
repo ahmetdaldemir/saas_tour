@@ -9,9 +9,12 @@ import DashboardView from '../views/DashboardView.vue';
 import ToursView from '../views/ToursView.vue';
 import TourDetailView from '../views/TourDetailView.vue';
 import RentacarView from '../views/RentacarView.vue';
+import CrmView from '../views/CrmView.vue';
+import ReservationsView from '../views/ReservationsView.vue';
 import LanguagesView from '../views/LanguagesView.vue';
 import DestinationsView from '../views/DestinationsView.vue';
 import HotelsView from '../views/HotelsView.vue';
+import CustomersView from '../views/CustomersView.vue';
 import { useAuthStore } from '../stores/auth';
 
 const routes: RouteRecordRaw[] = [
@@ -89,6 +92,24 @@ const routes: RouteRecordRaw[] = [
     path: '/app/rentacar',
     name: 'rentacar',
     component: RentacarView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/customers',
+    name: 'customers',
+    component: CustomersView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/crm',
+    name: 'crm',
+    component: CrmView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/reservations',
+    name: 'reservations',
+    component: ReservationsView,
     meta: { requiresAuth: true, layout: 'admin' },
   },
   {

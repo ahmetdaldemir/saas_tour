@@ -100,6 +100,9 @@ const navigationItems = computed(() => {
 
   if (auth.tenant?.category === 'rentacar') {
     items.push({ title: 'Rent A Car', to: '/app/rentacar', icon: 'mdi-car-sports' });
+    items.push({ title: 'Müşteriler', to: '/app/customers', icon: 'mdi-account-multiple' });
+    items.push({ title: 'CRM', to: '/app/crm', icon: 'mdi-account-group' });
+    items.push({ title: 'Rezervasyonlar', to: '/app/reservations', icon: 'mdi-calendar-check' });
   }
 
   return items;

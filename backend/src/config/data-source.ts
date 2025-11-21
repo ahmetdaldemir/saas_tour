@@ -26,6 +26,10 @@ import { VehicleCategory } from '../modules/rentacar/entities/vehicle-category.e
 import { VehicleCategoryTranslation } from '../modules/rentacar/entities/vehicle-category-translation.entity';
 import { VehicleBrand } from '../modules/rentacar/entities/vehicle-brand.entity';
 import { VehicleModel } from '../modules/rentacar/entities/vehicle-model.entity';
+import { Location } from '../modules/rentacar/entities/location.entity';
+import { LocationTranslation } from '../modules/rentacar/entities/location-translation.entity';
+import { LocationVehiclePricing } from '../modules/rentacar/entities/location-vehicle-pricing.entity';
+import { LocationDeliveryPricing } from '../modules/rentacar/entities/location-delivery-pricing.entity';
 import { TenantUser } from '../modules/tenants/entities/tenant-user.entity';
 
 const env = loadEnv();
@@ -66,6 +70,10 @@ export const AppDataSource = new DataSource({
           VehicleCategoryTranslation,
           VehicleBrand,
           VehicleModel,
+          Location,
+          LocationTranslation,
+          LocationVehiclePricing,
+          LocationDeliveryPricing,
           TenantUser,
   ],
   migrations: ['dist/migrations/*.js'],
