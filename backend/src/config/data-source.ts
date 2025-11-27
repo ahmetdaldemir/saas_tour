@@ -4,6 +4,7 @@ import { Tenant } from '../modules/tenants/entities/tenant.entity';
 import { Destination } from '../modules/shared/entities/destination.entity';
 import { Hotel } from '../modules/shared/entities/hotel.entity';
 import { Blog } from '../modules/shared/entities/blog.entity';
+import { BlogTranslation } from '../modules/shared/entities/blog-translation.entity';
 import { PhoneCountry } from '../modules/shared/entities/phone-country.entity';
 import { PaymentMethod } from '../modules/shared/entities/payment-method.entity';
 import { Reservation } from '../modules/shared/entities/reservation.entity';
@@ -48,6 +49,7 @@ export const AppDataSource = new DataSource({
     Destination,
     Hotel,
     Blog,
+    BlogTranslation,
     PhoneCountry,
     PaymentMethod,
     Reservation,

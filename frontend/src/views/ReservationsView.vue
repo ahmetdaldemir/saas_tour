@@ -286,7 +286,40 @@
                         hide-details
                         class="flex-grow-1"
                         @update:model-value="onCustomerSelect"
-                      />
+                      >
+                        <template #item="{ item, props }">
+                          <v-list-item
+                            v-bind="props"
+                            :disabled="item.raw.isBlacklisted"
+                          >
+                            <template #prepend>
+                              <v-icon
+                                v-if="item.raw.isBlacklisted"
+                                icon="mdi-account-off"
+                                color="error"
+                                size="20"
+                                class="mr-2"
+                              />
+                            </template>
+                            <v-list-item-title>
+                              <span :class="{ 'text-error': item.raw.isBlacklisted }">
+                                {{ item.raw.fullName }}
+                                <span v-if="item.raw.isBlacklisted" class="text-error text-caption ml-2">
+                                  (Kara Listede)
+                                </span>
+                              </span>
+                            </v-list-item-title>
+                          </v-list-item>
+                        </template>
+                        <template #selection="{ item }">
+                          <span :class="{ 'text-error': item.raw.isBlacklisted }">
+                            {{ item.raw.fullName }}
+                            <span v-if="item.raw.isBlacklisted" class="text-error text-caption ml-2">
+                              (Kara Listede)
+                            </span>
+                          </span>
+                        </template>
+                      </v-select>
                       <v-btn
                         color="success"
                         prepend-icon="mdi-plus"
@@ -680,6 +713,7 @@ interface CustomerDto {
   country?: string;
   birthDate?: string;
   gender?: 'male' | 'female' | 'other';
+  isBlacklisted?: boolean;
 }
 
 interface VehicleDto {
@@ -726,8 +760,22 @@ const availableLocations = computed(() => {
   }));
 });
 
+const getBlacklistedCustomers = (): string[] => {
+  try {
+    const blacklisted = localStorage.getItem('crm_blacklisted_customers');
+    return blacklisted ? JSON.parse(blacklisted) : [];
+  } catch {
+    return [];
+  }
+};
+
 const availableCustomers = computed(() => {
-  return customers.value;
+  const blacklistedIds = getBlacklistedCustomers();
+  return customers.value.map(customer => ({
+    ...customer,
+    isBlacklisted: blacklistedIds.includes(customer.id),
+    disabled: blacklistedIds.includes(customer.id),
+  }));
 });
 
 const selectedCustomer = computed(() => {
@@ -974,8 +1022,15 @@ const loadCustomers = async () => {
     // Silinen öğeleri filtrele ve eklenen öğeleri ekle
     const deletedIds = getDeletedCustomers();
     const addedCustomers = getAddedCustomers();
+    const blacklistedIds = getBlacklistedCustomers();
     const filteredSample = sampleData.filter(item => !deletedIds.includes(item.id));
-    customers.value = [...filteredSample, ...addedCustomers];
+    const allCustomers = [...filteredSample, ...addedCustomers];
+    
+    // Kara liste durumunu ekle
+    customers.value = allCustomers.map(customer => ({
+      ...customer,
+      isBlacklisted: blacklistedIds.includes(customer.id),
+    }));
   } catch (error) {
     console.error('Failed to load customers:', error);
   } finally {
@@ -1044,6 +1099,15 @@ const selectVehicle = (_event: any, { item }: { item: AvailableVehicleDto }) => 
 };
 
 const onCustomerSelect = (customerId: string) => {
+  const blacklistedIds = getBlacklistedCustomers();
+  if (blacklistedIds.includes(customerId)) {
+    // Kara listedeki müşteri seçilemez
+    alert('Kara listedeki müşteriler rezervasyon için seçilemez!');
+    reservationForm.customerId = '';
+    resetCustomerInfo();
+    return;
+  }
+  
   const customer = customers.value.find(c => c.id === customerId);
   if (!customer) {
     resetCustomerInfo();
@@ -1088,6 +1152,13 @@ const openCustomerDialog = () => {
 
 const saveReservation = async () => {
   if (!auth.tenant || !canSaveReservation.value) return;
+  
+  // Kara liste kontrolü
+  const blacklistedIds = getBlacklistedCustomers();
+  if (blacklistedIds.includes(reservationForm.customerId)) {
+    alert('Kara listedeki müşteriler için rezervasyon oluşturulamaz!');
+    return;
+  }
   
   savingReservation.value = true;
   try {

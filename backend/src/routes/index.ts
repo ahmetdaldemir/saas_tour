@@ -13,6 +13,7 @@ import authRouter from '../modules/auth/routes/auth.router';
 import languageRouter from '../modules/shared/routes/language.router';
 import destinationRouter from '../modules/shared/routes/destination.router';
 import hotelRouter from '../modules/shared/routes/hotel.router';
+import blogRouter from '../modules/shared/routes/blog.router';
 import translationRouter from '../modules/shared/routes/translation.router';
 
 export const registerRoutes = (app: Express) => {
@@ -24,6 +25,7 @@ export const registerRoutes = (app: Express) => {
   app.use('/api/languages', languageRouter);
   app.use('/api/destinations', destinationRouter);
   app.use('/api/hotels', hotelRouter);
+  app.use('/api/blogs', blogRouter);
   app.use('/api/tenants', tenantRouter);
   app.use('/api/tours', tourRouter);
   app.use('/api/tour-features', tourFeatureRouter);

@@ -92,6 +92,7 @@ const navigationItems = computed(() => {
     { title: 'Diller', to: '/app/languages', icon: 'mdi-translate' },
     { title: 'Destinasyonlar', to: '/app/destinations', icon: 'mdi-map-marker-radius' },
     { title: 'Oteller', to: '/app/hotels', icon: 'mdi-hotel' },
+    { title: 'Blog', to: '/app/blogs', icon: 'mdi-file-document-outline' },
   ];
 
   if (auth.tenant?.category === 'tour') {

@@ -33,74 +33,174 @@
           </div>
         </v-card-title>
         <v-divider />
+        <v-card-text class="pa-4">
+          <!-- Filtre Seçici -->
+          <div class="mb-4">
+            <div class="d-flex align-center gap-4 flex-wrap">
+              <div class="flex-grow-1">
+                <v-radio-group v-model="vehicleFilter" inline hide-details>
+                  <v-radio
+                    label="Tüm Araçlar"
+                    value="all"
+                    color="primary"
+                  />
+                  <v-radio
+                    label="Rezervasyondaki Araçlar"
+                    value="reserved"
+                    color="warning"
+                  />
+                  <v-radio
+                    label="Boşta Olan Araçlar"
+                    value="available"
+                    color="success"
+                  />
+                </v-radio-group>
+              </div>
+              <div style="min-width: 200px;">
+                <v-select
+                  v-model="selectedBrandFilter"
+                  :items="brandFilterOptions"
+                  item-title="label"
+                  item-value="value"
+                  label="Marka Filtresi"
+                  prepend-inner-icon="mdi-alpha-b-box"
+                  density="compact"
+                  clearable
+                  hide-details
+                />
+              </div>
+            </div>
+          </div>
+        </v-card-text>
+        <v-divider />
         <v-card-text class="pa-0">
           <v-data-table
             :headers="tableHeaders"
-            :items="vehicles"
+            :items="filteredVehicles"
             :loading="loadingVehicles"
+            :expanded="Array.from(expandedVehicles)"
             item-value="id"
             class="elevation-0"
           >
             <template #item.plate="{ item }">
-              <div v-if="item.plates && item.plates.length > 0">
+              <div class="d-flex align-center gap-1">
                 <v-chip
-                  v-for="plate in item.plates"
-                  :key="plate.id"
+                  v-if="item.plate"
                   color="info"
                   variant="flat"
                   size="small"
                   prepend-icon="mdi-card-text"
                   style="cursor: pointer;"
-                  @click="openPlateDialog(item, plate)"
+                  @click="openPlateDialog(item.vehicle, item.plate)"
                 >
-                  {{ plate.plateNumber }}
+                  {{ item.plate.plateNumber }}
                 </v-chip>
+                <span v-else class="text-caption text-grey">Plaka yok</span>
+                <v-btn
+                  icon="mdi-plus"
+                  variant="text"
+                  size="small"
+                  color="primary"
+                  @click="openPlateDialog(item.vehicle)"
+                  title="Yeni Plaka Ekle"
+                />
               </div>
-              <v-btn
-                v-else
-                color="info"
-                variant="outlined"
-                size="small"
-                prepend-icon="mdi-card-text"
-                @click="openPlateDialog(item)"
-              >
-                Plaka Ekle
-              </v-btn>
             </template>
 
             <template #item.name="{ item }">
-              <div class="d-flex align-center gap-2">
+              <div class="d-flex align-center gap-2" style="cursor: pointer;" @click="toggleVehicleDetails(item.id)">
+                <v-icon 
+                  :icon="expandedVehicles.has(item.id) ? 'mdi-chevron-down' : 'mdi-chevron-right'" 
+                  size="16" 
+                  color="primary"
+                />
                 <v-icon icon="mdi-car" size="20" color="primary" />
-                <span class="font-weight-medium">{{ item.name }}</span>
+                <span class="font-weight-medium">{{ item.vehicle.name }}</span>
               </div>
             </template>
 
             <template #item.category="{ item }">
-              <v-chip v-if="item.category" size="small" color="primary" variant="tonal">
-                {{ getCategoryName(item.category) }}
+              <v-chip v-if="item.vehicle.category" size="small" color="primary" variant="tonal">
+                {{ getCategoryName(item.vehicle.category) }}
               </v-chip>
               <span v-else class="text-grey">-</span>
             </template>
 
             <template #item.brand="{ item }">
-              <span>{{ item.brand?.name || item.brandName || '-' }}</span>
+              <span>{{ item.vehicle.brand?.name || item.vehicle.brandName || '-' }}</span>
             </template>
 
             <template #item.model="{ item }">
-              <span>{{ item.model?.name || item.modelName || '-' }}</span>
+              <span>{{ item.vehicle.model?.name || item.vehicle.modelName || '-' }}</span>
             </template>
 
             <template #item.year="{ item }">
-              <span>{{ item.year || '-' }}</span>
+              <span>{{ item.vehicle.year || '-' }}</span>
             </template>
 
-            <template #item.baseRate="{ item }">
-              <span class="font-weight-medium">{{ Number(item.baseRate).toFixed(2) }} {{ item.currencyCode }}</span>
+            <template #item.status="{ item }">
+              <v-btn
+                :color="getVehicleStatus(item).color"
+                :icon="getVehicleStatus(item).icon"
+                :variant="getVehicleStatus(item).variant"
+                size="small"
+                :class="getVehicleStatus(item).class"
+              />
             </template>
 
             <template #item.actions="{ item }">
-              <v-btn icon="mdi-pencil" variant="text" size="small" @click="editVehicle(item)" />
-              <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="deleteVehicle(item.id)" />
+              <v-btn icon="mdi-pencil" variant="text" size="small" @click="editVehicle(item.vehicle)" />
+              <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="deleteVehicle(item.vehicle.id)" />
+            </template>
+
+            <!-- Expanded Details Row -->
+            <template #expanded-row="{ item }">
+              <tr>
+                <td :colspan="tableHeaders.length" class="pa-4">
+                  <v-card variant="outlined" class="pa-4">
+                    <div class="d-flex flex-column gap-3">
+                      <h4 class="text-subtitle-1 font-weight-bold mb-2">Araç Detayları</h4>
+                      <v-row>
+                        <v-col cols="12" md="6">
+                          <div class="d-flex align-center gap-2">
+                            <v-icon icon="mdi-file-document" size="20" color="primary" />
+                            <span class="font-weight-medium">Belge Seri No:</span>
+                            <span>{{ item.plate?.documentNumber || item.plate?.serialNumber || '-' }}</span>
+                          </div>
+                        </v-col>
+                        <v-col cols="12" md="6">
+                          <div class="d-flex align-center gap-2">
+                            <v-icon icon="mdi-calendar-plus" size="20" color="primary" />
+                            <span class="font-weight-medium">Giriş Tarihi:</span>
+                            <span>{{ item.vehicle.createdAt ? new Date(item.vehicle.createdAt).toLocaleDateString('tr-TR') : '-' }}</span>
+                          </div>
+                        </v-col>
+                        <v-col cols="12" md="6">
+                          <div class="d-flex align-center gap-2">
+                            <v-icon icon="mdi-calendar-check" size="20" color="primary" />
+                            <span class="font-weight-medium">Tescil Tarihi:</span>
+                            <span>{{ item.plate?.registrationDate ? new Date(item.plate.registrationDate).toLocaleDateString('tr-TR') : '-' }}</span>
+                          </div>
+                        </v-col>
+                        <v-col cols="12" md="6">
+                          <div class="d-flex align-center gap-2">
+                            <v-icon icon="mdi-speedometer" size="20" color="primary" />
+                            <span class="font-weight-medium">Son Km:</span>
+                            <span>{{ item.plate?.km || '-' }}</span>
+                          </div>
+                        </v-col>
+                        <v-col cols="12" md="6">
+                          <div class="d-flex align-center gap-2">
+                            <v-icon icon="mdi-map-marker" size="20" color="primary" />
+                            <span class="font-weight-medium">Son Şehir:</span>
+                            <span>-</span>
+                          </div>
+                        </v-col>
+                      </v-row>
+                    </div>
+                  </v-card>
+                </td>
+              </tr>
             </template>
           </v-data-table>
         </v-card-text>
@@ -622,24 +722,6 @@
                           rows="3"
                         />
                       </v-col>
-                      <v-col cols="12" md="6">
-                        <v-text-field
-                          v-model.number="form.baseRate"
-                          label="Baz Fiyat"
-                          type="number"
-                          prepend-inner-icon="mdi-currency-eur"
-                        />
-                      </v-col>
-                      <v-col cols="12" md="6">
-                        <v-select
-                          v-model="form.currencyCode"
-                          :items="currencyOptions"
-                          item-title="title"
-                          item-value="value"
-                          label="Para Birimi"
-                          prepend-inner-icon="mdi-wallet"
-                        />
-                      </v-col>
                     </v-row>
                   </v-form>
                 </div>
@@ -663,7 +745,7 @@
           <v-card-title class="d-flex align-center justify-space-between">
             <div class="d-flex align-center gap-2">
               <v-icon icon="mdi-card-text" size="24" />
-              <span class="text-h6">{{ editingPlate ? 'Plaka Düzenle' : 'Plaka Ekle' }}</span>
+              <span class="text-h6">Plakalar</span>
             </div>
             <v-btn icon="mdi-close" variant="text" @click="closePlateDialog" />
           </v-card-title>
@@ -683,6 +765,64 @@
                   </div>
                 </div>
               </v-alert>
+            </div>
+
+            <!-- Mevcut Plakalar Listesi -->
+            <div v-if="selectedVehicleForPlate && selectedVehicleForPlate.plates && selectedVehicleForPlate.plates.length > 0" class="mb-6">
+              <h3 class="text-subtitle-1 mb-3">Mevcut Plakalar</h3>
+              <v-list>
+                <v-list-item
+                  v-for="(plate, index) in selectedVehicleForPlate.plates"
+                  :key="plate.id"
+                  class="mb-2"
+                  style="border: 1px solid rgba(0,0,0,0.12); border-radius: 4px;"
+                >
+                  <template #prepend>
+                    <v-btn
+                      icon="mdi-plus"
+                      variant="text"
+                      size="small"
+                      color="primary"
+                      @click="addNewPlateAfter(index)"
+                    />
+                  </template>
+                  <v-list-item-title class="font-weight-medium">{{ plate.plateNumber }}</v-list-item-title>
+                  <v-list-item-subtitle v-if="plate.registrationDate">
+                    Tescil: {{ plate.registrationDate }}
+                  </v-list-item-subtitle>
+                  <template #append>
+                    <div class="d-flex align-center gap-1">
+                      <v-btn
+                        icon="mdi-pencil"
+                        variant="text"
+                        size="small"
+                        @click="editPlateInDialog(plate)"
+                      />
+                      <v-btn
+                        icon="mdi-delete"
+                        variant="text"
+                        size="small"
+                        color="error"
+                        @click="deletePlateInDialog(plate.id)"
+                      />
+                    </div>
+                  </template>
+                </v-list-item>
+              </v-list>
+            </div>
+
+            <!-- Yeni Plaka Ekleme Formu -->
+            <div class="mb-4">
+              <div class="d-flex align-center justify-space-between mb-3">
+                <h3 class="text-subtitle-1">{{ editingPlate ? 'Plaka Düzenle' : 'Yeni Plaka Ekle' }}</h3>
+                <v-btn
+                  v-if="editingPlate"
+                  icon="mdi-close"
+                  variant="text"
+                  size="small"
+                  @click="cancelPlateEdit"
+                />
+              </div>
             </div>
 
             <v-form ref="plateFormRef" v-model="plateFormValid">
@@ -859,6 +999,7 @@
           <v-divider />
           <v-card-actions>
             <v-spacer />
+            <v-btn variant="text" @click="closePlateDialog">Kapat</v-btn>
             <v-btn 
               v-if="editingPlate"
               color="error"
@@ -869,9 +1010,8 @@
             >
               Sil
             </v-btn>
-            <v-btn variant="text" @click="closePlateDialog">İptal</v-btn>
             <v-btn color="primary" @click="savePlate" :loading="savingPlate" :disabled="!plateFormValid">
-              Kaydet
+              {{ editingPlate ? 'Güncelle' : 'Ekle' }}
             </v-btn>
           </v-card-actions>
         </v-card>
@@ -1157,49 +1297,23 @@
           <v-divider />
           <v-card-text class="pa-6">
             <v-form ref="locationFormRef" v-model="locationFormValid">
-              <!-- Dil Sekmeleri -->
-              <v-tabs v-model="locationLanguageTab" density="compact" class="mb-4">
-                <v-tab
-                  v-for="lang in availableLanguages"
-                  :key="lang.id"
-                  :value="lang.id"
-                >
-                  {{ lang.name }} ({{ lang.code }})
-                  <v-chip v-if="lang.isDefault" size="x-small" color="primary" class="ml-1">Varsayılan</v-chip>
-                </v-tab>
-              </v-tabs>
-
-              <v-window v-model="locationLanguageTab">
-                <v-window-item
-                  v-for="lang in availableLanguages"
-                  :key="lang.id"
-                  :value="lang.id"
-                >
-                  <v-row>
-                    <v-col cols="12">
-                      <v-text-field
-                        v-model="locationForm.translations[lang.id].name"
-                        :label="`Lokasyon Adı (${lang.name})`"
-                        :placeholder="lang.isDefault ? 'Varsayılan dil - diğer dillere otomatik çevrilecek' : 'Bu dil için lokasyon adı'"
-                        prepend-inner-icon="mdi-map-marker"
-                        required
-                        :hint="lang.isDefault ? 'Varsayılan dil - diğer dillere otomatik çevrilecek' : 'Bu dil için lokasyon adı'"
-                        persistent-hint
-                      />
-                    </v-col>
-                    <v-col cols="12">
-                      <v-text-field
-                        v-model="locationForm.translations[lang.id].metaTitle"
-                        :label="`Meta Title (${lang.name})`"
-                        :placeholder="lang.isDefault ? 'Varsayılan dil - diğer dillere otomatik çevrilecek' : 'Bu dil için meta title'"
-                        prepend-inner-icon="mdi-tag"
-                        :hint="lang.isDefault ? 'Varsayılan dil - diğer dillere otomatik çevrilecek' : 'Bu dil için meta title'"
-                        persistent-hint
-                      />
-                    </v-col>
-                  </v-row>
-                </v-window-item>
-              </v-window>
+              <v-row>
+                <v-col cols="12">
+                  <v-text-field
+                    v-model="locationForm.name"
+                    label="Lokasyon Adı"
+                    prepend-inner-icon="mdi-map-marker"
+                    required
+                  />
+                </v-col>
+                <v-col cols="12">
+                  <v-text-field
+                    v-model="locationForm.metaTitle"
+                    label="Meta Title"
+                    prepend-inner-icon="mdi-tag"
+                  />
+                </v-col>
+              </v-row>
 
               <v-divider class="my-4" />
 
@@ -1398,6 +1512,7 @@ interface VehicleDto {
   currencyCode?: string;
   plates?: VehiclePlateDto[];
   pricingPeriods?: any[];
+  createdAt?: string;
 }
 
 interface LocationTranslationDto {
@@ -1435,9 +1550,13 @@ const vehicleBrands = ref<VehicleBrandDto[]>([]);
 const vehicleModels = ref<VehicleModelDto[]>([]);
 const availableLanguages = ref<LanguageDto[]>([]);
 const locations = ref<LocationDto[]>([]);
+const vehicleReservations = ref<Array<{ vehicleId: string; plateId: string; startDate: string; endDate: string }>>([]);
 
 // UI State
 const mainTab = ref('vehicles');
+const vehicleFilter = ref<'all' | 'reserved' | 'available'>('all');
+const selectedBrandFilter = ref<string | null>(null);
+const expandedVehicles = ref<Set<string>>(new Set());
 const showVehicleDialog = ref(false);
 const showPlateDialog = ref(false);
 const showLocationDialog = ref(false);
@@ -1544,14 +1663,14 @@ const modelForm = reactive({
 });
 
 const categoryLanguageTab = ref('');
-const locationLanguageTab = ref('');
 
 // Editing state
 const editingVehicle = ref<VehicleDto | null>(null);
 
 // Location Form
 const locationForm = reactive({
-  translations: {} as Record<string, { name: string; metaTitle: string }>,
+  name: '',
+  metaTitle: '',
   province: '',
   district: '',
   type: 'merkez' as 'merkez' | 'otel' | 'havalimani' | 'adres',
@@ -1630,7 +1749,7 @@ const tableHeaders = [
   { title: 'Marka', key: 'brand' },
   { title: 'Model', key: 'model' },
   { title: 'Yıl', key: 'year' },
-  { title: 'Fiyat', key: 'baseRate' },
+  { title: 'Durum', key: 'status', sortable: false, width: '120px' },
   { title: 'İşlemler', key: 'actions', sortable: false },
 ];
 
@@ -1722,6 +1841,111 @@ const selectedBrandName = computed(() => {
   return brand?.name || '';
 });
 
+const brandFilterOptions = computed(() => {
+  const options = [
+    { label: 'Tüm Markalar', value: null },
+  ];
+  vehicleBrands.value.forEach(brand => {
+    options.push({
+      label: brand.name,
+      value: brand.id,
+    });
+  });
+  return options;
+});
+
+// Her plaka için ayrı satır oluşturmak için vehicle+plate kombinasyonları
+interface VehiclePlateRow {
+  vehicle: VehicleDto;
+  plate: VehiclePlateDto | null;
+  id: string; // unique id for row (vehicleId + plateId or vehicleId + 'no-plate')
+}
+
+const filteredVehicles = computed(() => {
+  let filteredVehicleList: VehicleDto[] = [];
+  
+  // Önce marka filtresini uygula
+  if (selectedBrandFilter.value) {
+    filteredVehicleList = vehicles.value.filter(vehicle => 
+      vehicle.brandId === selectedBrandFilter.value
+    );
+  } else {
+    filteredVehicleList = vehicles.value;
+  }
+  
+  // Sonra durum filtresini uygula
+  if (vehicleFilter.value !== 'all') {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (vehicleFilter.value === 'reserved') {
+      // Rezervasyondaki araçlar: En az bir plakası aktif rezervasyonda olan araçlar
+      filteredVehicleList = filteredVehicleList.filter(vehicle => {
+        if (!vehicle.plates || vehicle.plates.length === 0) return false;
+        
+        return vehicle.plates.some(plate => {
+          const plateReservations = vehicleReservations.value.filter(
+            r => r.plateId === plate.id
+          );
+          
+          return plateReservations.some(reservation => {
+            const startDate = new Date(reservation.startDate);
+            const endDate = new Date(reservation.endDate);
+            startDate.setHours(0, 0, 0, 0);
+            endDate.setHours(23, 59, 59, 999);
+            
+            return today >= startDate && today <= endDate;
+          });
+        });
+      });
+    } else if (vehicleFilter.value === 'available') {
+      // Boşta olan araçlar: Hiçbir plakası aktif rezervasyonda olmayan araçlar
+      filteredVehicleList = filteredVehicleList.filter(vehicle => {
+        if (!vehicle.plates || vehicle.plates.length === 0) return true;
+        
+        return !vehicle.plates.some(plate => {
+          const plateReservations = vehicleReservations.value.filter(
+            r => r.plateId === plate.id
+          );
+          
+          return plateReservations.some(reservation => {
+            const startDate = new Date(reservation.startDate);
+            const endDate = new Date(reservation.endDate);
+            startDate.setHours(0, 0, 0, 0);
+            endDate.setHours(23, 59, 59, 999);
+            
+            return today >= startDate && today <= endDate;
+          });
+        });
+      });
+    }
+  }
+  
+  // Her araç için plakaları ayrı satırlara dönüştür
+  const rows: VehiclePlateRow[] = [];
+  filteredVehicleList.forEach(vehicle => {
+    if (vehicle.plates && vehicle.plates.length > 0) {
+      // Her plaka için ayrı satır
+      vehicle.plates.forEach(plate => {
+        rows.push({
+          vehicle,
+          plate,
+          id: `${vehicle.id}-${plate.id}`,
+        });
+      });
+    } else {
+      // Plaka yoksa tek satır
+      rows.push({
+        vehicle,
+        plate: null,
+        id: `${vehicle.id}-no-plate`,
+      });
+    }
+  });
+  
+  return rows;
+});
+
 // Methods
 const getTabName = (tab: string) => {
   const names: Record<string, string> = {
@@ -1738,6 +1962,61 @@ const getCategoryName = (category: VehicleCategoryDto): string => {
   if (!defaultLang) return 'Kategori';
   const translation = category.translations.find(t => t.languageId === defaultLang.id);
   return translation?.name || 'Kategori';
+};
+
+const toggleVehicleDetails = (vehicleId: string) => {
+  if (expandedVehicles.value.has(vehicleId)) {
+    expandedVehicles.value.delete(vehicleId);
+  } else {
+    expandedVehicles.value.add(vehicleId);
+  }
+};
+
+const getVehicleStatus = (row: VehiclePlateRow): { color: string; icon: string; variant: string; class?: string } => {
+  // Eğer plaka yoksa, araç boşta sayılır
+  if (!row.plate) {
+    return {
+      color: 'success',
+      icon: 'mdi-check-circle',
+      variant: 'flat',
+      class: 'rounded-circle',
+    };
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Bu plakanın rezervasyonlarını kontrol et
+  const plateReservations = vehicleReservations.value.filter(
+    r => r.plateId === row.plate!.id
+  );
+
+  // Aktif rezervasyon var mı kontrol et
+  const hasActiveReservation = plateReservations.some(reservation => {
+    const startDate = new Date(reservation.startDate);
+    const endDate = new Date(reservation.endDate);
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
+    
+    return today >= startDate && today <= endDate;
+  });
+
+  if (hasActiveReservation) {
+    // Rezervasyondaki araçlar için kırmızı buton
+    return {
+      color: 'error',
+      icon: 'mdi-alert-circle',
+      variant: 'flat',
+    };
+  } else {
+    // Boşta olan araçlar için yeşil yuvarlak buton
+    return {
+      color: 'success',
+      icon: 'mdi-check-circle',
+      variant: 'flat',
+      class: 'rounded-circle',
+    };
+  }
 };
 
 const loadLanguages = async () => {
@@ -1790,6 +2069,26 @@ const loadVehicleModels = async (brandId?: string) => {
   }
 };
 
+const loadVehicleReservations = async () => {
+  if (!auth.tenant) return;
+  try {
+    // TODO: Backend API endpoint'i eklendiğinde buraya entegre edilecek
+    // Şimdilik boş array döndürüyoruz
+    // const { data } = await http.get('/rentacar/vehicle-reservations', {
+    //   params: { tenantId: auth.tenant.id },
+    // });
+    // vehicleReservations.value = data.map((r: any) => ({
+    //   vehicleId: r.plate.vehicleId,
+    //   plateId: r.plateId,
+    //   startDate: r.startDate,
+    //   endDate: r.endDate,
+    // }));
+    vehicleReservations.value = [];
+  } catch (error) {
+    console.error('Failed to load vehicle reservations:', error);
+  }
+};
+
 const loadVehicles = async () => {
   if (!auth.tenant) return;
   loadingVehicles.value = true;
@@ -1798,6 +2097,8 @@ const loadVehicles = async () => {
       params: { tenantId: auth.tenant.id },
     });
     vehicles.value = data;
+    // Rezervasyon bilgilerini de yükle
+    await loadVehicleReservations();
   } catch (error) {
     console.error('Failed to load vehicles:', error);
   } finally {
@@ -2055,8 +2356,6 @@ const saveVehicle = async () => {
       hasSunroof: form.hasSunroof,
       order: form.order,
       description: form.description,
-      baseRate: form.baseRate,
-      currencyCode: form.currencyCode,
     };
     
     if (editingVehicle.value) {
@@ -2101,8 +2400,6 @@ const editVehicle = (vehicle: VehicleDto) => {
     hasSunroof: vehicle.hasSunroof || false,
     order: vehicle.order || 0,
     description: vehicle.description || '',
-    baseRate: vehicle.baseRate || 0,
-    currencyCode: vehicle.currencyCode || 'EUR',
   });
   
   if (vehicle.brandId) {
@@ -2126,34 +2423,88 @@ const deleteVehicle = async (id: string) => {
 // Plate methods
 const openPlateDialog = (vehicle: VehicleDto, plate?: VehiclePlateDto) => {
   selectedVehicleForPlate.value = vehicle;
-  editingPlate.value = plate || null;
   if (plate) {
-    // Load existing plate data
-    Object.assign(plateForm, {
-      plateNumber: plate.plateNumber || '',
-      registrationDate: plate.registrationDate || '',
-      documentNumber: plate.documentNumber || '',
-      serialNumber: plate.serialNumber || '',
-      km: plate.km,
-      oilKm: plate.oilKm,
-      description: plate.description || '',
-      comprehensiveInsuranceCompany: plate.comprehensiveInsuranceCompany || '',
-      comprehensiveInsuranceStart: plate.comprehensiveInsuranceStart || '',
-      comprehensiveInsuranceEnd: plate.comprehensiveInsuranceEnd || '',
-      trafficInsuranceCompany: plate.trafficInsuranceCompany || '',
-      trafficInsuranceStart: plate.trafficInsuranceStart || '',
-      trafficInsuranceEnd: plate.trafficInsuranceEnd || '',
-      inspectionCompany: plate.inspectionCompany || '',
-      inspectionStart: plate.inspectionStart || '',
-      inspectionEnd: plate.inspectionEnd || '',
-      exhaustInspectionCompany: plate.exhaustInspectionCompany || '',
-      exhaustInspectionStart: plate.exhaustInspectionStart || '',
-      exhaustInspectionEnd: plate.exhaustInspectionEnd || '',
-    });
+    editingPlate.value = plate;
+    loadPlateData(plate);
   } else {
+    editingPlate.value = null;
     resetPlateForm();
   }
   showPlateDialog.value = true;
+};
+
+const loadPlateData = (plate: VehiclePlateDto) => {
+  Object.assign(plateForm, {
+    plateNumber: plate.plateNumber || '',
+    registrationDate: plate.registrationDate || '',
+    documentNumber: plate.documentNumber || '',
+    serialNumber: plate.serialNumber || '',
+    km: plate.km,
+    oilKm: plate.oilKm,
+    description: plate.description || '',
+    comprehensiveInsuranceCompany: plate.comprehensiveInsuranceCompany || '',
+    comprehensiveInsuranceStart: plate.comprehensiveInsuranceStart || '',
+    comprehensiveInsuranceEnd: plate.comprehensiveInsuranceEnd || '',
+    trafficInsuranceCompany: plate.trafficInsuranceCompany || '',
+    trafficInsuranceStart: plate.trafficInsuranceStart || '',
+    trafficInsuranceEnd: plate.trafficInsuranceEnd || '',
+    inspectionCompany: plate.inspectionCompany || '',
+    inspectionStart: plate.inspectionStart || '',
+    inspectionEnd: plate.inspectionEnd || '',
+    exhaustInspectionCompany: plate.exhaustInspectionCompany || '',
+    exhaustInspectionStart: plate.exhaustInspectionStart || '',
+    exhaustInspectionEnd: plate.exhaustInspectionEnd || '',
+  });
+};
+
+const addNewPlateAfter = (index: number) => {
+  editingPlate.value = null;
+  resetPlateForm();
+  // Scroll to form
+  setTimeout(() => {
+    const formElement = document.querySelector('.v-card-text');
+    if (formElement) {
+      formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, 100);
+};
+
+const editPlateInDialog = (plate: VehiclePlateDto) => {
+  editingPlate.value = plate;
+  loadPlateData(plate);
+  // Scroll to form
+  setTimeout(() => {
+    const formElement = document.querySelector('.v-card-text');
+    if (formElement) {
+      formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, 100);
+};
+
+const deletePlateInDialog = async (plateId: string) => {
+  if (!selectedVehicleForPlate.value) return;
+  
+  if (!confirm('Bu plakayı silmek istediğinizden emin misiniz?')) return;
+  
+  deletingPlate.value = true;
+  try {
+    await http.delete(`/rentacar/vehicles/${selectedVehicleForPlate.value.id}/plates/${plateId}`);
+    await loadVehicles();
+    // Reload vehicle data to update plates list
+    if (selectedVehicleForPlate.value) {
+      const { data } = await http.get<VehicleDto>(`/rentacar/vehicles/${selectedVehicleForPlate.value.id}`);
+      selectedVehicleForPlate.value = data;
+    }
+  } catch (error: any) {
+    alert(error.response?.data?.message || 'Plaka silinirken bir hata oluştu');
+  } finally {
+    deletingPlate.value = false;
+  }
+};
+
+const cancelPlateEdit = () => {
+  editingPlate.value = null;
+  resetPlateForm();
 };
 
 const closePlateDialog = () => {
@@ -2232,8 +2583,16 @@ const savePlate = async () => {
       await http.post(`/rentacar/vehicles/${selectedVehicleForPlate.value.id}/plates`, plateData);
     }
     
+    // Reload vehicles and update selected vehicle
     await loadVehicles();
-    closePlateDialog();
+    if (selectedVehicleForPlate.value) {
+      const { data } = await http.get<VehicleDto>(`/rentacar/vehicles/${selectedVehicleForPlate.value.id}`);
+      selectedVehicleForPlate.value = data;
+    }
+    
+    // Reset form after save
+    editingPlate.value = null;
+    resetPlateForm();
   } catch (error: any) {
     alert(error.response?.data?.message || 'Plaka kaydedilirken bir hata oluştu');
   } finally {
@@ -2252,7 +2611,14 @@ const deletePlate = async () => {
   try {
     await http.delete(`/rentacar/vehicles/${selectedVehicleForPlate.value.id}/plates/${editingPlate.value.id}`);
     await loadVehicles();
-    closePlateDialog();
+    // Reload vehicle data to update plates list
+    if (selectedVehicleForPlate.value) {
+      const { data } = await http.get<VehicleDto>(`/rentacar/vehicles/${selectedVehicleForPlate.value.id}`);
+      selectedVehicleForPlate.value = data;
+    }
+    // Reset form after delete
+    editingPlate.value = null;
+    resetPlateForm();
   } catch (error: any) {
     alert(error.response?.data?.message || 'Plaka silinirken bir hata oluştu');
   } finally {
@@ -2345,12 +2711,6 @@ const openLocationDialog = () => {
   editingLocation.value = null;
   resetLocationForm();
   showLocationDialog.value = true;
-  
-  // Set default language tab
-  const defaultLang = availableLanguages.value.find(l => l.isDefault) || availableLanguages.value[0];
-  if (defaultLang) {
-    locationLanguageTab.value = defaultLang.id;
-  }
 };
 
 const closeLocationDialog = () => {
@@ -2359,10 +2719,8 @@ const closeLocationDialog = () => {
 };
 
 const resetLocationForm = () => {
-  availableLanguages.value.forEach(lang => {
-    locationForm.translations[lang.id] = { name: '', metaTitle: '' };
-  });
-  
+  locationForm.name = '';
+  locationForm.metaTitle = '';
   locationForm.province = '';
   locationForm.district = '';
   locationForm.type = 'merkez';
@@ -2381,25 +2739,24 @@ const saveLocation = async () => {
   const validated = await locationFormRef.value?.validate();
   if (!validated?.valid) return;
   
+  if (!locationForm.name) {
+    alert('Lokasyon adı gerekli');
+    return;
+  }
+  
   const defaultLang = availableLanguages.value.find(l => l.isDefault) || availableLanguages.value[0];
   if (!defaultLang) {
     alert('Varsayılan dil bulunamadı');
     return;
   }
   
-  const defaultName = locationForm.translations[defaultLang.id]?.name;
-  if (!defaultName) {
-    alert('Lokasyon adı gerekli');
-    return;
-  }
-  
   savingLocation.value = true;
   try {
-    const translations = availableLanguages.value.map(lang => ({
-      languageId: lang.id,
-      name: locationForm.translations[lang.id]?.name || '',
-      metaTitle: locationForm.translations[lang.id]?.metaTitle || '',
-    })).filter(t => t.name);
+    const translations = [{
+      languageId: defaultLang.id,
+      name: locationForm.name,
+      metaTitle: locationForm.metaTitle || '',
+    }];
     
     const locationData = {
       tenantId: auth.tenant.id,
@@ -2434,25 +2791,23 @@ const saveLocation = async () => {
 const editLocation = (location: LocationDto) => {
   editingLocation.value = location;
   
-  // Load translations
-  if (location.translations) {
-    location.translations.forEach(trans => {
-      if (!locationForm.translations[trans.languageId]) {
-        locationForm.translations[trans.languageId] = { name: '', metaTitle: '' };
-      }
-      locationForm.translations[trans.languageId].name = trans.name;
-      locationForm.translations[trans.languageId].metaTitle = trans.metaTitle || '';
-    });
+  // Load default language translation
+  const defaultLang = availableLanguages.value.find(l => l.isDefault) || availableLanguages.value[0];
+  if (defaultLang && location.translations) {
+    const defaultTranslation = location.translations.find(t => t.languageId === defaultLang.id);
+    if (defaultTranslation) {
+      locationForm.name = defaultTranslation.name;
+      locationForm.metaTitle = defaultTranslation.metaTitle || '';
+    } else {
+      // Fallback to first translation or direct name
+      const firstTranslation = location.translations[0];
+      locationForm.name = firstTranslation?.name || location.name || '';
+      locationForm.metaTitle = firstTranslation?.metaTitle || location.metaTitle || '';
+    }
   } else {
     // Fallback to direct name/metaTitle
-    const defaultLang = availableLanguages.value.find(l => l.isDefault) || availableLanguages.value[0];
-    if (defaultLang && location.name) {
-      if (!locationForm.translations[defaultLang.id]) {
-        locationForm.translations[defaultLang.id] = { name: '', metaTitle: '' };
-      }
-      locationForm.translations[defaultLang.id].name = location.name;
-      locationForm.translations[defaultLang.id].metaTitle = location.metaTitle || '';
-    }
+    locationForm.name = location.name || '';
+    locationForm.metaTitle = location.metaTitle || '';
   }
   
   locationForm.province = location.province || '';
@@ -2470,11 +2825,6 @@ const editLocation = (location: LocationDto) => {
   }
   
   showLocationDialog.value = true;
-  
-  const defaultLang = availableLanguages.value.find(l => l.isDefault) || availableLanguages.value[0];
-  if (defaultLang) {
-    locationLanguageTab.value = defaultLang.id;
-  }
 };
 
 const deleteLocation = async (id: string) => {
@@ -2765,59 +3115,6 @@ const saveDeliveryPricing = async () => {
   }
 };
 
-// Auto-translate location name and meta title
-const locationDefaultLanguageId = computed(() => {
-  return availableLanguages.value.find(l => l.isDefault)?.id || availableLanguages.value[0]?.id;
-});
-
-watch(
-  () => {
-    const defaultLangId = locationDefaultLanguageId.value;
-    if (!defaultLangId) return { name: '', metaTitle: '' };
-    return {
-      name: locationForm.translations[defaultLangId]?.name || '',
-      metaTitle: locationForm.translations[defaultLangId]?.metaTitle || '',
-    };
-  },
-  async (newValue, oldValue) => {
-    if (!newValue.name || (newValue.name === oldValue?.name && newValue.metaTitle === oldValue?.metaTitle)) return;
-    
-    const defaultLang = availableLanguages.value.find(l => l.id === locationDefaultLanguageId.value);
-    if (!defaultLang) return;
-    
-    // Debounce translation
-    setTimeout(async () => {
-      for (const lang of availableLanguages.value) {
-        if (lang.id === defaultLang.id) continue;
-        
-        if (!locationForm.translations[lang.id]) {
-          locationForm.translations[lang.id] = { name: '', metaTitle: '' };
-        }
-        
-        // Translate name
-        if (newValue.name && (!locationForm.translations[lang.id].name || locationForm.translations[lang.id].name === '')) {
-          try {
-            const translated = await translateText(newValue.name, lang.code, defaultLang.code);
-            locationForm.translations[lang.id].name = translated;
-          } catch (error) {
-            console.error(`Failed to translate location name to ${lang.code}:`, error);
-          }
-        }
-        
-        // Translate meta title
-        if (newValue.metaTitle && (!locationForm.translations[lang.id].metaTitle || locationForm.translations[lang.id].metaTitle === '')) {
-          try {
-            const translated = await translateText(newValue.metaTitle, lang.code, defaultLang.code);
-            locationForm.translations[lang.id].metaTitle = translated;
-          } catch (error) {
-            console.error(`Failed to translate meta title to ${lang.code}:`, error);
-          }
-        }
-      }
-    }, 1500);
-  },
-  { deep: true }
-);
 
 onMounted(async () => {
   if (isRentacarTenant.value) {
@@ -2828,13 +3125,6 @@ onMounted(async () => {
       loadVehicles(),
       loadLocations(),
     ]);
-    
-    // Initialize location form translations
-    availableLanguages.value.forEach(lang => {
-      if (!locationForm.translations[lang.id]) {
-        locationForm.translations[lang.id] = { name: '', metaTitle: '' };
-      }
-    });
   }
 });
 </script>

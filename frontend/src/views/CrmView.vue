@@ -23,6 +23,10 @@
           <v-icon start icon="mdi-account-alert" />
           Ceza Sorgulama (Kişi)
         </v-tab>
+        <v-tab value="hgs">
+          <v-icon start icon="mdi-road-variant" />
+          HGS Sorgulama
+        </v-tab>
       </v-tabs>
       <v-divider />
       <v-window v-model="mainTab" class="window-content">
@@ -235,6 +239,26 @@
                 size="large"
                 prepend-icon="mdi-open-in-new"
                 @click="openPenaltyPersonInNewTab"
+              >
+                Yeni Sekmede Aç
+              </v-btn>
+            </v-card-text>
+          </v-card>
+        </v-window-item>
+
+        <!-- HGS Sorgulama Sekmesi -->
+        <v-window-item value="hgs">
+          <v-card elevation="0" class="mb-4">
+            <v-card-title class="d-flex align-center justify-space-between px-4 py-3">
+              <span class="text-h6 font-weight-bold">HGS Sorgulama</span>
+            </v-card-title>
+            <v-divider />
+            <v-card-text class="pa-8 d-flex align-center justify-center" style="height: calc(100vh - 300px); min-height: 600px;">
+              <v-btn
+                color="primary"
+                size="large"
+                prepend-icon="mdi-open-in-new"
+                @click="openHgsInNewTab"
               >
                 Yeni Sekmede Aç
               </v-btn>
@@ -641,6 +665,7 @@ const loadingLocations = ref(false);
 const kapisUrl = 'https://arackiralama.egm.gov.tr/my.policy';
 const penaltyUrl = 'https://www.turkiye.gov.tr/egm-arac-plakasina-yazilan-ceza-sorgulama-tuzel-kisi';
 const penaltyPersonUrl = 'https://www.turkiye.gov.tr/emniyet-arac-plakasina-yazilan-ceza-sorgulama';
+const hgsUrl = 'https://webihlaltakip.kgm.gov.tr/WebIhlalSorgulama/Sayfalar/Sorgulama';
 const showExtraDialog = ref(false);
 const savingExtra = ref(false);
 const editingExtra = ref<ExtraDto | null>(null);
@@ -1295,6 +1320,10 @@ const openPenaltyInNewTab = () => {
 
 const openPenaltyPersonInNewTab = () => {
   window.open(penaltyPersonUrl, '_blank', 'noopener,noreferrer');
+};
+
+const openHgsInNewTab = () => {
+  window.open(hgsUrl, '_blank', 'noopener,noreferrer');
 };
 
 // Campaign Methods

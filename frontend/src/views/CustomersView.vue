@@ -123,22 +123,22 @@
                 @click.stop="deleteCustomer(item.id)"
               />
               <v-btn
-                color="info"
+                :color="isBlacklisted(item.id) ? 'error' : 'success'"
                 variant="text"
                 size="small"
-                prepend-icon="mdi-account-off"
-                @click.stop="blacklistCustomer(item)"
+                :prepend-icon="isBlacklisted(item.id) ? 'mdi-account-off' : 'mdi-account-plus'"
+                @click.stop="toggleBlacklist(item)"
               >
-                Kara Liste
+                {{ isBlacklisted(item.id) ? 'Kara Listede' : 'Kara Listeye Ekle' }}
               </v-btn>
               <v-btn
                 color="info"
                 variant="text"
                 size="small"
-                prepend-icon="mdi-note-plus"
-                @click.stop="addNoteToCustomer(item)"
+                :prepend-icon="getCustomerNote(item.id) ? 'mdi-note-edit' : 'mdi-note-plus'"
+                @click.stop="openNoteDialog(item)"
               >
-                Not Ekle
+                {{ getCustomerNote(item.id) ? 'Notu Düzenle' : 'Not Ekle' }}
               </v-btn>
               <v-btn
                 color="warning"
@@ -441,6 +441,38 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Not Ekleme/Düzenleme Dialog -->
+    <v-dialog v-model="showNoteDialog" max-width="600" scrollable>
+      <v-card>
+        <v-card-title class="d-flex align-center justify-space-between">
+          <div class="d-flex align-center gap-2">
+            <v-icon icon="mdi-note-text" size="24" />
+            <span class="text-h6">{{ selectedCustomerForNote ? `${selectedCustomerForNote.fullName} - Not` : 'Not' }}</span>
+          </div>
+          <v-btn icon="mdi-close" variant="text" @click="closeNoteDialog" />
+        </v-card-title>
+        <v-divider />
+        <v-card-text class="pa-6">
+          <v-textarea
+            v-model="noteForm.content"
+            label="Not"
+            prepend-inner-icon="mdi-note-text"
+            rows="8"
+            placeholder="Müşteri hakkında notunuzu buraya yazın..."
+            auto-grow
+          />
+        </v-card-text>
+        <v-divider />
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="closeNoteDialog">İptal</v-btn>
+          <v-btn color="primary" @click="saveNote" :loading="savingNote">
+            Kaydet
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -455,6 +487,7 @@ const auth = useAuthStore();
 // Data
 const customers = ref<CustomerDto[]>([]);
 const availableLanguages = ref<LanguageDto[]>([]);
+const customerNotes = ref<Record<string, string>>({});
 
 // UI State
 const loadingCustomers = ref(false);
@@ -462,6 +495,9 @@ const showCustomerDialog = ref(false);
 const savingCustomer = ref(false);
 const editingCustomer = ref<CustomerDto | null>(null);
 const customerFormTab = ref('personal');
+const showNoteDialog = ref(false);
+const savingNote = ref(false);
+const selectedCustomerForNote = ref<CustomerDto | null>(null);
 
 // Search Filters
 const searchFilters = reactive({
@@ -504,6 +540,11 @@ const customerForm = reactive({
   workAddress: '',
 });
 
+// Note Form
+const noteForm = reactive({
+  content: '',
+});
+
 // Options
 const idTypeOptions = [
   { label: 'T.C. Kimlik', value: 'tc' },
@@ -531,6 +572,7 @@ interface CustomerDto {
   phone?: string;
   email?: string;
   isActive: boolean;
+  isBlacklisted?: boolean;
 }
 
 // Table headers
@@ -587,8 +629,18 @@ const loadCustomers = async () => {
     // Silinen öğeleri filtrele ve eklenen öğeleri ekle
     const deletedIds = getDeletedCustomers();
     const addedCustomers = getAddedCustomers();
+    const blacklistedIds = getBlacklistedCustomers();
     const filteredSample = sampleData.filter(item => !deletedIds.includes(item.id));
-    customers.value = [...filteredSample, ...addedCustomers];
+    const allCustomers = [...filteredSample, ...addedCustomers];
+    
+    // Notları yükle
+    customerNotes.value = getCustomerNotes();
+    
+    // Kara liste durumunu ekle
+    customers.value = allCustomers.map(customer => ({
+      ...customer,
+      isBlacklisted: blacklistedIds.includes(customer.id),
+    }));
   } catch (error) {
     console.error('Failed to load customers:', error);
   } finally {
@@ -803,14 +855,79 @@ const deleteCustomer = async (id: string) => {
   }
 };
 
-const blacklistCustomer = (customer: CustomerDto) => {
-  // TODO: Kara liste özelliği eklenecek
-  alert(`Kara listeye ekleme: ${customer.fullName}`);
+const isBlacklisted = (customerId: string): boolean => {
+  const blacklistedIds = getBlacklistedCustomers();
+  return blacklistedIds.includes(customerId);
 };
 
-const addNoteToCustomer = (customer: CustomerDto) => {
-  // TODO: Not ekleme özelliği eklenecek
-  alert(`Not ekleme: ${customer.fullName}`);
+const toggleBlacklist = async (customer: CustomerDto) => {
+  try {
+    const blacklistedIds = getBlacklistedCustomers();
+    const isCurrentlyBlacklisted = blacklistedIds.includes(customer.id);
+    
+    if (isCurrentlyBlacklisted) {
+      // Kara listeden çıkar
+      const updatedIds = blacklistedIds.filter(id => id !== customer.id);
+      saveBlacklistedCustomers(updatedIds);
+    } else {
+      // Kara listeye ekle
+      blacklistedIds.push(customer.id);
+      saveBlacklistedCustomers(blacklistedIds);
+    }
+    
+    // Local state'i güncelle - Array'i yeniden oluşturarak Vue reactivity'sini tetikle
+    const updatedBlacklistedIds = getBlacklistedCustomers();
+    customers.value = customers.value.map(c => ({
+      ...c,
+      isBlacklisted: updatedBlacklistedIds.includes(c.id),
+    }));
+    
+    // TODO: Backend API endpoint'i eklendiğinde buraya entegre edilecek
+    // await http.put(`/crm/customers/${customer.id}/blacklist`, { isBlacklisted: !isCurrentlyBlacklisted });
+  } catch (error: any) {
+    alert(error.response?.data?.message || 'Kara liste işlemi sırasında bir hata oluştu');
+  }
+};
+
+const getCustomerNote = (customerId: string): string | null => {
+  return customerNotes.value[customerId] || null;
+};
+
+const openNoteDialog = (customer: CustomerDto) => {
+  selectedCustomerForNote.value = customer;
+  const existingNote = getCustomerNote(customer.id);
+  noteForm.content = existingNote || '';
+  showNoteDialog.value = true;
+};
+
+const closeNoteDialog = () => {
+  showNoteDialog.value = false;
+  selectedCustomerForNote.value = null;
+  noteForm.content = '';
+};
+
+const saveNote = async () => {
+  if (!selectedCustomerForNote.value) return;
+  
+  savingNote.value = true;
+  try {
+    if (noteForm.content.trim()) {
+      // Not ekle veya güncelle
+      customerNotes.value[selectedCustomerForNote.value.id] = noteForm.content.trim();
+    } else {
+      // Boş not ise sil
+      delete customerNotes.value[selectedCustomerForNote.value.id];
+    }
+    
+    // localStorage'a kaydet
+    saveCustomerNotes(customerNotes.value);
+    
+    closeNoteDialog();
+  } catch (error: any) {
+    alert(error.response?.data?.message || 'Not kaydedilirken bir hata oluştu');
+  } finally {
+    savingNote.value = false;
+  }
 };
 
 const viewReservations = (customer: CustomerDto) => {
@@ -855,6 +972,40 @@ const saveAddedCustomers = (customers: CustomerDto[]) => {
     localStorage.setItem('crm_added_customers', JSON.stringify(customers));
   } catch (error) {
     console.error('Failed to save added customers:', error);
+  }
+};
+
+const getBlacklistedCustomers = (): string[] => {
+  try {
+    const blacklisted = localStorage.getItem('crm_blacklisted_customers');
+    return blacklisted ? JSON.parse(blacklisted) : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveBlacklistedCustomers = (customerIds: string[]) => {
+  try {
+    localStorage.setItem('crm_blacklisted_customers', JSON.stringify(customerIds));
+  } catch (error) {
+    console.error('Failed to save blacklisted customers:', error);
+  }
+};
+
+const getCustomerNotes = (): Record<string, string> => {
+  try {
+    const notes = localStorage.getItem('crm_customer_notes');
+    return notes ? JSON.parse(notes) : {};
+  } catch {
+    return {};
+  }
+};
+
+const saveCustomerNotes = (notes: Record<string, string>) => {
+  try {
+    localStorage.setItem('crm_customer_notes', JSON.stringify(notes));
+  } catch (error) {
+    console.error('Failed to save customer notes:', error);
   }
 };
 

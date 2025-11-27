@@ -14,6 +14,7 @@ import ReservationsView from '../views/ReservationsView.vue';
 import LanguagesView from '../views/LanguagesView.vue';
 import DestinationsView from '../views/DestinationsView.vue';
 import HotelsView from '../views/HotelsView.vue';
+import BlogsView from '../views/BlogsView.vue';
 import CustomersView from '../views/CustomersView.vue';
 import { useAuthStore } from '../stores/auth';
 
@@ -74,6 +75,12 @@ const routes: RouteRecordRaw[] = [
     path: '/app/hotels',
     name: 'hotels',
     component: HotelsView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/blogs',
+    name: 'blogs',
+    component: BlogsView,
     meta: { requiresAuth: true, layout: 'admin' },
   },
   {
