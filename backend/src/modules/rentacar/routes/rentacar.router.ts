@@ -14,6 +14,8 @@ router.put('/vehicles/:vehicleId/plates/:plateId', RentacarController.updatePlat
 router.patch('/vehicles/:vehicleId/plates/:plateId', RentacarController.updatePlate);
 router.delete('/vehicles/:vehicleId/plates/:plateId', RentacarController.deletePlate);
 router.post('/vehicles/:vehicleId/pricing', RentacarController.upsertPricing);
+router.put('/vehicles/:id/last-return-location', RentacarController.updateLastReturnLocation);
+router.patch('/vehicles/:id/last-return-location', RentacarController.updateLastReturnLocation);
 router.post('/reservations/:reservationId/assignments', RentacarController.assignPlate);
 
 export default router;

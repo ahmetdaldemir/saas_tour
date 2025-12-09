@@ -162,4 +162,15 @@ export class RentacarController {
       res.status(400).json({ message: (error as Error).message });
     }
   }
+
+  static async updateLastReturnLocation(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { locationId } = req.body;
+      const vehicle = await VehicleService.updateLastReturnLocation(id, locationId || null);
+      res.json(vehicle);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  }
 }

@@ -82,256 +82,365 @@
 
         <!-- Yeni Rezervasyon -->
         <v-window-item value="new">
-          <v-row class="ma-0">
-            <!-- Sol Sidebar -->
-            <v-col cols="12" md="3" class="pa-0">
-              <v-card elevation="0" class="h-100" style="border-right: 1px solid rgba(0,0,0,0.12);">
-                <v-card-text class="pa-4">
-                  <!-- Para Birimi -->
-                  <div class="mb-4">
-                    <label class="text-body-2 font-weight-medium mb-2 d-block">Para Birimi</label>
-                    <v-select
-                      v-model="reservationForm.currencyCode"
-                      :items="currencyOptions"
-                      item-title="label"
-                      item-value="value"
-                      density="compact"
-                      variant="outlined"
-                      hide-details
-                    >
-                      <template #prepend-inner>
-                        <v-icon :icon="getCurrencyIcon(reservationForm.currencyCode)" size="20" />
-                      </template>
-                    </v-select>
-                  </div>
+          <v-card elevation="0" class="pa-6">
+            <!-- Para Birimi ve Rezervasyon Kaynağı -->
+            <v-row class="mb-4">
+              <v-col cols="12" md="6">
+                <v-select
+                  v-model="reservationForm.currencyCode"
+                  :items="currencyOptions"
+                  item-title="label"
+                  item-value="value"
+                  label="Para Birimi"
+                  density="comfortable"
+                  variant="outlined"
+                  prepend-inner-icon="mdi-currency-usd"
+                  hide-details
+                >
+                  <template #prepend-inner>
+                    <v-icon :icon="getCurrencyIcon(reservationForm.currencyCode)" size="24" />
+                  </template>
+                </v-select>
+              </v-col>
+              <v-col cols="12" md="6">
+                <v-select
+                  v-model="reservationForm.source"
+                  :items="sourceOptions"
+                  item-title="label"
+                  item-value="value"
+                  label="Rezervasyon Kaynağı"
+                  density="comfortable"
+                  variant="outlined"
+                  prepend-inner-icon="mdi-source-branch"
+                  hide-details
+                >
+                  <template #prepend-inner>
+                    <v-icon :icon="getSourceIcon(reservationForm.source)" size="24" />
+                  </template>
+                </v-select>
+              </v-col>
+            </v-row>
 
-                  <!-- Rezervasyon Kaynağı -->
-                  <div class="mb-4">
-                    <label class="text-body-2 font-weight-medium mb-2 d-block">Rezervasyon Kaynağı</label>
-                    <v-select
-                      v-model="reservationForm.source"
-                      :items="sourceOptions"
-                      item-title="label"
-                      item-value="value"
-                      density="compact"
-                      variant="outlined"
-                      hide-details
-                    >
-                      <template #prepend-inner>
-                        <v-icon :icon="getSourceIcon(reservationForm.source)" size="20" />
-                      </template>
-                    </v-select>
-                  </div>
+            <!-- Alış ve Dönüş Lokasyon - Tarih Saat Bilgileri -->
+            <v-row class="mb-4">
+              <!-- Alış Lokasyon -->
+              <v-col cols="12" md="6">
+                <v-card variant="outlined" class="pa-4">
+                  <h3 class="text-subtitle-1 font-weight-bold mb-3 d-flex align-center">
+                    <v-icon icon="mdi-map-marker-outline" class="mr-2" color="primary" />
+                    Alış Lokasyon - Tarih Saat
+                  </h3>
+                  <v-select
+                    v-model="reservationForm.pickupLocationId"
+                    :items="availableLocations"
+                    item-title="name"
+                    item-value="id"
+                    label="Alış Yeri Seçiniz"
+                    density="comfortable"
+                    variant="outlined"
+                    prepend-inner-icon="mdi-map-marker"
+                    hide-details
+                    class="mb-3"
+                  />
+                  <v-text-field
+                    v-model="reservationForm.pickupDate"
+                    type="date"
+                    label="Alış Tarihi"
+                    density="comfortable"
+                    variant="outlined"
+                    prepend-inner-icon="mdi-calendar"
+                    hide-details
+                    class="mb-3"
+                  />
+                  <v-text-field
+                    v-model="reservationForm.pickupTime"
+                    type="time"
+                    label="Alış Saati"
+                    density="comfortable"
+                    variant="outlined"
+                    prepend-inner-icon="mdi-clock-outline"
+                    hide-details
+                  />
+                </v-card>
+              </v-col>
 
-                  <!-- Alış Lokasyon - Tarih Saat Bilgileri -->
-                  <div class="mb-4">
-                    <label class="text-body-2 font-weight-medium mb-2 d-block">Alış Lokasyon - Tarih Saat Bilgileri</label>
-                    <v-select
-                      v-model="reservationForm.pickupLocationId"
-                      :items="availableLocations"
-                      item-title="name"
-                      item-value="id"
-                      label="Alış Yeri Seçiniz"
-                      density="compact"
-                      variant="outlined"
-                      hide-details
-                      class="mb-2"
-                    />
-                    <v-text-field
-                      v-model="reservationForm.pickupDate"
-                      type="date"
-                      density="compact"
-                      variant="outlined"
-                      hide-details
-                      class="mb-2"
-                    >
-                      <template #prepend-inner>
-                        <v-icon icon="mdi-calendar" size="20" />
-                      </template>
-                    </v-text-field>
-                    <v-text-field
-                      v-model="reservationForm.pickupTime"
-                      type="time"
-                      density="compact"
-                      variant="outlined"
-                      hide-details
-                    >
-                      <template #prepend-inner>
-                        <v-icon icon="mdi-clock-outline" size="20" />
-                      </template>
-                    </v-text-field>
-                  </div>
+              <!-- Dönüş Lokasyon -->
+              <v-col cols="12" md="6">
+                <v-card variant="outlined" class="pa-4">
+                  <h3 class="text-subtitle-1 font-weight-bold mb-3 d-flex align-center">
+                    <v-icon icon="mdi-map-marker-check-outline" class="mr-2" color="success" />
+                    Dönüş Lokasyon - Tarih Saat
+                  </h3>
+                  <v-select
+                    v-model="reservationForm.returnLocationId"
+                    :items="availableLocations"
+                    item-title="name"
+                    item-value="id"
+                    label="Dönüş Yeri Seçiniz"
+                    density="comfortable"
+                    variant="outlined"
+                    prepend-inner-icon="mdi-map-marker"
+                    hide-details
+                    class="mb-3"
+                  />
+                  <v-text-field
+                    v-model="reservationForm.returnDate"
+                    type="date"
+                    label="Dönüş Tarihi"
+                    density="comfortable"
+                    variant="outlined"
+                    prepend-inner-icon="mdi-calendar"
+                    hide-details
+                    class="mb-3"
+                  />
+                  <v-text-field
+                    v-model="reservationForm.returnTime"
+                    type="time"
+                    label="Dönüş Saati"
+                    density="comfortable"
+                    variant="outlined"
+                    prepend-inner-icon="mdi-clock-outline"
+                    hide-details
+                  />
+                </v-card>
+              </v-col>
+            </v-row>
 
-                  <!-- Dönüş Lokasyon - Tarih Saat Bilgileri -->
-                  <div class="mb-4">
-                    <label class="text-body-2 font-weight-medium mb-2 d-block">Dönüş Lokasyon - Tarih Saat Bilgileri</label>
-                    <v-select
-                      v-model="reservationForm.returnLocationId"
-                      :items="availableLocations"
-                      item-title="name"
-                      item-value="id"
-                      label="Dönüş Yeri Seçiniz"
-                      density="compact"
-                      variant="outlined"
-                      hide-details
-                      class="mb-2"
-                    />
-                    <v-text-field
-                      v-model="reservationForm.returnDate"
-                      type="date"
-                      density="compact"
-                      variant="outlined"
-                      hide-details
-                      class="mb-2"
-                    >
-                      <template #prepend-inner>
-                        <v-icon icon="mdi-calendar" size="20" />
-                      </template>
-                    </v-text-field>
-                    <v-text-field
-                      v-model="reservationForm.returnTime"
-                      type="time"
-                      density="compact"
-                      variant="outlined"
-                      hide-details
-                    >
-                      <template #prepend-inner>
-                        <v-icon icon="mdi-clock-outline" size="20" />
-                      </template>
-                    </v-text-field>
-                  </div>
+            <!-- Araçları Getir Butonu -->
+            <v-row class="mb-4">
+              <v-col cols="12">
+                <v-btn
+                  color="primary"
+                  size="large"
+                  prepend-icon="mdi-car-search"
+                  @click="loadAvailableVehicles"
+                  :loading="loadingVehicles"
+                  :disabled="!canLoadVehicles"
+                  block
+                >
+                  Araçları Getir
+                </v-btn>
+              </v-col>
+            </v-row>
 
-                  <v-btn
-                    color="primary"
-                    block
-                    prepend-icon="mdi-car-search"
-                    @click="loadAvailableVehicles"
-                    :loading="loadingVehicles"
-                    :disabled="!canLoadVehicles"
+            <!-- Kiraya Verilebilecek Araçlar -->
+            <v-card variant="outlined" class="mb-4" v-if="availableVehicles.length > 0 || loadingVehicles">
+              <v-card-title class="d-flex align-center justify-space-between pa-4">
+                <h3 class="text-h6 font-weight-bold d-flex align-center">
+                  <v-icon icon="mdi-car-multiple" class="mr-2" color="primary" />
+                  Kiraya Verilebilecek Araçlar
+                </h3>
+                <v-chip color="primary" variant="tonal">
+                  {{ availableVehicles.length }} Araç
+                </v-chip>
+              </v-card-title>
+              <v-divider />
+              <v-card-text class="pa-0">
+                <v-data-table
+                  :headers="vehicleTableHeaders"
+                  :items="availableVehicles"
+                  :loading="loadingVehicles"
+                  item-value="id"
+                  class="elevation-0 vehicle-table"
+                  density="comfortable"
+                  @click:row="selectVehicle"
+                  :item-class="(item) => item.id === reservationForm.vehicleId ? 'selected-vehicle' : ''"
+                >
+                  <template #item.image="{ item }">
+                    <v-avatar size="48" color="primary" variant="tonal">
+                      <v-icon icon="mdi-car" size="24" />
+                    </v-avatar>
+                  </template>
+                  <template #item.vehicleModel="{ item }">
+                    <div>
+                      <div class="font-weight-bold text-body-1">{{ item.name }}</div>
+                      <div class="text-caption text-medium-emphasis">
+                        {{ item.brandName || '-' }} {{ item.modelName || '-' }}
+                      </div>
+                    </div>
+                  </template>
+                  <template #item.plate="{ item }">
+                    <v-chip size="small" variant="outlined" color="primary">
+                      {{ item.plate || '-' }}
+                    </v-chip>
+                  </template>
+                  <template #item.days>
+                    <v-chip size="small" color="info" variant="tonal">
+                      {{ calculateDays() }} Gün
+                    </v-chip>
+                  </template>
+                  <template #item.dailyPrice="{ item }">
+                    <span class="font-weight-medium">{{ formatPrice(item.dailyPrice || 0, reservationForm.currencyCode) }}</span>
+                  </template>
+                  <template #item.rentalPrice="{ item }">
+                    <span class="font-weight-medium">{{ formatPrice(calculateRentalPrice(item), reservationForm.currencyCode) }}</span>
+                  </template>
+                  <template #item.dropFee>
+                    <span>{{ formatPrice(getDropFee(), reservationForm.currencyCode) }}</span>
+                  </template>
+                  <template #item.deliveryFee>
+                    <span>{{ formatPrice(getDeliveryFee(), reservationForm.currencyCode) }}</span>
+                  </template>
+                  <template #item.totalPrice="{ item }">
+                    <span class="font-weight-bold text-h6 text-primary">{{ formatPrice(calculateTotalPrice(item), reservationForm.currencyCode) }}</span>
+                  </template>
+                  <template #item.lastReturnLocation>
+                    <span class="text-medium-emphasis">-</span>
+                  </template>
+                </v-data-table>
+              </v-card-text>
+            </v-card>
+
+            <!-- Ekstra Hizmetler -->
+            <v-card variant="outlined" class="mb-4">
+              <v-card-title class="pa-4">
+                <h3 class="text-h6 font-weight-bold d-flex align-center">
+                  <v-icon icon="mdi-star-plus" class="mr-2" color="warning" />
+                  Ekstra Hizmetler
+                </h3>
+              </v-card-title>
+              <v-divider />
+              <v-card-text class="pa-4">
+                <v-row v-if="availableExtras.length > 0">
+                  <v-col
+                    cols="12"
+                    sm="6"
+                    md="4"
+                    lg="3"
+                    v-for="extra in availableExtras"
+                    :key="extra.id"
                   >
-                    Araçları Getir
-                  </v-btn>
-                </v-card-text>
-              </v-card>
-            </v-col>
-
-            <!-- Orta Alan -->
-            <v-col cols="12" md="6" class="pa-0">
-              <v-card elevation="0" class="h-100" style="border-right: 1px solid rgba(0,0,0,0.12);">
-                <v-card-text class="pa-4">
-                  <!-- Kiraya Verilebilecek Araçlar -->
-                  <div class="mb-4">
-                    <h3 class="text-h6 font-weight-bold mb-3">Kiraya Verilebilecek Araçlar</h3>
-                    <v-data-table
-                      :headers="vehicleTableHeaders"
-                      :items="availableVehicles"
-                      :loading="loadingVehicles"
-                      item-value="id"
-                      class="elevation-0 vehicle-table"
-                      density="compact"
-                      @click:row="selectVehicle"
+                    <v-card
+                      variant="outlined"
+                      :class="{ 'border-primary': isExtraSelected(extra.id) }"
+                      class="extra-card"
+                      @click="toggleExtra(extra)"
                     >
-                      <template #item.image="{ item }">
-                        <v-avatar size="40" color="grey-lighten-2">
-                          <v-icon icon="mdi-car" />
-                        </v-avatar>
-                      </template>
-                      <template #item.vehicleModel="{ item }">
-                        <div>
-                          <div class="font-weight-medium">{{ item.name }}</div>
-                          <div class="text-caption text-medium-emphasis">
-                            {{ item.brandName || '-' }} {{ item.modelName || '-' }}
-                          </div>
-                        </div>
-                      </template>
-                      <template #item.plate="{ item }">
-                        <span>{{ getVehiclePlate(item) || '-' }}</span>
-                      </template>
-                      <template #item.days="{ item }">
-                        <span>{{ calculateDays() }}</span>
-                      </template>
-                      <template #item.dailyPrice="{ item }">
-                        <span>{{ formatPrice(item.dailyPrice || 0, reservationForm.currencyCode) }}</span>
-                      </template>
-                      <template #item.rentalPrice="{ item }">
-                        <span>{{ formatPrice(calculateRentalPrice(item), reservationForm.currencyCode) }}</span>
-                      </template>
-                      <template #item.dropFee="{ item }">
-                        <span>{{ formatPrice(getDropFee(), reservationForm.currencyCode) }}</span>
-                      </template>
-                      <template #item.deliveryFee="{ item }">
-                        <span>{{ formatPrice(getDeliveryFee(), reservationForm.currencyCode) }}</span>
-                      </template>
-                      <template #item.totalPrice="{ item }">
-                        <span class="font-weight-bold">{{ formatPrice(calculateTotalPrice(item), reservationForm.currencyCode) }}</span>
-                      </template>
-                      <template #item.lastReturnLocation="{ item }">
-                        <span>-</span>
-                      </template>
-                    </v-data-table>
-                  </div>
-
-                  <!-- Müşteri Seçimi -->
-                  <div class="mb-4">
-                    <h3 class="text-h6 font-weight-bold mb-3">Müşteri Seçimi</h3>
-                    <div class="d-flex align-center gap-2 mb-3">
-                      <v-select
-                        v-model="reservationForm.customerId"
-                        :items="availableCustomers"
-                        item-title="fullName"
-                        item-value="id"
-                        label="Müşteri Seçimi"
-                        density="compact"
-                        variant="outlined"
-                        hide-details
-                        class="flex-grow-1"
-                        @update:model-value="onCustomerSelect"
-                      >
-                        <template #item="{ item, props }">
-                          <v-list-item
-                            v-bind="props"
-                            :disabled="item.raw.isBlacklisted"
+                      <v-card-text class="pa-3">
+                        <div class="d-flex align-center justify-space-between mb-2">
+                          <v-checkbox
+                            :model-value="isExtraSelected(extra.id)"
+                            @click.stop="toggleExtra(extra)"
+                            density="compact"
+                            hide-details
+                            class="ma-0"
+                          />
+                          <v-chip
+                            v-if="extra.isMandatory"
+                            size="x-small"
+                            color="error"
+                            variant="flat"
                           >
-                            <template #prepend>
-                              <v-icon
-                                v-if="item.raw.isBlacklisted"
-                                icon="mdi-account-off"
-                                color="error"
-                                size="20"
-                                class="mr-2"
-                              />
-                            </template>
-                            <v-list-item-title>
-                              <span :class="{ 'text-error': item.raw.isBlacklisted }">
-                                {{ item.raw.fullName }}
-                                <span v-if="item.raw.isBlacklisted" class="text-error text-caption ml-2">
-                                  (Kara Listede)
-                                </span>
-                              </span>
-                            </v-list-item-title>
-                          </v-list-item>
+                            Zorunlu
+                          </v-chip>
+                        </div>
+                        <div class="text-body-2 font-weight-medium mb-1">{{ extra.name }}</div>
+                        <div class="text-h6 font-weight-bold text-primary">
+                          {{ formatPrice(extra.price || 0, reservationForm.currencyCode) }}
+                        </div>
+                        <div class="text-caption text-medium-emphasis" v-if="extra.salesType === 'daily'">
+                          Günlük
+                        </div>
+                      </v-card-text>
+                    </v-card>
+                  </v-col>
+                </v-row>
+                <v-alert v-else type="info" variant="tonal">
+                  Henüz ekstra hizmet eklenmemiş. CRM modülünden ekstra hizmet ekleyebilirsiniz.
+                </v-alert>
+                <v-alert
+                  v-if="selectedExtras.length > 0"
+                  type="success"
+                  variant="tonal"
+                  class="mt-4"
+                >
+                  <div class="d-flex align-center justify-space-between">
+                    <span>Seçilen Ekstra Hizmetler Toplamı:</span>
+                    <span class="text-h6 font-weight-bold">{{ formatPrice(calculateExtrasTotal(), reservationForm.currencyCode) }}</span>
+                  </div>
+                </v-alert>
+              </v-card-text>
+            </v-card>
+
+            <!-- Müşteri Seçimi -->
+            <v-card variant="outlined" class="mb-4">
+              <v-card-title class="pa-4">
+                <h3 class="text-h6 font-weight-bold d-flex align-center">
+                  <v-icon icon="mdi-account" class="mr-2" color="success" />
+                  Müşteri Seçimi
+                </h3>
+              </v-card-title>
+              <v-divider />
+              <v-card-text class="pa-4">
+                <div class="d-flex align-center gap-2 mb-4">
+                  <v-select
+                    v-model="reservationForm.customerId"
+                    :items="availableCustomers"
+                    item-title="fullName"
+                    item-value="id"
+                    label="Müşteri Seçimi"
+                    density="comfortable"
+                    variant="outlined"
+                    prepend-inner-icon="mdi-account-search"
+                    hide-details
+                    class="flex-grow-1"
+                    @update:model-value="onCustomerSelect"
+                  >
+                    <template #item="{ item, props }">
+                      <v-list-item
+                        v-bind="props"
+                        :disabled="item.raw.isBlacklisted"
+                      >
+                        <template #prepend>
+                          <v-icon
+                            v-if="item.raw.isBlacklisted"
+                            icon="mdi-account-off"
+                            color="error"
+                            size="20"
+                            class="mr-2"
+                          />
+                          <v-icon
+                            v-else
+                            icon="mdi-account"
+                            color="success"
+                            size="20"
+                            class="mr-2"
+                          />
                         </template>
-                        <template #selection="{ item }">
+                        <v-list-item-title>
                           <span :class="{ 'text-error': item.raw.isBlacklisted }">
                             {{ item.raw.fullName }}
                             <span v-if="item.raw.isBlacklisted" class="text-error text-caption ml-2">
                               (Kara Listede)
                             </span>
                           </span>
-                        </template>
-                      </v-select>
-                      <v-btn
-                        color="success"
-                        prepend-icon="mdi-plus"
-                        @click="openCustomerDialog"
-                      >
-                        Müşteri Ekle
-                      </v-btn>
-                    </div>
+                        </v-list-item-title>
+                      </v-list-item>
+                    </template>
+                    <template #selection="{ item }">
+                      <span :class="{ 'text-error': item.raw.isBlacklisted }">
+                        {{ item.raw.fullName }}
+                        <span v-if="item.raw.isBlacklisted" class="text-error text-caption ml-2">
+                          (Kara Listede)
+                        </span>
+                      </span>
+                    </template>
+                  </v-select>
+                  <v-btn
+                    color="success"
+                    prepend-icon="mdi-plus"
+                    @click="openCustomerDialog"
+                    size="large"
+                  >
+                    Müşteri Ekle
+                  </v-btn>
+                </div>
 
-                    <!-- Müşteri Bilgileri -->
-                    <v-row v-if="selectedCustomer" dense>
-                      <v-col cols="6">
+                <!-- Müşteri Bilgileri -->
+                <v-expand-transition>
+                  <v-card v-if="selectedCustomer" variant="outlined" class="pa-4">
+                    <v-row dense>
+                      <v-col cols="6" md="3">
                         <v-text-field
                           v-model="customerInfo.country"
                           label="Ülke"
@@ -341,7 +450,7 @@
                           hide-details
                         />
                       </v-col>
-                      <v-col cols="6">
+                      <v-col cols="6" md="3">
                         <v-text-field
                           v-model="customerInfo.fullName"
                           label="Müşteri"
@@ -351,7 +460,7 @@
                           hide-details
                         />
                       </v-col>
-                      <v-col cols="6">
+                      <v-col cols="6" md="3">
                         <v-text-field
                           v-model="customerInfo.email"
                           label="Email"
@@ -361,7 +470,7 @@
                           hide-details
                         />
                       </v-col>
-                      <v-col cols="6">
+                      <v-col cols="6" md="3">
                         <v-text-field
                           v-model="customerInfo.mobile"
                           label="Mobil"
@@ -371,231 +480,151 @@
                           hide-details
                         />
                       </v-col>
-                      <v-col cols="6">
-                        <v-text-field
-                          v-model="customerInfo.phone"
-                          label="Tel"
-                          density="compact"
-                          variant="outlined"
-                          readonly
-                          hide-details
-                        />
-                      </v-col>
-                      <v-col cols="6">
-                        <v-text-field
-                          v-model="customerInfo.birthDate"
-                          label="D.Tarihi"
-                          density="compact"
-                          variant="outlined"
-                          readonly
-                          hide-details
-                        />
-                      </v-col>
-                      <v-col cols="6">
-                        <v-text-field
-                          v-model="customerInfo.gender"
-                          label="Cinsiyet"
-                          density="compact"
-                          variant="outlined"
-                          readonly
-                          hide-details
-                        />
-                      </v-col>
-                      <v-col cols="6">
-                        <v-text-field
-                          v-model="customerInfo.totalPoints"
-                          label="Toplam Puan"
-                          density="compact"
-                          variant="outlined"
-                          readonly
-                          hide-details
-                        />
-                      </v-col>
-                      <v-col cols="6">
-                        <v-text-field
-                          v-model="customerInfo.remainingPoints"
-                          label="Kalan Puan"
-                          density="compact"
-                          variant="outlined"
-                          readonly
-                          hide-details
-                        />
-                      </v-col>
-                      <v-col cols="4">
-                        <v-text-field
-                          v-model="customerInfo.canceledReservations"
-                          label="İptal Rez."
-                          density="compact"
-                          variant="outlined"
-                          readonly
-                          hide-details
-                        />
-                      </v-col>
-                      <v-col cols="4">
-                        <v-text-field
-                          v-model="customerInfo.approvedReservations"
-                          label="Onaylı Rez."
-                          density="compact"
-                          variant="outlined"
-                          readonly
-                          hide-details
-                        />
-                      </v-col>
-                      <v-col cols="4">
-                        <v-text-field
-                          v-model="customerInfo.pendingReservations"
-                          label="Beklemede Rez."
-                          density="compact"
-                          variant="outlined"
-                          readonly
-                          hide-details
-                        />
-                      </v-col>
-                      <v-col cols="12">
-                        <v-text-field
-                          v-model="customerInfo.completedReservations"
-                          label="Tamamlanan Rez."
-                          density="compact"
-                          variant="outlined"
-                          readonly
-                          hide-details
-                        />
-                      </v-col>
                     </v-row>
-                  </div>
-                </v-card-text>
-              </v-card>
-            </v-col>
+                  </v-card>
+                </v-expand-transition>
+              </v-card-text>
+            </v-card>
 
-            <!-- Sağ Sidebar -->
-            <v-col cols="12" md="3" class="pa-0">
-              <v-card elevation="0" class="h-100">
-                <v-card-text class="pa-4">
-                  <h3 class="text-h6 font-weight-bold mb-3">Fiyat Detayları</h3>
-                  
-                  <v-row dense>
-                    <v-col cols="12">
-                      <v-text-field
-                        :model-value="calculateDays()"
-                        label="Kiralama Süresi"
-                        density="compact"
-                        variant="outlined"
-                        readonly
-                        hide-details
-                        suffix="Gün"
-                      />
-                    </v-col>
-                    <v-col cols="12">
-                      <v-text-field
-                        v-model="reservationForm.nonRentalFee"
-                        label="Kiramama Ücreti"
-                        type="number"
-                        density="compact"
-                        variant="outlined"
-                        hide-details
-                        :suffix="getCurrencySymbol(reservationForm.currencyCode)"
-                      />
-                    </v-col>
-                    <v-col cols="12">
-                      <v-text-field
-                        v-model="reservationForm.extraFee"
-                        label="Ekstra Ücreti"
-                        type="number"
-                        density="compact"
-                        variant="outlined"
-                        hide-details
-                        :suffix="getCurrencySymbol(reservationForm.currencyCode)"
-                      />
-                    </v-col>
-                    <v-col cols="12">
-                      <v-text-field
-                        :model-value="getDeliveryFee()"
-                        label="Teslim Ücreti"
-                        density="compact"
-                        variant="outlined"
-                        readonly
-                        hide-details
-                        :suffix="getCurrencySymbol(reservationForm.currencyCode)"
-                      />
-                    </v-col>
-                    <v-col cols="12">
-                      <v-text-field
-                        :model-value="getDropFee()"
-                        label="Drop Ücreti"
-                        density="compact"
-                        variant="outlined"
-                        readonly
-                        hide-details
-                        :suffix="getCurrencySymbol(reservationForm.currencyCode)"
-                      />
-                    </v-col>
-                    <v-col cols="12">
-                      <v-text-field
-                        :model-value="selectedVehicle ? (selectedVehicle.dailyPrice || 0) : 0"
-                        label="Günlük Fiyat"
-                        density="compact"
-                        variant="outlined"
-                        readonly
-                        hide-details
-                        :suffix="getCurrencySymbol(reservationForm.currencyCode)"
-                      />
-                    </v-col>
-                    <v-col cols="12">
-                      <v-select
-                        v-model="reservationForm.paymentMethod"
-                        :items="paymentMethodOptions"
-                        item-title="label"
-                        item-value="value"
-                        label="Ödeme Yöntemi"
-                        density="compact"
-                        variant="outlined"
-                        hide-details
-                      />
-                    </v-col>
-                    <v-col cols="12">
-                      <v-text-field
-                        :model-value="calculateTotalAmount()"
-                        label="Ödenecek Tutar"
-                        density="compact"
-                        variant="outlined"
-                        readonly
-                        hide-details
-                        :suffix="getCurrencySymbol(reservationForm.currencyCode)"
-                        class="font-weight-bold"
-                      />
-                    </v-col>
-                    <v-col cols="12">
-                      <v-text-field
-                        v-model="reservationForm.discountedAmount"
-                        label="İndirimli Tutar"
-                        type="number"
-                        density="compact"
-                        variant="outlined"
-                        hide-details
-                        :suffix="getCurrencySymbol(reservationForm.currencyCode)"
-                      />
-                    </v-col>
-                  </v-row>
-                </v-card-text>
-              </v-card>
-            </v-col>
-          </v-row>
+            <!-- Fiyat Detayları - Tek Satır -->
+            <v-card variant="outlined" class="mb-4">
+              <v-card-title class="pa-4">
+                <h3 class="text-h6 font-weight-bold d-flex align-center">
+                  <v-icon icon="mdi-calculator" class="mr-2" color="info" />
+                  Fiyat Detayları
+                </h3>
+              </v-card-title>
+              <v-divider />
+              <v-card-text class="pa-4">
+                <v-row dense>
+                  <v-col cols="6" md="2">
+                    <v-text-field
+                      :model-value="calculateDays()"
+                      label="Kiralama Süresi"
+                      density="compact"
+                      variant="outlined"
+                      readonly
+                      hide-details
+                      suffix="Gün"
+                    />
+                  </v-col>
+                  <v-col cols="6" md="2">
+                    <v-text-field
+                      :model-value="selectedVehicle ? formatPrice(selectedVehicle.dailyPrice || 0, reservationForm.currencyCode) : '0'"
+                      label="Günlük Fiyat"
+                      density="compact"
+                      variant="outlined"
+                      readonly
+                      hide-details
+                    />
+                  </v-col>
+                  <v-col cols="6" md="2">
+                    <v-text-field
+                      :model-value="selectedVehicle ? formatPrice(calculateRentalPrice(selectedVehicle), reservationForm.currencyCode) : '0'"
+                      label="Kiralama Fiyatı"
+                      density="compact"
+                      variant="outlined"
+                      readonly
+                      hide-details
+                    />
+                  </v-col>
+                  <v-col cols="6" md="2">
+                    <v-text-field
+                      :model-value="formatPrice(getDeliveryFee(), reservationForm.currencyCode)"
+                      label="Teslim Ücreti"
+                      density="compact"
+                      variant="outlined"
+                      readonly
+                      hide-details
+                    />
+                  </v-col>
+                  <v-col cols="6" md="2">
+                    <v-text-field
+                      :model-value="formatPrice(getDropFee(), reservationForm.currencyCode)"
+                      label="Drop Ücreti"
+                      density="compact"
+                      variant="outlined"
+                      readonly
+                      hide-details
+                    />
+                  </v-col>
+                  <v-col cols="6" md="2">
+                    <v-text-field
+                      v-model="reservationForm.nonRentalFee"
+                      label="Kiramama Ücreti"
+                      type="number"
+                      density="compact"
+                      variant="outlined"
+                      hide-details
+                      :suffix="getCurrencySymbol(reservationForm.currencyCode)"
+                    />
+                  </v-col>
+                </v-row>
+              </v-card-text>
+            </v-card>
 
-          <!-- Alt Bar - Kaydet Butonu -->
-          <v-card elevation="0" class="mt-4">
-            <v-card-actions class="pa-4 bg-primary">
-              <v-spacer />
-              <v-btn
-                color="white"
-                size="large"
-                prepend-icon="mdi-content-save"
-                @click="saveReservation"
-                :loading="savingReservation"
-                :disabled="!canSaveReservation"
-              >
-                REZERVASYONU KAYDET
-              </v-btn>
-            </v-card-actions>
+            <!-- Ödeme Yöntemi, İndirim ve Ödenecek Tutar -->
+            <v-card variant="outlined" class="mb-4">
+              <v-card-text class="pa-4">
+                <v-row align="center">
+                  <v-col cols="12" md="4">
+                    <v-select
+                      v-model="reservationForm.paymentMethod"
+                      :items="paymentMethodOptions"
+                      item-title="label"
+                      item-value="value"
+                      label="Ödeme Yöntemi"
+                      density="comfortable"
+                      variant="outlined"
+                      prepend-inner-icon="mdi-credit-card"
+                      hide-details
+                    />
+                  </v-col>
+                  <v-col cols="12" md="4">
+                    <v-text-field
+                      v-model="reservationForm.discountedAmount"
+                      label="İndirim Tutarı"
+                      type="number"
+                      density="comfortable"
+                      variant="outlined"
+                      prepend-inner-icon="mdi-tag"
+                      hide-details
+                      :suffix="getCurrencySymbol(reservationForm.currencyCode)"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="4">
+                    <v-text-field
+                      :model-value="formatPrice(calculateTotalAmount(), reservationForm.currencyCode)"
+                      label="Ödenecek Tutar"
+                      density="comfortable"
+                      variant="outlined"
+                      prepend-inner-icon="mdi-cash"
+                      readonly
+                      hide-details
+                      class="font-weight-bold text-h6"
+                      color="primary"
+                    />
+                  </v-col>
+                </v-row>
+              </v-card-text>
+            </v-card>
+
+            <!-- Kaydet Butonu -->
+            <v-card variant="flat" color="primary">
+              <v-card-actions class="pa-4">
+                <v-spacer />
+                <v-btn
+                  color="white"
+                  size="x-large"
+                  prepend-icon="mdi-content-save"
+                  @click="saveReservation"
+                  :loading="savingReservation"
+                  :disabled="!canSaveReservation"
+                >
+                  REZERVASYONU KAYDET
+                </v-btn>
+              </v-card-actions>
+            </v-card>
           </v-card>
         </v-window-item>
       </v-window>
@@ -604,7 +633,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, onMounted } from 'vue';
+import { computed, reactive, ref, onMounted, watch } from 'vue';
 import { http } from '../modules/http';
 import { useAuthStore } from '../stores/auth';
 
@@ -616,6 +645,8 @@ const locations = ref<LocationDto[]>([]);
 const customers = ref<CustomerDto[]>([]);
 const vehicles = ref<VehicleDto[]>([]);
 const availableVehicles = ref<AvailableVehicleDto[]>([]);
+const extras = ref<ExtraDto[]>([]);
+const selectedExtras = ref<string[]>([]);
 
 // UI State
 const mainTab = ref('list');
@@ -750,6 +781,22 @@ interface ReservationDto {
   totalPrice: number;
   currencyCode: string;
   status: string;
+  vehicleId?: string;
+  plateId?: string;
+}
+
+interface ExtraDto {
+  id: string;
+  name: string;
+  price: number;
+  isMandatory: boolean;
+  isActive: boolean;
+  canIncreaseQuantity?: boolean;
+  image?: string;
+  value?: string;
+  inputName?: string;
+  type?: 'insurance' | 'extra';
+  salesType?: 'daily' | 'per_rental';
 }
 
 // Computed
@@ -922,14 +969,31 @@ const calculateTotalPrice = (vehicle: AvailableVehicleDto): number => {
   return rentalPrice + deliveryFee + dropFee;
 };
 
+const calculateExtrasTotal = (): number => {
+  const days = calculateDays();
+  return selectedExtras.value.reduce((total, extraId) => {
+    const extra = extras.value.find(e => e.id === extraId);
+    if (!extra || !extra.isActive) return total;
+    
+    if (extra.salesType === 'daily') {
+      return total + (extra.price * days);
+    } else {
+      return total + extra.price;
+    }
+  }, 0);
+};
+
 const calculateTotalAmount = (): number => {
   if (!selectedVehicle.value) return 0;
   const rentalPrice = calculateRentalPrice(selectedVehicle.value);
   const deliveryFee = getDeliveryFee();
   const dropFee = getDropFee();
   const nonRentalFee = reservationForm.nonRentalFee || 0;
-  const extraFee = reservationForm.extraFee || 0;
-  return rentalPrice + deliveryFee + dropFee + nonRentalFee + extraFee;
+  const extrasTotal = calculateExtrasTotal();
+  const discountedAmount = reservationForm.discountedAmount || 0;
+  
+  const total = rentalPrice + deliveryFee + dropFee + nonRentalFee + extrasTotal;
+  return Math.max(0, total - discountedAmount);
 };
 
 const getVehiclePlate = (vehicle: VehicleDto): string => {
@@ -1053,20 +1117,52 @@ const loadVehicles = async () => {
   }
 };
 
+const isVehicleReserved = (vehicle: VehicleDto): boolean => {
+  if (!reservationForm.pickupDate || !reservationForm.returnDate) return false;
+  
+  const pickupDate = new Date(reservationForm.pickupDate);
+  const returnDate = new Date(reservationForm.returnDate);
+  pickupDate.setHours(0, 0, 0, 0);
+  returnDate.setHours(23, 59, 59, 999);
+  
+  // Rezervasyonlarda bu araç için çakışma kontrolü
+  return reservations.value.some(reservation => {
+    if (reservation.vehicleId !== vehicle.id) return false;
+    if (!reservation.pickupDate || !reservation.returnDate) return false;
+    
+    const resPickup = new Date(reservation.pickupDate);
+    const resReturn = new Date(reservation.returnDate);
+    resPickup.setHours(0, 0, 0, 0);
+    resReturn.setHours(23, 59, 59, 999);
+    
+    // Çakışma kontrolü: yeni rezervasyon mevcut rezervasyonla çakışıyor mu?
+    return (
+      (pickupDate >= resPickup && pickupDate <= resReturn) ||
+      (returnDate >= resPickup && returnDate <= resReturn) ||
+      (pickupDate <= resPickup && returnDate >= resReturn)
+    );
+  });
+};
+
 const loadAvailableVehicles = async () => {
   if (!canLoadVehicles.value) return;
   
   loadingVehicles.value = true;
   try {
-    // TODO: Backend API endpoint'i eklendiğinde buraya entegre edilecek
-    // Araçları filtrele ve fiyatlandır
-    
-    // Şimdilik mevcut araçları göster
     const days = calculateDays();
     const pickupLocation = getPickupLocation();
     const returnLocation = getReturnLocation();
     
-    availableVehicles.value = vehicles.value.map(vehicle => {
+    // Rezervasyonda olmayan araçları filtrele
+    const available = vehicles.value.filter(vehicle => {
+      // Aktif olmayan araçları filtrele
+      if (!vehicle.baseRate || vehicle.baseRate === 0) return false;
+      
+      // Rezervasyonda olan araçları filtrele
+      return !isVehicleReserved(vehicle);
+    });
+    
+    availableVehicles.value = available.map(vehicle => {
       const dailyPrice = vehicle.baseRate || 0;
       const rentalPrice = dailyPrice * days;
       const deliveryFee = pickupLocation?.deliveryFee || 0;
@@ -1097,6 +1193,27 @@ const selectVehicle = (_event: any, { item }: { item: AvailableVehicleDto }) => 
   selectedVehicle.value = item;
   reservationForm.vehicleId = item.id;
 };
+
+// Watch return location and date/time to update vehicle's last location
+watch(
+  () => [reservationForm.returnLocationId, reservationForm.returnDate, reservationForm.returnTime, reservationForm.vehicleId],
+  async ([returnLocationId, returnDate, returnTime, vehicleId]) => {
+    // Only update if all required fields are filled and vehicle is selected
+    if (returnLocationId && returnDate && returnTime && vehicleId) {
+      try {
+        await http.put(`/rentacar/vehicles/${vehicleId}/last-return-location`, {
+          locationId: returnLocationId,
+        });
+        // Optionally reload vehicles to reflect the change
+        // await loadVehicles();
+      } catch (error: any) {
+        console.error('Failed to update vehicle last location:', error);
+        // Don't show alert to user as this is an automatic background update
+      }
+    }
+  },
+  { deep: true }
+);
 
 const onCustomerSelect = (customerId: string) => {
   const blacklistedIds = getBlacklistedCustomers();
@@ -1175,7 +1292,8 @@ const saveReservation = async () => {
       customerId: reservationForm.customerId,
       vehicleId: reservationForm.vehicleId,
       nonRentalFee: reservationForm.nonRentalFee || 0,
-      extraFee: reservationForm.extraFee || 0,
+      extraFee: calculateExtrasTotal(),
+      extraIds: selectedExtras.value,
       paymentMethod: reservationForm.paymentMethod,
       discountedAmount: reservationForm.discountedAmount || 0,
       totalAmount: calculateTotalAmount(),
@@ -1192,6 +1310,55 @@ const saveReservation = async () => {
     alert(error.response?.data?.message || 'Rezervasyon kaydedilirken bir hata oluştu');
   } finally {
     savingReservation.value = false;
+  }
+};
+
+// Ekstra Hizmetler
+const getAddedExtras = (): ExtraDto[] => {
+  try {
+    const added = localStorage.getItem('crm_added_extras');
+    return added ? JSON.parse(added) : [];
+  } catch {
+    return [];
+  }
+};
+
+const availableExtras = computed(() => {
+  return extras.value.filter(extra => extra.isActive);
+});
+
+const isExtraSelected = (extraId: string): boolean => {
+  return selectedExtras.value.includes(extraId);
+};
+
+const toggleExtra = (extra: ExtraDto) => {
+  if (extra.isMandatory) return; // Zorunlu ekstralar seçilemez/seçilemez yapılamaz
+  
+  const index = selectedExtras.value.indexOf(extra.id);
+  if (index > -1) {
+    selectedExtras.value.splice(index, 1);
+  } else {
+    selectedExtras.value.push(extra.id);
+  }
+  
+  // Ekstra ücreti güncelle
+  reservationForm.extraFee = calculateExtrasTotal();
+};
+
+const loadExtras = async () => {
+  if (!auth.tenant) return;
+  try {
+    // TODO: Backend API endpoint'i eklendiğinde buraya entegre edilecek
+    // const { data } = await http.get<ExtraDto[]>('/crm/extras', {
+    //   params: { tenantId: auth.tenant.id },
+    // });
+    // extras.value = data.filter(e => e.isActive);
+    
+    // localStorage'dan ekstra hizmetleri yükle
+    const addedExtras = getAddedExtras();
+    extras.value = addedExtras.filter(e => e.isActive);
+  } catch (error) {
+    console.error('Failed to load extras:', error);
   }
 };
 
@@ -1212,6 +1379,7 @@ const resetReservationForm = () => {
   reservationForm.discountedAmount = 0;
   selectedVehicle.value = null;
   availableVehicles.value = [];
+  selectedExtras.value = [];
   resetCustomerInfo();
 };
 
@@ -1238,6 +1406,7 @@ onMounted(async () => {
     loadLocations(),
     loadCustomers(),
     loadVehicles(),
+    loadExtras(),
   ]);
 });
 </script>
@@ -1288,6 +1457,24 @@ onMounted(async () => {
 
 .vehicle-table :deep(.v-data-table__tr:hover) {
   background-color: rgba(var(--v-theme-primary), 0.05);
+}
+
+.vehicle-table :deep(.selected-vehicle) {
+  background-color: rgba(var(--v-theme-primary), 0.1) !important;
+}
+
+.extra-card {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.extra-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.extra-card.border-primary {
+  border: 2px solid rgb(var(--v-theme-primary)) !important;
 }
 </style>
 

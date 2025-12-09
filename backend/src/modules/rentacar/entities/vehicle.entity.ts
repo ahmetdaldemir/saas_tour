@@ -6,6 +6,7 @@ import { VehiclePricingPeriod } from './vehicle-pricing-period.entity';
 import { VehicleCategory } from './vehicle-category.entity';
 import { VehicleBrand } from './vehicle-brand.entity';
 import { VehicleModel } from './vehicle-model.entity';
+import { Location } from './location.entity';
 
 export enum TransmissionType {
   AUTOMATIC = 'automatic',
@@ -127,6 +128,13 @@ export class Vehicle extends BaseEntity {
 
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;
+
+  @ManyToOne(() => Location, { nullable: true })
+  @JoinColumn({ name: 'last_return_location_id' })
+  lastReturnLocation?: Location | null;
+
+  @Column({ name: 'last_return_location_id', nullable: true })
+  lastReturnLocationId?: string | null;
 
   @OneToMany(() => VehiclePlate, (plate) => plate.vehicle)
   plates!: VehiclePlate[];

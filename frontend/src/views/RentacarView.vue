@@ -138,6 +138,25 @@
               <span>{{ item.vehicle.year || '-' }}</span>
             </template>
 
+            <template #item.lastReturnLocation="{ item }">
+              <v-select
+                :model-value="item.vehicle.lastReturnLocationId || ''"
+                :items="availableLocations"
+                item-title="name"
+                item-value="id"
+                density="compact"
+                hide-details
+                variant="outlined"
+                style="max-width: 200px;"
+                :placeholder="item.vehicle.lastReturnLocation ? getLocationName(item.vehicle.lastReturnLocation) : 'Lokasyon seçin'"
+                @update:model-value="updateVehicleLastLocation(item.vehicle.id, $event)"
+              >
+                <template #prepend-inner>
+                  <v-icon icon="mdi-map-marker" size="16" />
+                </template>
+              </v-select>
+            </template>
+
             <template #item.status="{ item }">
               <v-btn
                 :color="getVehicleStatus(item).color"
@@ -1201,7 +1220,7 @@
       </v-dialog>
 
       <!-- Dönüş Bölgesi Ücretleri Dialog -->
-      <v-dialog v-model="showDeliveryPricingDialog" max-width="1200" fullscreen scrollable>
+      <v-dialog v-model="showDeliveryPricingDialog" fullscreen scrollable>
         <v-card>
           <v-card-title class="d-flex align-center justify-space-between">
             <div class="d-flex align-center gap-2">
@@ -1285,7 +1304,7 @@
       </v-dialog>
 
       <!-- Lokasyon Ekleme/Düzenleme Dialog -->
-      <v-dialog v-model="showLocationDialog" max-width="1200" scrollable>
+      <v-dialog v-model="showLocationDialog" scrollable>
         <v-card>
           <v-card-title class="d-flex align-center justify-space-between">
             <div class="d-flex align-center gap-2">
@@ -1513,6 +1532,8 @@ interface VehicleDto {
   plates?: VehiclePlateDto[];
   pricingPeriods?: any[];
   createdAt?: string;
+  lastReturnLocationId?: string | null;
+  lastReturnLocation?: LocationDto | null;
 }
 
 interface LocationTranslationDto {
@@ -1749,6 +1770,7 @@ const tableHeaders = [
   { title: 'Marka', key: 'brand' },
   { title: 'Model', key: 'model' },
   { title: 'Yıl', key: 'year' },
+  { title: 'Son Lokasyon', key: 'lastReturnLocation', sortable: false, width: '200px' },
   { title: 'Durum', key: 'status', sortable: false, width: '120px' },
   { title: 'İşlemler', key: 'actions', sortable: false },
 ];
@@ -1852,6 +1874,13 @@ const brandFilterOptions = computed(() => {
     });
   });
   return options;
+});
+
+const availableLocations = computed(() => {
+  return locations.value.filter(loc => loc.isActive).map(loc => ({
+    id: loc.id,
+    name: getLocationName(loc),
+  }));
 });
 
 // Her plaka için ayrı satır oluşturmak için vehicle+plate kombinasyonları
@@ -3112,6 +3141,18 @@ const saveDeliveryPricing = async () => {
     alert(error.response?.data?.message || 'Dönüş bölgesi ücretleri kaydedilirken bir hata oluştu');
   } finally {
     savingDeliveryPricing.value = false;
+  }
+};
+
+const updateVehicleLastLocation = async (vehicleId: string, locationId: string | null) => {
+  try {
+    await http.put(`/rentacar/vehicles/${vehicleId}/last-return-location`, {
+      locationId: locationId || null,
+    });
+    // Reload vehicles to get updated data
+    await loadVehicles();
+  } catch (error: any) {
+    alert(error.response?.data?.message || 'Son lokasyon güncellenirken bir hata oluştu');
   }
 };
 

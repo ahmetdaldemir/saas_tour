@@ -65,7 +65,7 @@
       </v-app-bar>
 
       <v-main>
-        <v-container max-width="1200" class="py-6">
+        <v-container class="py-6">
           <RouterView />
         </v-container>
       </v-main>

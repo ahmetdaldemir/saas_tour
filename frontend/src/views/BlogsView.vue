@@ -70,7 +70,7 @@
     </v-card>
 
     <!-- Blog Ekleme/Düzenleme Dialog -->
-    <v-dialog v-model="showBlogDialog" max-width="1200" fullscreen scrollable>
+    <v-dialog v-model="showBlogDialog" fullscreen scrollable>
       <v-card>
         <v-card-title class="d-flex align-center justify-space-between">
           <div class="d-flex align-center gap-2">

@@ -501,7 +501,7 @@
     </v-dialog>
 
     <!-- Ekstra Ürün Ekleme/Düzenleme Dialog -->
-    <v-dialog v-model="showExtraDialog" max-width="1200" scrollable>
+    <v-dialog v-model="showExtraDialog" scrollable>
       <v-card>
         <v-card-title class="d-flex align-center justify-space-between">
           <div class="d-flex align-center gap-2">

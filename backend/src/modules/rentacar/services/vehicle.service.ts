@@ -7,6 +7,7 @@ import { VehicleReservationAssignment } from '../entities/vehicle-reservation-as
 import { VehicleCategory } from '../entities/vehicle-category.entity';
 import { VehicleBrand } from '../entities/vehicle-brand.entity';
 import { VehicleModel } from '../entities/vehicle-model.entity';
+import { Location } from '../entities/location.entity';
 import { Tenant, TenantCategory } from '../../tenants/entities/tenant.entity';
 import { Reservation, ReservationStatus, ReservationType } from '../../shared/entities/reservation.entity';
 
@@ -457,8 +458,33 @@ export class VehicleService {
   static listVehicles(tenantId: string): Promise<Vehicle[]> {
     return this.vehicleRepo().find({
       where: { tenantId },
-      relations: ['category', 'category.translations', 'category.translations.language', 'brand', 'model', 'plates', 'pricingPeriods'],
+      relations: ['category', 'category.translations', 'category.translations.language', 'brand', 'model', 'plates', 'pricingPeriods', 'lastReturnLocation', 'lastReturnLocation.translations'],
       order: { order: 'ASC', createdAt: 'DESC' },
     });
+  }
+
+  static async updateLastReturnLocation(vehicleId: string, locationId: string | null): Promise<Vehicle> {
+    const vehicle = await this.vehicleRepo().findOne({ where: { id: vehicleId } });
+    if (!vehicle) {
+      throw new Error('Vehicle not found');
+    }
+
+    if (locationId) {
+      const locationRepo = AppDataSource.getRepository(Location);
+      const location = await locationRepo.findOne({ where: { id: locationId } });
+      if (!location) {
+        throw new Error('Location not found');
+      }
+      if (location.tenantId !== vehicle.tenantId) {
+        throw new Error('Location and vehicle belong to different tenants');
+      }
+      vehicle.lastReturnLocation = location;
+      vehicle.lastReturnLocationId = locationId;
+    } else {
+      vehicle.lastReturnLocation = null;
+      vehicle.lastReturnLocationId = null;
+    }
+
+    return this.vehicleRepo().save(vehicle);
   }
 }
