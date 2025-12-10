@@ -28,7 +28,6 @@ import { VehicleCategoryTranslation } from '../modules/rentacar/entities/vehicle
 import { VehicleBrand } from '../modules/rentacar/entities/vehicle-brand.entity';
 import { VehicleModel } from '../modules/rentacar/entities/vehicle-model.entity';
 import { Location } from '../modules/rentacar/entities/location.entity';
-import { LocationTranslation } from '../modules/rentacar/entities/location-translation.entity';
 import { LocationVehiclePricing } from '../modules/rentacar/entities/location-vehicle-pricing.entity';
 import { LocationDeliveryPricing } from '../modules/rentacar/entities/location-delivery-pricing.entity';
 import { TenantUser } from '../modules/tenants/entities/tenant-user.entity';
@@ -73,7 +72,6 @@ export const AppDataSource = new DataSource({
           VehicleBrand,
           VehicleModel,
           Location,
-          LocationTranslation,
           LocationVehiclePricing,
           LocationDeliveryPricing,
           TenantUser,

@@ -244,7 +244,7 @@
                   class="elevation-0 vehicle-table"
                   density="comfortable"
                   @click:row="selectVehicle"
-                  :item-class="(item) => item.id === reservationForm.vehicleId ? 'selected-vehicle' : ''"
+                  :item-class="(item: AvailableVehicleDto) => item.id === reservationForm.vehicleId ? 'selected-vehicle' : ''"
                 >
                   <template #item.image="{ item }">
                     <v-avatar size="48" color="primary" variant="tonal">
@@ -728,11 +728,14 @@ const customerInfo = reactive({
 interface LocationDto {
   id: string;
   name: string;
-  province?: string;
-  district?: string;
+  metaTitle?: string;
+  parentId?: string | null;
+  parent?: LocationDto | null;
+  type?: 'merkez' | 'otel' | 'havalimani' | 'adres';
+  sort?: number;
   deliveryFee?: number;
   dropFee?: number;
-  currencyCode?: string;
+  minDayCount?: number;
   isActive?: boolean;
 }
 
@@ -799,12 +802,34 @@ interface ExtraDto {
   salesType?: 'daily' | 'per_rental';
 }
 
+// Location type options
+const locationTypeOptions = [
+  { label: 'Merkez', value: 'merkez' },
+  { label: 'Otel', value: 'otel' },
+  { label: 'Havalimanı', value: 'havalimani' },
+  { label: 'Adres', value: 'adres' },
+];
+
+// Helper function to get location type label
+const getLocationTypeLabel = (type?: string): string => {
+  const option = locationTypeOptions.find(o => o.value === type);
+  return option?.label || type || '';
+};
+
 // Computed
 const availableLocations = computed(() => {
-  return locations.value.filter(loc => loc.name).map(loc => ({
-    id: loc.id,
-    name: loc.name || `${loc.province || ''} ${loc.district || ''}`.trim(),
-  }));
+  return locations.value
+    .filter(loc => loc.isActive !== false) // Filter active locations
+    .map(loc => {
+      const locationName = loc.name || 'Lokasyon';
+      const typeLabel = getLocationTypeLabel(loc.type);
+      const displayName = typeLabel ? `${locationName} - ${typeLabel}` : locationName;
+      
+      return {
+        id: loc.id,
+        name: displayName,
+      };
+    });
 });
 
 const getBlacklistedCustomers = (): string[] => {
@@ -947,13 +972,13 @@ const getReturnLocation = () => {
 
 const getDeliveryFee = (): number => {
   const location = getPickupLocation();
-  if (!location || location.currencyCode !== reservationForm.currencyCode) return 0;
+  if (!location) return 0;
   return location.deliveryFee || 0;
 };
 
 const getDropFee = (): number => {
   const location = getReturnLocation();
-  if (!location || location.currencyCode !== reservationForm.currencyCode) return 0;
+  if (!location) return 0;
   return location.dropFee || 0;
 };
 

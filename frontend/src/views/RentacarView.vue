@@ -83,18 +83,21 @@
             class="elevation-0"
           >
             <template #item.plate="{ item }">
-              <div class="d-flex align-center gap-1">
-                <v-chip
-                  v-if="item.plate"
-                  color="info"
-                  variant="flat"
-                  size="small"
-                  prepend-icon="mdi-card-text"
-                  style="cursor: pointer;"
-                  @click="openPlateDialog(item.vehicle, item.plate)"
-                >
-                  {{ item.plate.plateNumber }}
-                </v-chip>
+              <div class="d-flex align-center flex-wrap gap-1">
+                <template v-if="item.plates && item.plates.length > 0">
+                  <v-chip
+                    v-for="plate in item.plates"
+                    :key="plate.id"
+                    color="info"
+                    variant="flat"
+                    size="small"
+                    prepend-icon="mdi-card-text"
+                    style="cursor: pointer;"
+                    @click="openPlateDialog(item.vehicle, plate)"
+                  >
+                    {{ plate.plateNumber }}
+                  </v-chip>
+                </template>
                 <span v-else class="text-caption text-grey">Plaka yok</span>
                 <v-btn
                   icon="mdi-plus"
@@ -179,33 +182,14 @@
                   <v-card variant="outlined" class="pa-4">
                     <div class="d-flex flex-column gap-3">
                       <h4 class="text-subtitle-1 font-weight-bold mb-2">Araç Detayları</h4>
+                      
+                      <!-- Araç Bilgileri -->
                       <v-row>
-                        <v-col cols="12" md="6">
-                          <div class="d-flex align-center gap-2">
-                            <v-icon icon="mdi-file-document" size="20" color="primary" />
-                            <span class="font-weight-medium">Belge Seri No:</span>
-                            <span>{{ item.plate?.documentNumber || item.plate?.serialNumber || '-' }}</span>
-                          </div>
-                        </v-col>
                         <v-col cols="12" md="6">
                           <div class="d-flex align-center gap-2">
                             <v-icon icon="mdi-calendar-plus" size="20" color="primary" />
                             <span class="font-weight-medium">Giriş Tarihi:</span>
                             <span>{{ item.vehicle.createdAt ? new Date(item.vehicle.createdAt).toLocaleDateString('tr-TR') : '-' }}</span>
-                          </div>
-                        </v-col>
-                        <v-col cols="12" md="6">
-                          <div class="d-flex align-center gap-2">
-                            <v-icon icon="mdi-calendar-check" size="20" color="primary" />
-                            <span class="font-weight-medium">Tescil Tarihi:</span>
-                            <span>{{ item.plate?.registrationDate ? new Date(item.plate.registrationDate).toLocaleDateString('tr-TR') : '-' }}</span>
-                          </div>
-                        </v-col>
-                        <v-col cols="12" md="6">
-                          <div class="d-flex align-center gap-2">
-                            <v-icon icon="mdi-speedometer" size="20" color="primary" />
-                            <span class="font-weight-medium">Son Km:</span>
-                            <span>{{ item.plate?.km || '-' }}</span>
                           </div>
                         </v-col>
                         <v-col cols="12" md="6">
@@ -216,6 +200,45 @@
                           </div>
                         </v-col>
                       </v-row>
+
+                      <!-- Plaka Bilgileri -->
+                      <div v-if="item.plates && item.plates.length > 0">
+                        <h5 class="text-subtitle-2 font-weight-bold mb-3">Plaka Bilgileri</h5>
+                        <v-row v-for="(plate, index) in item.plates" :key="plate.id" class="mb-2">
+                          <v-col cols="12">
+                            <v-card variant="outlined" class="pa-3">
+                              <div class="d-flex align-center gap-2 mb-2">
+                                <v-icon icon="mdi-card-text" size="20" color="primary" />
+                                <span class="font-weight-bold">Plaka {{ index + 1 }}: {{ plate.plateNumber }}</span>
+                              </div>
+                              <v-row>
+                                <v-col cols="12" md="6">
+                                  <div class="d-flex align-center gap-2">
+                                    <v-icon icon="mdi-file-document" size="18" color="primary" />
+                                    <span class="font-weight-medium">Belge Seri No:</span>
+                                    <span>{{ plate.documentNumber || plate.serialNumber || '-' }}</span>
+                                  </div>
+                                </v-col>
+                                <v-col cols="12" md="6">
+                                  <div class="d-flex align-center gap-2">
+                                    <v-icon icon="mdi-calendar-check" size="18" color="primary" />
+                                    <span class="font-weight-medium">Tescil Tarihi:</span>
+                                    <span>{{ plate.registrationDate ? new Date(plate.registrationDate).toLocaleDateString('tr-TR') : '-' }}</span>
+                                  </div>
+                                </v-col>
+                                <v-col cols="12" md="6">
+                                  <div class="d-flex align-center gap-2">
+                                    <v-icon icon="mdi-speedometer" size="18" color="primary" />
+                                    <span class="font-weight-medium">Son Km:</span>
+                                    <span>{{ plate.km || '-' }}</span>
+                                  </div>
+                                </v-col>
+                              </v-row>
+                            </v-card>
+                          </v-col>
+                        </v-row>
+                      </div>
+                      <div v-else class="text-grey text-caption">Plaka bilgisi bulunmamaktadır.</div>
                     </div>
                   </v-card>
                 </td>
@@ -244,7 +267,7 @@
                 <div class="table-container">
                   <v-data-table
                     :headers="locationTableHeaders"
-                    :items="locations"
+                    :items="displayedLocations"
                     :loading="loadingLocations"
                     item-value="id"
                     class="elevation-0 location-table"
@@ -255,14 +278,28 @@
                   </template>
 
                   <template #item.name="{ item }">
-                    <div class="d-flex align-center gap-2">
+                    <div class="d-flex align-center gap-2" :style="{ paddingLeft: item.isChild ? '40px' : '0' }">
+                      <v-icon 
+                        v-if="item.type === 'merkez'"
+                        :icon="expandedLocations.has(item.id) ? 'mdi-chevron-down' : 'mdi-chevron-right'" 
+                        size="16" 
+                        color="primary"
+                        style="cursor: pointer;"
+                        @click.stop="toggleLocationExpansion(item.id)"
+                      />
+                      <v-icon 
+                        v-else
+                        icon="mdi-map-marker-outline" 
+                        size="16" 
+                        color="grey"
+                      />
                       <v-icon icon="mdi-map-marker" size="20" color="primary" />
                       <span class="font-weight-medium">{{ getLocationName(item) }}</span>
                     </div>
                   </template>
 
-                  <template #item.parentRegion="{ item }">
-                    <span>{{ item.parentRegion || '-' }}</span>
+                  <template #item.parent="{ item }">
+                    <span>{{ item.parent?.name || '-' }}</span>
                   </template>
 
                   <template #item.type="{ item }">
@@ -311,16 +348,16 @@
                     </v-text-field>
                   </template>
 
-                  <template #item.orderNo="{ item }">
+                  <template #item.sort="{ item }">
                     <v-text-field
-                      v-model.number="item.orderNo"
+                      v-model.number="item.sort"
                       type="number"
                       density="compact"
                       hide-details
                       variant="outlined"
                       style="max-width: 100px;"
-                      @blur="updateLocationField(item, 'orderNo', item.orderNo)"
-                      @keyup.enter="updateLocationField(item, 'orderNo', item.orderNo)"
+                      @blur="updateLocationField(item, 'sort', item.sort)"
+                      @keyup.enter="updateLocationField(item, 'sort', item.sort)"
                     />
                   </template>
 
@@ -1043,7 +1080,7 @@
             <div class="d-flex align-center gap-2">
               <v-icon icon="mdi-currency-usd" size="24" />
               <span class="text-h6">
-                {{ selectedLocationForPricing ? `${getLocationName(selectedLocationForPricing)}${selectedLocationForPricing.province || selectedLocationForPricing.district ? ` (${selectedLocationForPricing.province || ''}${selectedLocationForPricing.district ? ` - ${selectedLocationForPricing.district}` : ''})` : ''} => Fiyatlandırma` : 'Fiyatlandırma' }}
+                {{ selectedLocationForPricing ? `${getLocationName(selectedLocationForPricing)} => Fiyatlandırma` : 'Fiyatlandırma' }}
               </span>
             </div>
             <v-btn icon="mdi-close" variant="text" @click="closePricingDialog" />
@@ -1074,7 +1111,8 @@
                 <template #item.vehicle="{ item }">
                   <div class="d-flex flex-column">
                     <span class="font-weight-medium">
-                      {{ item.brandName || '-' }} | {{ item.modelName || '-' }}
+                      {{ item.brandName && item.brandName !== '-' ? item.brandName : 'Marka Seçilmemiş' }} | 
+                      {{ item.modelName && item.modelName !== '-' ? item.modelName : 'Model Seçilmemiş' }}
                     </span>
                     <span class="text-caption text-grey">
                       {{ item.transmission ? (item.transmission === 'automatic' ? 'Automatic' : 'Manuel') : '' }}
@@ -1226,7 +1264,7 @@
             <div class="d-flex align-center gap-2">
               <v-icon icon="mdi-map-marker-multiple" size="24" />
               <span class="text-h6">
-                {{ selectedLocationForDeliveryPricing ? `${getLocationName(selectedLocationForDeliveryPricing)}${selectedLocationForDeliveryPricing.province || selectedLocationForDeliveryPricing.district ? ` (${selectedLocationForDeliveryPricing.province || ''}${selectedLocationForDeliveryPricing.district ? ` - ${selectedLocationForDeliveryPricing.district}` : ''})` : ''} => Dönüş Bölgesi Ücretleri` : 'Dönüş Bölgesi Ücretleri' }}
+                {{ selectedLocationForDeliveryPricing ? `${getLocationName(selectedLocationForDeliveryPricing)} => Dönüş Bölgesi Ücretleri` : 'Dönüş Bölgesi Ücretleri' }}
               </span>
             </div>
             <div class="d-flex align-center gap-2">
@@ -1332,30 +1370,16 @@
                     prepend-inner-icon="mdi-tag"
                   />
                 </v-col>
-              </v-row>
-
-              <v-divider class="my-4" />
-
-              <v-row>
                 <v-col cols="12" md="6">
                   <v-select
-                    v-model="locationForm.province"
-                    :items="provinces"
+                    v-model="locationForm.parentId"
+                    :items="availableParentLocations"
                     item-title="name"
-                    item-value="name"
-                    label="İl"
-                    prepend-inner-icon="mdi-map"
-                    @update:model-value="onProvinceChange"
-                  />
-                </v-col>
-                <v-col cols="12" md="6">
-                  <v-select
-                    v-model="locationForm.district"
-                    :items="districts"
-                    :disabled="!locationForm.province"
-                    label="İlçe"
-                    prepend-inner-icon="mdi-map-marker"
-                    :placeholder="locationForm.province ? 'İlçe seçin' : 'Önce il seçin'"
+                    item-value="id"
+                    label="Üst Lokasyon"
+                    prepend-inner-icon="mdi-folder"
+                    clearable
+                    :placeholder="'Üst lokasyon seçin (opsiyonel)'"
                   />
                 </v-col>
                 <v-col cols="12" md="6">
@@ -1370,8 +1394,8 @@
                 </v-col>
                 <v-col cols="12" md="6">
                   <v-text-field
-                    v-model.number="locationForm.orderNo"
-                    label="Sıra No"
+                    v-model.number="locationForm.sort"
+                    label="Sıralama"
                     type="number"
                     prepend-inner-icon="mdi-sort-numeric"
                   />
@@ -1432,7 +1456,6 @@ import { computed, reactive, ref, onMounted, watch } from 'vue';
 import { http } from '../modules/http';
 import { useAuthStore } from '../stores/auth';
 import { translateText } from '../services/deepl';
-import { TURKEY_CITIES } from '../data/turkey-cities';
 
 // Interfaces
 interface LanguageDto {
@@ -1536,28 +1559,17 @@ interface VehicleDto {
   lastReturnLocation?: LocationDto | null;
 }
 
-interface LocationTranslationDto {
-  id: string;
-  languageId: string;
-  languageCode: string;
-  name: string;
-  metaTitle?: string;
-}
-
 interface LocationDto {
   id: string;
-  translations?: LocationTranslationDto[];
-  name?: string;
+  name: string;
   metaTitle?: string;
-  province?: string;
-  district?: string;
-  parentRegion?: string;
+  parentId?: string | null;
+  parent?: LocationDto | null;
   type?: 'merkez' | 'otel' | 'havalimani' | 'adres';
-  orderNo?: number;
+  sort?: number;
   deliveryFee?: number;
   dropFee?: number;
   minDayCount?: number;
-  currencyCode?: string;
   isActive?: boolean;
 }
 
@@ -1578,6 +1590,7 @@ const mainTab = ref('vehicles');
 const vehicleFilter = ref<'all' | 'reserved' | 'available'>('all');
 const selectedBrandFilter = ref<string | null>(null);
 const expandedVehicles = ref<Set<string>>(new Set());
+const expandedLocations = ref<Set<string>>(new Set());
 const showVehicleDialog = ref(false);
 const showPlateDialog = ref(false);
 const showLocationDialog = ref(false);
@@ -1692,20 +1705,44 @@ const editingVehicle = ref<VehicleDto | null>(null);
 const locationForm = reactive({
   name: '',
   metaTitle: '',
-  province: '',
-  district: '',
+  parentId: null as string | null,
   type: 'merkez' as 'merkez' | 'otel' | 'havalimani' | 'adres',
-  orderNo: 1000,
+  sort: 0,
   deliveryFee: 0,
   dropFee: 0,
   minDayCount: undefined as number | undefined,
-  currencyCode: 'TRY' as string,
   isActive: true,
 });
 
-// Provinces and Districts
-const provinces = computed(() => TURKEY_CITIES.map(city => ({ name: city.name, code: city.code })));
-const districts = ref<string[]>([]);
+// Available parent locations (excluding current location if editing)
+// Only show locations with type='merkez' as parent options
+const availableParentLocations = computed(() => {
+  if (!editingLocation.value) {
+    return locations.value
+      .filter(loc => loc.isActive && loc.type === 'merkez')
+      .map(loc => ({
+        id: loc.id,
+        name: loc.name || 'Lokasyon',
+      }));
+  }
+  // Exclude current location and its children from parent selection
+  const excludeIds = new Set<string>([editingLocation.value.id]);
+  const findChildren = (parentId: string) => {
+    locations.value.forEach(loc => {
+      if (loc.parentId === parentId) {
+        excludeIds.add(loc.id);
+        findChildren(loc.id);
+      }
+    });
+  };
+  findChildren(editingLocation.value.id);
+  return locations.value
+    .filter(loc => loc.isActive && loc.type === 'merkez' && !excludeIds.has(loc.id))
+    .map(loc => ({
+      id: loc.id,
+      name: loc.name || 'Lokasyon',
+    }));
+});
 
 const locationTypeOptions = [
   { label: 'Merkez', value: 'merkez' },
@@ -1778,12 +1815,12 @@ const tableHeaders = [
 const locationTableHeaders = [
   { title: '#', key: 'index', sortable: false, width: '50px' },
   { title: 'Alış Lokasyon Adı', key: 'name', width: '200px' },
-  { title: 'Üst Bölge', key: 'parentRegion', width: '150px' },
+  { title: 'Üst Lokasyon', key: 'parent', width: '150px' },
   { title: 'Tipi', key: 'type', width: '100px' },
   { title: 'Durum', key: 'status', sortable: false, width: '100px' },
   { title: 'Fiyatlandır', key: 'pricing', sortable: false, width: '140px' },
   { title: 'Min. Kiralama Süresi', key: 'minDayCount', width: '150px' },
-  { title: 'Sıra', key: 'orderNo', sortable: false, width: '100px' },
+  { title: 'Sıra', key: 'sort', sortable: false, width: '100px' },
   { title: 'Teslim Bölgesi', key: 'deliveryPricing', sortable: false, width: '220px' },
   { title: 'İşlemler', key: 'actions', sortable: false, width: '100px' },
 ];
@@ -1864,7 +1901,7 @@ const selectedBrandName = computed(() => {
 });
 
 const brandFilterOptions = computed(() => {
-  const options = [
+  const options: Array<{ label: string; value: string | null }> = [
     { label: 'Tüm Markalar', value: null },
   ];
   vehicleBrands.value.forEach(brand => {
@@ -1883,11 +1920,11 @@ const availableLocations = computed(() => {
   }));
 });
 
-// Her plaka için ayrı satır oluşturmak için vehicle+plate kombinasyonları
+// Her araç için tek satır, tüm plakaları içerir
 interface VehiclePlateRow {
   vehicle: VehicleDto;
-  plate: VehiclePlateDto | null;
-  id: string; // unique id for row (vehicleId + plateId or vehicleId + 'no-plate')
+  plates: VehiclePlateDto[]; // Tüm plakalar
+  id: string; // unique id for row (vehicleId)
 }
 
 const filteredVehicles = computed(() => {
@@ -1950,27 +1987,12 @@ const filteredVehicles = computed(() => {
     }
   }
   
-  // Her araç için plakaları ayrı satırlara dönüştür
-  const rows: VehiclePlateRow[] = [];
-  filteredVehicleList.forEach(vehicle => {
-    if (vehicle.plates && vehicle.plates.length > 0) {
-      // Her plaka için ayrı satır
-      vehicle.plates.forEach(plate => {
-        rows.push({
-          vehicle,
-          plate,
-          id: `${vehicle.id}-${plate.id}`,
-        });
-      });
-    } else {
-      // Plaka yoksa tek satır
-      rows.push({
-        vehicle,
-        plate: null,
-        id: `${vehicle.id}-no-plate`,
-      });
-    }
-  });
+  // Her araç için tek satır oluştur, tüm plakaları göster
+  const rows: VehiclePlateRow[] = filteredVehicleList.map(vehicle => ({
+    vehicle,
+    plates: vehicle.plates || [],
+    id: vehicle.id,
+  }));
   
   return rows;
 });
@@ -2003,7 +2025,7 @@ const toggleVehicleDetails = (vehicleId: string) => {
 
 const getVehicleStatus = (row: VehiclePlateRow): { color: string; icon: string; variant: string; class?: string } => {
   // Eğer plaka yoksa, araç boşta sayılır
-  if (!row.plate) {
+  if (!row.plates || row.plates.length === 0) {
     return {
       color: 'success',
       icon: 'mdi-check-circle',
@@ -2015,19 +2037,21 @@ const getVehicleStatus = (row: VehiclePlateRow): { color: string; icon: string; 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Bu plakanın rezervasyonlarını kontrol et
-  const plateReservations = vehicleReservations.value.filter(
-    r => r.plateId === row.plate!.id
-  );
+  // Tüm plakaların rezervasyonlarını kontrol et
+  // Eğer herhangi bir plakada aktif rezervasyon varsa, araç rezervasyonda sayılır
+  const hasActiveReservation = row.plates.some(plate => {
+    const plateReservations = vehicleReservations.value.filter(
+      r => r.plateId === plate.id
+    );
 
-  // Aktif rezervasyon var mı kontrol et
-  const hasActiveReservation = plateReservations.some(reservation => {
-    const startDate = new Date(reservation.startDate);
-    const endDate = new Date(reservation.endDate);
-    startDate.setHours(0, 0, 0, 0);
-    endDate.setHours(23, 59, 59, 999);
-    
-    return today >= startDate && today <= endDate;
+    return plateReservations.some(reservation => {
+      const startDate = new Date(reservation.startDate);
+      const endDate = new Date(reservation.endDate);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+      
+      return today >= startDate && today <= endDate;
+    });
   });
 
   if (hasActiveReservation) {
@@ -2321,7 +2345,7 @@ const saveModel = async () => {
       brandId: form.brandId,
       name: modelForm.name,
     });
-    await loadVehicleModels(form.brandId);
+    await loadVehicleModels(form.brandId || undefined);
     modelForm.name = '';
   } catch (error: any) {
     alert(error.response?.data?.message || 'Model eklenirken bir hata oluştu');
@@ -2339,7 +2363,7 @@ const deleteModel = async (id: string) => {
   if (!confirm('Bu modeli silmek istediğinizden emin misiniz?')) return;
   try {
     await http.delete(`/vehicle-models/${id}`);
-    await loadVehicleModels(form.brandId);
+    await loadVehicleModels(form.brandId || undefined);
   } catch (error: any) {
     alert(error.response?.data?.message || 'Model silinirken bir hata oluştu');
   }
@@ -2432,7 +2456,7 @@ const editVehicle = (vehicle: VehicleDto) => {
   });
   
   if (vehicle.brandId) {
-    loadVehicleModels(vehicle.brandId);
+    loadVehicleModels(vehicle.brandId || undefined);
   }
   
   showVehicleDialog.value = true;
@@ -2699,26 +2723,52 @@ watch(
 );
 
 // Location methods
-const onProvinceChange = (provinceName: string) => {
-  const city = TURKEY_CITIES.find(c => c.name === provinceName);
-  if (city) {
-    districts.value = city.districts;
-    locationForm.district = '';
-  } else {
-    districts.value = [];
-  }
-};
-
-const getLocationName = (location: LocationDto): string => {
-  const defaultLang = availableLanguages.value.find(l => l.isDefault) || availableLanguages.value[0];
-  if (!defaultLang || !location.translations) return location.name || 'Lokasyon';
-  const translation = location.translations.find(t => t.languageId === defaultLang.id);
-  return translation?.name || location.name || 'Lokasyon';
-};
 
 const getLocationTypeLabel = (type?: string): string => {
   const option = locationTypeOptions.find(o => o.value === type);
   return option?.label || type || '-';
+};
+
+const getLocationName = (location: LocationDto): string => {
+  const locationName = location.name || 'Lokasyon';
+  const typeLabel = getLocationTypeLabel(location.type);
+  return typeLabel ? `${locationName} - ${typeLabel}` : locationName;
+};
+
+// Filtrelenmiş ve genişletilmiş lokasyon listesi
+const displayedLocations = computed(() => {
+  const result: Array<LocationDto & { isChild?: boolean }> = [];
+  
+  // Sadece merkez tipindeki lokasyonları al ve sırala
+  const merkezLocations = locations.value
+    .filter(loc => loc.type === 'merkez')
+    .sort((a, b) => (a.sort || 0) - (b.sort || 0));
+  
+  merkezLocations.forEach(merkez => {
+    // Merkezi ekle
+    result.push(merkez);
+    
+    // Eğer merkez expand edilmişse, alt lokasyonlarını ekle
+    if (expandedLocations.value.has(merkez.id)) {
+      const childLocations = locations.value
+        .filter(loc => loc.parentId === merkez.id)
+        .sort((a, b) => (a.sort || 0) - (b.sort || 0));
+      
+      childLocations.forEach(child => {
+        result.push({ ...child, isChild: true });
+      });
+    }
+  });
+  
+  return result;
+});
+
+const toggleLocationExpansion = (locationId: string) => {
+  if (expandedLocations.value.has(locationId)) {
+    expandedLocations.value.delete(locationId);
+  } else {
+    expandedLocations.value.add(locationId);
+  }
 };
 
 const loadLocations = async () => {
@@ -2750,16 +2800,13 @@ const closeLocationDialog = () => {
 const resetLocationForm = () => {
   locationForm.name = '';
   locationForm.metaTitle = '';
-  locationForm.province = '';
-  locationForm.district = '';
+  locationForm.parentId = null;
   locationForm.type = 'merkez';
-  locationForm.orderNo = 1000;
+  locationForm.sort = 0;
   locationForm.deliveryFee = 0;
   locationForm.dropFee = 0;
   locationForm.minDayCount = undefined;
-  locationForm.currencyCode = 'TRY';
   locationForm.isActive = true;
-  districts.value = [];
 };
 
 const saveLocation = async () => {
@@ -2773,32 +2820,31 @@ const saveLocation = async () => {
     return;
   }
   
-  const defaultLang = availableLanguages.value.find(l => l.isDefault) || availableLanguages.value[0];
-  if (!defaultLang) {
-    alert('Varsayılan dil bulunamadı');
-    return;
+  // Check if location with same name and type already exists (only for new locations)
+  if (!editingLocation.value) {
+    const existingLocation = locations.value.find(
+      loc => loc.name.toLowerCase().trim() === locationForm.name.toLowerCase().trim() 
+        && loc.type === locationForm.type
+    );
+    
+    if (existingLocation) {
+      alert(`Aynı isim (${locationForm.name}) ve tip (${getLocationTypeLabel(locationForm.type)}) ile bir lokasyon zaten mevcut.`);
+      return;
+    }
   }
   
   savingLocation.value = true;
   try {
-    const translations = [{
-      languageId: defaultLang.id,
-      name: locationForm.name,
-      metaTitle: locationForm.metaTitle || '',
-    }];
-    
     const locationData = {
       tenantId: auth.tenant.id,
-      translations,
-      province: locationForm.province,
-      district: locationForm.district,
-      parentRegion: locationForm.district ? `${locationForm.province} - ${locationForm.district}` : locationForm.province,
+      name: locationForm.name,
+      metaTitle: locationForm.metaTitle || undefined,
+      parentId: locationForm.parentId || null,
       type: locationForm.type,
-      orderNo: locationForm.orderNo,
-      deliveryFee: locationForm.deliveryFee,
-      dropFee: locationForm.dropFee,
+      sort: locationForm.sort || 0,
+      deliveryFee: locationForm.deliveryFee || 0,
+      dropFee: locationForm.dropFee || 0,
       minDayCount: locationForm.minDayCount,
-      currencyCode: locationForm.currencyCode,
       isActive: locationForm.isActive,
     };
     
@@ -2820,38 +2866,15 @@ const saveLocation = async () => {
 const editLocation = (location: LocationDto) => {
   editingLocation.value = location;
   
-  // Load default language translation
-  const defaultLang = availableLanguages.value.find(l => l.isDefault) || availableLanguages.value[0];
-  if (defaultLang && location.translations) {
-    const defaultTranslation = location.translations.find(t => t.languageId === defaultLang.id);
-    if (defaultTranslation) {
-      locationForm.name = defaultTranslation.name;
-      locationForm.metaTitle = defaultTranslation.metaTitle || '';
-    } else {
-      // Fallback to first translation or direct name
-      const firstTranslation = location.translations[0];
-      locationForm.name = firstTranslation?.name || location.name || '';
-      locationForm.metaTitle = firstTranslation?.metaTitle || location.metaTitle || '';
-    }
-  } else {
-    // Fallback to direct name/metaTitle
-    locationForm.name = location.name || '';
-    locationForm.metaTitle = location.metaTitle || '';
-  }
-  
-  locationForm.province = location.province || '';
-  locationForm.district = location.district || '';
+  locationForm.name = location.name || '';
+  locationForm.metaTitle = location.metaTitle || '';
+  locationForm.parentId = location.parentId || null;
   locationForm.type = location.type || 'merkez';
-  locationForm.orderNo = location.orderNo || 1000;
+  locationForm.sort = location.sort || 0;
   locationForm.deliveryFee = location.deliveryFee || 0;
   locationForm.dropFee = location.dropFee || 0;
   locationForm.minDayCount = location.minDayCount;
-  locationForm.currencyCode = location.currencyCode || 'TRY';
   locationForm.isActive = location.isActive !== undefined ? location.isActive : true;
-  
-  if (locationForm.province) {
-    onProvinceChange(locationForm.province);
-  }
   
   showLocationDialog.value = true;
 };
@@ -2866,7 +2889,7 @@ const deleteLocation = async (id: string) => {
   }
 };
 
-const updateLocationField = async (location: LocationDto, field: 'minDayCount' | 'orderNo', value: number | undefined) => {
+const updateLocationField = async (location: LocationDto, field: 'minDayCount' | 'sort', value: number | undefined) => {
   if (!location.id) return;
   
   updatingLocationField.value = true;
@@ -2874,8 +2897,8 @@ const updateLocationField = async (location: LocationDto, field: 'minDayCount' |
     const updateData: any = {};
     if (field === 'minDayCount') {
       updateData.minDayCount = value !== undefined && value !== null ? value : null;
-    } else if (field === 'orderNo') {
-      updateData.orderNo = value !== undefined && value !== null ? value : 1000;
+    } else if (field === 'sort') {
+      updateData.sort = value !== undefined && value !== null ? value : 0;
     }
 
     await http.put(`/rentacar/locations/${location.id}`, updateData);
@@ -2885,8 +2908,8 @@ const updateLocationField = async (location: LocationDto, field: 'minDayCount' |
     if (index !== -1) {
       if (field === 'minDayCount') {
         locations.value[index].minDayCount = updateData.minDayCount;
-      } else if (field === 'orderNo') {
-        locations.value[index].orderNo = updateData.orderNo;
+      } else if (field === 'sort') {
+        locations.value[index].sort = updateData.sort;
       }
     }
   } catch (error: any) {
@@ -2916,6 +2939,15 @@ const loadPricingData = async () => {
   
   loadingPricing.value = true;
   try {
+    // Ensure brands and models are loaded
+    if (vehicleBrands.value.length === 0) {
+      await loadVehicleBrands();
+    }
+    // Load all models (without brandId filter) to ensure we have all models available
+    if (vehicleModels.value.length === 0) {
+      await loadVehicleModels();
+    }
+
     // Load vehicles
     if (!auth.tenant) return;
     const { data: vehiclesData } = await http.get<VehicleDto[]>('/rentacar/vehicles', {
@@ -2942,11 +2974,43 @@ const loadPricingData = async () => {
 
       const firstPricing = vehiclePricing[0];
       
+      // Get brand name - try multiple sources in order of preference
+      let brandName = '-';
+      // First try: nested brand object (from relations)
+      if (vehicle.brand && typeof vehicle.brand === 'object' && 'name' in vehicle.brand) {
+        brandName = (vehicle.brand as any).name || '-';
+      }
+      // Second try: brandName field (legacy)
+      else if (vehicle.brandName) {
+        brandName = vehicle.brandName;
+      }
+      // Third try: lookup from brands list using brandId
+      else if (vehicle.brandId && vehicleBrands.value.length > 0) {
+        const brand = vehicleBrands.value.find(b => b.id === vehicle.brandId);
+        brandName = brand?.name || '-';
+      }
+      
+      // Get model name - try multiple sources in order of preference
+      let modelName = '-';
+      // First try: nested model object (from relations)
+      if (vehicle.model && typeof vehicle.model === 'object' && 'name' in vehicle.model) {
+        modelName = (vehicle.model as any).name || '-';
+      }
+      // Second try: modelName field (legacy)
+      else if (vehicle.modelName) {
+        modelName = vehicle.modelName;
+      }
+      // Third try: lookup from models list using modelId
+      else if (vehicle.modelId && vehicleModels.value.length > 0) {
+        const model = vehicleModels.value.find(m => m.id === vehicle.modelId);
+        modelName = model?.name || '-';
+      }
+      
       return {
         vehicleId: vehicle.id,
         vehicleName: vehicle.name,
-        brandName: vehicle.brand?.name || vehicle.brandName || '-',
-        modelName: vehicle.model?.name || vehicle.modelName || '-',
+        brandName,
+        modelName,
         transmission: vehicle.transmission,
         fuelType: vehicle.fuelType,
         year: vehicle.year,
@@ -3077,9 +3141,7 @@ const loadDeliveryPricingData = async () => {
       .map(location => {
         const existing = existingPricing.find((p: any) => p.deliveryLocationId === location.id);
         
-        const cityName = location.district 
-          ? `${location.province} - ${location.district}`
-          : location.province || getLocationName(location);
+        const cityName = getLocationName(location);
 
         return {
           deliveryLocationId: location.id,

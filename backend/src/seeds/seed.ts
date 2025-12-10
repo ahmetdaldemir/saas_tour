@@ -74,11 +74,11 @@ const seed = async () => {
   let rentacarTenant = await tenantRepo.findOne({ where: { slug: 'swift-rentals' } });
   if (!rentacarTenant) {
     rentacarTenant = tenantRepo.create({
-      name: 'Swift Rentals',
-      slug: 'swift-rentals',
+      name: 'Berg Rentals',
+      slug: 'berg-rentals',
       category: TenantCategory.RENTACAR,
       defaultLanguage: 'tr',
-      supportEmail: 'destek@swiftrentals.com',
+      supportEmail: 'destek@bergrentals.com',
     });
     rentacarTenant = await tenantRepo.save(rentacarTenant);
   }

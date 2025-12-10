@@ -1,39 +1,24 @@
 import { Repository } from 'typeorm';
 import { AppDataSource } from '../../../config/data-source';
 import { Location, LocationType } from '../entities/location.entity';
-import { LocationTranslation } from '../entities/location-translation.entity';
-import { Language } from '../../shared/entities/language.entity';
-import { TranslationService } from '../../shared/services/translation.service';
 
 export type CreateLocationInput = {
   tenantId: string;
-  translations: Array<{
-    languageId: string;
-    name: string;
-    metaTitle?: string;
-  }>;
-  province?: string;
-  district?: string;
-  parentRegion?: string;
+  name: string;
+  metaTitle?: string;
+  parentId?: string | null;
   type?: LocationType;
-  orderNo?: number;
+  sort?: number;
   deliveryFee?: number;
   dropFee?: number;
   minDayCount?: number;
-  currencyCode?: string;
   isActive?: boolean;
 };
 
 export type UpdateLocationInput = Partial<CreateLocationInput>;
 
-export type LocationWithTranslations = Omit<Location, 'translations' | 'tenant'> & {
-  translations: Array<{
-    id: string;
-    languageId: string;
-    languageCode: string;
-    name: string;
-    metaTitle?: string;
-  }>;
+export type LocationDto = Omit<Location, 'tenant' | 'parent' | 'children'> & {
+  parent?: LocationDto | null;
 };
 
 export class LocationService {
@@ -41,19 +26,11 @@ export class LocationService {
     return AppDataSource.getRepository(Location);
   }
 
-  private static translationRepo(): Repository<LocationTranslation> {
-    return AppDataSource.getRepository(LocationTranslation);
-  }
-
-  private static languageRepo(): Repository<Language> {
-    return AppDataSource.getRepository(Language);
-  }
-
-  static async list(tenantId: string): Promise<LocationWithTranslations[]> {
+  static async list(tenantId: string): Promise<LocationDto[]> {
     const locations = await this.locationRepo().find({
       where: { tenantId },
-      relations: ['translations', 'translations.language'],
-      order: { orderNo: 'ASC', createdAt: 'DESC' },
+      relations: ['parent'],
+      order: { sort: 'ASC', createdAt: 'DESC' },
     });
 
     return locations.map((location) => ({
@@ -61,125 +38,111 @@ export class LocationService {
       createdAt: location.createdAt,
       updatedAt: location.updatedAt,
       tenantId: location.tenantId,
-      province: location.province,
-      district: location.district,
-      parentRegion: location.parentRegion,
+      name: location.name,
+      metaTitle: location.metaTitle,
+      parentId: location.parentId,
+      parent: location.parent ? {
+        id: location.parent.id,
+        createdAt: location.parent.createdAt,
+        updatedAt: location.parent.updatedAt,
+        tenantId: location.parent.tenantId,
+        name: location.parent.name,
+        metaTitle: location.parent.metaTitle,
+        parentId: location.parent.parentId,
+        type: location.parent.type,
+        sort: location.parent.sort,
+        deliveryFee: location.parent.deliveryFee,
+        dropFee: location.parent.dropFee,
+        minDayCount: location.parent.minDayCount,
+        isActive: location.parent.isActive,
+      } : null,
       type: location.type,
-      orderNo: location.orderNo,
+      sort: location.sort,
       deliveryFee: location.deliveryFee,
       dropFee: location.dropFee,
       minDayCount: location.minDayCount,
-      currencyCode: location.currencyCode,
       isActive: location.isActive,
-      translations: location.translations.map((t) => ({
-        id: t.id,
-        languageId: t.languageId,
-        languageCode: t.language.code,
-        name: t.name,
-        metaTitle: t.metaTitle,
-      })),
     }));
   }
 
-  static async create(input: CreateLocationInput): Promise<LocationWithTranslations> {
+  static async create(input: CreateLocationInput): Promise<LocationDto> {
     const {
       tenantId,
-      translations: inputTranslations,
-      province,
-      district,
-      parentRegion,
+      name,
+      metaTitle,
+      parentId,
       type,
-      orderNo,
+      sort,
       deliveryFee,
       dropFee,
       minDayCount,
-      currencyCode,
       isActive,
     } = input;
 
-    if (!inputTranslations || inputTranslations.length === 0) {
-      throw new Error('At least one translation is required');
+    if (!name || name.trim().length === 0) {
+      throw new Error('Location name is required');
     }
 
-    // Build parent region from province and district
-    const finalParentRegion = parentRegion || (district ? `${province} - ${district}` : province);
+    let parent: Location | null = null;
+    if (parentId) {
+      parent = await this.locationRepo().findOne({ where: { id: parentId } });
+      if (!parent) {
+        throw new Error('Parent location not found');
+      }
+    }
 
     const location = this.locationRepo().create({
       tenantId,
-      province,
-      district,
-      parentRegion: finalParentRegion,
+      name: name.trim(),
+      metaTitle: metaTitle?.trim(),
+      parent: parent,
+      parentId: parentId || null,
       type: type || LocationType.MERKEZ,
-      orderNo: orderNo || 1000,
+      sort: sort ?? 0,
       deliveryFee: deliveryFee || 0,
       dropFee: dropFee || 0,
       minDayCount,
-      currencyCode: currencyCode || 'TRY',
       isActive: isActive !== undefined ? isActive : true,
     });
 
     const savedLocation = await this.locationRepo().save(location);
 
-    // Get default language
-    const defaultLanguage = await this.languageRepo().findOne({ where: { isDefault: true } });
-    const defaultTranslation = inputTranslations.find(
-      (t) => defaultLanguage && t.languageId === defaultLanguage.id
-    ) || inputTranslations[0];
-
-    // Auto-translate for other languages if default language is provided
-    const translationEntities = await Promise.all(
-      inputTranslations.map(async (t) => {
-        const language = await this.languageRepo().findOne({ where: { id: t.languageId } });
-        if (!language) {
-          throw new Error(`Language with ID ${t.languageId} not found`);
-        }
-
-        let name = t.name;
-        let metaTitle = t.metaTitle;
-
-        // Auto-translate if this is not the default language and default translation exists
-        if (defaultLanguage && t.languageId !== defaultLanguage.id && defaultTranslation.name) {
-          try {
-            name = await TranslationService.translateText({
-              text: defaultTranslation.name,
-              targetLanguageCode: language.code,
-              sourceLanguageCode: defaultLanguage.code,
-            });
-          } catch (error) {
-            console.error('Auto-translation failed for name, using provided name:', error);
-          }
-
-          if (defaultTranslation.metaTitle) {
-            try {
-              metaTitle = await TranslationService.translateText({
-                text: defaultTranslation.metaTitle,
-                targetLanguageCode: language.code,
-                sourceLanguageCode: defaultLanguage.code,
-              });
-            } catch (error) {
-              console.error('Auto-translation failed for metaTitle, using provided metaTitle:', error);
-            }
-          }
-        }
-
-        return this.translationRepo().create({
-          location: savedLocation,
-          language,
-          name,
-          metaTitle,
-        });
-      })
-    );
-
-    await this.translationRepo().save(translationEntities);
-
-    return this.getById(savedLocation.id) as Promise<LocationWithTranslations>;
+    return {
+      id: savedLocation.id,
+      createdAt: savedLocation.createdAt,
+      updatedAt: savedLocation.updatedAt,
+      tenantId: savedLocation.tenantId,
+      name: savedLocation.name,
+      metaTitle: savedLocation.metaTitle,
+      parentId: savedLocation.parentId,
+      parent: savedLocation.parent ? {
+        id: savedLocation.parent.id,
+        createdAt: savedLocation.parent.createdAt,
+        updatedAt: savedLocation.parent.updatedAt,
+        tenantId: savedLocation.parent.tenantId,
+        name: savedLocation.parent.name,
+        metaTitle: savedLocation.parent.metaTitle,
+        parentId: savedLocation.parent.parentId,
+        type: savedLocation.parent.type,
+        sort: savedLocation.parent.sort,
+        deliveryFee: savedLocation.parent.deliveryFee,
+        dropFee: savedLocation.parent.dropFee,
+        minDayCount: savedLocation.parent.minDayCount,
+        isActive: savedLocation.parent.isActive,
+      } : null,
+      type: savedLocation.type,
+      sort: savedLocation.sort,
+      deliveryFee: savedLocation.deliveryFee,
+      dropFee: savedLocation.dropFee,
+      minDayCount: savedLocation.minDayCount,
+      isActive: savedLocation.isActive,
+    };
   }
 
-  static async getById(id: string): Promise<LocationWithTranslations | null> {
+  static async getById(id: string): Promise<LocationDto | null> {
     const location = await this.locationRepo().findOne({
       where: { id },
-      relations: ['translations', 'translations.language'],
+      relations: ['parent'],
     });
 
     if (!location) {
@@ -191,107 +154,109 @@ export class LocationService {
       createdAt: location.createdAt,
       updatedAt: location.updatedAt,
       tenantId: location.tenantId,
-      province: location.province,
-      district: location.district,
-      parentRegion: location.parentRegion,
+      name: location.name,
+      metaTitle: location.metaTitle,
+      parentId: location.parentId,
+      parent: location.parent ? {
+        id: location.parent.id,
+        createdAt: location.parent.createdAt,
+        updatedAt: location.parent.updatedAt,
+        tenantId: location.parent.tenantId,
+        name: location.parent.name,
+        metaTitle: location.parent.metaTitle,
+        parentId: location.parent.parentId,
+        type: location.parent.type,
+        sort: location.parent.sort,
+        deliveryFee: location.parent.deliveryFee,
+        dropFee: location.parent.dropFee,
+        minDayCount: location.parent.minDayCount,
+        isActive: location.parent.isActive,
+      } : null,
       type: location.type,
-      orderNo: location.orderNo,
+      sort: location.sort,
       deliveryFee: location.deliveryFee,
       dropFee: location.dropFee,
       minDayCount: location.minDayCount,
-      currencyCode: location.currencyCode,
       isActive: location.isActive,
-      translations: location.translations.map((t) => ({
-        id: t.id,
-        languageId: t.languageId,
-        languageCode: t.language.code,
-        name: t.name,
-        metaTitle: t.metaTitle,
-      })),
     };
   }
 
-  static async update(id: string, input: UpdateLocationInput): Promise<LocationWithTranslations> {
+  static async update(id: string, input: UpdateLocationInput): Promise<LocationDto> {
     const location = await this.locationRepo().findOne({ where: { id } });
     if (!location) {
       throw new Error('Location not found');
     }
 
-    if (input.province !== undefined) location.province = input.province;
-    if (input.district !== undefined) location.district = input.district;
+    if (input.name !== undefined) location.name = input.name.trim();
+    if (input.metaTitle !== undefined) location.metaTitle = input.metaTitle?.trim();
     if (input.type !== undefined) location.type = input.type;
-    if (input.orderNo !== undefined) location.orderNo = input.orderNo;
+    if (input.sort !== undefined) location.sort = input.sort;
     if (input.deliveryFee !== undefined) location.deliveryFee = input.deliveryFee;
     if (input.dropFee !== undefined) location.dropFee = input.dropFee;
     if (input.minDayCount !== undefined) location.minDayCount = input.minDayCount;
-    if (input.currencyCode !== undefined) location.currencyCode = input.currencyCode;
     if (input.isActive !== undefined) location.isActive = input.isActive;
 
-    // Build parent region from province and district
-    if (input.province !== undefined || input.district !== undefined) {
-      const finalProvince = input.province !== undefined ? input.province : location.province;
-      const finalDistrict = input.district !== undefined ? input.district : location.district;
-      location.parentRegion = input.parentRegion || (finalDistrict ? `${finalProvince} - ${finalDistrict}` : finalProvince);
-    } else if (input.parentRegion !== undefined) {
-      location.parentRegion = input.parentRegion;
+    // Handle parent relationship
+    if (input.parentId !== undefined) {
+      if (input.parentId === null) {
+        location.parent = null;
+        location.parentId = null;
+      } else {
+        // Prevent self-reference
+        if (input.parentId === id) {
+          throw new Error('Location cannot be its own parent');
+        }
+        const parent = await this.locationRepo().findOne({ where: { id: input.parentId } });
+        if (!parent) {
+          throw new Error('Parent location not found');
+        }
+        location.parent = parent;
+        location.parentId = input.parentId;
+      }
     }
 
     const savedLocation = await this.locationRepo().save(location);
 
-    if (input.translations !== undefined) {
-      await this.translationRepo().delete({ locationId: id });
+    // Reload with parent relation
+    const reloadedLocation = await this.locationRepo().findOne({
+      where: { id: savedLocation.id },
+      relations: ['parent'],
+    });
 
-      const defaultLanguage = await this.languageRepo().findOne({ where: { isDefault: true } });
-      const defaultTranslation = input.translations.find(
-        (t) => defaultLanguage && t.languageId === defaultLanguage.id
-      ) || input.translations[0];
-
-      const translationEntities = await Promise.all(
-        input.translations.map(async (t) => {
-          const language = await this.languageRepo().findOne({ where: { id: t.languageId } });
-          if (!language) {
-            throw new Error(`Language with ID ${t.languageId} not found`);
-          }
-
-          let name = t.name;
-          let metaTitle = t.metaTitle;
-
-          if (defaultLanguage && t.languageId !== defaultLanguage.id && defaultTranslation.name) {
-            try {
-              name = await TranslationService.translateText({
-                text: defaultTranslation.name,
-                targetLanguageCode: language.code,
-                sourceLanguageCode: defaultLanguage.code,
-              });
-            } catch (error) {
-              console.error('Auto-translation failed for name, using provided name:', error);
-            }
-
-            if (defaultTranslation.metaTitle) {
-              try {
-                metaTitle = await TranslationService.translateText({
-                  text: defaultTranslation.metaTitle,
-                  targetLanguageCode: language.code,
-                  sourceLanguageCode: defaultLanguage.code,
-                });
-              } catch (error) {
-                console.error('Auto-translation failed for metaTitle, using provided metaTitle:', error);
-              }
-            }
-          }
-
-          return this.translationRepo().create({
-            location: savedLocation,
-            language,
-            name,
-            metaTitle,
-          });
-        })
-      );
-      await this.translationRepo().save(translationEntities);
+    if (!reloadedLocation) {
+      throw new Error('Failed to reload location');
     }
 
-    return this.getById(savedLocation.id) as Promise<LocationWithTranslations>;
+    return {
+      id: reloadedLocation.id,
+      createdAt: reloadedLocation.createdAt,
+      updatedAt: reloadedLocation.updatedAt,
+      tenantId: reloadedLocation.tenantId,
+      name: reloadedLocation.name,
+      metaTitle: reloadedLocation.metaTitle,
+      parentId: reloadedLocation.parentId,
+      parent: reloadedLocation.parent ? {
+        id: reloadedLocation.parent.id,
+        createdAt: reloadedLocation.parent.createdAt,
+        updatedAt: reloadedLocation.parent.updatedAt,
+        tenantId: reloadedLocation.parent.tenantId,
+        name: reloadedLocation.parent.name,
+        metaTitle: reloadedLocation.parent.metaTitle,
+        parentId: reloadedLocation.parent.parentId,
+        type: reloadedLocation.parent.type,
+        sort: reloadedLocation.parent.sort,
+        deliveryFee: reloadedLocation.parent.deliveryFee,
+        dropFee: reloadedLocation.parent.dropFee,
+        minDayCount: reloadedLocation.parent.minDayCount,
+        isActive: reloadedLocation.parent.isActive,
+      } : null,
+      type: reloadedLocation.type,
+      sort: reloadedLocation.sort,
+      deliveryFee: reloadedLocation.deliveryFee,
+      dropFee: reloadedLocation.dropFee,
+      minDayCount: reloadedLocation.minDayCount,
+      isActive: reloadedLocation.isActive,
+    };
   }
 
   static async remove(id: string): Promise<void> {
@@ -302,4 +267,3 @@ export class LocationService {
     await this.locationRepo().remove(location);
   }
 }
-

@@ -26,8 +26,6 @@ export type LocationDeliveryPricingDto = {
   locationId: string;
   deliveryLocationId: string;
   deliveryLocationName?: string;
-  deliveryLocationProvince?: string;
-  deliveryLocationDistrict?: string;
   distance: number;
   fee: number;
   isActive: boolean;
@@ -47,26 +45,16 @@ export class LocationDeliveryPricingService {
   static async listByLocation(locationId: string): Promise<LocationDeliveryPricingDto[]> {
     const pricings = await this.pricingRepo().find({
       where: { locationId },
-      relations: ['deliveryLocation', 'deliveryLocation.translations', 'deliveryLocation.translations.language'],
+      relations: ['deliveryLocation'],
       order: { createdAt: 'ASC' },
     });
 
     return pricings.map((p) => {
-      let deliveryLocationName = '';
-      if (p.deliveryLocation.translations && p.deliveryLocation.translations.length > 0) {
-        const defaultLang = p.deliveryLocation.translations.find(
-          (t) => t.language?.isDefault
-        ) || p.deliveryLocation.translations[0];
-        deliveryLocationName = defaultLang?.name || '';
-      }
-
       return {
         id: p.id,
         locationId: p.locationId,
         deliveryLocationId: p.deliveryLocationId,
-        deliveryLocationName: deliveryLocationName || (p.deliveryLocation as any).name || '',
-        deliveryLocationProvince: p.deliveryLocation.province,
-        deliveryLocationDistrict: p.deliveryLocation.district,
+        deliveryLocationName: p.deliveryLocation.name || '',
         distance: Number(p.distance),
         fee: Number(p.fee),
         isActive: p.isActive,

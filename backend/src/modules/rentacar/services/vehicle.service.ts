@@ -458,7 +458,7 @@ export class VehicleService {
   static listVehicles(tenantId: string): Promise<Vehicle[]> {
     return this.vehicleRepo().find({
       where: { tenantId },
-      relations: ['category', 'category.translations', 'category.translations.language', 'brand', 'model', 'plates', 'pricingPeriods', 'lastReturnLocation', 'lastReturnLocation.translations'],
+      relations: ['category', 'category.translations', 'category.translations.language', 'brand', 'model', 'plates', 'pricingPeriods', 'lastReturnLocation'],
       order: { order: 'ASC', createdAt: 'DESC' },
     });
   }

@@ -65,9 +65,9 @@
       </v-app-bar>
 
       <v-main>
-        <v-container class="py-6">
+        <div style="width: 90%; max-width: 90%; margin: 0 auto; padding: 8px 0;">
           <RouterView />
-        </v-container>
+        </div>
       </v-main>
     </v-layout>
   </v-app>
@@ -91,7 +91,7 @@ const navigationItems = computed(() => {
     { title: 'Genel Bakış', to: '/app/dashboard', icon: 'mdi-view-dashboard-outline' },
     { title: 'Diller', to: '/app/languages', icon: 'mdi-translate' },
     { title: 'Destinasyonlar', to: '/app/destinations', icon: 'mdi-map-marker-radius' },
-    { title: 'Oteller', to: '/app/hotels', icon: 'mdi-hotel' },
+    { title: 'Oteller', to: '/app/hotels', icon: 'mdi-bed' },
     { title: 'Blog', to: '/app/blogs', icon: 'mdi-file-document-outline' },
   ];
 
