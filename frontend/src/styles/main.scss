@@ -19,3 +19,24 @@ body {
 #app {
   min-height: 100vh;
 }
+
+/* Vuetify Navigation List Item Styles */
+.v-list-item--nav .v-list-item-title {
+  font-weight: 500;
+  font-size: 0.9999rem;
+  color: #475569;
+  transition: color 0.2s ease;
+}
+
+.v-list-item--nav.v-list-item--active .v-list-item-title {
+  color: #1976d2;
+  font-weight: 600;
+}
+
+.v-list-item--nav:hover .v-list-item-title {
+  color: #0f172a;
+}
+
+.v-list-item--nav.v-list-item--active {
+  background-color: rgba(25, 118, 210, 0.08);
+}

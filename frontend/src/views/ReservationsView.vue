@@ -130,18 +130,76 @@
                     <v-icon icon="mdi-map-marker-outline" class="mr-2" color="primary" />
                     Alış Lokasyon - Tarih Saat
                   </h3>
-                  <v-select
+                  <v-autocomplete
                     v-model="reservationForm.pickupLocationId"
-                    :items="availableLocations"
-                    item-title="name"
+                    :items="locationSearchQuery ? filteredLocationsForSearch : []"
+                    item-title="title"
                     item-value="id"
                     label="Alış Yeri Seçiniz"
+                    placeholder="Alış Yeri Seçiniz"
                     density="comfortable"
                     variant="outlined"
                     prepend-inner-icon="mdi-map-marker"
                     hide-details
                     class="mb-3"
-                  />
+                    :search="locationSearchQuery"
+                    @update:search="locationSearchQuery = $event"
+                    @update:model-value="onPickupLocationSelected"
+                    clearable
+                    ref="pickupLocationAutocomplete"
+                  >
+                    <template #item="{ item, props: itemProps }">
+                      <v-list-item 
+                        v-bind="itemProps" 
+                        :prepend-icon="item.raw?.icon || 'mdi-map-marker'"
+                      >
+                        <v-list-item-title>
+                          <span class="font-weight-medium">{{ item.raw?.name || item.title }}</span>
+                          <span v-if="item.raw?.type" class="text-caption text-medium-emphasis ml-2">
+                            ({{ getLocationTypeLabel(item.raw.type) }})
+                          </span>
+                        </v-list-item-title>
+                      </v-list-item>
+                    </template>
+                    <template #prepend-item v-if="!locationSearchQuery">
+                      <template v-for="(group, groupIndex) in availableLocations" :key="`group-${groupIndex}`">
+                        <v-list-subheader v-if="group.type === 'subheader'" class="font-weight-bold text-uppercase">
+                          {{ group.title }}
+                        </v-list-subheader>
+                        <template v-if="group.children && group.children.length > 0">
+                          <v-list-item
+                            v-for="child in group.children"
+                            :key="child.id"
+                            :value="child.id"
+                            :prepend-icon="child.icon"
+                            class="pl-8"
+                            @click="selectPickupLocation(child.id)"
+                          >
+                            <v-list-item-title>
+                              <span>{{ child.name }}</span>
+                              <span class="text-caption text-medium-emphasis ml-2">
+                                ({{ getLocationTypeLabel(child.type) }})
+                              </span>
+                            </v-list-item-title>
+                          </v-list-item>
+                        </template>
+                        <v-divider v-if="groupIndex < availableLocations.length - 1" class="my-2" />
+                      </template>
+                    </template>
+                    <template #selection="{ item }">
+                      <template v-if="reservationForm.pickupLocationId">
+                        <template v-if="item && item.raw">
+                          <div class="d-flex align-center">
+                            <v-icon :icon="item.raw?.icon || 'mdi-map-marker'" size="20" class="mr-2" />
+                            <span>{{ item.raw?.name || item.title }}</span>
+                          </div>
+                        </template>
+                        <template v-else>
+                          {{ getSelectedLocationName(reservationForm.pickupLocationId) }}
+                        </template>
+                      </template>
+                    </template>
+                  </v-autocomplete>
                   <v-text-field
                     v-model="reservationForm.pickupDate"
                     type="date"
@@ -171,18 +229,76 @@
                     <v-icon icon="mdi-map-marker-check-outline" class="mr-2" color="success" />
                     Dönüş Lokasyon - Tarih Saat
                   </h3>
-                  <v-select
+                  <v-autocomplete
                     v-model="reservationForm.returnLocationId"
-                    :items="availableLocations"
-                    item-title="name"
+                    :items="locationSearchQuery ? filteredLocationsForSearch : []"
+                    item-title="title"
                     item-value="id"
                     label="Dönüş Yeri Seçiniz"
+                    placeholder="Dönüş Yeri Seçiniz"
                     density="comfortable"
                     variant="outlined"
-                    prepend-inner-icon="mdi-map-marker"
+                    prepend-inner-icon="mdi-map-marker-check"
                     hide-details
                     class="mb-3"
-                  />
+                    :search="locationSearchQuery"
+                    @update:search="locationSearchQuery = $event"
+                    @update:model-value="onReturnLocationSelected"
+                    clearable
+                    ref="returnLocationAutocomplete"
+                  >
+                    <template #item="{ item, props: itemProps }">
+                      <v-list-item 
+                        v-bind="itemProps" 
+                        :prepend-icon="item.raw?.icon || 'mdi-map-marker'"
+                      >
+                        <v-list-item-title>
+                          <span class="font-weight-medium">{{ item.raw?.name || item.title }}</span>
+                          <span v-if="item.raw?.type" class="text-caption text-medium-emphasis ml-2">
+                            ({{ getLocationTypeLabel(item.raw.type) }})
+                          </span>
+                        </v-list-item-title>
+                      </v-list-item>
+                    </template>
+                    <template #prepend-item v-if="!locationSearchQuery">
+                      <template v-for="(group, groupIndex) in availableLocations" :key="`group-${groupIndex}`">
+                        <v-list-subheader v-if="group.type === 'subheader'" class="font-weight-bold text-uppercase">
+                          {{ group.title }}
+                        </v-list-subheader>
+                        <template v-if="group.children && group.children.length > 0">
+                          <v-list-item
+                            v-for="child in group.children"
+                            :key="child.id"
+                            :value="child.id"
+                            :prepend-icon="child.icon"
+                            class="pl-8"
+                            @click="selectReturnLocation(child.id)"
+                          >
+                            <v-list-item-title>
+                              <span>{{ child.name }}</span>
+                              <span class="text-caption text-medium-emphasis ml-2">
+                                ({{ getLocationTypeLabel(child.type) }})
+                              </span>
+                            </v-list-item-title>
+                          </v-list-item>
+                        </template>
+                        <v-divider v-if="groupIndex < availableLocations.length - 1" class="my-2" />
+                      </template>
+                    </template>
+                    <template #selection="{ item }">
+                      <template v-if="reservationForm.returnLocationId">
+                        <template v-if="item && item.raw">
+                          <div class="d-flex align-center">
+                            <v-icon :icon="item.raw?.icon || 'mdi-map-marker'" size="20" class="mr-2" />
+                            <span>{{ item.raw?.name || item.title }}</span>
+                          </div>
+                        </template>
+                        <template v-else>
+                          {{ getSelectedLocationName(reservationForm.returnLocationId) }}
+                        </template>
+                      </template>
+                    </template>
+                  </v-autocomplete>
                   <v-text-field
                     v-model="reservationForm.returnDate"
                     type="date"
@@ -255,7 +371,8 @@
                     <div>
                       <div class="font-weight-bold text-body-1">{{ item.name }}</div>
                       <div class="text-caption text-medium-emphasis">
-                        {{ item.brandName || '-' }} {{ item.modelName || '-' }}
+                        {{ (item.brandName && item.brandName !== '-' ? item.brandName : 'Marka Seçilmemiş') }} | 
+                        {{ (item.modelName && item.modelName !== '-' ? item.modelName : 'Model Seçilmemiş') }}
                       </div>
                     </div>
                   </template>
@@ -633,7 +750,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, onMounted, watch } from 'vue';
+import { computed, reactive, ref, onMounted, watch, nextTick } from 'vue';
 import { http } from '../modules/http';
 import { useAuthStore } from '../stores/auth';
 
@@ -644,6 +761,8 @@ const reservations = ref<ReservationDto[]>([]);
 const locations = ref<LocationDto[]>([]);
 const customers = ref<CustomerDto[]>([]);
 const vehicles = ref<VehicleDto[]>([]);
+const vehicleBrands = ref<VehicleBrandDto[]>([]);
+const vehicleModels = ref<VehicleModelDto[]>([]);
 const availableVehicles = ref<AvailableVehicleDto[]>([]);
 const extras = ref<ExtraDto[]>([]);
 const selectedExtras = ref<string[]>([]);
@@ -753,18 +872,33 @@ interface CustomerDto {
 interface VehicleDto {
   id: string;
   name: string;
-  brandName?: string;
-  modelName?: string;
+  brandId?: string | null;
+  modelId?: string | null;
+  brand?: { id: string; name: string } | null;
+  model?: { id: string; name: string } | null;
+  brandName?: string | null;
+  modelName?: string | null;
   plates?: Array<{ plateNumber: string; isActive: boolean }>;
   baseRate?: number;
   currencyCode?: string;
 }
 
+interface VehicleBrandDto {
+  id: string;
+  name: string;
+}
+
+interface VehicleModelDto {
+  id: string;
+  name: string;
+  brandId: string;
+}
+
 interface AvailableVehicleDto {
   id: string;
   name: string;
-  brandName?: string;
-  modelName?: string;
+  brandName?: string | null;
+  modelName?: string | null;
   plate?: string;
   dailyPrice: number;
   rentalPrice: number;
@@ -816,21 +950,246 @@ const getLocationTypeLabel = (type?: string): string => {
   return option?.label || type || '';
 };
 
-// Computed
+// Helper function to get location icon based on type
+const getLocationIcon = (type?: string): string => {
+  const iconMap: Record<string, string> = {
+    merkez: 'mdi-office-building',
+    otel: 'mdi-bed',
+    havalimani: 'mdi-airplane',
+    adres: 'mdi-map-marker',
+  };
+  return iconMap[type || 'adres'] || 'mdi-map-marker';
+};
+
+// Helper function to format location name with type
+const formatLocationDisplayName = (location: LocationDto): string => {
+  const name = location.name || 'Lokasyon';
+  const type = location.type;
+  
+  // Create display name based on type
+  if (type === 'havalimani') {
+    return `${name} (${location.metaTitle || name.substring(0, 3).toUpperCase()})`;
+  } else if (type === 'otel') {
+    return `${name} Teslimi${location.metaTitle ? ` (${location.metaTitle})` : ''}`;
+  } else if (type === 'merkez') {
+    return `${name} Büro${location.metaTitle ? ` (${location.metaTitle})` : ''}`;
+  }
+  
+  return name;
+};
+
+// Computed: Grouped locations with merkez as option groups
 const availableLocations = computed(() => {
-  return locations.value
-    .filter(loc => loc.isActive !== false) // Filter active locations
-    .map(loc => {
-      const locationName = loc.name || 'Lokasyon';
-      const typeLabel = getLocationTypeLabel(loc.type);
-      const displayName = typeLabel ? `${locationName} - ${typeLabel}` : locationName;
-      
-      return {
+  const activeLocations = locations.value.filter(loc => loc.isActive !== false);
+  
+  // Get all merkez locations
+  const merkezLocations = activeLocations.filter(loc => loc.type === 'merkez');
+  
+  // Build grouped structure
+  const grouped: Array<{
+    type: 'divider' | 'subheader';
+    title?: string;
+    children?: Array<{
+      id: string;
+      name: string;
+      title: string;
+      icon: string;
+      type: string;
+    }>;
+  }> = [];
+  
+  // Sort merkez locations by sort field or name
+  const sortedMerkez = [...merkezLocations].sort((a, b) => {
+    if (a.sort !== undefined && b.sort !== undefined) {
+      return a.sort - b.sort;
+    }
+    return (a.name || '').localeCompare(b.name || '');
+  });
+  
+  // For each merkez, create a group with its children (exclude merkez itself from selectable items)
+  sortedMerkez.forEach(merkez => {
+    const children = activeLocations
+      .filter(loc => {
+        // Only include children, exclude merkez itself and any other merkez types
+        return loc.parentId === merkez.id && loc.type !== 'merkez';
+      })
+      .sort((a, b) => {
+        // Sort children: havalimani first, then otel, then others
+        const typeOrder: Record<string, number> = {
+          havalimani: 1,
+          otel: 2,
+          adres: 3,
+        };
+        const aOrder = typeOrder[a.type || ''] || 4;
+        const bOrder = typeOrder[b.type || ''] || 4;
+        if (aOrder !== bOrder) return aOrder - bOrder;
+        
+        // Then by sort field or name
+        if (a.sort !== undefined && b.sort !== undefined) {
+          return a.sort - b.sort;
+        }
+        return (a.name || '').localeCompare(b.name || '');
+      })
+      .map(loc => ({
         id: loc.id,
-        name: displayName,
-      };
+        name: formatLocationDisplayName(loc),
+        title: formatLocationDisplayName(loc),
+        icon: getLocationIcon(loc.type),
+        type: loc.type || '',
+      }));
+    
+    // Only add merkez as group header if it has children (merkez itself is NOT selectable)
+    if (children.length > 0) {
+      grouped.push({
+        type: 'subheader',
+        title: merkez.name || 'Merkez',
+        children: children,
+      });
+    }
+  });
+  
+  // Also include standalone locations (those without parent or parent not merkez)
+  const standaloneLocations = activeLocations.filter(loc => {
+    if (loc.type === 'merkez') return false; // Skip merkez, they're groups
+    if (!loc.parentId) return true; // Include locations without parent
+    // Check if parent is merkez
+    const parent = activeLocations.find(p => p.id === loc.parentId);
+    return !parent || parent.type !== 'merkez';
+  });
+  
+  if (standaloneLocations.length > 0) {
+    grouped.push({
+      type: 'subheader',
+      title: 'Diğer Lokasyonlar',
+      children: standaloneLocations.map(loc => ({
+        id: loc.id,
+        name: formatLocationDisplayName(loc),
+        title: formatLocationDisplayName(loc),
+        icon: getLocationIcon(loc.type),
+        type: loc.type || '',
+      })),
     });
+  }
+  
+  return grouped;
 });
+
+// Flatten locations for autocomplete search (exclude merkez locations - they are only group headers)
+const locationSearchQuery = ref('');
+const flattenedLocations = computed(() => {
+  const flat: Array<{
+    id: string;
+    title: string;
+    name: string;
+    icon: string;
+    type: string;
+    group?: string;
+  }> = [];
+  
+  availableLocations.value.forEach(group => {
+    if (group.children) {
+      // Only add children, exclude any merkez type locations
+      group.children
+        .filter(child => child.type !== 'merkez')
+        .forEach(child => {
+          flat.push({
+            ...child,
+            title: child.name,
+            group: group.title,
+          });
+        });
+    }
+  });
+  
+  // Filter by search query if exists
+  if (locationSearchQuery.value) {
+    const query = locationSearchQuery.value.toLowerCase();
+    return flat.filter(loc => 
+      loc.name.toLowerCase().includes(query) ||
+      loc.type.toLowerCase().includes(query) ||
+      (loc.group && loc.group.toLowerCase().includes(query))
+    );
+  }
+  
+  return flat;
+});
+
+// Filtered locations for search (only show when searching)
+const filteredLocationsForSearch = computed(() => {
+  if (!locationSearchQuery.value) {
+    return [];
+  }
+  return flattenedLocations.value;
+});
+
+// Helper function to get location name by ID
+const getSelectedLocationName = (locationId: string | null | undefined): string => {
+  if (!locationId) return '';
+  
+  // First try to find in flattened locations
+  const flattened = flattenedLocations.value.find(loc => loc.id === locationId);
+  if (flattened) return flattened.name;
+  
+  // Then try to find in all locations
+  const location = locations.value.find(loc => loc.id === locationId);
+  if (location) {
+    return formatLocationDisplayName(location);
+  }
+  
+  return '';
+};
+
+// Refs for autocomplete components
+const pickupLocationAutocomplete = ref<any>(null);
+const returnLocationAutocomplete = ref<any>(null);
+
+// Method to handle pickup location selection from prepend-item
+const selectPickupLocation = (locationId: string) => {
+  reservationForm.pickupLocationId = locationId;
+  locationSearchQuery.value = ''; // Clear search query when selecting from prepend-item
+  // Close the autocomplete menu
+  nextTick(() => {
+    if (pickupLocationAutocomplete.value) {
+      pickupLocationAutocomplete.value.blur();
+    }
+  });
+};
+
+// Method to handle return location selection from prepend-item
+const selectReturnLocation = (locationId: string) => {
+  reservationForm.returnLocationId = locationId;
+  locationSearchQuery.value = ''; // Clear search query when selecting from prepend-item
+  // Close the autocomplete menu
+  nextTick(() => {
+    if (returnLocationAutocomplete.value) {
+      returnLocationAutocomplete.value.blur();
+    }
+  });
+};
+
+// Handler for when pickup location is selected from items list
+const onPickupLocationSelected = (value: string | null) => {
+  if (value) {
+    locationSearchQuery.value = ''; // Clear search query
+    nextTick(() => {
+      if (pickupLocationAutocomplete.value) {
+        pickupLocationAutocomplete.value.blur();
+      }
+    });
+  }
+};
+
+// Handler for when return location is selected from items list
+const onReturnLocationSelected = (value: string | null) => {
+  if (value) {
+    locationSearchQuery.value = ''; // Clear search query
+    nextTick(() => {
+      if (returnLocationAutocomplete.value) {
+        returnLocationAutocomplete.value.blur();
+      }
+    });
+  }
+};
 
 const getBlacklistedCustomers = (): string[] => {
   try {
@@ -939,8 +1298,9 @@ const formatDate = (date: string): string => {
   return new Date(date).toLocaleDateString('tr-TR');
 };
 
-const formatPrice = (price: number, currencyCode: string): string => {
-  return `${price.toFixed(2)} ${getCurrencySymbol(currencyCode)}`;
+const formatPrice = (price: number | string | null | undefined, currencyCode: string): string => {
+  const numPrice = typeof price === 'string' ? parseFloat(price) || 0 : (price || 0);
+  return `${Number(numPrice).toFixed(2)} ${getCurrencySymbol(currencyCode)}`;
 };
 
 const getStatusColor = (status: string): string => {
@@ -973,18 +1333,21 @@ const getReturnLocation = () => {
 const getDeliveryFee = (): number => {
   const location = getPickupLocation();
   if (!location) return 0;
-  return location.deliveryFee || 0;
+  const fee = location.deliveryFee || 0;
+  return typeof fee === 'string' ? parseFloat(fee) || 0 : Number(fee) || 0;
 };
 
 const getDropFee = (): number => {
   const location = getReturnLocation();
   if (!location) return 0;
-  return location.dropFee || 0;
+  const fee = location.dropFee || 0;
+  return typeof fee === 'string' ? parseFloat(fee) || 0 : Number(fee) || 0;
 };
 
 const calculateRentalPrice = (vehicle: AvailableVehicleDto): number => {
   const days = calculateDays();
-  return (vehicle.dailyPrice || 0) * days;
+  const dailyPrice = typeof vehicle.dailyPrice === 'string' ? parseFloat(vehicle.dailyPrice) || 0 : (vehicle.dailyPrice || 0);
+  return Number(dailyPrice) * days;
 };
 
 const calculateTotalPrice = (vehicle: AvailableVehicleDto): number => {
@@ -1000,10 +1363,13 @@ const calculateExtrasTotal = (): number => {
     const extra = extras.value.find(e => e.id === extraId);
     if (!extra || !extra.isActive) return total;
     
+    const price = typeof extra.price === 'string' ? parseFloat(extra.price) || 0 : (extra.price || 0);
+    const numPrice = Number(price);
+    
     if (extra.salesType === 'daily') {
-      return total + (extra.price * days);
+      return total + (numPrice * days);
     } else {
-      return total + extra.price;
+      return total + numPrice;
     }
   }, 0);
 };
@@ -1127,14 +1493,65 @@ const loadCustomers = async () => {
   }
 };
 
+const loadVehicleBrands = async () => {
+  try {
+    const { data } = await http.get<VehicleBrandDto[]>('/vehicle-brands');
+    vehicleBrands.value = data;
+  } catch (error) {
+    console.error('Failed to load vehicle brands:', error);
+  }
+};
+
+const loadVehicleModels = async () => {
+  try {
+    const { data } = await http.get<VehicleModelDto[]>('/vehicle-models');
+    vehicleModels.value = data;
+  } catch (error) {
+    console.error('Failed to load vehicle models:', error);
+  }
+};
+
 const loadVehicles = async () => {
   if (!auth.tenant) return;
   loadingVehicles.value = true;
   try {
+    // Load brands and models first
+    await Promise.all([loadVehicleBrands(), loadVehicleModels()]);
+    
     const { data } = await http.get<VehicleDto[]>('/rentacar/vehicles', {
       params: { tenantId: auth.tenant.id },
     });
-    vehicles.value = data;
+    
+    // Resolve brandName and modelName from relations or IDs
+    vehicles.value = data.map(vehicle => {
+      let brandName = vehicle.brandName || null;
+      let modelName = vehicle.modelName || null;
+      
+      // First try: brand/model relations
+      if (!brandName && vehicle.brand?.name) {
+        brandName = vehicle.brand.name;
+      }
+      // Second try: lookup from brands list using brandId
+      else if (!brandName && vehicle.brandId && vehicleBrands.value.length > 0) {
+        const brand = vehicleBrands.value.find(b => b.id === vehicle.brandId);
+        brandName = brand?.name || null;
+      }
+      
+      if (!modelName && vehicle.model?.name) {
+        modelName = vehicle.model.name;
+      }
+      // Second try: lookup from models list using modelId
+      else if (!modelName && vehicle.modelId && vehicleModels.value.length > 0) {
+        const model = vehicleModels.value.find(m => m.id === vehicle.modelId);
+        modelName = model?.name || null;
+      }
+      
+      return {
+        ...vehicle,
+        brandName: brandName || null,
+        modelName: modelName || null,
+      };
+    });
   } catch (error) {
     console.error('Failed to load vehicles:', error);
   } finally {

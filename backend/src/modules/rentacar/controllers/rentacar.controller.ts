@@ -12,7 +12,38 @@ export class RentacarController {
     }
 
     const vehicles = await VehicleService.listVehicles(tenantId);
-    res.json(vehicles);
+    
+    // Convert TypeORM entities to plain JSON objects and populate brand/model info
+    const vehiclesWithBrandModel = vehicles.map(vehicle => {
+      // Use JSON parse/stringify to get plain object from TypeORM entity
+      const vehicleData = JSON.parse(JSON.stringify(vehicle));
+      
+      // Populate brandName and brandId from brand relation if available
+      if (vehicle.brand) {
+        if (!vehicleData.brandName && vehicle.brand.name) {
+          vehicleData.brandName = vehicle.brand.name;
+        }
+        if (!vehicleData.brandId && vehicle.brand.id) {
+          vehicleData.brandId = vehicle.brand.id;
+        }
+        vehicleData.brand = vehicle.brand;
+      }
+      
+      // Populate modelName and modelId from model relation if available
+      if (vehicle.model) {
+        if (!vehicleData.modelName && vehicle.model.name) {
+          vehicleData.modelName = vehicle.model.name;
+        }
+        if (!vehicleData.modelId && vehicle.model.id) {
+          vehicleData.modelId = vehicle.model.id;
+        }
+        vehicleData.model = vehicle.model;
+      }
+      
+      return vehicleData;
+    });
+    
+    res.json(vehiclesWithBrandModel);
   }
 
   static async createVehicle(req: Request, res: Response) {

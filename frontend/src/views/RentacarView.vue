@@ -2954,6 +2954,11 @@ const loadPricingData = async () => {
       params: { tenantId: auth.tenant.id },
     });
 
+    // Debug: log vehicle data to understand structure
+    console.log('Vehicles data:', vehiclesData);
+    console.log('Vehicle brands:', vehicleBrands.value);
+    console.log('Vehicle models:', vehicleModels.value);
+
     // Load existing pricing for selected month
     const { data: existingPricing } = await http.get('/rentacar/location-pricing', {
       params: {
@@ -2975,42 +2980,42 @@ const loadPricingData = async () => {
       const firstPricing = vehiclePricing[0];
       
       // Get brand name - try multiple sources in order of preference
-      let brandName = '-';
+      let brandName: string | null = null;
       // First try: nested brand object (from relations)
       if (vehicle.brand && typeof vehicle.brand === 'object' && 'name' in vehicle.brand) {
-        brandName = (vehicle.brand as any).name || '-';
+        brandName = (vehicle.brand as any).name;
       }
       // Second try: brandName field (legacy)
-      else if (vehicle.brandName) {
+      if (!brandName && vehicle.brandName) {
         brandName = vehicle.brandName;
       }
       // Third try: lookup from brands list using brandId
-      else if (vehicle.brandId && vehicleBrands.value.length > 0) {
-        const brand = vehicleBrands.value.find(b => b.id === vehicle.brandId);
-        brandName = brand?.name || '-';
+      if (!brandName && vehicle.brandId && vehicleBrands.value.length > 0) {
+        const brand = vehicleBrands.value.find(b => String(b.id) === String(vehicle.brandId));
+        brandName = brand?.name || null;
       }
       
       // Get model name - try multiple sources in order of preference
-      let modelName = '-';
+      let modelName: string | null = null;
       // First try: nested model object (from relations)
       if (vehicle.model && typeof vehicle.model === 'object' && 'name' in vehicle.model) {
-        modelName = (vehicle.model as any).name || '-';
+        modelName = (vehicle.model as any).name;
       }
       // Second try: modelName field (legacy)
-      else if (vehicle.modelName) {
+      if (!modelName && vehicle.modelName) {
         modelName = vehicle.modelName;
       }
       // Third try: lookup from models list using modelId
-      else if (vehicle.modelId && vehicleModels.value.length > 0) {
-        const model = vehicleModels.value.find(m => m.id === vehicle.modelId);
-        modelName = model?.name || '-';
+      if (!modelName && vehicle.modelId && vehicleModels.value.length > 0) {
+        const model = vehicleModels.value.find(m => String(m.id) === String(vehicle.modelId));
+        modelName = model?.name || null;
       }
       
       return {
         vehicleId: vehicle.id,
         vehicleName: vehicle.name,
-        brandName,
-        modelName,
+        brandName: brandName || '-',
+        modelName: modelName || '-',
         transmission: vehicle.transmission,
         fuelType: vehicle.fuelType,
         year: vehicle.year,
@@ -3123,10 +3128,13 @@ const loadDeliveryPricingData = async () => {
   
   loadingDeliveryPricing.value = true;
   try {
-    // Load all locations for the tenant
+    // Load all locations for the tenant - filter only 'merkez' type
     const { data: allLocations } = await http.get<LocationDto[]>('/rentacar/locations', {
       params: { tenantId: auth.tenant.id },
     });
+    
+    // Filter only 'merkez' type locations
+    const merkezLocations = allLocations.filter(loc => loc.type === 'merkez');
 
     // Load existing delivery pricing
     const { data: existingPricing } = await http.get('/rentacar/location-delivery-pricing', {
@@ -3135,8 +3143,8 @@ const loadDeliveryPricingData = async () => {
       },
     });
 
-    // Create table data from all locations
-    const tableData: DeliveryPricingTableItem[] = allLocations
+    // Create table data from merkez locations only
+    const tableData: DeliveryPricingTableItem[] = merkezLocations
       .filter(loc => loc.id !== selectedLocationForDeliveryPricing.value?.id) // Exclude current location
       .map(location => {
         const existing = existingPricing.find((p: any) => p.deliveryLocationId === location.id);
