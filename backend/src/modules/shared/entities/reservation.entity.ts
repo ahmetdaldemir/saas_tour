@@ -2,6 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, Unique } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { Tenant } from '../../tenants/entities/tenant.entity';
 import { PhoneCountry } from './phone-country.entity';
+import { Language } from './language.entity';
 import { Tour } from '../../tour/entities/tour.entity';
 import { TourSession } from '../../tour/entities/tour-session.entity';
 
@@ -52,6 +53,13 @@ export class Reservation extends BaseEntity {
 
   @Column({ name: 'customer_phone_country_id', nullable: true })
   customerPhoneCountryId?: string | null;
+
+  @ManyToOne(() => Language, { nullable: true })
+  @JoinColumn({ name: 'customer_language_id' })
+  customerLanguage?: Language | null;
+
+  @Column({ name: 'customer_language_id', nullable: true })
+  customerLanguageId?: string | null;
 
   @Column({ name: 'check_in', type: 'timestamp', nullable: true })
   checkIn?: Date | null;

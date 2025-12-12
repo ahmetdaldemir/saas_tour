@@ -31,8 +31,18 @@ import { Location } from '../modules/rentacar/entities/location.entity';
 import { LocationVehiclePricing } from '../modules/rentacar/entities/location-vehicle-pricing.entity';
 import { LocationDeliveryPricing } from '../modules/rentacar/entities/location-delivery-pricing.entity';
 import { TenantUser } from '../modules/tenants/entities/tenant-user.entity';
+import { Currency } from '../modules/shared/entities/currency.entity';
+import { TenantSettings } from '../modules/shared/entities/tenant-settings.entity';
+import { Survey } from '../modules/shared/entities/survey.entity';
+import { SurveyQuestion } from '../modules/shared/entities/survey-question.entity';
+import { SurveyResponse } from '../modules/shared/entities/survey-response.entity';
+import { EmailTemplate } from '../modules/shared/entities/email-template.entity';
 
 const env = loadEnv();
+
+// Allow synchronize in production if DB_SYNC=true is set (useful for initial setup)
+const allowSyncInProduction = process.env.DB_SYNC === 'true';
+const shouldSynchronize = env.nodeEnv !== 'production' || allowSyncInProduction;
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -41,7 +51,7 @@ export const AppDataSource = new DataSource({
   username: env.database.username,
   password: env.database.password,
   database: env.database.name,
-  synchronize: env.nodeEnv !== 'production',
+  synchronize: shouldSynchronize,
   logging: env.nodeEnv === 'development',
   entities: [
     Tenant,
@@ -75,6 +85,12 @@ export const AppDataSource = new DataSource({
           LocationVehiclePricing,
           LocationDeliveryPricing,
           TenantUser,
+          Currency,
+          TenantSettings,
+          Survey,
+          SurveyQuestion,
+          SurveyResponse,
+          EmailTemplate,
   ],
   migrations: ['dist/migrations/*.js'],
 });

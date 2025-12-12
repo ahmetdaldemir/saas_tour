@@ -12,6 +12,7 @@ import { PaymentMethod, PaymentProvider } from '../modules/shared/entities/payme
 import { Vehicle, FuelType, TransmissionType } from '../modules/rentacar/entities/vehicle.entity';
 import { VehiclePlate } from '../modules/rentacar/entities/vehicle-plate.entity';
 import { VehiclePricingPeriod, SeasonName } from '../modules/rentacar/entities/vehicle-pricing-period.entity';
+import { Currency, CurrencyCode } from '../modules/shared/entities/currency.entity';
 
 const seed = async () => {
   await AppDataSource.initialize();
@@ -27,6 +28,7 @@ const seed = async () => {
   const vehicleRepo = AppDataSource.getRepository(Vehicle);
   const plateRepo = AppDataSource.getRepository(VehiclePlate);
   const pricingRepo = AppDataSource.getRepository(VehiclePricingPeriod);
+  const currencyRepo = AppDataSource.getRepository(Currency);
 
   // Languages
   const languages = [
@@ -269,6 +271,27 @@ const seed = async () => {
 
   if (cityCar) {
     await ensurePlate(cityCar, '06 REN 555');
+  }
+
+  // Currencies
+  const currencies = [
+    { code: CurrencyCode.TRY, name: 'Turkish Lira', symbol: '₺', rateToTry: 1.0, isBaseCurrency: true },
+    { code: CurrencyCode.EUR, name: 'Euro', symbol: '€', rateToTry: 35.0, isBaseCurrency: false },
+    { code: CurrencyCode.USD, name: 'US Dollar', symbol: '$', rateToTry: 32.0, isBaseCurrency: false },
+    { code: CurrencyCode.GBP, name: 'British Pound', symbol: '£', rateToTry: 40.0, isBaseCurrency: false },
+  ];
+
+  for (const currencyData of currencies) {
+    let currency = await currencyRepo.findOne({ where: { code: currencyData.code } });
+    if (!currency) {
+      currency = currencyRepo.create({
+        ...currencyData,
+        isActive: true,
+        autoUpdate: !currencyData.isBaseCurrency, // TRY hariç diğerleri otomatik güncellenecek
+        lastUpdatedAt: new Date(),
+      });
+      await currencyRepo.save(currency);
+    }
   }
 
   console.log('✅ Dummy data seeded successfully.');

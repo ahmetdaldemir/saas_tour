@@ -15,6 +15,11 @@ import destinationRouter from '../modules/shared/routes/destination.router';
 import hotelRouter from '../modules/shared/routes/hotel.router';
 import blogRouter from '../modules/shared/routes/blog.router';
 import translationRouter from '../modules/shared/routes/translation.router';
+import currencyRouter from '../modules/shared/routes/currency.router';
+import tenantSettingsRouter from '../modules/shared/routes/tenant-settings.router';
+import surveyRouter from '../modules/shared/routes/survey.router';
+import reservationRouter from '../modules/shared/routes/reservation.router';
+import emailTemplateRouter from '../modules/shared/routes/email-template.router';
 
 export const registerRoutes = (app: Express) => {
   app.get('/health', (_req, res) => {
@@ -37,4 +42,9 @@ export const registerRoutes = (app: Express) => {
   app.use('/api/rentacar/location-pricing', locationPricingRouter);
   app.use('/api/rentacar/location-delivery-pricing', locationDeliveryPricingRouter);
   app.use('/api/translation', translationRouter);
+  app.use('/api/currencies', currencyRouter);
+  app.use('/api/settings', tenantSettingsRouter);
+  app.use('/api/surveys', surveyRouter);
+  app.use('/api/reservations', reservationRouter);
+  app.use('/api/email-templates', emailTemplateRouter);
 };

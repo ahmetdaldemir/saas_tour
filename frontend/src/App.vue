@@ -106,6 +106,11 @@ const navigationItems = computed(() => {
     items.push({ title: 'Rezervasyonlar', to: '/app/reservations', icon: 'mdi-calendar-check' });
   }
 
+  // Ortak menü öğeleri
+  items.push({ title: 'Anketler', to: '/app/surveys', icon: 'mdi-clipboard-text-outline' });
+  items.push({ title: 'Mail Şablonları', to: '/app/email-templates', icon: 'mdi-email-multiple-outline' });
+  items.push({ title: 'Ayarlar', to: '/app/settings', icon: 'mdi-cog-outline' });
+
   return items;
 });
 

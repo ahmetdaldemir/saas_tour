@@ -16,6 +16,9 @@ import DestinationsView from '../views/DestinationsView.vue';
 import HotelsView from '../views/HotelsView.vue';
 import BlogsView from '../views/BlogsView.vue';
 import CustomersView from '../views/CustomersView.vue';
+import SettingsView from '../views/SettingsView.vue';
+import SurveysView from '../views/SurveysView.vue';
+import EmailTemplatesView from '../views/EmailTemplatesView.vue';
 import { useAuthStore } from '../stores/auth';
 
 const routes: RouteRecordRaw[] = [
@@ -117,6 +120,24 @@ const routes: RouteRecordRaw[] = [
     path: '/app/reservations',
     name: 'reservations',
     component: ReservationsView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/settings',
+    name: 'settings',
+    component: SettingsView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/surveys',
+    name: 'surveys',
+    component: SurveysView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/email-templates',
+    name: 'email-templates',
+    component: EmailTemplatesView,
     meta: { requiresAuth: true, layout: 'admin' },
   },
   {

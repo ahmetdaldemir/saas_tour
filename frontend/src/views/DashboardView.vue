@@ -1,5 +1,109 @@
 <template>
   <div class="dashboard-container">
+    <!-- Currency Rates - Üst Kısım -->
+    <v-row class="mb-6">
+      <v-col cols="12">
+        <v-card elevation="0" rounded="xl" class="currency-card-modern">
+          <v-card-title class="currency-card-header">
+            <div class="d-flex align-center">
+              <div class="currency-icon-wrapper">
+                <v-icon icon="mdi-trending-up" size="28" />
+              </div>
+              <div class="ml-3">
+                <div class="text-h6 font-weight-bold text-white">Döviz Kurları</div>
+                <div class="text-caption text-white text-opacity-80">Güncel kur bilgileri</div>
+              </div>
+            </div>
+            <v-btn
+              icon="mdi-refresh"
+              size="small"
+              variant="text"
+              color="white"
+              :loading="updatingRates"
+              @click="updateCurrencyRates"
+              class="refresh-btn"
+              title="Kurları Güncelle"
+            >
+              <v-icon>mdi-refresh</v-icon>
+              <v-tooltip activator="parent" location="bottom">Kurları Güncelle</v-tooltip>
+            </v-btn>
+          </v-card-title>
+          
+          <v-card-text class="currency-card-content">
+            <div v-if="currencies.length > 0" class="currency-grid-modern">
+              <v-card
+                v-for="(currency, index) in currencies"
+                :key="currency.id"
+                :class="['currency-card-item', { 'currency-base-card': currency.isBaseCurrency }]"
+                elevation="0"
+                rounded="lg"
+                :style="{ animationDelay: `${index * 0.05}s` }"
+              >
+                <div class="currency-item-content">
+                  <div class="currency-item-header">
+                    <div class="d-flex align-center">
+                      <div
+                        :class="['currency-code-badge', currency.isBaseCurrency ? 'badge-primary' : 'badge-default']"
+                      >
+                        {{ currency.code }}
+                      </div>
+                      <div class="currency-name-wrapper">
+                        <div class="currency-name">{{ currency.name }}</div>
+                        <div v-if="currency.symbol" class="currency-symbol">{{ currency.symbol }}</div>
+                      </div>
+                    </div>
+                    <v-chip
+                      v-if="currency.autoUpdate"
+                      color="success"
+                      size="x-small"
+                      variant="flat"
+                      class="auto-update-chip"
+                    >
+                      <v-icon start icon="mdi-sync" size="12" />
+                      Otomatik
+                    </v-chip>
+                  </div>
+                  
+                  <div class="currency-rate-section">
+                    <div class="rate-main">
+                      <span class="rate-value-modern">{{ formatCurrencyRate(currency.rateToTry) }}</span>
+                    </div>
+                    <div class="rate-label-modern">Türk Lirası Karşılığı</div>
+                  </div>
+                  
+                  <v-divider class="my-3" />
+                  
+                  <div class="currency-footer-modern">
+                    <div class="d-flex align-center">
+                      <v-icon icon="mdi-clock-time-four-outline" size="16" class="mr-1 text-medium-emphasis" />
+                      <span class="text-caption text-medium-emphasis">
+                        {{ formatDateTime(currency.lastUpdatedAt) }}
+                      </span>
+                    </div>
+                    <v-chip
+                      v-if="currency.isBaseCurrency"
+                      color="primary"
+                      size="x-small"
+                      variant="tonal"
+                    >
+                      Varsayılan
+                    </v-chip>
+                  </div>
+                </div>
+              </v-card>
+            </div>
+            <div v-else class="currency-empty-state">
+              <div class="empty-state-content">
+                <v-icon icon="mdi-currency-usd" size="64" color="grey-lighten-1" class="mb-4" />
+                <p class="text-h6 text-medium-emphasis mb-2">Kur Bilgisi Bulunamadı</p>
+                <p class="text-body-2 text-medium-emphasis">Henüz döviz kuru eklenmemiş</p>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+
     <!-- Dashboard Metrics Cards -->
     <v-row class="mb-6">
       <!-- Row 1 -->
@@ -33,6 +137,28 @@
             </span>
             <span class="metric-period">vs last month</span>
           </div>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <!-- Reservation Chart -->
+    <v-row class="mb-6">
+      <v-col cols="12">
+        <v-card elevation="0" rounded="lg" class="section-card">
+          <v-card-title class="section-title">
+            <v-icon icon="mdi-chart-line" class="mr-2" color="primary" />
+            Aylık Rezervasyon İstatistikleri
+          </v-card-title>
+          <v-divider class="mb-4" />
+          <v-card-text>
+            <div v-if="loadingChart" class="text-center py-8">
+              <v-progress-circular indeterminate color="primary" />
+              <p class="mt-4 text-medium-emphasis">Grafik yükleniyor...</p>
+            </div>
+            <div v-else style="position: relative; height: 300px;">
+              <Line :data="chartData" :options="chartOptions" />
+            </div>
+          </v-card-text>
         </v-card>
       </v-col>
     </v-row>
@@ -341,6 +467,29 @@ import { ref, computed, onMounted } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
 import { http } from '../modules/http';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from 'chart.js';
+import { Line } from 'vue-chartjs';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -532,6 +681,129 @@ const penaltyHeaders = [
   { title: 'Açıklama', key: 'description' },
 ];
 
+// Currency
+interface CurrencyDto {
+  id: string;
+  code: string;
+  name: string;
+  symbol?: string;
+  rateToTry: number;
+  isBaseCurrency: boolean;
+  isActive: boolean;
+  lastUpdatedAt?: string;
+  autoUpdate: boolean;
+}
+
+const currencies = ref<CurrencyDto[]>([]);
+const updatingRates = ref(false);
+
+// Chart data
+const loadingChart = ref(false);
+const reservations = ref<any[]>([]);
+
+// Prepare chart data
+const chartData = computed(() => {
+  // Son 12 ayı hazırla
+  const months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+  const currentDate = new Date();
+  const last12Months: string[] = [];
+  const monthData: number[] = new Array(12).fill(0);
+
+  // Son 12 ayın isimlerini hazırla (ters sırada)
+  for (let i = 11; i >= 0; i--) {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
+    last12Months.push(months[date.getMonth()] + ' ' + date.getFullYear());
+  }
+
+  // Rezervasyonları aylara göre say
+  reservations.value.forEach((reservation) => {
+    const createdDate = new Date(reservation.createdAt);
+    const monthDiff = (currentDate.getFullYear() - createdDate.getFullYear()) * 12 + 
+                     (currentDate.getMonth() - createdDate.getMonth());
+    
+    if (monthDiff >= 0 && monthDiff < 12) {
+      monthData[11 - monthDiff] += 1;
+    }
+  });
+
+  return {
+    labels: last12Months,
+    datasets: [
+      {
+        label: 'Rezervasyon Sayısı',
+        data: monthData,
+        borderColor: 'rgb(25, 118, 210)',
+        backgroundColor: 'rgba(25, 118, 210, 0.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: 'rgb(25, 118, 210)',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+      },
+    ],
+  };
+});
+
+const chartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: true,
+      position: 'top' as const,
+    },
+    tooltip: {
+      mode: 'index' as const,
+      intersect: false,
+      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+      padding: 12,
+      titleFont: {
+        size: 14,
+        weight: 'bold' as const,
+      },
+      bodyFont: {
+        size: 13,
+      },
+    },
+  },
+  scales: {
+    y: {
+      beginAtZero: true,
+      ticks: {
+        stepSize: 1,
+        precision: 0,
+      },
+      grid: {
+        color: 'rgba(0, 0, 0, 0.05)',
+      },
+    },
+    x: {
+      grid: {
+        display: false,
+      },
+    },
+  },
+};
+
+// Load reservations for chart
+const loadReservations = async () => {
+  if (!auth.tenant) return;
+  loadingChart.value = true;
+  try {
+    const { data } = await http.get('/reservations', {
+      params: { tenantId: auth.tenant.id },
+    });
+    reservations.value = data;
+  } catch (error) {
+    console.error('Failed to load reservations:', error);
+  } finally {
+    loadingChart.value = false;
+  }
+};
+
 // Helper functions
 const formatNumber = (num: number): string => {
   return new Intl.NumberFormat('tr-TR').format(num);
@@ -543,6 +815,29 @@ const formatCurrency = (amount: number): string => {
     currency: 'TRY',
     minimumFractionDigits: 2,
   }).format(amount);
+};
+
+const formatCurrencyRate = (rate: number): string => {
+  return new Intl.NumberFormat('tr-TR', {
+    minimumFractionDigits: 4,
+    maximumFractionDigits: 4,
+  }).format(rate) + ' ₺';
+};
+
+const formatDateTime = (dateStr?: string): string => {
+  if (!dateStr) return '-';
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleString('tr-TR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return dateStr;
+  }
 };
 
 // Load Dashboard Data
@@ -567,6 +862,34 @@ const loadDashboardData = async () => {
     };
   } catch (error) {
     console.error('Failed to load dashboard data:', error);
+  }
+};
+
+// Load Currencies
+const loadCurrencies = async () => {
+  try {
+    const { data } = await http.get<CurrencyDto[]>('/currencies');
+    currencies.value = data.filter(c => c.isActive).sort((a, b) => {
+      // Base currency first, then alphabetically
+      if (a.isBaseCurrency) return -1;
+      if (b.isBaseCurrency) return 1;
+      return a.code.localeCompare(b.code);
+    });
+  } catch (error) {
+    console.error('Failed to load currencies:', error);
+  }
+};
+
+// Update Currency Rates
+const updateCurrencyRates = async () => {
+  updatingRates.value = true;
+  try {
+    await http.post('/currencies/update-rates');
+    await loadCurrencies(); // Reload to get updated rates
+  } catch (error) {
+    console.error('Failed to update currency rates:', error);
+  } finally {
+    updatingRates.value = false;
   }
 };
 
@@ -625,6 +948,8 @@ const viewAllPenalties = () => {
 
 onMounted(() => {
   loadDashboardData();
+  loadCurrencies();
+  loadReservations();
 });
 </script>
 
@@ -869,4 +1194,243 @@ onMounted(() => {
 .metric-card:nth-child(10) { animation-delay: 0.5s; }
 .metric-card:nth-child(11) { animation-delay: 0.55s; }
 .metric-card:nth-child(12) { animation-delay: 0.6s; }
+
+/* Currency Card - Modern Design */
+.currency-card-modern {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+  overflow: hidden;
+  position: relative;
+}
+
+.currency-card-modern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  pointer-events: none;
+}
+
+.currency-card-header {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.currency-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+}
+
+.refresh-btn {
+  transition: transform 0.3s ease;
+}
+
+.refresh-btn:hover {
+  transform: rotate(180deg);
+}
+
+.currency-card-content {
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.currency-grid-modern {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.currency-card-item {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  animation: slideInUp 0.5s ease-out backwards;
+}
+
+.currency-card-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  transform: scaleX(0);
+  transition: transform 0.3s ease;
+}
+
+.currency-card-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  border-color: rgba(102, 126, 234, 0.5);
+}
+
+.currency-card-item:hover::before {
+  transform: scaleX(1);
+}
+
+.currency-base-card {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  border: 2px solid rgba(102, 126, 234, 0.3);
+}
+
+.currency-base-card::before {
+  background: linear-gradient(90deg, #1976d2 0%, #42a5f5 100%);
+}
+
+.currency-item-content {
+  padding: 20px;
+}
+
+.currency-item-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.currency-code-badge {
+  min-width: 56px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: white;
+  margin-right: 12px;
+}
+
+.badge-primary {
+  background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%);
+  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
+}
+
+.badge-default {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+.currency-name-wrapper {
+  flex: 1;
+}
+
+.currency-name {
+  font-weight: 600;
+  font-size: 0.9375rem;
+  color: #1a1a1a;
+  line-height: 1.3;
+}
+
+.currency-symbol {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.auto-update-chip {
+  margin-top: 4px;
+}
+
+.currency-rate-section {
+  margin: 16px 0;
+}
+
+.rate-main {
+  margin-bottom: 4px;
+}
+
+.rate-value-modern {
+  font-size: 1.75rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.2;
+  display: block;
+}
+
+.rate-label-modern {
+  font-size: 0.8125rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.currency-footer-modern {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.currency-empty-state {
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.empty-state-content {
+  max-width: 300px;
+  margin: 0 auto;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 960px) {
+  .currency-grid-modern {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  
+  .rate-value-modern {
+    font-size: 1.5rem;
+  }
+  
+  .currency-card-header {
+    padding: 16px 20px;
+  }
+  
+  .currency-card-content {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 600px) {
+  .currency-grid-modern {
+    grid-template-columns: 1fr;
+  }
+  
+  .currency-icon-wrapper {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .currency-icon-wrapper .v-icon {
+    font-size: 20px;
+  }
+}
 </style>
