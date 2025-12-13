@@ -10,7 +10,8 @@
     "seed": "ts-node src/seeds/seed.ts",
     "import:destinations": "ts-node --project tsconfig.json src/scripts/import-destinations.ts",
     "import:hotels": "ts-node --project tsconfig.json src/scripts/import-hotels.ts",
-    "seed:global": "ts-node --project tsconfig.json src/scripts/seed-global-destinations-hotels.ts"
+    "seed:global": "ts-node --project tsconfig.json src/scripts/seed-global-destinations-hotels.ts",
+    "seed:mock": "ts-node --project tsconfig.json src/scripts/seed-mock-data.ts"
   },
   "keywords": [],
   "author": "",

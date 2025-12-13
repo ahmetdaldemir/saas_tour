@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
 
   const proxyTarget =
     env.VITE_PROXY_TARGET ||
-    (mode === 'development' ? 'http://localhost:3000' : 'http://backend:3000');
+    (mode === 'development' ? 'http://localhost:4001' : 'http://backend:3000');
 
   return {
     plugins: [

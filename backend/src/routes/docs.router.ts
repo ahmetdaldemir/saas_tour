@@ -24,7 +24,7 @@ router.get('/docs/readme', (req: Request, res: Response) => {
   const readme = `# SaaS Tour API Documentation
 
 ## Base URL
-- Development: http://localhost:3000/api
+- Development: http://localhost:4001/api
 - Production: https://api.saastour.com/api
 
 ## Authentication

@@ -426,7 +426,7 @@ const formatTime = (date: string | Date) => {
 const connectSocket = () => {
   if (!auth.token || !auth.tenant) return;
 
-  const socketUrl = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
+  const socketUrl = import.meta.env.VITE_WS_URL || 'http://localhost:4001';
   
   socket = io(socketUrl, {
     auth: {
