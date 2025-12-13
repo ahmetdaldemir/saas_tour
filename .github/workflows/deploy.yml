@@ -62,11 +62,11 @@ jobs:
           SFTP_PORT="22"
           SFTP_REMOTE_PATH="/var/www/html/saastour360"
           
-          echo "🚀 Starting deployment to ${SFTP_USERNAME}@${SFTP_HOST}:${SFTP_REMOTE_PATH}"
+          echo "🚀 Starting deployment to root@185.209.228.189:/var/www/html/saastour360/"
           
           export SSHPASS="${SFTP_PASSWORD}"
           sshpass -e rsync -avz --delete \
-            -e "ssh -p ${SFTP_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
+            -e "ssh -p 22 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
             --exclude='.git' \
             --exclude='node_modules' \
             --exclude='.vscode' \
@@ -81,7 +81,7 @@ jobs:
             --exclude='backend/dist' \
             --exclude='docker-datatabse-stack' \
             --exclude='infra' \
-            ./ ${SFTP_USERNAME}@${SFTP_HOST}:${SFTP_REMOTE_PATH}/
+            ./ root@185.209.228.189:/var/www/html/saastour360/
       
       - name: Run Deployment Script on Server
         uses: appleboy/ssh-action@v1.0.3
