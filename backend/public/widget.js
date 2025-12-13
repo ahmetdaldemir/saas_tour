@@ -16,10 +16,10 @@
   const CONFIG = {
     wsUrl: window.location.protocol === 'https:' 
       ? 'wss://api.saastour360.com' 
-      : 'ws://localhost:3000',
+      : 'ws://localhost:4001',
     apiUrl: window.location.protocol === 'https:'
       ? 'https://api.saastour360.com'
-      : 'http://localhost:3000',
+      : 'http://localhost:4001',
     widgetId: 'chat-widget-container',
     widgetButtonId: 'chat-widget-button',
   };

@@ -2,6 +2,8 @@
 
 Monorepo tasarımında Node.js (TypeORM) backend ve Vue.js frontend içeren çok kiracılı (multi-tenant) tur ve araç kiralama SaaS projesi.
 
+> 📚 **Kapsamlı Dokümantasyon:** Detaylı kurulum, modül dokümantasyonu, API referansı ve deployment kılavuzu için [DOCUMENTATION.md](./DOCUMENTATION.md) dosyasına bakın.
+
 ## 📁 Proje Yapısı
 
 ```
@@ -36,8 +38,8 @@ docker-compose up -d --build
 
 ### 3. Uygulamaya Erişim
 
-- **Backend API**: http://localhost:3000/api
-- **Frontend**: http://localhost:8080
+- **Backend API**: http://localhost:4001/api
+- **Frontend**: http://localhost:9001
 
 > **Not**: Portlar environment variable'lar ile değiştirilebilir (BACKEND_PORT, FRONTEND_PORT)
 
@@ -49,7 +51,7 @@ docker-compose up -d --build
 
 ```env
 NODE_ENV=development
-APP_PORT=3000
+APP_PORT=3000  # Container içi port (değiştirilmemeli)
 DB_HOST=global_postgres
 DB_PORT=5432
 DB_USERNAME=dev_user
@@ -69,8 +71,8 @@ RAPIDAPI_TRAVEL_ADVISOR_HOST=travel-advisor.p.rapidapi.com
 
 ```bash
 # Portlar
-export BACKEND_PORT=3000        # Default: 3000
-export FRONTEND_PORT=8080       # Default: 8080
+export BACKEND_PORT=4001        # Default: 4001 (host port)
+export FRONTEND_PORT=9001       # Default: 9001 (host port)
 
 # Node Environment
 export NODE_ENV=production      # Default: development
@@ -101,8 +103,8 @@ docker-compose up -d --build
 ```bash
 cd infra
 export NODE_ENV=production
-export BACKEND_PORT=3000
-export FRONTEND_PORT=8001
+export BACKEND_PORT=4001
+export FRONTEND_PORT=9001
 docker-compose up -d --build
 ```
 
@@ -314,8 +316,8 @@ DB_SYNC=true
 Portları environment variable ile değiştirin:
 
 ```bash
-export BACKEND_PORT=3001
-export FRONTEND_PORT=8081
+export BACKEND_PORT=4002
+export FRONTEND_PORT=9002
 docker-compose up -d
 ```
 

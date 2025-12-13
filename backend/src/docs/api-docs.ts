@@ -17,7 +17,7 @@ export const apiDocumentation = {
   },
   servers: [
     {
-      url: 'http://localhost:3000/api',
+      url: 'http://localhost:4001/api',
       description: 'Development server',
     },
     {

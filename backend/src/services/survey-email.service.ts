@@ -66,7 +66,7 @@ export const sendSurveyEmailForReservation = async (reservation: Reservation) =>
 
       // Anket linki oluştur (frontend'de anket cevaplama sayfası)
       // TODO: Frontend'de anket cevaplama sayfası oluşturulduğunda bu URL'i güncelleyin
-      const frontendUrl = process.env.FRONTEND_URL || process.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:8001';
+      const frontendUrl = process.env.FRONTEND_URL || process.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:9001';
       const surveyUrl = `${frontendUrl}/survey/${survey.id}?reservation=${reservation.id}`;
 
       // E-posta şablonu

@@ -711,7 +711,7 @@ const getImageUrl = (url: string): string => {
     return url;
   }
   // Relative URL ise API base URL'ini ekle
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001/api';
   return `${apiBaseUrl.replace('/api', '')}${url.startsWith('/') ? url : '/' + url}`;
 };
 

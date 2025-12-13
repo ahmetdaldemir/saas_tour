@@ -188,8 +188,8 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
 
     # Environment variables ayarla
     export NODE_ENV=production
-    export BACKEND_PORT=3001
-    export FRONTEND_PORT=8001
+    export BACKEND_PORT=4001
+    export FRONTEND_PORT=9001
     export DB_HOST=global_postgres
     export DB_PORT=${DB_PORT:-5432}
     export DB_USERNAME=${DB_USERNAME:-dev_user}
@@ -228,8 +228,8 @@ docker-compose ps
 
 echo ""
 echo -e "${BLUE}🌐 Erişim:${NC}"
-echo -e "   Backend API:  ${GREEN}http://localhost:3001/api${NC}"
-echo -e "   Frontend:     ${GREEN}http://localhost:8001${NC}"
+echo -e "   Backend API:  ${GREEN}http://localhost:4001/api${NC}"
+echo -e "   Frontend:     ${GREEN}http://localhost:9001${NC}"
 echo ""
 echo -e "${BLUE}📝 Loglar:${NC}"
 echo "   docker-compose logs -f backend"
