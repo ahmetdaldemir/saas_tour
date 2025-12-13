@@ -7,6 +7,7 @@ const router = Router();
 router.get('/', LanguageController.list);
 router.post('/', authenticate, LanguageController.create);
 router.patch('/:id', authenticate, LanguageController.update);
+router.post('/:id/set-default', authenticate, LanguageController.setDefault);
 router.delete('/:id', authenticate, LanguageController.remove);
 
 export default router;

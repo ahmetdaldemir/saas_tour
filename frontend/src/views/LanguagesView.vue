@@ -8,6 +8,14 @@
             <v-text-field v-model="form.code" label="Dil Kodu" placeholder="en" prepend-inner-icon="mdi-translate" required />
             <v-text-field v-model="form.name" label="Dil Adi" prepend-inner-icon="mdi-alphabetical" required />
             <v-switch v-model="form.isActive" color="primary" label="Aktif" inset />
+            <v-switch 
+              v-model="form.isDefault" 
+              color="primary" 
+              label="Varsayılan Dil" 
+              inset 
+              :hint="form.isDefault ? 'Bu dil varsayılan olarak ayarlanacak. Diğer varsayılan dil kaldırılacak.' : 'Bu dili varsayılan dil olarak ayarla'"
+              persistent-hint
+            />
             <v-btn color="primary" class="mt-4" :loading="creating" type="submit">Kaydet</v-btn>
           </v-form>
           <v-alert v-if="error" type="error" variant="tonal" class="mt-4">{{ error }}</v-alert>
@@ -25,6 +33,7 @@
                 <th>Kod</th>
                 <th>Adi</th>
                 <th>Durum</th>
+                <th>Varsayılan</th>
                 <th></th>
               </tr>
             </thead>
@@ -37,7 +46,30 @@
                     {{ language.isActive ? 'Aktif' : 'Pasif' }}
                   </v-chip>
                 </td>
+                <td>
+                  <v-chip 
+                    v-if="language.isDefault" 
+                    color="primary" 
+                    size="small" 
+                    variant="flat"
+                    prepend-icon="mdi-star"
+                  >
+                    Varsayılan
+                  </v-chip>
+                  <span v-else class="text-grey text-caption">-</span>
+                </td>
                 <td class="text-right">
+                  <v-btn 
+                    v-if="!language.isDefault"
+                    size="small" 
+                    variant="text" 
+                    color="primary"
+                    :loading="settingDefault === language.id" 
+                    @click="setAsDefault(language.id)"
+                    prepend-icon="mdi-star"
+                  >
+                    Varsayılan Yap
+                  </v-btn>
                   <v-btn size="small" variant="text" :loading="toggling === language.id" @click="toggleActive(language)">
                     {{ language.isActive ? 'Pasif Yap' : 'Aktif Yap' }}
                   </v-btn>
@@ -64,6 +96,7 @@ interface Language {
   code: string;
   name: string;
   isActive: boolean;
+  isDefault: boolean;
 }
 
 const languages = ref<Language[]>([]);
@@ -71,6 +104,7 @@ const loading = ref(false);
 const creating = ref(false);
 const toggling = ref<string | null>(null);
 const removing = ref<string | null>(null);
+const settingDefault = ref<string | null>(null);
 const error = ref('');
 const formRef = ref();
 const isValid = ref(false);
@@ -79,6 +113,7 @@ const form = reactive({
   code: '',
   name: '',
   isActive: true,
+  isDefault: false,
 });
 
 const loadLanguages = async () => {
@@ -95,6 +130,7 @@ const resetForm = () => {
   form.code = '';
   form.name = '';
   form.isActive = true;
+  form.isDefault = false;
 };
 
 const handleCreate = async () => {
@@ -127,12 +163,27 @@ const toggleActive = async (language: Language) => {
 };
 
 const removeLanguage = async (id: string) => {
+  if (!confirm('Bu dili silmek istediğinizden emin misiniz?')) {
+    return;
+  }
   removing.value = id;
   try {
     await http.delete(`/languages/${id}`);
     await loadLanguages();
   } finally {
     removing.value = null;
+  }
+};
+
+const setAsDefault = async (id: string) => {
+  settingDefault.value = id;
+  try {
+    await http.post(`/languages/${id}/set-default`);
+    await loadLanguages();
+  } catch (err) {
+    error.value = (err as Error).message ?? 'Varsayılan dil ayarlanamadı';
+  } finally {
+    settingDefault.value = null;
   }
 };
 

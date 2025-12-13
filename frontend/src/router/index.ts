@@ -7,10 +7,21 @@ import LoginView from '../views/LoginView.vue';
 import RegisterView from '../views/RegisterView.vue';
 import DashboardView from '../views/DashboardView.vue';
 import ToursView from '../views/ToursView.vue';
+import TourDetailView from '../views/TourDetailView.vue';
 import RentacarView from '../views/RentacarView.vue';
+import CrmView from '../views/CrmView.vue';
+import ReservationsView from '../views/ReservationsView.vue';
 import LanguagesView from '../views/LanguagesView.vue';
 import DestinationsView from '../views/DestinationsView.vue';
 import HotelsView from '../views/HotelsView.vue';
+import BlogsView from '../views/BlogsView.vue';
+import CustomersView from '../views/CustomersView.vue';
+import SettingsView from '../views/SettingsView.vue';
+import SurveysView from '../views/SurveysView.vue';
+import EmailTemplatesView from '../views/EmailTemplatesView.vue';
+import UsersView from '../views/UsersView.vue';
+import TransferView from '../views/TransferView.vue';
+import ChatView from '../views/ChatView.vue';
 import { useAuthStore } from '../stores/auth';
 
 const routes: RouteRecordRaw[] = [
@@ -73,15 +84,81 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, layout: 'admin' },
   },
   {
+    path: '/app/blogs',
+    name: 'blogs',
+    component: BlogsView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
     path: '/app/tours',
     name: 'tours',
     component: ToursView,
     meta: { requiresAuth: true, layout: 'admin' },
   },
   {
+    path: '/app/tours/:id',
+    name: 'tour-detail',
+    component: TourDetailView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
     path: '/app/rentacar',
     name: 'rentacar',
     component: RentacarView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/customers',
+    name: 'customers',
+    component: CustomersView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/crm',
+    name: 'crm',
+    component: CrmView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/reservations',
+    name: 'reservations',
+    component: ReservationsView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/settings',
+    name: 'settings',
+    component: SettingsView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/surveys',
+    name: 'surveys',
+    component: SurveysView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/email-templates',
+    name: 'email-templates',
+    component: EmailTemplatesView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/users',
+    name: 'users',
+    component: UsersView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/transfer',
+    name: 'transfer',
+    component: TransferView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/chat',
+    name: 'chat',
+    component: ChatView,
     meta: { requiresAuth: true, layout: 'admin' },
   },
   {

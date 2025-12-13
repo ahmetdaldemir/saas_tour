@@ -1,7 +1,8 @@
 import { Request, Response } from 'express';
 import { VehicleService } from '../services/vehicle.service';
 import { SeasonName } from '../entities/vehicle-pricing-period.entity';
-import { FuelType, TransmissionType } from '../entities/vehicle.entity';
+import { AppDataSource } from '../../../config/data-source';
+import { Vehicle } from '../entities/vehicle.entity';
 
 export class RentacarController {
   static async listVehicles(req: Request, res: Response) {
@@ -11,26 +12,83 @@ export class RentacarController {
     }
 
     const vehicles = await VehicleService.listVehicles(tenantId);
-    res.json(vehicles);
+    
+    // Convert TypeORM entities to plain JSON objects and populate brand/model info
+    const vehiclesWithBrandModel = vehicles.map(vehicle => {
+      // Use JSON parse/stringify to get plain object from TypeORM entity
+      const vehicleData = JSON.parse(JSON.stringify(vehicle));
+      
+      // Populate brandName and brandId from brand relation if available
+      if (vehicle.brand) {
+        if (!vehicleData.brandName && vehicle.brand.name) {
+          vehicleData.brandName = vehicle.brand.name;
+        }
+        if (!vehicleData.brandId && vehicle.brand.id) {
+          vehicleData.brandId = vehicle.brand.id;
+        }
+        vehicleData.brand = vehicle.brand;
+      }
+      
+      // Populate modelName and modelId from model relation if available
+      if (vehicle.model) {
+        if (!vehicleData.modelName && vehicle.model.name) {
+          vehicleData.modelName = vehicle.model.name;
+        }
+        if (!vehicleData.modelId && vehicle.model.id) {
+          vehicleData.modelId = vehicle.model.id;
+        }
+        vehicleData.model = vehicle.model;
+      }
+      
+      return vehicleData;
+    });
+    
+    res.json(vehiclesWithBrandModel);
   }
 
   static async createVehicle(req: Request, res: Response) {
     try {
-      const vehicle = await VehicleService.createVehicle({
-        tenantId: req.body.tenantId,
-        name: req.body.name,
-        brand: req.body.brand,
-        model: req.body.model,
-        year: req.body.year,
-        transmission: req.body.transmission as TransmissionType,
-        fuelType: req.body.fuelType as FuelType,
-        seats: req.body.seats,
-        luggage: req.body.luggage,
-        description: req.body.description,
-        baseRate: req.body.baseRate,
-        currencyCode: req.body.currencyCode,
-      });
+      const vehicle = await VehicleService.createVehicle(req.body);
       res.status(201).json(vehicle);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  }
+
+  static async updateVehicle(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const vehicle = await VehicleService.updateVehicle(id, req.body);
+      res.json(vehicle);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  }
+
+  static async getVehicle(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const vehicle = await VehicleService.listVehicles(req.query.tenantId as string);
+      const found = vehicle.find(v => v.id === id);
+      if (!found) {
+        return res.status(404).json({ message: 'Vehicle not found' });
+      }
+      res.json(found);
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  }
+
+  static async deleteVehicle(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const vehicleRepo = AppDataSource.getRepository(Vehicle);
+      const vehicle = await vehicleRepo.findOne({ where: { id } });
+      if (!vehicle) {
+        return res.status(404).json({ message: 'Vehicle not found' });
+      }
+      await vehicleRepo.remove(vehicle);
+      res.status(204).send();
     } catch (error) {
       res.status(400).json({ message: (error as Error).message });
     }
@@ -41,8 +99,67 @@ export class RentacarController {
       const plate = await VehicleService.addPlate({
         vehicleId: req.params.vehicleId,
         plateNumber: req.body.plateNumber,
+        registrationDate: req.body.registrationDate,
+        documentNumber: req.body.documentNumber,
+        serialNumber: req.body.serialNumber,
+        km: req.body.km,
+        oilKm: req.body.oilKm,
+        description: req.body.description,
+        comprehensiveInsuranceCompany: req.body.comprehensiveInsuranceCompany,
+        comprehensiveInsuranceStart: req.body.comprehensiveInsuranceStart,
+        comprehensiveInsuranceEnd: req.body.comprehensiveInsuranceEnd,
+        trafficInsuranceCompany: req.body.trafficInsuranceCompany,
+        trafficInsuranceStart: req.body.trafficInsuranceStart,
+        trafficInsuranceEnd: req.body.trafficInsuranceEnd,
+        inspectionCompany: req.body.inspectionCompany,
+        inspectionStart: req.body.inspectionStart,
+        inspectionEnd: req.body.inspectionEnd,
+        exhaustInspectionCompany: req.body.exhaustInspectionCompany,
+        exhaustInspectionStart: req.body.exhaustInspectionStart,
+        exhaustInspectionEnd: req.body.exhaustInspectionEnd,
       });
       res.status(201).json(plate);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  }
+
+  static async updatePlate(req: Request, res: Response) {
+    try {
+      const { vehicleId, plateId } = req.params;
+      const plate = await VehicleService.updatePlate(plateId, {
+        vehicleId,
+        plateNumber: req.body.plateNumber,
+        registrationDate: req.body.registrationDate,
+        documentNumber: req.body.documentNumber,
+        serialNumber: req.body.serialNumber,
+        km: req.body.km,
+        oilKm: req.body.oilKm,
+        description: req.body.description,
+        comprehensiveInsuranceCompany: req.body.comprehensiveInsuranceCompany,
+        comprehensiveInsuranceStart: req.body.comprehensiveInsuranceStart,
+        comprehensiveInsuranceEnd: req.body.comprehensiveInsuranceEnd,
+        trafficInsuranceCompany: req.body.trafficInsuranceCompany,
+        trafficInsuranceStart: req.body.trafficInsuranceStart,
+        trafficInsuranceEnd: req.body.trafficInsuranceEnd,
+        inspectionCompany: req.body.inspectionCompany,
+        inspectionStart: req.body.inspectionStart,
+        inspectionEnd: req.body.inspectionEnd,
+        exhaustInspectionCompany: req.body.exhaustInspectionCompany,
+        exhaustInspectionStart: req.body.exhaustInspectionStart,
+        exhaustInspectionEnd: req.body.exhaustInspectionEnd,
+      });
+      res.json(plate);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  }
+
+  static async deletePlate(req: Request, res: Response) {
+    try {
+      const { plateId } = req.params;
+      await VehicleService.removePlate(plateId);
+      res.status(204).send();
     } catch (error) {
       res.status(400).json({ message: (error as Error).message });
     }
@@ -72,6 +189,17 @@ export class RentacarController {
         endDate: req.body.endDate,
       });
       res.status(201).json(assignment);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  }
+
+  static async updateLastReturnLocation(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { locationId } = req.body;
+      const vehicle = await VehicleService.updateLastReturnLocation(id, locationId || null);
+      res.json(vehicle);
     } catch (error) {
       res.status(400).json({ message: (error as Error).message });
     }

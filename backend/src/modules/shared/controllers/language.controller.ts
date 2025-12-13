@@ -9,12 +9,12 @@ export class LanguageController {
 
   static async create(req: Request, res: Response) {
     try {
-      const { code, name, isActive } = req.body;
+      const { code, name, isActive, isDefault } = req.body;
       if (!code || !name) {
         return res.status(400).json({ message: 'code and name are required' });
       }
 
-      const language = await LanguageService.create({ code, name, isActive });
+      const language = await LanguageService.create({ code, name, isActive, isDefault });
       res.status(201).json(language);
     } catch (error) {
       res.status(400).json({ message: (error as Error).message });
@@ -24,8 +24,18 @@ export class LanguageController {
   static async update(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const { code, name, isActive } = req.body;
-      const language = await LanguageService.update(id, { code, name, isActive });
+      const { code, name, isActive, isDefault } = req.body;
+      const language = await LanguageService.update(id, { code, name, isActive, isDefault });
+      res.json(language);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  }
+
+  static async setDefault(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const language = await LanguageService.setDefault(id);
       res.json(language);
     } catch (error) {
       res.status(400).json({ message: (error as Error).message });

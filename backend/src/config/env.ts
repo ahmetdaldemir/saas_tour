@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 
-dotenv.config();
+// Load .env file but allow environment variables to override
+dotenv.config({ override: false });
 
 export type AppConfig = {
   nodeEnv: string;
