@@ -70,5 +70,32 @@ export class LocationPricingController {
       res.status(400).json({ message: (error as Error).message });
     }
   }
+
+  static async bulkCopyPrice(req: Request, res: Response) {
+    try {
+      const { locationId, sourceVehicleId, sourceMonth, dayRange, price } = req.body;
+      
+      if (!locationId || !sourceVehicleId || !sourceMonth || !dayRange || price === undefined) {
+        return res.status(400).json({ 
+          message: 'locationId, sourceVehicleId, sourceMonth, dayRange, and price are required' 
+        });
+      }
+
+      const pricings = await LocationPricingService.bulkCopyPrice({
+        locationId,
+        sourceVehicleId,
+        sourceMonth: parseInt(sourceMonth, 10),
+        dayRange,
+        price: parseFloat(price),
+      });
+
+      res.json({ 
+        message: `Price copied to ${pricings.length} pricing entries`,
+        count: pricings.length 
+      });
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  }
 }
 

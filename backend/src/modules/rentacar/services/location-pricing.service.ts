@@ -222,5 +222,71 @@ export class LocationPricingService {
   static async removeByLocationAndMonth(locationId: string, month: number): Promise<void> {
     await this.pricingRepo().delete({ locationId, month });
   }
+
+  static async bulkCopyPrice(input: {
+    locationId: string;
+    sourceVehicleId: string;
+    sourceMonth: number;
+    dayRange: string;
+    price: number;
+  }): Promise<LocationVehiclePricing[]> {
+    const { locationId, sourceVehicleId, sourceMonth, dayRange, price } = input;
+
+    // Validate inputs
+    if (sourceMonth < 1 || sourceMonth > 12) {
+      throw new Error('Source month must be between 1 and 12');
+    }
+
+    const location = await this.locationRepo().findOne({ where: { id: locationId } });
+    if (!location) {
+      throw new Error('Location not found');
+    }
+
+    // Get all vehicles for this location's tenant
+    const vehicles = await this.vehicleRepo().find({
+      where: { tenantId: location.tenantId },
+    });
+
+    if (vehicles.length === 0) {
+      throw new Error('No vehicles found for this location');
+    }
+
+    const pricingsToSave: LocationVehiclePricing[] = [];
+
+    // Copy price to all vehicles and all months (1-12)
+    for (const vehicle of vehicles) {
+      for (let month = 1; month <= 12; month++) {
+        let pricing = await this.pricingRepo().findOne({
+          where: {
+            locationId,
+            vehicleId: vehicle.id,
+            month,
+            dayRange: dayRange as any,
+          },
+        });
+
+        if (!pricing) {
+          pricing = this.pricingRepo().create({
+            location,
+            vehicle,
+            month,
+            dayRange: dayRange as any,
+            price,
+            discount: 0,
+            minDays: 0,
+            isActive: true,
+          });
+        } else {
+          pricing.price = price;
+        }
+
+        pricingsToSave.push(pricing);
+      }
+    }
+
+    // Bulk save all pricings
+    const results = await this.pricingRepo().save(pricingsToSave);
+    return results;
+  }
 }
 

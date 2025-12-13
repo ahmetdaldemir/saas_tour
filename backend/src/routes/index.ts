@@ -9,6 +9,7 @@ import vehicleModelRouter from '../modules/rentacar/routes/vehicle-model.router'
 import locationRouter from '../modules/rentacar/routes/location.router';
 import locationPricingRouter from '../modules/rentacar/routes/location-pricing.router';
 import locationDeliveryPricingRouter from '../modules/rentacar/routes/location-delivery-pricing.router';
+import extraRouter from '../modules/rentacar/routes/extra.router';
 import authRouter from '../modules/auth/routes/auth.router';
 import languageRouter from '../modules/shared/routes/language.router';
 import destinationRouter from '../modules/shared/routes/destination.router';
@@ -57,6 +58,7 @@ export const registerRoutes = (app: Express) => {
   app.use('/api/rentacar/locations', locationRouter);
   app.use('/api/rentacar/location-pricing', locationPricingRouter);
   app.use('/api/rentacar/location-delivery-pricing', locationDeliveryPricingRouter);
+  app.use('/api/rentacar/extras', extraRouter);
   app.use('/api/translation', translationRouter);
   app.use('/api/currencies', currencyRouter);
   app.use('/api/settings', tenantSettingsRouter);
