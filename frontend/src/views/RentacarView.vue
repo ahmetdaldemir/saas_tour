@@ -12,6 +12,18 @@
             <v-icon start icon="mdi-car" />
             Araçlar
           </v-tab>
+          <v-tab value="categories">
+            <v-icon start icon="mdi-tag" />
+            Kategoriler
+          </v-tab>
+          <v-tab value="brands">
+            <v-icon start icon="mdi-alpha-b-box" />
+            Markalar
+          </v-tab>
+          <v-tab value="models">
+            <v-icon start icon="mdi-shape" />
+            Modeller
+          </v-tab>
           <v-tab value="locations">
             <v-icon start icon="mdi-map-marker" />
             Lokasyonlar
@@ -249,6 +261,153 @@
             </v-card>
           </v-window-item>
 
+          <!-- Kategoriler Sekmesi -->
+          <v-window-item value="categories">
+            <v-card elevation="0" class="mb-4">
+              <v-card-title class="d-flex align-center justify-space-between px-4 py-3">
+                <span class="text-h6 font-weight-bold">Araç Kategorileri</span>
+                <div class="d-flex align-center gap-2">
+                  <v-btn icon="mdi-refresh" variant="text" @click="loadVehicleCategories" />
+                  <v-btn color="primary" prepend-icon="mdi-plus" @click="showCategoryDialog = true">
+                    Yeni Kategori Ekle
+                  </v-btn>
+                </div>
+              </v-card-title>
+              <v-divider />
+              <v-card-text class="pa-0">
+                <v-data-table
+                  :headers="categoryTableHeaders"
+                  :items="vehicleCategories"
+                  :loading="loadingCategories"
+                  item-value="id"
+                  class="elevation-0"
+                >
+                  <template #item.name="{ item }">
+                    {{ getCategoryName(item) }}
+                  </template>
+                  <template #item.translations="{ item }">
+                    <div class="d-flex flex-wrap gap-1">
+                      <v-chip
+                        v-for="trans in item.translations"
+                        :key="trans.id"
+                        size="small"
+                        color="primary"
+                        variant="tonal"
+                      >
+                        {{ trans.language?.code?.toUpperCase() || 'N/A' }}: {{ trans.name }}
+                      </v-chip>
+                    </div>
+                  </template>
+                  <template #item.isActive="{ item }">
+                    <v-chip :color="item.isActive ? 'success' : 'grey'" size="small" variant="tonal">
+                      {{ item.isActive ? 'Aktif' : 'Pasif' }}
+                    </v-chip>
+                  </template>
+                  <template #item.actions="{ item }">
+                    <v-btn icon="mdi-pencil" variant="text" size="small" @click="editCategory(item)" />
+                    <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="deleteCategory(item.id)" />
+                  </template>
+                </v-data-table>
+              </v-card-text>
+            </v-card>
+          </v-window-item>
+
+          <!-- Markalar Sekmesi -->
+          <v-window-item value="brands">
+            <v-card elevation="0" class="mb-4">
+              <v-card-title class="d-flex align-center justify-space-between px-4 py-3">
+                <span class="text-h6 font-weight-bold">Araç Markaları</span>
+                <div class="d-flex align-center gap-2">
+                  <v-btn icon="mdi-refresh" variant="text" @click="loadVehicleBrands" />
+                  <v-btn color="primary" prepend-icon="mdi-plus" @click="showBrandDialog = true">
+                    Yeni Marka Ekle
+                  </v-btn>
+                </div>
+              </v-card-title>
+              <v-divider />
+              <v-card-text class="pa-0">
+                <v-data-table
+                  :headers="brandTableHeaders"
+                  :items="vehicleBrands"
+                  :loading="loadingBrands"
+                  item-value="id"
+                  class="elevation-0"
+                >
+                  <template #item.isActive="{ item }">
+                    <v-chip :color="item.isActive ? 'success' : 'grey'" size="small" variant="tonal">
+                      {{ item.isActive ? 'Aktif' : 'Pasif' }}
+                    </v-chip>
+                  </template>
+                  <template #item.models="{ item }">
+                    <v-chip size="small" color="info" variant="tonal">
+                      {{ item.models?.length || 0 }} Model
+                    </v-chip>
+                  </template>
+                  <template #item.actions="{ item }">
+                    <v-btn icon="mdi-pencil" variant="text" size="small" @click="editBrand(item)" />
+                    <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="deleteBrand(item.id)" />
+                  </template>
+                </v-data-table>
+              </v-card-text>
+            </v-card>
+          </v-window-item>
+
+          <!-- Modeller Sekmesi -->
+          <v-window-item value="models">
+            <v-card elevation="0" class="mb-4">
+              <v-card-title class="d-flex align-center justify-space-between px-4 py-3">
+                <span class="text-h6 font-weight-bold">Araç Modelleri</span>
+                <div class="d-flex align-center gap-2">
+                  <v-select
+                    v-model="selectedBrandForModels"
+                    :items="brandFilterOptions"
+                    item-title="label"
+                    item-value="value"
+                    label="Marka Filtresi"
+                    prepend-inner-icon="mdi-filter"
+                    density="compact"
+                    clearable
+                    style="max-width: 250px;"
+                    hide-details
+                    @update:model-value="handleModelBrandFilter"
+                  />
+                  <v-btn icon="mdi-refresh" variant="text" @click="loadVehicleModels" />
+                  <v-btn
+                    color="primary"
+                    prepend-icon="mdi-plus"
+                    @click="showModelDialog = true"
+                    :disabled="!selectedBrandForModels"
+                  >
+                    Yeni Model Ekle
+                  </v-btn>
+                </div>
+              </v-card-title>
+              <v-divider />
+              <v-card-text class="pa-0">
+                <v-data-table
+                  :headers="modelTableHeaders"
+                  :items="filteredModelsForTable"
+                  :loading="loadingModels"
+                  item-value="id"
+                  class="elevation-0"
+                >
+                  <template #item.brand="{ item }">
+                    {{ getBrandName(item.brandId) }}
+                  </template>
+                  <template #item.isActive="{ item }">
+                    <v-chip :color="item.isActive ? 'success' : 'grey'" size="small" variant="tonal">
+                      {{ item.isActive ? 'Aktif' : 'Pasif' }}
+                    </v-chip>
+                  </template>
+                  <template #item.actions="{ item }">
+                    <v-btn icon="mdi-pencil" variant="text" size="small" @click="editModel(item)" />
+                    <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="deleteModel(item.id)" />
+                  </template>
+                </v-data-table>
+              </v-card-text>
+            </v-card>
+          </v-window-item>
+
           <!-- Lokasyonlar Sekmesi -->
           <v-window-item value="locations">
             <!-- Lokasyon Listesi -->
@@ -394,220 +553,110 @@
             <div class="d-flex align-center gap-2">
               <v-icon icon="mdi-car" size="24" />
               <span class="text-h6">{{ editingVehicle ? 'Araç Düzenle' : 'Yeni Araç Ekle' }}</span>
-              <v-chip v-if="activeTab" size="small" color="primary" variant="tonal" class="ml-2">
-                {{ getTabName(activeTab) }}
-              </v-chip>
             </div>
             <v-btn icon="mdi-close" variant="text" @click="closeVehicleDialog" />
           </v-card-title>
           <v-divider />
           <v-card-text class="pa-0">
-            <v-tabs v-model="activeTab" show-arrows>
-              <v-tab value="category">
-                <v-icon start icon="mdi-tag" />
-                Kategoriler
-              </v-tab>
-              <v-tab value="brand">
-                <v-icon start icon="mdi-alpha-b-box" />
-                Marka
-              </v-tab>
-              <v-tab value="model">
-                <v-icon start icon="mdi-shape" />
-                Model
-              </v-tab>
-              <v-tab value="vehicle">
-                <v-icon start icon="mdi-car" />
-                Araçlar
-              </v-tab>
-            </v-tabs>
-            <v-divider />
-            <v-window v-model="activeTab">
-              <!-- Kategoriler Sekmesi -->
-              <v-window-item value="category">
-                <div class="pa-6">
-                  <h3 class="text-h6 mb-4">Kategori Seç veya Oluştur</h3>
+            <v-progress-linear
+              v-if="loadingCategories || loadingBrands"
+              indeterminate
+              color="primary"
+              class="mb-0"
+            />
+            <div class="pa-6">
+
+              <!-- Araç Detay Bilgileri -->
+              <h3 class="text-h6 mb-4">Araç Detay Bilgileri</h3>
                   
-                  <!-- Yeni Kategori Ekle -->
-                  <v-card variant="outlined" class="mb-4">
-                    <v-card-title class="text-subtitle-1">Yeni Kategori Ekle</v-card-title>
-                    <v-card-text>
-                      <v-form ref="categoryFormRef" v-model="categoryFormValid">
-                        <v-tabs v-model="categoryLanguageTab" density="compact" class="mb-4">
-                          <v-tab
-                            v-for="lang in availableLanguages"
-                            :key="lang.id"
-                            :value="lang.id"
-                          >
-                            {{ lang.name }} ({{ lang.code }})
-                            <v-chip v-if="lang.isDefault" size="x-small" color="primary" class="ml-1">Varsayılan</v-chip>
-                          </v-tab>
-                        </v-tabs>
-                        <v-window v-model="categoryLanguageTab">
-                          <v-window-item
-                            v-for="lang in availableLanguages"
-                            :key="lang.id"
-                            :value="lang.id"
-                          >
-                            <v-text-field
-                              v-model="categoryForm.translations[lang.id]"
-                              :label="`Kategori Adı (${lang.name})`"
-                              :placeholder="lang.isDefault ? 'Varsayılan dil - diğer dillere otomatik çevrilecek' : 'Bu dil için kategori adı'"
-                              prepend-inner-icon="mdi-tag"
-                              required
-                              :hint="lang.isDefault ? 'Varsayılan dil - diğer dillere otomatik çevrilecek' : 'Bu dil için kategori adı'"
-                              persistent-hint
-                            />
-                          </v-window-item>
-                        </v-window>
-                        <v-btn color="primary" @click="saveCategory" :loading="savingCategory" :disabled="!categoryFormValid">
-                          Kategori Ekle
-                        </v-btn>
-                      </v-form>
-                    </v-card-text>
-                  </v-card>
-
-                  <!-- Mevcut Kategoriler -->
-                  <v-card variant="outlined">
-                    <v-card-title class="text-subtitle-1">Mevcut Kategoriler</v-card-title>
-                    <v-card-text>
-                      <v-list v-if="vehicleCategories.length > 0">
-                        <v-list-item
-                          v-for="category in vehicleCategories"
-                          :key="category.id"
-                          :class="{ 'bg-primary-lighten-5': form.categoryId === category.id }"
-                          @click="selectCategory(category.id)"
-                        >
-                          <template #prepend>
-                            <v-radio :model-value="form.categoryId" :value="category.id" />
-                          </template>
-                          <v-list-item-title>{{ getCategoryName(category) }}</v-list-item-title>
-                          <template #append>
-                            <v-btn icon="mdi-pencil" variant="text" size="small" @click.stop="editCategory(category)" />
-                            <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click.stop="deleteCategory(category.id)" />
-                          </template>
-                        </v-list-item>
-                      </v-list>
-                      <v-alert v-else type="info" variant="tonal">Henüz kategori eklenmemiş.</v-alert>
-                    </v-card-text>
-                  </v-card>
-                </div>
-              </v-window-item>
-
-              <!-- Marka Sekmesi -->
-              <v-window-item value="brand">
-                <div class="pa-6">
-                  <h3 class="text-h6 mb-4">Marka Seç veya Oluştur</h3>
-                  
-                  <!-- Yeni Marka Ekle -->
-                  <v-card variant="outlined" class="mb-4">
-                    <v-card-title class="text-subtitle-1">Yeni Marka Ekle</v-card-title>
-                    <v-card-text>
-                      <v-form ref="brandFormRef" v-model="brandFormValid">
-                        <v-text-field
-                          v-model="brandForm.name"
-                          label="Marka Adı"
-                          prepend-inner-icon="mdi-alpha-b-box"
-                          required
-                        />
-                        <v-btn color="primary" @click="saveBrand" :loading="savingBrand" :disabled="!brandFormValid">
-                          Marka Ekle
-                        </v-btn>
-                      </v-form>
-                    </v-card-text>
-                  </v-card>
-
-                  <!-- Mevcut Markalar -->
-                  <v-card variant="outlined">
-                    <v-card-title class="text-subtitle-1">Mevcut Markalar</v-card-title>
-                    <v-card-text>
-                      <v-list v-if="vehicleBrands.length > 0">
-                        <v-list-item
-                          v-for="brand in vehicleBrands"
-                          :key="brand.id"
-                          :class="{ 'bg-primary-lighten-5': form.brandId === brand.id }"
-                          @click="selectBrand(brand.id)"
-                        >
-                          <template #prepend>
-                            <v-radio :model-value="form.brandId" :value="brand.id" />
-                          </template>
-                          <v-list-item-title>{{ brand.name }}</v-list-item-title>
-                          <template #append>
-                            <v-btn icon="mdi-pencil" variant="text" size="small" @click.stop="editBrand(brand)" />
-                            <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click.stop="deleteBrand(brand.id)" />
-                          </template>
-                        </v-list-item>
-                      </v-list>
-                      <v-alert v-else type="info" variant="tonal">Henüz marka eklenmemiş.</v-alert>
-                    </v-card-text>
-                  </v-card>
-                </div>
-              </v-window-item>
-
-              <!-- Model Sekmesi -->
-              <v-window-item value="model">
-                <div class="pa-6">
-                  <h3 class="text-h6 mb-4">Model Seç veya Oluştur</h3>
-                  <v-alert v-if="!form.brandId" type="warning" variant="tonal" class="mb-4">
-                    Önce bir marka seçmelisiniz.
-                  </v-alert>
-                  
-                  <template v-else>
-                    <!-- Yeni Model Ekle -->
-                    <v-card variant="outlined" class="mb-4">
-                      <v-card-title class="text-subtitle-1">Yeni Model Ekle</v-card-title>
-                      <v-card-text>
-                        <v-form ref="modelFormRef" v-model="modelFormValid">
-                          <v-text-field
-                            v-model="modelForm.name"
-                            label="Model Adı"
-                            prepend-inner-icon="mdi-shape"
-                            required
-                          />
-                          <v-btn color="primary" @click="saveModel" :loading="savingModel" :disabled="!modelFormValid">
-                            Model Ekle
-                          </v-btn>
-                        </v-form>
-                      </v-card-text>
-                    </v-card>
-
-                    <!-- Mevcut Modeller -->
-                    <v-card variant="outlined">
-                      <v-card-title class="text-subtitle-1">Mevcut Modeller ({{ selectedBrandName }})</v-card-title>
-                      <v-card-text>
-                        <v-list v-if="vehicleModels.length > 0">
-                          <v-list-item
-                            v-for="model in vehicleModels"
-                            :key="model.id"
-                            :class="{ 'bg-primary-lighten-5': form.modelId === model.id }"
-                            @click="selectModel(model.id)"
-                          >
-                            <template #prepend>
-                              <v-radio :model-value="form.modelId" :value="model.id" />
-                            </template>
-                            <v-list-item-title>{{ model.name }}</v-list-item-title>
-                            <template #append>
-                              <v-btn icon="mdi-pencil" variant="text" size="small" @click.stop="editModel(model)" />
-                              <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click.stop="deleteModel(model.id)" />
-                            </template>
-                          </v-list-item>
-                        </v-list>
-                        <v-alert v-else type="info" variant="tonal">Bu marka için henüz model eklenmemiş.</v-alert>
-                      </v-card-text>
-                    </v-card>
-                  </template>
-                </div>
-              </v-window-item>
-
-              <!-- Araçlar Sekmesi -->
-              <v-window-item value="vehicle">
-                <div class="pa-6">
-                  <h3 class="text-h6 mb-4">Araç Bilgileri</h3>
-                  <v-alert v-if="!form.categoryId || !form.brandId || !form.modelId" type="warning" variant="tonal" class="mb-4">
-                    Önce kategori, marka ve model seçmelisiniz.
-                  </v-alert>
-                  
-                  <v-form ref="vehicleFormRef" v-model="vehicleFormValid">
+              <v-form ref="vehicleFormRef" v-model="vehicleFormValid">
                     <v-row>
+                      <!-- Kategori Seçimi -->
+                      <v-col cols="12" md="4">
+                        <v-autocomplete
+                          v-model="form.categoryId"
+                          :items="categoryOptions"
+                          item-title="title"
+                          item-value="value"
+                          label="Araç Kategorisi *"
+                          placeholder="Kategori seçiniz"
+                          prepend-inner-icon="mdi-tag"
+                          :rules="[rules.required]"
+                          clearable
+                          variant="outlined"
+                          density="comfortable"
+                        >
+                          <template #append-inner>
+                            <v-btn
+                              icon="mdi-plus"
+                              variant="text"
+                              size="small"
+                              @click.stop="showCategoryDialog = true"
+                              title="Yeni Kategori Ekle"
+                            />
+                          </template>
+                        </v-autocomplete>
+                      </v-col>
+
+                      <!-- Marka Seçimi -->
+                      <v-col cols="12" md="4">
+                        <v-autocomplete
+                          v-model="form.brandId"
+                          :items="brandOptions"
+                          item-title="title"
+                          item-value="value"
+                          label="Araç Markası *"
+                          placeholder="Marka seçiniz"
+                          prepend-inner-icon="mdi-alpha-b-box"
+                          :rules="[rules.required]"
+                          clearable
+                          variant="outlined"
+                          density="comfortable"
+                          @update:model-value="handleBrandChange"
+                        >
+                          <template #append-inner>
+                            <v-btn
+                              icon="mdi-plus"
+                              variant="text"
+                              size="small"
+                              @click.stop="showBrandDialog = true"
+                              title="Yeni Marka Ekle"
+                            />
+                          </template>
+                        </v-autocomplete>
+                      </v-col>
+
+                      <!-- Model Seçimi -->
+                      <v-col cols="12" md="4">
+                        <v-autocomplete
+                          v-model="form.modelId"
+                          :items="filteredModelOptions"
+                          item-title="title"
+                          item-value="value"
+                          label="Araç Modeli *"
+                          placeholder="Model seçiniz"
+                          prepend-inner-icon="mdi-shape"
+                          :rules="[rules.required]"
+                          :disabled="!form.brandId"
+                          clearable
+                          variant="outlined"
+                          density="comfortable"
+                          :hint="!form.brandId ? 'Önce marka seçiniz' : ''"
+                          persistent-hint
+                        >
+                          <template #append-inner>
+                            <v-btn
+                              icon="mdi-plus"
+                              variant="text"
+                              size="small"
+                              :disabled="!form.brandId"
+                              @click.stop="showModelDialog = true"
+                              title="Yeni Model Ekle"
+                            />
+                          </template>
+                        </v-autocomplete>
+                      </v-col>
+
                       <v-col cols="12" md="6">
                         <v-text-field
                           v-model="form.name"
@@ -781,14 +830,135 @@
                     </v-row>
                   </v-form>
                 </div>
-              </v-window-item>
-            </v-window>
           </v-card-text>
           <v-divider />
           <v-card-actions>
             <v-spacer />
             <v-btn variant="text" @click="closeVehicleDialog">İptal</v-btn>
             <v-btn color="primary" @click="saveVehicle" :loading="savingVehicle" :disabled="!vehicleFormValid">
+              Kaydet
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <!-- Category Add Dialog -->
+      <v-dialog v-model="showCategoryDialog" max-width="600">
+        <v-card>
+          <v-card-title class="d-flex align-center justify-space-between">
+            <span class="text-h6">{{ editingCategory ? 'Kategori Düzenle' : 'Yeni Kategori Ekle' }}</span>
+            <v-btn icon="mdi-close" variant="text" @click="closeCategoryDialog" />
+          </v-card-title>
+          <v-divider />
+          <v-card-text class="pa-6">
+            <v-form ref="categoryFormRef" v-model="categoryFormValid">
+              <v-tabs v-model="categoryLanguageTab" density="compact" class="mb-4">
+                <v-tab
+                  v-for="lang in availableLanguages"
+                  :key="lang.id"
+                  :value="lang.id"
+                >
+                  {{ lang.name }}
+                </v-tab>
+              </v-tabs>
+              <v-window v-model="categoryLanguageTab">
+                <v-window-item
+                  v-for="lang in availableLanguages"
+                  :key="lang.id"
+                  :value="lang.id"
+                >
+                  <v-text-field
+                    v-model="categoryForm.translations[lang.id]"
+                    :label="`Kategori Adı (${lang.name})`"
+                    prepend-inner-icon="mdi-tag"
+                    required
+                  />
+                </v-window-item>
+              </v-window>
+            </v-form>
+          </v-card-text>
+          <v-divider />
+          <v-card-actions>
+            <v-spacer />
+            <v-btn variant="text" @click="closeCategoryDialog">İptal</v-btn>
+            <v-btn color="primary" @click="saveCategoryAndClose" :loading="savingCategory" :disabled="!categoryFormValid">
+              Kaydet
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <!-- Brand Add Dialog -->
+      <v-dialog v-model="showBrandDialog" max-width="500">
+        <v-card>
+          <v-card-title class="d-flex align-center justify-space-between">
+            <span class="text-h6">{{ editingBrand ? 'Marka Düzenle' : 'Yeni Marka Ekle' }}</span>
+            <v-btn icon="mdi-close" variant="text" @click="closeBrandDialog" />
+          </v-card-title>
+          <v-divider />
+          <v-card-text class="pa-6">
+            <v-form ref="brandFormRef" v-model="brandFormValid">
+              <v-text-field
+                v-model="brandForm.name"
+                label="Marka Adı"
+                prepend-inner-icon="mdi-alpha-b-box"
+                required
+              />
+            </v-form>
+          </v-card-text>
+          <v-divider />
+          <v-card-actions>
+            <v-spacer />
+            <v-btn variant="text" @click="closeBrandDialog">İptal</v-btn>
+            <v-btn color="primary" @click="saveBrandAndClose" :loading="savingBrand" :disabled="!brandFormValid">
+              Kaydet
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <!-- Model Add Dialog -->
+      <v-dialog v-model="showModelDialog" max-width="500">
+        <v-card>
+          <v-card-title class="d-flex align-center justify-space-between">
+            <span class="text-h6">{{ editingModel ? 'Model Düzenle' : 'Yeni Model Ekle' }}</span>
+            <v-btn icon="mdi-close" variant="text" @click="closeModelDialog" />
+          </v-card-title>
+          <v-divider />
+          <v-card-text class="pa-6">
+            <v-alert v-if="!form.brandId && !editingModel" type="warning" variant="tonal" class="mb-4">
+              Önce bir marka seçmelisiniz.
+            </v-alert>
+            <v-form v-if="form.brandId || editingModel" ref="modelFormRef" v-model="modelFormValid">
+              <v-select
+                v-if="editingModel"
+                v-model="form.brandId"
+                :items="vehicleBrands"
+                item-title="name"
+                item-value="id"
+                label="Marka"
+                prepend-inner-icon="mdi-alpha-b-box"
+                required
+                class="mb-4"
+              />
+              <v-text-field
+                v-model="modelForm.name"
+                label="Model Adı"
+                prepend-inner-icon="mdi-shape"
+                required
+              />
+            </v-form>
+          </v-card-text>
+          <v-divider />
+          <v-card-actions>
+            <v-spacer />
+            <v-btn variant="text" @click="closeModelDialog">İptal</v-btn>
+            <v-btn
+              color="primary"
+              @click="saveModelAndClose"
+              :loading="savingModel"
+              :disabled="!modelFormValid || (!form.brandId && !editingModel)"
+            >
               Kaydet
             </v-btn>
           </v-card-actions>
@@ -1589,6 +1759,7 @@ const vehicleReservations = ref<Array<{ vehicleId: string; plateId: string; star
 const mainTab = ref('vehicles');
 const vehicleFilter = ref<'all' | 'reserved' | 'available'>('all');
 const selectedBrandFilter = ref<string | null>(null);
+const selectedBrandForModels = ref<string | null>(null);
 const expandedVehicles = ref<Set<string>>(new Set());
 const expandedLocations = ref<Set<string>>(new Set());
 const showVehicleDialog = ref(false);
@@ -1596,9 +1767,14 @@ const showPlateDialog = ref(false);
 const showLocationDialog = ref(false);
 const showPricingDialog = ref(false);
 const showDeliveryPricingDialog = ref(false);
-const activeTab = ref('category');
+const showCategoryDialog = ref(false);
+const showBrandDialog = ref(false);
+const showModelDialog = ref(false);
 const loadingVehicles = ref(false);
 const loadingLocations = ref(false);
+const loadingCategories = ref(false);
+const loadingBrands = ref(false);
+const loadingModels = ref(false);
 const loadingPricing = ref(false);
 const loadingDeliveryPricing = ref(false);
 const savingVehicle = ref(false);
@@ -1700,6 +1876,9 @@ const categoryLanguageTab = ref('');
 
 // Editing state
 const editingVehicle = ref<VehicleDto | null>(null);
+const editingCategory = ref<VehicleCategoryDto | null>(null);
+const editingBrand = ref<VehicleBrandDto | null>(null);
+const editingModel = ref<VehicleModelDto | null>(null);
 
 // Location Form
 const locationForm = reactive({
@@ -1799,6 +1978,11 @@ const currencyOptions = [
   { value: 'EUR', title: 'Euro', symbol: '€' },
 ];
 
+// Validation rules
+const rules = {
+  required: (v: any) => !!v || 'Bu alan zorunludur',
+};
+
 // Table headers
 const tableHeaders = [
   { title: 'Plaka', key: 'plate', sortable: false, width: '100px' },
@@ -1809,6 +1993,30 @@ const tableHeaders = [
   { title: 'Yıl', key: 'year' },
   { title: 'Son Lokasyon', key: 'lastReturnLocation', sortable: false, width: '200px' },
   { title: 'Durum', key: 'status', sortable: false, width: '120px' },
+  { title: 'İşlemler', key: 'actions', sortable: false },
+];
+
+const categoryTableHeaders = [
+  { title: 'Kategori Adı', key: 'name' },
+  { title: 'Çeviriler', key: 'translations' },
+  { title: 'Sıra', key: 'sortOrder' },
+  { title: 'Durum', key: 'isActive' },
+  { title: 'İşlemler', key: 'actions', sortable: false },
+];
+
+const brandTableHeaders = [
+  { title: 'Marka Adı', key: 'name' },
+  { title: 'Modeller', key: 'models' },
+  { title: 'Sıra', key: 'sortOrder' },
+  { title: 'Durum', key: 'isActive' },
+  { title: 'İşlemler', key: 'actions', sortable: false },
+];
+
+const modelTableHeaders = [
+  { title: 'Model Adı', key: 'name' },
+  { title: 'Marka', key: 'brand' },
+  { title: 'Sıra', key: 'sortOrder' },
+  { title: 'Durum', key: 'isActive' },
   { title: 'İşlemler', key: 'actions', sortable: false },
 ];
 
@@ -1895,9 +2103,55 @@ const deliveryPricingTableHeaders = [
 const deliveryPricingTableData = ref<DeliveryPricingTableItem[]>([]);
 
 // Computed
+// Computed options for dropdowns
+const categoryOptions = computed(() => {
+  return vehicleCategories.value.map(cat => ({
+    title: getCategoryName(cat),
+    value: cat.id,
+  }));
+});
+
+const brandOptions = computed(() => {
+  return vehicleBrands.value.map(brand => ({
+    title: brand.name,
+    value: brand.id,
+  }));
+});
+
+const modelOptions = computed(() => {
+  return vehicleModels.value.map(model => ({
+    title: model.name,
+    value: model.id,
+  }));
+});
+
+// Filtered models based on selected brand
+const filteredModelOptions = computed(() => {
+  if (!form.brandId) {
+    return [];
+  }
+  return vehicleModels.value
+    .filter(model => model.brandId === form.brandId)
+    .map(model => ({
+      title: model.name,
+      value: model.id,
+    }));
+});
+
+// Selected names for display
+const selectedCategoryName = computed(() => {
+  const category = vehicleCategories.value.find(c => c.id === form.categoryId);
+  return category ? getCategoryName(category) : '';
+});
+
 const selectedBrandName = computed(() => {
   const brand = vehicleBrands.value.find(b => b.id === form.brandId);
   return brand?.name || '';
+});
+
+const selectedModelName = computed(() => {
+  const model = vehicleModels.value.find(m => m.id === form.modelId);
+  return model?.name || '';
 });
 
 const brandFilterOptions = computed(() => {
@@ -1912,6 +2166,28 @@ const brandFilterOptions = computed(() => {
   });
   return options;
 });
+
+const filteredModelsForTable = computed(() => {
+  if (!selectedBrandForModels.value) {
+    return vehicleModels.value;
+  }
+  return vehicleModels.value.filter(model => model.brandId === selectedBrandForModels.value);
+});
+
+const getBrandName = (brandId?: string | null): string => {
+  if (!brandId) return '-';
+  const brand = vehicleBrands.value.find(b => b.id === brandId);
+  return brand?.name || '-';
+};
+
+const handleModelBrandFilter = (brandId: string | null) => {
+  selectedBrandForModels.value = brandId;
+  if (brandId) {
+    loadVehicleModels(brandId);
+  } else {
+    loadVehicleModels();
+  }
+};
 
 const availableLocations = computed(() => {
   return locations.value.filter(loc => loc.isActive).map(loc => ({
@@ -1998,16 +2274,6 @@ const filteredVehicles = computed(() => {
 });
 
 // Methods
-const getTabName = (tab: string) => {
-  const names: Record<string, string> = {
-    category: 'Kategoriler',
-    brand: 'Marka',
-    model: 'Model',
-    vehicle: 'Araçlar',
-  };
-  return names[tab] || tab;
-};
-
 const getCategoryName = (category: VehicleCategoryDto): string => {
   const defaultLang = availableLanguages.value.find(l => l.isDefault) || availableLanguages.value[0];
   if (!defaultLang) return 'Kategori';
@@ -2095,30 +2361,42 @@ const loadLanguages = async () => {
 };
 
 const loadVehicleCategories = async () => {
+  loadingCategories.value = true;
   try {
     const { data } = await http.get<VehicleCategoryDto[]>('/vehicle-categories');
     vehicleCategories.value = data;
+    console.log('Loaded categories:', data.length);
   } catch (error) {
     console.error('Failed to load vehicle categories:', error);
+  } finally {
+    loadingCategories.value = false;
   }
 };
 
 const loadVehicleBrands = async () => {
+  loadingBrands.value = true;
   try {
     const { data } = await http.get<VehicleBrandDto[]>('/vehicle-brands');
     vehicleBrands.value = data;
+    console.log('Loaded brands:', data.length);
   } catch (error) {
     console.error('Failed to load vehicle brands:', error);
+  } finally {
+    loadingBrands.value = false;
   }
 };
 
 const loadVehicleModels = async (brandId?: string) => {
+  loadingModels.value = true;
   try {
     const params = brandId ? { brandId } : {};
     const { data } = await http.get<VehicleModelDto[]>('/vehicle-models', { params });
     vehicleModels.value = data;
+    console.log('Loaded models:', data.length, brandId ? `for brand ${brandId}` : '');
   } catch (error) {
     console.error('Failed to load vehicle models:', error);
+  } finally {
+    loadingModels.value = false;
   }
 };
 
@@ -2159,11 +2437,18 @@ const loadVehicles = async () => {
   }
 };
 
-const openCreateDialog = () => {
+const openCreateDialog = async () => {
   editingVehicle.value = null;
   resetForm();
-  showVehicleDialog.value = true;
-  activeTab.value = 'category';
+  showVehicleDialog.value = true; // Dialog'u hemen aç ki kullanıcı alanları görebilsin
+  // Load all data for dropdowns (asenkron yüklenecek)
+  Promise.all([
+    loadVehicleCategories(),
+    loadVehicleBrands(),
+    loadVehicleModels(),
+  ]).catch(err => {
+    console.error('Error loading dropdown data:', err);
+  });
 };
 
 const closeVehicleDialog = () => {
@@ -2258,13 +2543,21 @@ const saveCategory = async () => {
       return;
     }
     
-    await http.post('/vehicle-categories', { translations });
+    if (editingCategory.value) {
+      // Update existing category
+      await http.put(`/vehicle-categories/${editingCategory.value.id}`, { translations });
+    } else {
+      // Create new category
+      await http.post('/vehicle-categories', { translations });
+    }
+    
     await loadVehicleCategories();
     
     // Reset form
     availableLanguages.value.forEach(lang => {
       categoryForm.translations[lang.id] = '';
     });
+    editingCategory.value = null;
   } catch (error: any) {
     alert(error.response?.data?.message || 'Kategori eklenirken bir hata oluştu');
   } finally {
@@ -2272,9 +2565,35 @@ const saveCategory = async () => {
   }
 };
 
+const saveCategoryAndClose = async () => {
+  await saveCategory();
+  if (!savingCategory.value) {
+    showCategoryDialog.value = false;
+    editingCategory.value = null;
+    // Reset form
+    availableLanguages.value.forEach(lang => {
+      categoryForm.translations[lang.id] = '';
+    });
+  }
+};
+
+const closeCategoryDialog = () => {
+  showCategoryDialog.value = false;
+  editingCategory.value = null;
+  // Reset form
+  availableLanguages.value.forEach(lang => {
+    categoryForm.translations[lang.id] = '';
+  });
+};
+
 const editCategory = (category: VehicleCategoryDto) => {
-  // TODO: Implement edit category
-  alert('Kategori düzenleme özelliği yakında eklenecek');
+  editingCategory.value = category;
+  // Load translations
+  availableLanguages.value.forEach(lang => {
+    const translation = category.translations?.find(t => t.languageId === lang.id);
+    categoryForm.translations[lang.id] = translation?.name || '';
+  });
+  showCategoryDialog.value = true;
 };
 
 const deleteCategory = async (id: string) => {
@@ -2287,11 +2606,33 @@ const deleteCategory = async (id: string) => {
   }
 };
 
-// Brand methods
-const selectBrand = (brandId: string) => {
+// Brand change handler
+const handleBrandChange = (brandId: string | null) => {
   form.brandId = brandId;
   form.modelId = null; // Reset model when brand changes
-  loadVehicleModels(brandId);
+  if (brandId) {
+    loadVehicleModels(brandId);
+  } else {
+    vehicleModels.value = [];
+  }
+};
+
+// Legacy methods (kept for backward compatibility if needed)
+// selectBrand and selectModel are defined below in their respective sections
+
+const saveBrandAndClose = async () => {
+  await saveBrand();
+  if (!savingBrand.value) {
+    showBrandDialog.value = false;
+    editingBrand.value = null;
+    brandForm.name = '';
+  }
+};
+
+const closeBrandDialog = () => {
+  showBrandDialog.value = false;
+  editingBrand.value = null;
+  brandForm.name = '';
 };
 
 const saveBrand = async () => {
@@ -2300,19 +2641,27 @@ const saveBrand = async () => {
   
   savingBrand.value = true;
   try {
-    await http.post('/vehicle-brands', { name: brandForm.name });
+    if (editingBrand.value) {
+      // Update existing brand
+      await http.put(`/vehicle-brands/${editingBrand.value.id}`, { name: brandForm.name });
+    } else {
+      // Create new brand
+      await http.post('/vehicle-brands', { name: brandForm.name });
+    }
     await loadVehicleBrands();
     brandForm.name = '';
+    editingBrand.value = null;
   } catch (error: any) {
-    alert(error.response?.data?.message || 'Marka eklenirken bir hata oluştu');
+    alert(error.response?.data?.message || 'Marka kaydedilirken bir hata oluştu');
   } finally {
     savingBrand.value = false;
   }
 };
 
 const editBrand = (brand: VehicleBrandDto) => {
-  // TODO: Implement edit brand
-  alert('Marka düzenleme özelliği yakında eklenecek');
+  editingBrand.value = brand;
+  brandForm.name = brand.name;
+  showBrandDialog.value = true;
 };
 
 const deleteBrand = async (id: string) => {
@@ -2330,8 +2679,23 @@ const selectModel = (modelId: string) => {
   form.modelId = modelId;
 };
 
+const saveModelAndClose = async () => {
+  await saveModel();
+  if (!savingModel.value) {
+    showModelDialog.value = false;
+    editingModel.value = null;
+    modelForm.name = '';
+  }
+};
+
+const closeModelDialog = () => {
+  showModelDialog.value = false;
+  editingModel.value = null;
+  modelForm.name = '';
+};
+
 const saveModel = async () => {
-  if (!form.brandId) {
+  if (!form.brandId && !editingModel.value) {
     alert('Önce bir marka seçmelisiniz');
     return;
   }
@@ -2341,22 +2705,40 @@ const saveModel = async () => {
   
   savingModel.value = true;
   try {
-    await http.post('/vehicle-models', {
-      brandId: form.brandId,
-      name: modelForm.name,
-    });
-    await loadVehicleModels(form.brandId || undefined);
+    const brandId = editingModel.value?.brandId || form.brandId;
+    if (!brandId) {
+      alert('Marka bilgisi bulunamadı');
+      return;
+    }
+    
+    if (editingModel.value) {
+      // Update existing model
+      await http.put(`/vehicle-models/${editingModel.value.id}`, {
+        brandId,
+        name: modelForm.name,
+      });
+    } else {
+      // Create new model
+      await http.post('/vehicle-models', {
+        brandId,
+        name: modelForm.name,
+      });
+    }
+    await loadVehicleModels(selectedBrandForModels.value || undefined);
     modelForm.name = '';
+    editingModel.value = null;
   } catch (error: any) {
-    alert(error.response?.data?.message || 'Model eklenirken bir hata oluştu');
+    alert(error.response?.data?.message || 'Model kaydedilirken bir hata oluştu');
   } finally {
     savingModel.value = false;
   }
 };
 
 const editModel = (model: VehicleModelDto) => {
-  // TODO: Implement edit model
-  alert('Model düzenleme özelliği yakında eklenecek');
+  editingModel.value = model;
+  modelForm.name = model.name;
+  form.brandId = model.brandId || null;
+  showModelDialog.value = true;
 };
 
 const deleteModel = async (id: string) => {
@@ -2426,7 +2808,7 @@ const saveVehicle = async () => {
   }
 };
 
-const editVehicle = (vehicle: VehicleDto) => {
+const editVehicle = async (vehicle: VehicleDto) => {
   editingVehicle.value = vehicle;
   Object.assign(form, {
     name: vehicle.name,
@@ -2455,12 +2837,15 @@ const editVehicle = (vehicle: VehicleDto) => {
     description: vehicle.description || '',
   });
   
-  if (vehicle.brandId) {
-    loadVehicleModels(vehicle.brandId || undefined);
-  }
-  
-  showVehicleDialog.value = true;
-  activeTab.value = 'vehicle';
+  showVehicleDialog.value = true; // Dialog'u hemen aç ki kullanıcı alanları görebilsin
+  // Load all data for dropdowns (asenkron yüklenecek)
+  Promise.all([
+    loadVehicleCategories(),
+    loadVehicleBrands(),
+    vehicle.brandId ? loadVehicleModels(vehicle.brandId || undefined) : loadVehicleModels(),
+  ]).catch(err => {
+    console.error('Error loading dropdown data:', err);
+  });
 };
 
 const deleteVehicle = async (id: string) => {
@@ -3233,10 +3618,27 @@ onMounted(async () => {
       loadLanguages(),
       loadVehicleCategories(),
       loadVehicleBrands(),
+      loadVehicleModels(), // Tüm modelleri yükle (marka filtresi olmadan)
       loadVehicles(),
       loadLocations(),
     ]);
+    console.log('Initial data loaded:', {
+      categories: vehicleCategories.value.length,
+      brands: vehicleBrands.value.length,
+      models: vehicleModels.value.length,
+    });
   }
+  
+  // Watch for tab changes to load data when switching tabs
+  watch(mainTab, (newTab) => {
+    if (newTab === 'categories') {
+      loadVehicleCategories();
+    } else if (newTab === 'brands') {
+      loadVehicleBrands();
+    } else if (newTab === 'models') {
+      loadVehicleModels(selectedBrandForModels.value || undefined);
+    }
+  });
 });
 </script>
 

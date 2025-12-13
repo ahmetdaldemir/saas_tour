@@ -19,6 +19,9 @@ import CustomersView from '../views/CustomersView.vue';
 import SettingsView from '../views/SettingsView.vue';
 import SurveysView from '../views/SurveysView.vue';
 import EmailTemplatesView from '../views/EmailTemplatesView.vue';
+import UsersView from '../views/UsersView.vue';
+import TransferView from '../views/TransferView.vue';
+import ChatView from '../views/ChatView.vue';
 import { useAuthStore } from '../stores/auth';
 
 const routes: RouteRecordRaw[] = [
@@ -138,6 +141,24 @@ const routes: RouteRecordRaw[] = [
     path: '/app/email-templates',
     name: 'email-templates',
     component: EmailTemplatesView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/users',
+    name: 'users',
+    component: UsersView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/transfer',
+    name: 'transfer',
+    component: TransferView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/chat',
+    name: 'chat',
+    component: ChatView,
     meta: { requiresAuth: true, layout: 'admin' },
   },
   {

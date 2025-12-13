@@ -97,12 +97,27 @@
                         variant="outlined"
                         density="comfortable"
                         accept="image/*"
-                        :rules="[v => !v || (v instanceof File && v.size < 5000000) || 'Dosya boyutu 5MB\'dan küçük olmalıdır']"
-                        @update:model-value="handleLogoUpload"
+                        :rules="[(v: any) => {
+                          if (!v) return true;
+                          if (v && typeof v === 'object' && 'size' in v) {
+                            return v.size < 5000000 || 'Dosya boyutu 5MB\'dan küçük olmalıdır';
+                          }
+                          return true;
+                        }]"
                         :loading="uploadingLogo"
                         show-size
                         clearable
                       />
+                      <v-btn
+                        v-if="logoFile && !uploadingLogo"
+                        color="primary"
+                        size="small"
+                        prepend-icon="mdi-upload"
+                        @click="handleLogoUpload"
+                        class="mt-2"
+                      >
+                        Logo Yükle
+                      </v-btn>
                       <v-img
                         v-if="uploadedLogoUrl"
                         :src="getImageUrl(uploadedLogoUrl)"
@@ -122,12 +137,27 @@
                         variant="outlined"
                         density="comfortable"
                         accept="image/*,.ico"
-                        :rules="[v => !v || (v instanceof File && v.size < 5000000) || 'Dosya boyutu 5MB\'dan küçük olmalıdır']"
-                        @update:model-value="handleFaviconUpload"
+                        :rules="[(v: any) => {
+                          if (!v) return true;
+                          if (v && typeof v === 'object' && 'size' in v) {
+                            return v.size < 5000000 || 'Dosya boyutu 5MB\'dan küçük olmalıdır';
+                          }
+                          return true;
+                        }]"
                         :loading="uploadingFavicon"
                         show-size
                         clearable
                       />
+                      <v-btn
+                        v-if="faviconFile && !uploadingFavicon"
+                        color="primary"
+                        size="small"
+                        prepend-icon="mdi-upload"
+                        @click="handleFaviconUpload"
+                        class="mt-2"
+                      >
+                        Favicon Yükle
+                      </v-btn>
                       <v-img
                         v-if="uploadedFaviconUrl"
                         :src="getImageUrl(uploadedFaviconUrl)"
@@ -602,7 +632,9 @@ const savePaymentSettings = async () => {
 
 // File upload handlers
 const handleLogoUpload = async () => {
-  if (!logoFile.value) return;
+  if (!logoFile.value || !(logoFile.value instanceof File)) {
+    return;
+  }
   
   uploadingLogo.value = true;
   try {
@@ -619,22 +651,26 @@ const handleLogoUpload = async () => {
       uploadedLogoUrl.value = data.url;
       // Save to settings
       await http.put('/settings/site', {
-        tenantId: auth.tenant.id,
+        tenantId: auth.tenant!.id,
         ...siteForm.value,
         logoUrl: data.url, // Save URL to backend
       });
       logoFile.value = null; // Clear file input after successful upload
+      alert('Logo başarıyla yüklendi');
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to upload logo:', error);
-    alert('Logo yüklenirken bir hata oluştu');
+    const errorMessage = error.response?.data?.message || 'Logo yüklenirken bir hata oluştu';
+    alert(errorMessage);
   } finally {
     uploadingLogo.value = false;
   }
 };
 
 const handleFaviconUpload = async () => {
-  if (!faviconFile.value) return;
+  if (!faviconFile.value || !(faviconFile.value instanceof File)) {
+    return;
+  }
   
   uploadingFavicon.value = true;
   try {
@@ -651,15 +687,17 @@ const handleFaviconUpload = async () => {
       uploadedFaviconUrl.value = data.url;
       // Save to settings
       await http.put('/settings/site', {
-        tenantId: auth.tenant.id,
+        tenantId: auth.tenant!.id,
         ...siteForm.value,
         faviconUrl: data.url, // Save URL to backend
       });
       faviconFile.value = null; // Clear file input after successful upload
+      alert('Favicon başarıyla yüklendi');
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to upload favicon:', error);
-    alert('Favicon yüklenirken bir hata oluştu');
+    const errorMessage = error.response?.data?.message || 'Favicon yüklenirken bir hata oluştu';
+    alert(errorMessage);
   } finally {
     uploadingFavicon.value = false;
   }

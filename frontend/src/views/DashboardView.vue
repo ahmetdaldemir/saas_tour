@@ -3,101 +3,108 @@
     <!-- Currency Rates - Üst Kısım -->
     <v-row class="mb-6">
       <v-col cols="12">
-        <v-card elevation="0" rounded="xl" class="currency-card-modern">
-          <v-card-title class="currency-card-header">
-            <div class="d-flex align-center">
-              <div class="currency-icon-wrapper">
-                <v-icon icon="mdi-trending-up" size="28" />
+        <v-card elevation="1" rounded="lg" class="currency-section-card">
+          <v-card-title class="px-6 py-4 border-b">
+            <div class="d-flex align-center justify-space-between w-100">
+              <div class="d-flex align-center">
+                <v-icon icon="mdi-currency-usd" size="24" class="mr-3 text-primary" />
+                <div>
+                  <div class="text-h6 font-weight-medium">Döviz Kurları</div>
+                  <div class="text-caption text-medium-emphasis">Güncel döviz kuru bilgileri</div>
+                </div>
               </div>
-              <div class="ml-3">
-                <div class="text-h6 font-weight-bold text-white">Döviz Kurları</div>
-                <div class="text-caption text-white text-opacity-80">Güncel kur bilgileri</div>
-              </div>
+              <v-btn
+                icon="mdi-refresh"
+                size="small"
+                variant="outlined"
+                color="primary"
+                :loading="updatingRates"
+                @click="updateCurrencyRates"
+              >
+                <v-icon>mdi-refresh</v-icon>
+              </v-btn>
             </div>
-            <v-btn
-              icon="mdi-refresh"
-              size="small"
-              variant="text"
-              color="white"
-              :loading="updatingRates"
-              @click="updateCurrencyRates"
-              class="refresh-btn"
-              title="Kurları Güncelle"
-            >
-              <v-icon>mdi-refresh</v-icon>
-              <v-tooltip activator="parent" location="bottom">Kurları Güncelle</v-tooltip>
-            </v-btn>
           </v-card-title>
           
-          <v-card-text class="currency-card-content">
-            <div v-if="currencies.length > 0" class="currency-grid-modern">
-              <v-card
-                v-for="(currency, index) in currencies"
-                :key="currency.id"
-                :class="['currency-card-item', { 'currency-base-card': currency.isBaseCurrency }]"
-                elevation="0"
-                rounded="lg"
-                :style="{ animationDelay: `${index * 0.05}s` }"
-              >
-                <div class="currency-item-content">
-                  <div class="currency-item-header">
-                    <div class="d-flex align-center">
-                      <div
-                        :class="['currency-code-badge', currency.isBaseCurrency ? 'badge-primary' : 'badge-default']"
-                      >
-                        {{ currency.code }}
+          <v-card-text class="pa-6">
+            <div v-if="currencies.length > 0">
+              <v-row>
+                <v-col
+                  v-for="currency in currencies"
+                  :key="currency.id"
+                  cols="12"
+                  sm="6"
+                  md="3"
+                >
+                  <v-card
+                    elevation="0"
+                    rounded="lg"
+                    :class="['currency-item-card', { 'currency-base-item': currency.isBaseCurrency }]"
+                    variant="outlined"
+                  >
+                    <v-card-text class="pa-4">
+                      <div class="d-flex align-center justify-space-between mb-3">
+                        <div class="d-flex align-center">
+                          <div
+                            :class="[
+                              'currency-code-box',
+                              currency.isBaseCurrency ? 'code-box-primary' : 'code-box-default'
+                            ]"
+                          >
+                            {{ currency.code }}
+                          </div>
+                          <div class="ml-3">
+                            <div class="text-body-2 font-weight-medium">{{ currency.name }}</div>
+                            <div v-if="currency.symbol" class="text-caption text-medium-emphasis">
+                              {{ currency.symbol }}
+                            </div>
+                          </div>
+                        </div>
+                        <v-chip
+                          v-if="currency.autoUpdate"
+                          color="success"
+                          size="x-small"
+                          variant="tonal"
+                        >
+                          <v-icon start icon="mdi-sync" size="12" />
+                          Otomatik
+                        </v-chip>
                       </div>
-                      <div class="currency-name-wrapper">
-                        <div class="currency-name">{{ currency.name }}</div>
-                        <div v-if="currency.symbol" class="currency-symbol">{{ currency.symbol }}</div>
+                      
+                      <div class="currency-rate-display mb-3">
+                        <div class="text-h5 font-weight-bold text-primary mb-1">
+                          {{ formatCurrencyRate(currency.rateToTry) }}
+                        </div>
+                        <div class="text-caption text-medium-emphasis">₺ Türk Lirası</div>
                       </div>
-                    </div>
-                    <v-chip
-                      v-if="currency.autoUpdate"
-                      color="success"
-                      size="x-small"
-                      variant="flat"
-                      class="auto-update-chip"
-                    >
-                      <v-icon start icon="mdi-sync" size="12" />
-                      Otomatik
-                    </v-chip>
-                  </div>
-                  
-                  <div class="currency-rate-section">
-                    <div class="rate-main">
-                      <span class="rate-value-modern">{{ formatCurrencyRate(currency.rateToTry) }}</span>
-                    </div>
-                    <div class="rate-label-modern">Türk Lirası Karşılığı</div>
-                  </div>
-                  
-                  <v-divider class="my-3" />
-                  
-                  <div class="currency-footer-modern">
-                    <div class="d-flex align-center">
-                      <v-icon icon="mdi-clock-time-four-outline" size="16" class="mr-1 text-medium-emphasis" />
-                      <span class="text-caption text-medium-emphasis">
-                        {{ formatDateTime(currency.lastUpdatedAt) }}
-                      </span>
-                    </div>
-                    <v-chip
-                      v-if="currency.isBaseCurrency"
-                      color="primary"
-                      size="x-small"
-                      variant="tonal"
-                    >
-                      Varsayılan
-                    </v-chip>
-                  </div>
-                </div>
-              </v-card>
+                      
+                      <v-divider class="my-3" />
+                      
+                      <div class="d-flex align-center justify-space-between">
+                        <div class="d-flex align-center">
+                          <v-icon icon="mdi-clock-outline" size="14" class="mr-1 text-medium-emphasis" />
+                          <span class="text-caption text-medium-emphasis">
+                            {{ formatDateTime(currency.lastUpdatedAt) }}
+                          </span>
+                        </div>
+                        <v-chip
+                          v-if="currency.isBaseCurrency"
+                          color="primary"
+                          size="x-small"
+                          variant="flat"
+                        >
+                          Varsayılan
+                        </v-chip>
+                      </div>
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+              </v-row>
             </div>
-            <div v-else class="currency-empty-state">
-              <div class="empty-state-content">
-                <v-icon icon="mdi-currency-usd" size="64" color="grey-lighten-1" class="mb-4" />
-                <p class="text-h6 text-medium-emphasis mb-2">Kur Bilgisi Bulunamadı</p>
-                <p class="text-body-2 text-medium-emphasis">Henüz döviz kuru eklenmemiş</p>
-              </div>
+            <div v-else class="text-center py-8">
+              <v-icon icon="mdi-currency-usd" size="48" color="grey-lighten-1" class="mb-3" />
+              <p class="text-body-1 text-medium-emphasis mb-1">Kur Bilgisi Bulunamadı</p>
+              <p class="text-caption text-medium-emphasis">Henüz döviz kuru eklenmemiş</p>
             </div>
           </v-card-text>
         </v-card>
@@ -1196,241 +1203,70 @@ onMounted(() => {
 .metric-card:nth-child(12) { animation-delay: 0.6s; }
 
 /* Currency Card - Modern Design */
-.currency-card-modern {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
-  overflow: hidden;
-  position: relative;
+/* Currency Section - Kurumsal Tasarım */
+.currency-section-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.currency-card-modern::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-  pointer-events: none;
+.currency-section-card .border-b {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
 }
 
-.currency-card-header {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  padding: 20px 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+.currency-item-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease;
+  height: 100%;
 }
 
-.currency-icon-wrapper {
-  width: 48px;
+.currency-item-card:hover {
+  border-color: rgba(25, 118, 210, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.currency-base-item {
+  border-color: rgba(25, 118, 210, 0.2);
+  background: rgba(25, 118, 210, 0.02);
+}
+
+.currency-code-box {
+  min-width: 48px;
   height: 48px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(10px);
-}
-
-.refresh-btn {
-  transition: transform 0.3s ease;
-}
-
-.refresh-btn:hover {
-  transform: rotate(180deg);
-}
-
-.currency-card-content {
-  padding: 24px;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.currency-grid-modern {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 20px;
-}
-
-.currency-card-item {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-  animation: slideInUp 0.5s ease-out backwards;
-}
-
-.currency-card-item::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-  transform: scaleX(0);
-  transition: transform 0.3s ease;
-}
-
-.currency-card-item:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
-  border-color: rgba(102, 126, 234, 0.5);
-}
-
-.currency-card-item:hover::before {
-  transform: scaleX(1);
-}
-
-.currency-base-card {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-  border: 2px solid rgba(102, 126, 234, 0.3);
-}
-
-.currency-base-card::before {
-  background: linear-gradient(90deg, #1976d2 0%, #42a5f5 100%);
-}
-
-.currency-item-content {
-  padding: 20px;
-}
-
-.currency-item-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.currency-code-badge {
-  min-width: 56px;
-  height: 32px;
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: 0.875rem;
-  color: white;
-  margin-right: 12px;
-}
-
-.badge-primary {
-  background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%);
-  box-shadow: 0 2px 8px rgba(25, 118, 210, 0.3);
-}
-
-.badge-default {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-}
-
-.currency-name-wrapper {
-  flex: 1;
-}
-
-.currency-name {
   font-weight: 600;
-  font-size: 0.9375rem;
-  color: #1a1a1a;
-  line-height: 1.3;
+  font-size: 0.875rem;
+  letter-spacing: 0.5px;
 }
 
-.currency-symbol {
-  font-size: 0.75rem;
-  color: #64748b;
-  margin-top: 2px;
+.code-box-primary {
+  background: #1976d2;
+  color: #ffffff;
 }
 
-.auto-update-chip {
-  margin-top: 4px;
+.code-box-default {
+  background: #f5f5f5;
+  color: #424242;
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.currency-rate-section {
-  margin: 16px 0;
+.currency-rate-display {
+  padding: 12px 0;
 }
 
-.rate-main {
-  margin-bottom: 4px;
-}
-
-.rate-value-modern {
+.currency-rate-display .text-h5 {
   font-size: 1.75rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  line-height: 1.2;
-  display: block;
-}
-
-.rate-label-modern {
-  font-size: 0.8125rem;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.currency-footer-modern {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.currency-empty-state {
-  padding: 60px 20px;
-  text-align: center;
-}
-
-.empty-state-content {
-  max-width: 300px;
-  margin: 0 auto;
-}
-
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 /* Responsive Design */
 @media (max-width: 960px) {
-  .currency-grid-modern {
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 16px;
-  }
-  
-  .rate-value-modern {
+  .currency-rate-display .text-h5 {
     font-size: 1.5rem;
-  }
-  
-  .currency-card-header {
-    padding: 16px 20px;
-  }
-  
-  .currency-card-content {
-    padding: 20px;
-  }
-}
-
-@media (max-width: 600px) {
-  .currency-grid-modern {
-    grid-template-columns: 1fr;
-  }
-  
-  .currency-icon-wrapper {
-    width: 40px;
-    height: 40px;
-  }
-  
-  .currency-icon-wrapper .v-icon {
-    font-size: 20px;
   }
 }
 </style>

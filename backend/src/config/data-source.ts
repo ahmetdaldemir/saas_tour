@@ -37,6 +37,16 @@ import { Survey } from '../modules/shared/entities/survey.entity';
 import { SurveyQuestion } from '../modules/shared/entities/survey-question.entity';
 import { SurveyResponse } from '../modules/shared/entities/survey-response.entity';
 import { EmailTemplate } from '../modules/shared/entities/email-template.entity';
+import { TransferVehicle } from '../modules/transfer/entities/transfer-vehicle.entity';
+import { TransferRoute } from '../modules/transfer/entities/transfer-route.entity';
+import { TransferRoutePoint } from '../modules/transfer/entities/transfer-route-point.entity';
+import { TransferPricing } from '../modules/transfer/entities/transfer-pricing.entity';
+import { TransferReservation } from '../modules/transfer/entities/transfer-reservation.entity';
+import { TransferDriver } from '../modules/transfer/entities/transfer-driver.entity';
+import { ChatRoom } from '../modules/chat/entities/chat-room.entity';
+import { ChatMessage } from '../modules/chat/entities/chat-message.entity';
+import { ChatParticipant } from '../modules/chat/entities/chat-participant.entity';
+import { ChatWidgetToken } from '../modules/chat/entities/chat-widget-token.entity';
 
 const env = loadEnv();
 
@@ -91,6 +101,16 @@ export const AppDataSource = new DataSource({
           SurveyQuestion,
           SurveyResponse,
           EmailTemplate,
+          TransferVehicle,
+          TransferRoute,
+          TransferRoutePoint,
+          TransferPricing,
+          TransferReservation,
+          TransferDriver,
+          ChatRoom,
+          ChatMessage,
+          ChatParticipant,
+          ChatWidgetToken,
   ],
   migrations: ['dist/migrations/*.js'],
 });

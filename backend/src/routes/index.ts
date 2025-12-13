@@ -20,11 +20,26 @@ import tenantSettingsRouter from '../modules/shared/routes/tenant-settings.route
 import surveyRouter from '../modules/shared/routes/survey.router';
 import reservationRouter from '../modules/shared/routes/reservation.router';
 import emailTemplateRouter from '../modules/shared/routes/email-template.router';
+import tenantUserRouter from '../modules/tenants/routes/tenant-user.router';
+import { transferVehicleRouter } from '../modules/transfer/routes/transfer-vehicle.router';
+import { transferRouteRouter } from '../modules/transfer/routes/transfer-route.router';
+import { transferPricingRouter } from '../modules/transfer/routes/transfer-pricing.router';
+import { transferReservationRouter } from '../modules/transfer/routes/transfer-reservation.router';
+import { transferDriverRouter } from '../modules/transfer/routes/transfer-driver.router';
+import docsRouter from './docs.router';
+import chatRouter from '../modules/chat/routes/chat.router';
+import chatWidgetRouter from '../modules/chat/routes/chat-widget.router';
 
 export const registerRoutes = (app: Express) => {
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok' });
   });
+
+  // API Documentation
+  app.use('/api', docsRouter);
+
+  // Public widget routes (no auth required, validated via publicKey)
+  app.use('/api/chat/widget', chatWidgetRouter);
 
   app.use('/api/auth', authRouter);
   app.use('/api/languages', languageRouter);
@@ -32,6 +47,7 @@ export const registerRoutes = (app: Express) => {
   app.use('/api/hotels', hotelRouter);
   app.use('/api/blogs', blogRouter);
   app.use('/api/tenants', tenantRouter);
+  app.use('/api/tenant-users', tenantUserRouter);
   app.use('/api/tours', tourRouter);
   app.use('/api/tour-features', tourFeatureRouter);
   app.use('/api/rentacar', rentacarRouter);
@@ -47,4 +63,10 @@ export const registerRoutes = (app: Express) => {
   app.use('/api/surveys', surveyRouter);
   app.use('/api/reservations', reservationRouter);
   app.use('/api/email-templates', emailTemplateRouter);
+  app.use('/api/transfer/vehicles', transferVehicleRouter);
+  app.use('/api/transfer/routes', transferRouteRouter);
+  app.use('/api/transfer/pricings', transferPricingRouter);
+  app.use('/api/transfer/reservations', transferReservationRouter);
+  app.use('/api/transfer/drivers', transferDriverRouter);
+  app.use('/api/chat', chatRouter);
 };

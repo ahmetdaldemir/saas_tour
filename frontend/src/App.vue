@@ -106,7 +106,16 @@ const navigationItems = computed(() => {
     items.push({ title: 'Rezervasyonlar', to: '/app/reservations', icon: 'mdi-calendar-check' });
   }
 
+  // VIP Transfer modülü (rentacar kullanıcıları için)
+  if (auth.tenant?.category === 'rentacar') {
+    items.push({ title: 'VIP Transfer', to: '/app/transfer', icon: 'mdi-car-limousine' });
+  }
+
+  // Chat / Agency menüsü (tüm tenant'lar için)
+  items.push({ title: 'Chat / Agency', to: '/app/chat', icon: 'mdi-chat-outline' });
+
   // Ortak menü öğeleri
+  items.push({ title: 'Kullanıcılar', to: '/app/users', icon: 'mdi-account-group-outline' });
   items.push({ title: 'Anketler', to: '/app/surveys', icon: 'mdi-clipboard-text-outline' });
   items.push({ title: 'Mail Şablonları', to: '/app/email-templates', icon: 'mdi-email-multiple-outline' });
   items.push({ title: 'Ayarlar', to: '/app/settings', icon: 'mdi-cog-outline' });
