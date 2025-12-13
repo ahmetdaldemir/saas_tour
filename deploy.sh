@@ -181,7 +181,21 @@ if [ "$MODE" = "full" ]; then
     cd ..
 fi
 
-# 5. Infra (Backend + Frontend) başlatma
+# 5. Sunucuda node_modules temizleme (infra modunda Docker build için)
+if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ]; then
+    echo -e "${YELLOW}🧹 Sunucudaki node_modules temizleniyor (Docker build için)...${NC}"
+    if [ -d "frontend/node_modules" ]; then
+        echo "Frontend node_modules siliniyor..."
+        rm -rf frontend/node_modules
+    fi
+    if [ -d "backend/node_modules" ]; then
+        echo "Backend node_modules siliniyor..."
+        rm -rf backend/node_modules
+    fi
+    echo -e "${GREEN}✅ node_modules temizlendi${NC}"
+fi
+
+# 6. Infra (Backend + Frontend) başlatma
 if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
     echo -e "${YELLOW}🚀 Application Stack ${MODE} modunda başlatılıyor...${NC}"
     cd infra

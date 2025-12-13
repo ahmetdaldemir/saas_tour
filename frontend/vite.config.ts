@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     server: {
-      port: 5173,
+      port: 9001,
       proxy: {
         '/api': {
           target: proxyTarget,
@@ -26,5 +26,6 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    logLevel: 'warn', // Sadece uyarıları ve hataları göster (Sass deprecation uyarılarını azaltır)
   };
 });
