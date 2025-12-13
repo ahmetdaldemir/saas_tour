@@ -53,21 +53,18 @@ jobs:
           sudo apt-get update && sudo apt-get install -y sshpass rsync
       
       - name: Deploy files via RSync
-        env:
-          SSHPASS: ${{ secrets.SFTP_PASSWORD }}
-          SFTP_HOST: ${{ secrets.SFTP_HOST }}
-          SFTP_USERNAME: ${{ secrets.SFTP_USERNAME }}
-          SFTP_PORT: ${{ secrets.SFTP_PORT || 22 }}
-          SFTP_REMOTE_PATH: ${{ secrets.SFTP_REMOTE_PATH }}
         run: |
-          if [ -z "$SSHPASS" ] || [ -z "$SFTP_HOST" ] || [ -z "$SFTP_USERNAME" ]; then
-            echo "❌ Error: Required secrets are missing!"
-            echo "Please check: SFTP_PASSWORD, SFTP_HOST, SFTP_USERNAME"
-            exit 1
-          fi
+          # ⚠️ WARNING: Hardcoded credentials - SECURITY RISK!
+          # In production, use GitHub Secrets instead
+          SFTP_HOST="185.209.228.189"
+          SFTP_USERNAME="root"
+          SFTP_PASSWORD="@198711Ad@"
+          SFTP_PORT="22"
+          SFTP_REMOTE_PATH="/var/www/html/saastour360"
           
-          echo "🚀 Starting deployment to $SFTP_USERNAME@$SFTP_HOST:$SFTP_REMOTE_PATH"
+          echo "🚀 Starting deployment to ${SFTP_USERNAME}@${SFTP_HOST}:${SFTP_REMOTE_PATH}"
           
+          export SSHPASS="${SFTP_PASSWORD}"
           sshpass -e rsync -avz --delete \
             -e "ssh -p ${SFTP_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
             --exclude='.git' \
@@ -89,15 +86,17 @@ jobs:
       - name: Run Deployment Script on Server
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.SFTP_HOST }}
-          username: ${{ secrets.SFTP_USERNAME }}
-          password: ${{ secrets.SFTP_PASSWORD }}
-          port: ${{ secrets.SFTP_PORT || 22 }}
+          # ⚠️ WARNING: Hardcoded credentials - SECURITY RISK!
+          # In production, use GitHub Secrets instead
+          host: "185.209.228.189"
+          username: "root"
+          password: "@198711Ad@"
+          port: "22"
           script_stop: true
           script: |
             set -e
             echo "📦 Running deployment script on server..."
-            cd ${{ secrets.SFTP_REMOTE_PATH }} || { echo "❌ Error: Cannot change to directory"; exit 1; }
+            cd /var/www/html/saastour360 || { echo "❌ Error: Cannot change to directory"; exit 1; }
             chmod +x deploy.sh || true
             ./deploy.sh infra
             echo "✅ Deployment completed successfully!"
