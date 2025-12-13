@@ -36,8 +36,14 @@ gh secret set SFTP_REMOTE_PATH --body "/var/www/html/saastour360"
 
 Deployment otomatik olarak şu durumlarda tetiklenir:
 
-- `main`, `master` veya `develop` branch'ine push yapıldığında
-- GitHub Actions UI'dan manuel olarak `workflow_dispatch` ile
+- ✅ `main` branch'ine direkt push yapıldığında
+- ✅ `main` branch'ine pull request **merge edildiğinde** (sadece kapatıldığında değil)
+- ✅ GitHub Actions UI'dan manuel olarak `workflow_dispatch` ile
+
+**Önemli Notlar:**
+- ❌ `develop` branch'ine push yapmak deployment'ı **TETİKLEMEZ**
+- ✅ Sadece `main` branch'ine merge edildiğinde deployment otomatik çalışır
+- ✅ Production'a deploy için `develop` → `main` merge workflow'u kullanın
 
 **Repository:** https://github.com/ahmetdaldemir/saas_tour.git
 
