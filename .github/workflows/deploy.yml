@@ -53,10 +53,23 @@ jobs:
           sudo apt-get update && sudo apt-get install -y sshpass rsync
       
       - name: Deploy files via RSync
+        env:
+          SSHPASS: ${{ secrets.SFTP_PASSWORD }}
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_USERNAME: ${{ secrets.SFTP_USERNAME }}
+          SFTP_PORT: ${{ secrets.SFTP_PORT || 22 }}
+          SFTP_REMOTE_PATH: ${{ secrets.SFTP_REMOTE_PATH }}
         run: |
-          export SSHPASS="${{ secrets.SFTP_PASSWORD }}"
+          if [ -z "$SSHPASS" ] || [ -z "$SFTP_HOST" ] || [ -z "$SFTP_USERNAME" ]; then
+            echo "❌ Error: Required secrets are missing!"
+            echo "Please check: SFTP_PASSWORD, SFTP_HOST, SFTP_USERNAME"
+            exit 1
+          fi
+          
+          echo "🚀 Starting deployment to $SFTP_USERNAME@$SFTP_HOST:$SFTP_REMOTE_PATH"
+          
           sshpass -e rsync -avz --delete \
-            -e "ssh -p ${{ secrets.SFTP_PORT || 22 }} -o StrictHostKeyChecking=no" \
+            -e "ssh -p ${SFTP_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
             --exclude='.git' \
             --exclude='node_modules' \
             --exclude='.vscode' \
@@ -71,7 +84,7 @@ jobs:
             --exclude='backend/dist' \
             --exclude='docker-datatabse-stack' \
             --exclude='infra' \
-            ./ ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_HOST }}:${{ secrets.SFTP_REMOTE_PATH }}/
+            ./ ${SFTP_USERNAME}@${SFTP_HOST}:${SFTP_REMOTE_PATH}/
       
       - name: Run Deployment Script on Server
         uses: appleboy/ssh-action@v1.0.3
@@ -80,8 +93,12 @@ jobs:
           username: ${{ secrets.SFTP_USERNAME }}
           password: ${{ secrets.SFTP_PASSWORD }}
           port: ${{ secrets.SFTP_PORT || 22 }}
+          script_stop: true
           script: |
-            cd ${{ secrets.SFTP_REMOTE_PATH }}
-            chmod +x deploy.sh
+            set -e
+            echo "📦 Running deployment script on server..."
+            cd ${{ secrets.SFTP_REMOTE_PATH }} || { echo "❌ Error: Cannot change to directory"; exit 1; }
+            chmod +x deploy.sh || true
             ./deploy.sh infra
+            echo "✅ Deployment completed successfully!"
 

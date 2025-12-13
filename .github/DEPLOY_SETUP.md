@@ -6,19 +6,23 @@ Bu proje GitHub Actions ile otomatik deployment yapılandırması içermektedir.
 
 ### 1. GitHub Secrets Ekleme
 
+⚠️ **ÖNEMLİ**: Deployment'ın çalışması için aşağıdaki secrets'ların **TAMAMININ** eklenmiş olması gerekmektedir!
+
 GitHub repository'nizde aşağıdaki secrets'ları eklemeniz gerekmektedir:
 
 **Settings > Secrets and variables > Actions > New repository secret**
 
 Aşağıdaki secrets'ları ekleyin:
 
-| Secret Adı | Değer | Açıklama |
-|------------|-------|----------|
-| `SFTP_HOST` | `185.209.228.189` | Sunucu IP adresi |
-| `SFTP_USERNAME` | `root` | SSH/SFTP kullanıcı adı |
-| `SFTP_PASSWORD` | `@198711Ad@` | SSH/SFTP şifresi |
-| `SFTP_PORT` | `22` | SSH port (opsiyonel, varsayılan: 22) |
-| `SFTP_REMOTE_PATH` | `/var/www/html/saastour360` | Sunucudaki deployment dizini |
+| Secret Adı | Değer | Açıklama | Zorunlu |
+|------------|-------|----------|---------|
+| `SFTP_HOST` | `185.209.228.189` | Sunucu IP adresi | ✅ Evet |
+| `SFTP_USERNAME` | `root` | SSH/SFTP kullanıcı adı | ✅ Evet |
+| `SFTP_PASSWORD` | `@198711Ad@` | SSH/SFTP şifresi | ✅ Evet |
+| `SFTP_PORT` | `22` | SSH port | ❌ Hayır (varsayılan: 22) |
+| `SFTP_REMOTE_PATH` | `/var/www/html/saastour360` | Sunucudaki deployment dizini | ✅ Evet |
+
+**Not:** Eğer `SSHPASS` veya hostname boş hatası alıyorsanız, secrets'ların doğru eklendiğinden emin olun!
 
 ### 2. Secrets Ekleme Komutu (GitHub CLI)
 
