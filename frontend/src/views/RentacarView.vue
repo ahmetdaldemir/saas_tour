@@ -482,9 +482,10 @@
                       color="primary" 
                       variant="outlined" 
                       size="small"
-                      prepend-icon="mdi-currency-usd"
                       @click="openPricingDialog(item)"
                       class="text-uppercase"
+                      :prepend-icon="getCurrencyIcon(defaultCurrency?.code || 'TRY')"
+                      :suffix="getCurrencySymbol(defaultCurrency?.code || 'TRY')"
                     >
                       Fiyat Ekle
                     </v-btn>
@@ -522,6 +523,7 @@
 
                   <template #item.deliveryPricing="{ item }">
                     <v-btn 
+                      v-if="!item.parentId"
                       color="success" 
                       variant="outlined" 
                       size="small"
@@ -817,6 +819,13 @@
                           item-value="value"
                           label="Sun Roof"
                           prepend-inner-icon="mdi-car-convertible"
+                        />
+                      </v-col>
+                      <v-col cols="12" md="4">
+                        <v-text-file-input  
+                          v-model="form.imageUrl"
+                          label="Resim"
+                          prepend-inner-icon="mdi-image"
                         />
                       </v-col>
                       <v-col cols="12">
@@ -1550,7 +1559,7 @@
                   hide-details
                   variant="outlined"
                   style="max-width: 120px;"
-                  suffix="₺"
+                  :suffix="getCurrencySymbol(defaultCurrency?.code || '₺')"
                   @update:model-value="updateDeliveryPricingFee(item, $event)"
                 />
               </template>
@@ -1645,8 +1654,8 @@
                     v-model.number="locationForm.deliveryFee"
                     label="Teslim Ücreti"
                     type="number"
-                    prepend-inner-icon="mdi-currency-try"
-                    suffix="₺"
+                    :prepend-inner-icon="getCurrencyIcon(defaultCurrency?.code || 'TRY')"
+                    :suffix="getCurrencySymbol(defaultCurrency?.code || 'TRY')"
                   />
                 </v-col>
                 <v-col cols="12" md="6">
@@ -1654,8 +1663,8 @@
                     v-model.number="locationForm.dropFee"
                     label="Drop Ücreti"
                     type="number"
-                    prepend-inner-icon="mdi-currency-try"
-                    suffix="₺"
+                    :prepend-inner-icon="getCurrencyIcon(defaultCurrency?.code || 'TRY')"
+                    :suffix="getCurrencySymbol(defaultCurrency?.code || 'TRY')"
                   />
                 </v-col>
                 <v-col cols="12" md="6">
@@ -1963,6 +1972,9 @@ const locationForm = reactive({
   isActive: true,
 });
 
+// Default currency for location fees
+const defaultCurrency = ref<{ code: string; symbol?: string } | null>(null);
+
 // Available parent locations (excluding current location if editing)
 // Only show locations with type='merkez' as parent options
 const availableParentLocations = computed(() => {
@@ -2047,6 +2059,27 @@ const currencyOptions = [
   { value: 'USD', title: 'Amerikan Doları', symbol: '$' },
   { value: 'EUR', title: 'Euro', symbol: '€' },
 ];
+
+// Currency helper functions
+const getCurrencyIcon = (code: string): string => {
+  const icons: Record<string, string> = {
+    TRY: 'mdi-currency-try',
+    USD: 'mdi-currency-usd',
+    EUR: 'mdi-currency-eur',
+    GBP: 'mdi-currency-gbp',
+  };
+  return icons[code] || 'mdi-currency-usd';
+};
+
+const getCurrencySymbol = (code: string): string => {
+  const symbols: Record<string, string> = {
+    TRY: '₺',
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+  };
+  return symbols[code] || '$';
+};
 
 // Validation rules
 const rules = {
@@ -3729,6 +3762,7 @@ onMounted(async () => {
       loadVehicleModels(), // Tüm modelleri yükle (marka filtresi olmadan)
       loadVehicles(),
       loadLocations(),
+      loadDefaultCurrency(), // Load default currency for location fee icons
     ]);
     console.log('Initial data loaded:', {
       categories: vehicleCategories.value.length,
@@ -3748,6 +3782,37 @@ onMounted(async () => {
     }
   });
 });
+
+// Load default currency from tenant settings
+const loadDefaultCurrency = async () => {
+  if (!auth.tenant) return;
+  try {
+    const { data } = await http.get<{ 
+      defaultCurrency?: { 
+        id?: string;
+        code: string; 
+        symbol?: string;
+      } | null;
+    }>('/settings/site', {
+      params: { tenantId: auth.tenant.id },
+    });
+    
+    if (data?.defaultCurrency) {
+      defaultCurrency.value = {
+        code: data.defaultCurrency.code,
+        symbol: data.defaultCurrency.symbol,
+      };
+    } else {
+      // Fallback to TRY if no default currency is set
+      defaultCurrency.value = { code: 'TRY', symbol: '₺' };
+    }
+  } catch (error) {
+    console.error('Failed to load default currency:', error);
+    // Fallback to TRY if API fails
+    defaultCurrency.value = { code: 'TRY', symbol: '₺' };
+  }
+};
+
 </script>
 
 <style scoped>

@@ -64,12 +64,20 @@
                 </template>
 
                 <template #item.price="{ item }">
-                  <span>{{ item.price || 0 }} ₺</span>
+                  <div class="d-flex align-center gap-1 justify-end">
+                    <v-icon 
+                      :icon="getCurrencyIcon(defaultCurrency?.code || 'TRY')" 
+                      size="small" 
+                      color="primary"
+                    />
+                    <span class="price-value">{{ item.price || 0 }}</span>
+                  </div>
                 </template>
 
                 <template #item.isMandatory="{ item }">
                   <v-chip
                     size="small"
+                     class="text-center"
                     :color="item.isMandatory ? 'success' : 'error'"
                     variant="flat"
                   >
@@ -718,6 +726,7 @@ const customerTypeOptions = [
   { label: 'Normal', value: 'normal' },
   { label: 'Özel Müşteri', value: 'special' },
 ];
+const defaultCurrency = ref<{ code: string; symbol?: string } | null>(null);
 
 // Computed
 const locationOptions = computed(() => {
@@ -1009,6 +1018,25 @@ const loadExtras = async () => {
   } finally {
     loadingExtras.value = false;
   }
+};
+const getCurrencyIcon = (code: string): string => {
+  const icons: Record<string, string> = {
+    TRY: 'mdi-currency-try',
+    USD: 'mdi-currency-usd',
+    EUR: 'mdi-currency-eur',
+    GBP: 'mdi-currency-gbp',
+  };
+  return icons[code] || 'mdi-currency-usd';
+};
+
+const getCurrencySymbol = (code: string): string => {
+  const symbols: Record<string, string> = {
+    TRY: '₺',
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+  };
+  return symbols[code] || '$';
 };
 
 // Computed for extra form default language
@@ -1576,6 +1604,34 @@ const loadLanguages = async () => {
     console.error('Failed to load languages:', error);
   }
 };
+const loadDefaultCurrency = async () => {
+  if (!auth.tenant) return;
+  try {
+    const { data } = await http.get<{ 
+      defaultCurrency?: { 
+        id?: string;
+        code: string; 
+        symbol?: string;
+      } | null;
+    }>('/settings/site', {
+      params: { tenantId: auth.tenant.id },
+    });
+    
+    if (data?.defaultCurrency) {
+      defaultCurrency.value = {
+        code: data.defaultCurrency.code,
+        symbol: data.defaultCurrency.symbol,
+      };
+    } else {
+      // Fallback to TRY if no default currency is set
+      defaultCurrency.value = { code: 'TRY', symbol: '₺' };
+    }
+  } catch (error) {
+    console.error('Failed to load default currency:', error);
+    // Fallback to TRY if API fails
+    defaultCurrency.value = { code: 'TRY', symbol: '₺' };
+  }
+};
 
 onMounted(async () => {
   await Promise.all([
@@ -1583,6 +1639,7 @@ onMounted(async () => {
     loadExtras(),
     loadCampaigns(),
     loadVehicles(),
+    loadDefaultCurrency(), // Load default currency for location fee icons
     loadLocations(),
   ]);
   
@@ -1637,6 +1694,15 @@ onMounted(async () => {
 .extra-table :deep(.v-btn) {
   font-size: 0.75rem;
   letter-spacing: 0.5px;
+}
+
+.price-value {
+  font-size: 16px;
+  font-weight: 500;
+  color: #f44336;
+  text-align: right;
+  min-width: 25px;
+  display: inline-block;
 }
 
 .campaign-table {

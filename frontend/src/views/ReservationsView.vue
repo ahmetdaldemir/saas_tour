@@ -1064,6 +1064,7 @@ const availableVehicles = ref<AvailableVehicleDto[]>([]);
 const extras = ref<ExtraDto[]>([]);
 const selectedExtras = ref<string[]>([]);
 const currencies = ref<Array<{ code: string; rateToTry: number; symbol?: string }>>([]);
+const defaultCurrency = ref<{ code: string; rateToTry: number } | null>(null);
 
 // UI State
 const mainTab = ref('list');
@@ -1656,8 +1657,14 @@ const formatDate = (date: string): string => {
   }
 };
 
-// Currency conversion: Converts price from sourceCurrency to targetCurrency
-const convertCurrency = (price: number, sourceCurrency: string, targetCurrency: string): number => {
+// Currency conversion: Converts price from default currency to target currency
+const convertCurrency = (price: number, targetCurrency: string): number => {
+  if (!defaultCurrency.value) {
+    console.warn('Default currency not loaded, returning original price');
+    return price;
+  }
+  
+  const sourceCurrency = defaultCurrency.value.code;
   if (sourceCurrency === targetCurrency) return price;
   
   // Find currency rates
@@ -1670,8 +1677,8 @@ const convertCurrency = (price: number, sourceCurrency: string, targetCurrency: 
     return price;
   }
   
-  // Convert to TRY first, then to target currency
-  // sourceCurrency -> TRY -> targetCurrency
+  // Convert from default currency to TRY first, then to target currency
+  // defaultCurrency -> TRY -> targetCurrency
   const priceInTry = sourceCurrency === 'TRY' ? price : price * sourceCurrencyData.rateToTry;
   const convertedPrice = targetCurrency === 'TRY' ? priceInTry : priceInTry / targetCurrencyData.rateToTry;
   
@@ -1696,17 +1703,33 @@ const getStatusColor = (status: string): string => {
 const calculateDays = (): number => {
   if (!reservationForm.pickupDate || !reservationForm.returnDate) return 0;
   try {
-    const pickup = new Date(reservationForm.pickupDate);
+    const pickupDate = new Date(reservationForm.pickupDate);
     const returnDate = new Date(reservationForm.returnDate);
     
     // Validate dates
-    if (isNaN(pickup.getTime()) || isNaN(returnDate.getTime())) return 0;
+    if (isNaN(pickupDate.getTime()) || isNaN(returnDate.getTime())) return 0;
     
     // If return date is before pickup date, return 0
-    if (returnDate < pickup) return 0;
+    if (returnDate < pickupDate) return 0;
     
-    const diffTime = returnDate.getTime() - pickup.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    // Calculate date difference in days
+    const diffTime = returnDate.getTime() - pickupDate.getTime();
+    let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    // Parse pickup and return times
+    const [pickupHour, pickupMinute] = (reservationForm.pickupTime || '09:00').split(':').map(Number);
+    const [returnHour, returnMinute] = (reservationForm.returnTime || '09:00').split(':').map(Number);
+    
+    // Calculate time difference in hours
+    const pickupTimeHours = pickupHour + pickupMinute / 60;
+    const returnTimeHours = returnHour + returnMinute / 60;
+    const timeDiffHours = Math.abs(returnTimeHours - pickupTimeHours);
+    
+    // If time difference is more than 2 hours, add 1 day
+    if (timeDiffHours > 2) {
+      diffDays += 1;
+    }
+    
     return diffDays > 0 ? diffDays : 1; // Minimum 1 day
   } catch {
     return 0;
@@ -1714,8 +1737,6 @@ const calculateDays = (): number => {
 };
 
 const getPickupLocation = () => {
-  console.log(locations.value);
-  console.log(reservationForm.pickupLocationId);
   return locations.value.find(l => l.id === reservationForm.pickupLocationId);
 };
 
@@ -1727,31 +1748,103 @@ const getReturnLocation = () => {
   return locations.value.find(l => l.id === reservationForm.returnLocationId);
 };
 
+// Helper function to get day range based on number of days
+const getDayRange = (days: number): string => {
+  if (days >= 1 && days <= 3) return '1-3';
+  if (days >= 4 && days <= 6) return '4-6';
+  if (days >= 7 && days <= 10) return '7-10';
+  if (days >= 11 && days <= 13) return '11-13';
+  if (days >= 14 && days <= 20) return '14-20';
+  if (days >= 21 && days <= 29) return '21-29';
+  if (days >= 30) return '30++';
+  return '1-3'; // Default
+};
+
+// Helper function to get vehicle price from location pricing
+const getVehiclePriceFromLocation = async (locationId: string, vehicleId: string, days: number): Promise<number> => {
+  try {
+    // Get pickup month (1-12)
+    const pickupDate = new Date(reservationForm.pickupDate);
+    const month = pickupDate.getMonth() + 1; // JavaScript months are 0-indexed
+    
+    // Get day range
+    const dayRange = getDayRange(days);
+    
+    // Get pricing from location-vehicle-pricing API
+    const { data: pricings } = await http.get('/rentacar/location-pricing/by-vehicle', {
+      params: {
+        locationId: locationId,
+        vehicleId: vehicleId,
+        month: month,
+      },
+    });
+    
+    // Find pricing for the specific day range
+    const pricing = pricings?.find((p: any) => p.dayRange === dayRange && p.isActive);
+    
+    if (pricing && pricing.price) {
+      return Number(pricing.price);
+    }
+    
+    // If no pricing found, fallback to vehicle baseRate
+    const vehicle = vehicles.value.find(v => v.id === vehicleId);
+    return vehicle?.baseRate ? Number(vehicle.baseRate) : 0;
+  } catch (error) {
+    console.error('Failed to get vehicle price from location:', error);
+    // Fallback to vehicle baseRate
+    const vehicle = vehicles.value.find(v => v.id === vehicleId);
+    return vehicle?.baseRate ? Number(vehicle.baseRate) : 0;
+  }
+};
+
 const getDeliveryFee = (): number => {
   const location = getPickupLocation();
   if (!location) return 0;
-  // Get from parent location if exists, otherwise from location itself
-  const parentLocation = location.parent;
-  const fee = parentLocation?.deliveryFee || location.deliveryFee || 0;
+  
+  // Delivery fee: Eğer lokasyon bir alt lokasyon ise (parentId varsa), parent'ın (merkez) delivery fee'ini kullan
+  // Alt lokasyonların kendi delivery fee'leri yok, sadece merkez lokasyonlarda delivery fee girilir
+  let fee = 0;
+  if (location.parentId) {
+    // Alt lokasyon ise, parent'ı bul ve onun delivery fee'sini kullan
+    const parentLocation = locations.value.find(l => l.id === location.parentId);
+    fee = parentLocation?.deliveryFee || 0;
+  } else {
+    // Merkez lokasyon ise, kendi delivery fee'sini kullan
+    fee = location.deliveryFee || 0;
+  }
+  
   const feeValue = typeof fee === 'string' ? parseFloat(fee) || 0 : Number(fee) || 0;
   
-  // Assume fees are stored in TRY, convert to selected currency
-  return convertCurrency(feeValue, 'TRY', reservationForm.currencyCode);
+  // Fees are stored in default currency, convert to selected currency
+  return convertCurrency(feeValue, reservationForm.currencyCode);
 };
 
 const getDropFee = (): number => {
-  // Eğer dönüş lokasyonu alış ile aynı ise, alış lokasyonunun drop fee'ini kullan
-  const location = reservationForm.sameReturnLocation 
-    ? getPickupLocation() 
-    : getReturnLocation();
-  if (!location) return 0;
-  // Get from parent location if exists, otherwise from location itself
-  const parentLocation = location.parent;
-  const fee = parentLocation?.dropFee || location.dropFee || 0;
+  // Eğer alış lokasyonu ile dönüş lokasyonu aynı ise, drop ücreti eklenmeyecek
+  if (reservationForm.sameReturnLocation) {
+    return 0;
+  }
+  
+  // Eğer farklı ise, dönüş lokasyonunun drop fee'ini al
+  const returnLocation = getReturnLocation();
+  if (!returnLocation) return 0;
+  
+  // Eğer lokasyon bir alt lokasyon ise (parentId varsa), parent'ın (merkez) drop fee'ini kullan
+  // Alt lokasyonların kendi drop fee'leri yok, sadece merkez lokasyonlarda drop fee girilir
+  let fee = 0;
+  if (returnLocation.parentId) {
+    // Alt lokasyon ise, parent'ı bul ve onun drop fee'sini kullan
+    const parentLocation = locations.value.find(l => l.id === returnLocation.parentId);
+    fee = parentLocation?.dropFee || 0;
+  } else {
+    // Merkez lokasyon ise, kendi drop fee'sini kullan
+    fee = returnLocation.dropFee || 0;
+  }
+  
   const feeValue = typeof fee === 'string' ? parseFloat(fee) || 0 : Number(fee) || 0;
   
-  // Assume fees are stored in TRY, convert to selected currency
-  return convertCurrency(feeValue, 'TRY', reservationForm.currencyCode);
+  // Fees are stored in default currency, convert to selected currency
+  return convertCurrency(feeValue, reservationForm.currencyCode);
 };
 
 const calculateRentalPrice = (vehicle: AvailableVehicleDto): number => {
@@ -1779,15 +1872,16 @@ const calculateExtrasTotal = (): number => {
     
     // Calculate price based on sales type
     let extraPrice = 0;
-    if (extra.salesType === 'daily' || extra.salesType === 'DAILY') {
+    const salesType = extra.salesType?.toLowerCase() || '';
+    if (salesType === 'daily') {
       extraPrice = numPrice * days;
     } else {
+      // per_rental or other types - price is per rental, not per day
       extraPrice = numPrice;
     }
     
-    // Convert from extra's currency to selected currency
-    const extraCurrency = extra.currencyCode || 'TRY';
-    const convertedPrice = convertCurrency(extraPrice, extraCurrency, reservationForm.currencyCode);
+    // Extras are stored in default currency, convert to selected currency
+    const convertedPrice = convertCurrency(extraPrice, reservationForm.currencyCode);
     
     return total + convertedPrice;
   }, 0);
@@ -2075,29 +2169,67 @@ const loadAvailableVehicles = async () => {
       return;
     }
     
-    console.log(pickupLocation);
+    // Get actual pickup location (merkez) - if pickup location is child, use parent
+    const actualPickupLocation = pickupLocation.parentId 
+      ? locations.value.find(l => l.id === pickupLocation.parentId)
+      : pickupLocation;
+    
+    if (!actualPickupLocation) {
+      alert('Alış lokasyonu bulunamadı!');
+      return;
+    }
+    
     // Rezervasyonda olmayan araçları filtrele
     const available = vehicles.value.filter(vehicle => {
-      // Aktif olmayan araçları filtrele
-      if (!vehicle.baseRate || vehicle.baseRate === 0) return false;
-      
       // Rezervasyonda olan araçları filtrele
       return !isVehicleReserved(vehicle);
     });
     
-    availableVehicles.value = available.map(vehicle => {
-      const vehicleCurrency = vehicle.currencyCode || 'TRY';
-      const dailyPriceInOriginalCurrency = Number(vehicle.baseRate) || 0;
-      
-      // Convert daily price to selected currency
-      const dailyPrice = convertCurrency(dailyPriceInOriginalCurrency, vehicleCurrency, reservationForm.currencyCode);
+    // Load prices for all vehicles in parallel
+    const vehiclePrices = await Promise.all(
+      available.map(async (vehicle) => {
+        const dailyPriceInDefaultCurrency = await getVehiclePriceFromLocation(
+          actualPickupLocation.id,
+          vehicle.id,
+          days
+        );
+        return { vehicle, dailyPriceInDefaultCurrency };
+      })
+    );
+    
+    availableVehicles.value = vehiclePrices.map(({ vehicle, dailyPriceInDefaultCurrency }) => {
+      // Convert daily price from default currency to selected currency
+      const dailyPrice = convertCurrency(dailyPriceInDefaultCurrency, reservationForm.currencyCode);
       const rentalPrice = dailyPrice * days;
       
-      // Delivery and drop fees are assumed to be in TRY, convert to selected currency
-      const deliveryFeeValue = Number(pickupLocation.parent?.deliveryFee || pickupLocation.deliveryFee) || 0;
-      const dropFeeValue = Number(returnLocation.parent?.dropFee || returnLocation.dropFee) || 0;
-      const deliveryFee = convertCurrency(deliveryFeeValue, 'TRY', reservationForm.currencyCode);
-      const dropFee = convertCurrency(dropFeeValue, 'TRY', reservationForm.currencyCode);
+      // Delivery fee: Alış bölgesi ücreti (merkez lokasyondan)
+      let deliveryFeeValue = 0;
+      if (pickupLocation.parentId) {
+        // Alt lokasyon ise, parent'ın (merkez) delivery fee'sini kullan
+        const parentLocation = locations.value.find(l => l.id === pickupLocation.parentId);
+        deliveryFeeValue = Number(parentLocation?.deliveryFee || 0);
+      } else {
+        // Merkez lokasyon ise, kendi delivery fee'sini kullan
+        deliveryFeeValue = Number(pickupLocation.deliveryFee || 0);
+      }
+      
+      // Drop fee: Eğer alış ve dönüş lokasyonu aynı ise, drop ücreti eklenmeyecek
+      // Eğer farklı ise, dönüş bölgesi ücreti (merkez lokasyondan)
+      let dropFeeValue = 0;
+      if (!reservationForm.sameReturnLocation) {
+        // Sadece alış ve dönüş lokasyonu farklı ise drop fee ekle
+        if (returnLocation.parentId) {
+          // Alt lokasyon ise, parent'ın (merkez) drop fee'sini kullan
+          const parentLocation = locations.value.find(l => l.id === returnLocation.parentId);
+          dropFeeValue = Number(parentLocation?.dropFee || 0);
+        } else {
+          // Merkez lokasyon ise, kendi drop fee'sini kullan
+          dropFeeValue = Number(returnLocation.dropFee || 0);
+        }
+      }
+      
+      const deliveryFee = convertCurrency(deliveryFeeValue, reservationForm.currencyCode);
+      const dropFee = convertCurrency(dropFeeValue, reservationForm.currencyCode);
       
       const totalPrice = rentalPrice + deliveryFee + dropFee;
       
@@ -2547,9 +2679,46 @@ const loadCurrencies = async () => {
   }
 };
 
+const loadDefaultCurrency = async () => {
+  if (!auth.tenant) return;
+  try {
+    const { data } = await http.get<{ 
+      defaultCurrency?: { 
+        id?: string;
+        code: string; 
+        rateToTry: number | string;
+        symbol?: string;
+      } | null;
+    }>('/settings/site', {
+      params: { tenantId: auth.tenant.id },
+    });
+    
+    if (data?.defaultCurrency) {
+      const rateToTry = typeof data.defaultCurrency.rateToTry === 'string' 
+        ? parseFloat(data.defaultCurrency.rateToTry) 
+        : data.defaultCurrency.rateToTry;
+      
+      defaultCurrency.value = {
+        code: data.defaultCurrency.code,
+        rateToTry: rateToTry || 1,
+      };
+    } else {
+      // Fallback to TRY if no default currency is set
+      defaultCurrency.value = { code: 'TRY', rateToTry: 1 };
+    }
+  } catch (error) {
+    console.error('Failed to load default currency:', error);
+    // Fallback to TRY if API fails
+    defaultCurrency.value = { code: 'TRY', rateToTry: 1 };
+  }
+};
+
 onMounted(async () => {
-  // Load currencies first as they're needed for conversions
-  await loadCurrencies();
+  // Load currencies and default currency first as they're needed for conversions
+  await Promise.all([
+    loadCurrencies(),
+    loadDefaultCurrency(),
+  ]);
   
   await Promise.all([
     loadReservations(),
