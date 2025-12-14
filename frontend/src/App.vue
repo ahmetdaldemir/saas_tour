@@ -119,6 +119,7 @@ const navigationItems = computed(() => {
   items.push({ title: 'Anketler', to: '/app/surveys', icon: 'mdi-clipboard-text-outline' });
   items.push({ title: 'Mail Şablonları', to: '/app/email-templates', icon: 'mdi-email-multiple-outline' });
   items.push({ title: 'Ayarlar', to: '/app/settings', icon: 'mdi-cog-outline' });
+  items.push({ title: 'Admin Dashboard', to: '/app/admin', icon: 'mdi-monitor-dashboard' });
 
   return items;
 });

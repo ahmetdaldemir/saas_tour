@@ -7,6 +7,7 @@ router.get('/', LocationPricingController.listByLocation);
 router.get('/by-vehicle', LocationPricingController.getByLocationAndVehicle);
 router.post('/', LocationPricingController.upsert);
 router.post('/bulk', LocationPricingController.bulkUpsert);
+router.post('/bulk-copy', LocationPricingController.bulkCopyPrice);
 router.delete('/:id', LocationPricingController.remove);
 
 export default router;

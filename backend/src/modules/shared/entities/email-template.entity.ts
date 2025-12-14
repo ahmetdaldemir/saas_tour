@@ -8,6 +8,7 @@ export enum EmailTemplateType {
   RESERVATION_CANCELLED = 'reservation_cancelled',
   RESERVATION_COMPLETED = 'reservation_completed',
   SURVEY_INVITATION = 'survey_invitation',
+  CUSTOMER_WELCOME = 'customer_welcome',
   CUSTOM = 'custom',
 }
 

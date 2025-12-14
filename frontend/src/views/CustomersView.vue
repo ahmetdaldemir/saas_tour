@@ -568,11 +568,17 @@ interface LanguageDto {
 interface CustomerDto {
   id: string;
   fullName: string;
+  firstName?: string;
+  lastName?: string;
   gender?: 'male' | 'female' | 'other';
   phone?: string;
+  mobilePhone?: string;
+  homePhone?: string;
   email?: string;
   isActive: boolean;
   isBlacklisted?: boolean;
+  country?: string;
+  birthDate?: string;
 }
 
 // Table headers

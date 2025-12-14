@@ -30,6 +30,7 @@ import { VehicleModel } from '../modules/rentacar/entities/vehicle-model.entity'
 import { Location } from '../modules/rentacar/entities/location.entity';
 import { LocationVehiclePricing } from '../modules/rentacar/entities/location-vehicle-pricing.entity';
 import { LocationDeliveryPricing } from '../modules/rentacar/entities/location-delivery-pricing.entity';
+import { Extra } from '../modules/rentacar/entities/extra.entity';
 import { TenantUser } from '../modules/tenants/entities/tenant-user.entity';
 import { Currency } from '../modules/shared/entities/currency.entity';
 import { TenantSettings } from '../modules/shared/entities/tenant-settings.entity';
@@ -47,6 +48,8 @@ import { ChatRoom } from '../modules/chat/entities/chat-room.entity';
 import { ChatMessage } from '../modules/chat/entities/chat-message.entity';
 import { ChatParticipant } from '../modules/chat/entities/chat-participant.entity';
 import { ChatWidgetToken } from '../modules/chat/entities/chat-widget-token.entity';
+import { Customer } from '../modules/shared/entities/customer.entity';
+import { CustomerEmail } from '../modules/shared/entities/customer-email.entity';
 
 const env = loadEnv();
 
@@ -94,9 +97,12 @@ export const AppDataSource = new DataSource({
           Location,
           LocationVehiclePricing,
           LocationDeliveryPricing,
+          Extra,
           TenantUser,
           Currency,
           TenantSettings,
+          Customer,
+          CustomerEmail,
           Survey,
           SurveyQuestion,
           SurveyResponse,

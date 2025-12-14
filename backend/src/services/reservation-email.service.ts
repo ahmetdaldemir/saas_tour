@@ -2,12 +2,76 @@ import { Reservation, ReservationStatus } from '../modules/shared/entities/reser
 import { EmailTemplateService } from '../modules/shared/services/email-template.service';
 import { EmailTemplateType } from '../modules/shared/entities/email-template.entity';
 import { TenantSettingsService } from '../modules/shared/services/tenant-settings.service';
+import { EmailLayoutService } from './email-layout.service';
+import { QueueService, EmailJob } from './queue.service';
 import nodemailer from 'nodemailer';
+
+/**
+ * Rezervasyon email'ini kuyruğa ekle
+ */
+export const queueReservationEmail = async (
+  reservation: Reservation,
+  templateType: EmailTemplateType,
+  priority: 'normal' | 'high' = 'normal'
+): Promise<void> => {
+  if (!reservation.customerEmail) {
+    console.log(`Reservation ${reservation.id} has no customer email, skipping email.`);
+    return;
+  }
+
+  try {
+    let jobType: EmailJob['type'];
+    switch (templateType) {
+      case EmailTemplateType.RESERVATION_CONFIRMATION:
+        jobType = 'reservation_confirmation';
+        break;
+      case EmailTemplateType.RESERVATION_CANCELLED:
+        jobType = 'reservation_cancelled';
+        break;
+      case EmailTemplateType.RESERVATION_COMPLETED:
+        jobType = 'reservation_completed';
+        break;
+      default:
+        jobType = 'reservation_confirmation';
+    }
+
+    await QueueService.publishEmailJob({
+      type: jobType,
+      tenantId: reservation.tenantId,
+      data: {
+        reservationId: reservation.id,
+        email: reservation.customerEmail,
+        languageId: reservation.customerLanguageId || undefined,
+      },
+      priority,
+    });
+    console.log(`✅ Reservation email queued: ${jobType} for ${reservation.customerEmail}`);
+  } catch (error) {
+    console.error('Failed to queue reservation email:', error);
+    // Fallback: Direkt gönder (kuyruk yoksa)
+    await sendReservationEmailDirect(reservation, templateType);
+  }
+};
 
 /**
  * Rezervasyon durumuna göre uygun e-posta şablonunu kullanarak mail gönderir
  */
 export const sendReservationEmail = async (
+  reservation: Reservation,
+  templateType: EmailTemplateType
+): Promise<void> => {
+  // Kuyruk sistemi varsa kuyruğa ekle, yoksa direkt gönder
+  const useQueue = process.env.USE_EMAIL_QUEUE !== 'false';
+  if (useQueue) {
+    return queueReservationEmail(reservation, templateType);
+  }
+  return sendReservationEmailDirect(reservation, templateType);
+};
+
+/**
+ * Direkt email gönder (worker tarafından kullanılır)
+ */
+export const sendReservationEmailDirect = async (
   reservation: Reservation,
   templateType: EmailTemplateType
 ): Promise<void> => {
@@ -60,7 +124,13 @@ export const sendReservationEmail = async (
 
   // Şablon değişkenlerini değiştir
   const subject = EmailTemplateService.replaceVariables(template.subject, variables);
-  const body = EmailTemplateService.replaceVariables(template.body, variables);
+  const templateBody = EmailTemplateService.replaceVariables(template.body, variables);
+
+  // Site settings'i al (logo ve adres bilgileri için)
+  const siteSettings = await TenantSettingsService.getSiteSettings(reservation.tenantId);
+
+  // Layout ile sarmala (logo ve footer bilgileriyle)
+  const htmlBody = EmailLayoutService.wrapContent(templateBody, siteSettings);
 
   // Mail gönder
   try {
@@ -68,7 +138,7 @@ export const sendReservationEmail = async (
       from: `"${mailSettings.fromName || 'Rezervasyon Sistemi'}" <${mailSettings.fromEmail}>`,
       to: reservation.customerEmail,
       subject,
-      html: body,
+      html: htmlBody,
     });
 
     console.log(`✅ Reservation email (${templateType}) sent to ${reservation.customerEmail} for reservation ${reservation.id}`);

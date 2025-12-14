@@ -482,9 +482,10 @@
                       color="primary" 
                       variant="outlined" 
                       size="small"
-                      prepend-icon="mdi-currency-usd"
                       @click="openPricingDialog(item)"
                       class="text-uppercase"
+                      :prepend-icon="getCurrencyIcon(defaultCurrency?.code || 'TRY')"
+                      :suffix="getCurrencySymbol(defaultCurrency?.code || 'TRY')"
                     >
                       Fiyat Ekle
                     </v-btn>
@@ -522,6 +523,7 @@
 
                   <template #item.deliveryPricing="{ item }">
                     <v-btn 
+                      v-if="!item.parentId"
                       color="success" 
                       variant="outlined" 
                       size="small"
@@ -817,6 +819,13 @@
                           item-value="value"
                           label="Sun Roof"
                           prepend-inner-icon="mdi-car-convertible"
+                        />
+                      </v-col>
+                      <v-col cols="12" md="4">
+                        <v-text-file-input  
+                          v-model="form.imageUrl"
+                          label="Resim"
+                          prepend-inner-icon="mdi-image"
                         />
                       </v-col>
                       <v-col cols="12">
@@ -1293,87 +1302,157 @@
                 </template>
 
                 <template #item.range1_3="{ item }">
-                  <v-text-field
-                    v-model.number="item.prices['1-3']"
-                    type="number"
-                    density="compact"
-                    hide-details
-                    variant="outlined"
-                    style="max-width: 100px;"
-                    @update:model-value="updatePricing(item, '1-3', $event)"
-                  />
+                  <div class="d-flex align-center gap-1">
+                    <v-text-field
+                      v-model.number="item.prices['1-3']"
+                      type="number"
+                      density="compact"
+                      hide-details
+                      variant="outlined"
+                      style="max-width: 100px;"
+                      @update:model-value="updatePricing(item, '1-3', $event)"
+                    />
+                    <v-btn
+                      icon="mdi-content-copy"
+                      size="x-small"
+                      variant="text"
+                      color="primary"
+                      @click="copyPriceToAll(item, '1-3')"
+                      title="Tamamına Kopyala"
+                    />
+                  </div>
                 </template>
 
                 <template #item.range4_6="{ item }">
-                  <v-text-field
-                    v-model.number="item.prices['4-6']"
-                    type="number"
-                    density="compact"
-                    hide-details
-                    variant="outlined"
-                    style="max-width: 100px;"
-                    @update:model-value="updatePricing(item, '4-6', $event)"
-                  />
+                  <div class="d-flex align-center gap-1">
+                    <v-text-field
+                      v-model.number="item.prices['4-6']"
+                      type="number"
+                      density="compact"
+                      hide-details
+                      variant="outlined"
+                      style="max-width: 100px;"
+                      @update:model-value="updatePricing(item, '4-6', $event)"
+                    />
+                    <v-btn
+                      icon="mdi-content-copy"
+                      size="x-small"
+                      variant="text"
+                      color="primary"
+                      @click="copyPriceToAll(item, '4-6')"
+                      title="Tamamına Kopyala"
+                    />
+                  </div>
                 </template>
 
                 <template #item.range7_10="{ item }">
-                  <v-text-field
-                    v-model.number="item.prices['7-10']"
-                    type="number"
-                    density="compact"
-                    hide-details
-                    variant="outlined"
-                    style="max-width: 100px;"
-                    @update:model-value="updatePricing(item, '7-10', $event)"
-                  />
+                  <div class="d-flex align-center gap-1">
+                    <v-text-field
+                      v-model.number="item.prices['7-10']"
+                      type="number"
+                      density="compact"
+                      hide-details
+                      variant="outlined"
+                      style="max-width: 100px;"
+                      @update:model-value="updatePricing(item, '7-10', $event)"
+                    />
+                    <v-btn
+                      icon="mdi-content-copy"
+                      size="x-small"
+                      variant="text"
+                      color="primary"
+                      @click="copyPriceToAll(item, '7-10')"
+                      title="Tamamına Kopyala"
+                    />
+                  </div>
                 </template>
 
                 <template #item.range11_13="{ item }">
-                  <v-text-field
-                    v-model.number="item.prices['11-13']"
-                    type="number"
-                    density="compact"
-                    hide-details
-                    variant="outlined"
-                    style="max-width: 100px;"
-                    @update:model-value="updatePricing(item, '11-13', $event)"
-                  />
+                  <div class="d-flex align-center gap-1">
+                    <v-text-field
+                      v-model.number="item.prices['11-13']"
+                      type="number"
+                      density="compact"
+                      hide-details
+                      variant="outlined"
+                      style="max-width: 100px;"
+                      @update:model-value="updatePricing(item, '11-13', $event)"
+                    />
+                    <v-btn
+                      icon="mdi-content-copy"
+                      size="x-small"
+                      variant="text"
+                      color="primary"
+                      @click="copyPriceToAll(item, '11-13')"
+                      title="Tamamına Kopyala"
+                    />
+                  </div>
                 </template>
 
                 <template #item.range14_20="{ item }">
-                  <v-text-field
-                    v-model.number="item.prices['14-20']"
-                    type="number"
-                    density="compact"
-                    hide-details
-                    variant="outlined"
-                    style="max-width: 100px;"
-                    @update:model-value="updatePricing(item, '14-20', $event)"
-                  />
+                  <div class="d-flex align-center gap-1">
+                    <v-text-field
+                      v-model.number="item.prices['14-20']"
+                      type="number"
+                      density="compact"
+                      hide-details
+                      variant="outlined"
+                      style="max-width: 100px;"
+                      @update:model-value="updatePricing(item, '14-20', $event)"
+                    />
+                    <v-btn
+                      icon="mdi-content-copy"
+                      size="x-small"
+                      variant="text"
+                      color="primary"
+                      @click="copyPriceToAll(item, '14-20')"
+                      title="Tamamına Kopyala"
+                    />
+                  </div>
                 </template>
 
                 <template #item.range21_29="{ item }">
-                  <v-text-field
-                    v-model.number="item.prices['21-29']"
-                    type="number"
-                    density="compact"
-                    hide-details
-                    variant="outlined"
-                    style="max-width: 100px;"
-                    @update:model-value="updatePricing(item, '21-29', $event)"
-                  />
+                  <div class="d-flex align-center gap-1">
+                    <v-text-field
+                      v-model.number="item.prices['21-29']"
+                      type="number"
+                      density="compact"
+                      hide-details
+                      variant="outlined"
+                      style="max-width: 100px;"
+                      @update:model-value="updatePricing(item, '21-29', $event)"
+                    />
+                    <v-btn
+                      icon="mdi-content-copy"
+                      size="x-small"
+                      variant="text"
+                      color="primary"
+                      @click="copyPriceToAll(item, '21-29')"
+                      title="Tamamına Kopyala"
+                    />
+                  </div>
                 </template>
 
                 <template #item.range30_plus="{ item }">
-                  <v-text-field
-                    v-model.number="item.prices['30++']"
-                    type="number"
-                    density="compact"
-                    hide-details
-                    variant="outlined"
-                    style="max-width: 100px;"
-                    @update:model-value="updatePricing(item, '30++', $event)"
-                  />
+                  <div class="d-flex align-center gap-1">
+                    <v-text-field
+                      v-model.number="item.prices['30++']"
+                      type="number"
+                      density="compact"
+                      hide-details
+                      variant="outlined"
+                      style="max-width: 100px;"
+                      @update:model-value="updatePricing(item, '30++', $event)"
+                    />
+                    <v-btn
+                      icon="mdi-content-copy"
+                      size="x-small"
+                      variant="text"
+                      color="primary"
+                      @click="copyPriceToAll(item, '30++')"
+                      title="Tamamına Kopyala"
+                    />
+                  </div>
                 </template>
 
                 <template #item.discount="{ item }">
@@ -1480,7 +1559,7 @@
                   hide-details
                   variant="outlined"
                   style="max-width: 120px;"
-                  suffix="₺"
+                  :suffix="getCurrencySymbol(defaultCurrency?.code || '₺')"
                   @update:model-value="updateDeliveryPricingFee(item, $event)"
                 />
               </template>
@@ -1575,8 +1654,8 @@
                     v-model.number="locationForm.deliveryFee"
                     label="Teslim Ücreti"
                     type="number"
-                    prepend-inner-icon="mdi-currency-try"
-                    suffix="₺"
+                    :prepend-inner-icon="getCurrencyIcon(defaultCurrency?.code || 'TRY')"
+                    :suffix="getCurrencySymbol(defaultCurrency?.code || 'TRY')"
                   />
                 </v-col>
                 <v-col cols="12" md="6">
@@ -1584,8 +1663,8 @@
                     v-model.number="locationForm.dropFee"
                     label="Drop Ücreti"
                     type="number"
-                    prepend-inner-icon="mdi-currency-try"
-                    suffix="₺"
+                    :prepend-inner-icon="getCurrencyIcon(defaultCurrency?.code || 'TRY')"
+                    :suffix="getCurrencySymbol(defaultCurrency?.code || 'TRY')"
                   />
                 </v-col>
                 <v-col cols="12" md="6">
@@ -1893,6 +1972,9 @@ const locationForm = reactive({
   isActive: true,
 });
 
+// Default currency for location fees
+const defaultCurrency = ref<{ code: string; symbol?: string } | null>(null);
+
 // Available parent locations (excluding current location if editing)
 // Only show locations with type='merkez' as parent options
 const availableParentLocations = computed(() => {
@@ -1977,6 +2059,27 @@ const currencyOptions = [
   { value: 'USD', title: 'Amerikan Doları', symbol: '$' },
   { value: 'EUR', title: 'Euro', symbol: '€' },
 ];
+
+// Currency helper functions
+const getCurrencyIcon = (code: string): string => {
+  const icons: Record<string, string> = {
+    TRY: 'mdi-currency-try',
+    USD: 'mdi-currency-usd',
+    EUR: 'mdi-currency-eur',
+    GBP: 'mdi-currency-gbp',
+  };
+  return icons[code] || 'mdi-currency-usd';
+};
+
+const getCurrencySymbol = (code: string): string => {
+  const symbols: Record<string, string> = {
+    TRY: '₺',
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+  };
+  return symbols[code] || '$';
+};
 
 // Validation rules
 const rules = {
@@ -3453,6 +3556,44 @@ const updatePricingStatus = (item: PricingTableItem, value: boolean) => {
   item.isActive = value;
 };
 
+const copyPriceToAll = async (item: PricingTableItem, dayRange: string) => {
+  if (!selectedLocationForPricing.value) return;
+  
+  const price = item.prices[dayRange];
+  
+  if (!price || price <= 0) {
+    alert('Lütfen önce bir fiyat giriniz.');
+    return;
+  }
+
+  const confirmMessage = `Bu fiyatı (${price} TL) tüm araçlar ve tüm aylar için "${dayRange}" gün aralığına kopyalamak istediğinizden emin misiniz?`;
+  
+  if (!confirm(confirmMessage)) {
+    return;
+  }
+
+  try {
+    savingPricing.value = true;
+    
+    await http.post('/rentacar/location-pricing/bulk-copy', {
+      locationId: selectedLocationForPricing.value.id,
+      sourceVehicleId: item.vehicleId,
+      sourceMonth: selectedMonth.value,
+      dayRange: dayRange,
+      price: price,
+    });
+
+    // Tüm aylar için veriyi yeniden yükle
+    await loadPricingData();
+    
+    alert(`Fiyat başarıyla tüm araçlar ve tüm aylar için kopyalandı!`);
+  } catch (error: any) {
+    alert(error.response?.data?.message || 'Fiyat kopyalanırken bir hata oluştu');
+  } finally {
+    savingPricing.value = false;
+  }
+};
+
 const savePricing = async () => {
   if (!selectedLocationForPricing.value) return;
   
@@ -3621,6 +3762,7 @@ onMounted(async () => {
       loadVehicleModels(), // Tüm modelleri yükle (marka filtresi olmadan)
       loadVehicles(),
       loadLocations(),
+      loadDefaultCurrency(), // Load default currency for location fee icons
     ]);
     console.log('Initial data loaded:', {
       categories: vehicleCategories.value.length,
@@ -3640,6 +3782,37 @@ onMounted(async () => {
     }
   });
 });
+
+// Load default currency from tenant settings
+const loadDefaultCurrency = async () => {
+  if (!auth.tenant) return;
+  try {
+    const { data } = await http.get<{ 
+      defaultCurrency?: { 
+        id?: string;
+        code: string; 
+        symbol?: string;
+      } | null;
+    }>('/settings/site', {
+      params: { tenantId: auth.tenant.id },
+    });
+    
+    if (data?.defaultCurrency) {
+      defaultCurrency.value = {
+        code: data.defaultCurrency.code,
+        symbol: data.defaultCurrency.symbol,
+      };
+    } else {
+      // Fallback to TRY if no default currency is set
+      defaultCurrency.value = { code: 'TRY', symbol: '₺' };
+    }
+  } catch (error) {
+    console.error('Failed to load default currency:', error);
+    // Fallback to TRY if API fails
+    defaultCurrency.value = { code: 'TRY', symbol: '₺' };
+  }
+};
+
 </script>
 
 <style scoped>

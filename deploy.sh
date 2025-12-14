@@ -181,7 +181,21 @@ if [ "$MODE" = "full" ]; then
     cd ..
 fi
 
-# 5. Infra (Backend + Frontend) başlatma
+# 5. Sunucuda node_modules temizleme (infra modunda Docker build için)
+if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ]; then
+    echo -e "${YELLOW}🧹 Sunucudaki node_modules temizleniyor (Docker build için)...${NC}"
+    if [ -d "frontend/node_modules" ]; then
+        echo "Frontend node_modules siliniyor..."
+        rm -rf frontend/node_modules
+    fi
+    if [ -d "backend/node_modules" ]; then
+        echo "Backend node_modules siliniyor..."
+        rm -rf backend/node_modules
+    fi
+    echo -e "${GREEN}✅ node_modules temizlendi${NC}"
+fi
+
+# 6. Infra (Backend + Frontend) başlatma
 if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
     echo -e "${YELLOW}🚀 Application Stack ${MODE} modunda başlatılıyor...${NC}"
     cd infra
@@ -215,6 +229,16 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
     # Backend'in başlamasını bekle
     echo -e "${YELLOW}⏳ Backend'in başlaması bekleniyor...${NC}"
     sleep 5
+    
+    # Worker'ın çalıştığını kontrol et
+    echo -e "${YELLOW}📧 Email Worker kontrolü...${NC}"
+    if docker ps --format '{{.Names}}' | grep -q "^saas-tour-worker$"; then
+        echo -e "${GREEN}✅ Worker container çalışıyor${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Worker container bulunamadı, kontrol ediliyor...${NC}"
+        # Worker container'ını başlat (eğer docker-compose'da tanımlıysa)
+        docker-compose up -d worker 2>/dev/null || echo -e "${YELLOW}⚠️  Worker service docker-compose.yml'de bulunamadı${NC}"
+    fi
 else
     echo -e "${RED}❌ Geçersiz mod: $MODE${NC}"
     exit 1
@@ -222,6 +246,7 @@ fi
 
 echo ""
 echo -e "${GREEN}✅ Deployment tamamlandı!${NC}"
+echo -e "${BLUE}📧 Email Worker: saas-tour-worker container'ında çalışıyor${NC}"
 echo ""
 echo -e "${BLUE}📊 Durum:${NC}"
 docker-compose ps

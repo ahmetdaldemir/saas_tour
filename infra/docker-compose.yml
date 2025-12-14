@@ -17,6 +17,33 @@ services:
       - DB_NAME=${DB_NAME:-tour_saas}
     ports:
       - "${BACKEND_PORT:-4001}:3000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - internal
+      - global_databases_network
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: saas-tour-worker
+    env_file:
+      - ../backend/.env
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - DB_HOST=global_postgres
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USERNAME=${DB_USERNAME:-dev_user}
+      - DB_PASSWORD=${DB_PASSWORD:-dev_pass}
+      - DB_NAME=${DB_NAME:-tour_saas}
+      - USE_EMAIL_QUEUE=${USE_EMAIL_QUEUE:-true}
+      - RABBITMQ_HOST=${RABBITMQ_HOST:-global_rabbitmq}
+      - RABBITMQ_PORT=${RABBITMQ_PORT:-5672}
+    command: node dist/workers/worker.js
+    depends_on:
+      - backend
     networks:
       - internal
       - global_databases_network

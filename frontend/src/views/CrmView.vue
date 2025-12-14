@@ -64,31 +64,42 @@
                 </template>
 
                 <template #item.price="{ item }">
-                  <span>{{ item.price || 0 }} ₺</span>
+                  <div class="d-flex align-center gap-1 justify-end">
+                    <v-icon 
+                      :icon="getCurrencyIcon(defaultCurrency?.code || 'TRY')" 
+                      size="small" 
+                      color="primary"
+                    />
+                    <span class="price-value">{{ item.price || 0 }}</span>
+                  </div>
                 </template>
 
                 <template #item.isMandatory="{ item }">
-                  <v-chip
-                    size="small"
-                    :color="item.isMandatory ? 'success' : 'error'"
-                    variant="flat"
-                  >
-                    {{ item.isMandatory ? 'EVET' : 'HAYIR' }}
-                  </v-chip>
+                  <div class="d-flex justify-center">
+                    <v-chip
+                      size="small"
+                      :color="item.isMandatory ? 'success' : 'error'"
+                      variant="flat"
+                    >
+                      {{ item.isMandatory ? 'EVET' : 'HAYIR' }}
+                    </v-chip>
+                  </div>
                 </template>
 
                 <template #item.status="{ item }">
-                  <v-chip
-                    size="small"
-                    :color="item.isActive ? 'success' : 'error'"
-                    variant="flat"
-                  >
-                    {{ item.isActive ? 'Aktif' : 'Pasif' }}
-                  </v-chip>
+                  <div class="d-flex justify-center">
+                    <v-chip
+                      size="small"
+                      :color="item.isActive ? 'success' : 'error'"
+                      variant="flat"
+                    >
+                      {{ item.isActive ? 'Aktif' : 'Pasif' }}
+                    </v-chip>
+                  </div>
                 </template>
 
                 <template #item.actions="{ item }">
-                  <div class="d-flex align-center gap-1" @click.stop>
+                  <div class="d-flex align-center gap-1 justify-end" @click.stop>
                     <v-btn
                       icon="mdi-pencil"
                       variant="text"
@@ -552,8 +563,8 @@
                   v-model="extraForm.price"
                   label="Fiyat"
                   type="number"
-                  prepend-inner-icon="mdi-currency-try"
-                  suffix="₺"
+                  :prepend-icon="getCurrencyIcon(defaultCurrency?.code || 'TRY')"
+                  :suffix="getCurrencySymbol(defaultCurrency?.code || 'TRY')"
                   class="mb-2"
                 />
               </v-col>
@@ -718,6 +729,7 @@ const customerTypeOptions = [
   { label: 'Normal', value: 'normal' },
   { label: 'Özel Müşteri', value: 'special' },
 ];
+const defaultCurrency = ref<{ code: string; symbol?: string } | null>(null);
 
 // Computed
 const locationOptions = computed(() => {
@@ -808,6 +820,7 @@ const extraForm = reactive<{
   translations: Record<string, string>;
   price: number | null;
   isMandatory: boolean;
+  isActive: boolean;
   canIncreaseQuantity: boolean;
   image: string;
   value: string;
@@ -818,6 +831,7 @@ const extraForm = reactive<{
   translations: {},
   price: null,
   isMandatory: false,
+  isActive: true,
   canIncreaseQuantity: false,
   image: '',
   value: '',
@@ -919,96 +933,48 @@ const loadExtras = async () => {
   if (!auth.tenant) return;
   loadingExtras.value = true;
   try {
-    // TODO: Backend API endpoint'i eklendiğinde buraya entegre edilecek
-    // const { data } = await http.get<ExtraDto[]>('/crm/extras', {
-    //   params: { tenantId: auth.tenant.id },
-    // });
-    // extras.value = data;
+    // Load extras from backend API
+    const { data } = await http.get<ExtraDto[]>('/rentacar/extras', {
+      params: { tenantId: auth.tenant.id },
+    });
     
-    // Örnek veri (görseldeki gibi)
-    const sampleData: ExtraDto[] = [
-      {
-        id: '1',
-        name: 'Mini Hasar Paketi',
-        price: 2,
-        isMandatory: true,
-        isActive: true,
-      },
-      {
-        id: '4',
-        name: 'Navigasyon',
-        price: 3,
-        isMandatory: false,
-        isActive: true,
-      },
-      {
-        id: '7',
-        name: 'Kış Lastiği',
-        price: 2,
-        isMandatory: false,
-        isActive: false,
-      },
-      {
-        id: '8',
-        name: 'Hızlı Geciş HGS',
-        price: 19,
-        isMandatory: false,
-        isActive: true,
-      },
-      {
-        id: '9',
-        name: 'Çocuk Koltuğu',
-        price: 3,
-        isMandatory: false,
-        isActive: true,
-      },
-      {
-        id: '11',
-        name: 'Kar Lastik Paleti',
-        price: 2,
-        isMandatory: false,
-        isActive: false,
-      },
-      {
-        id: '12',
-        name: 'Kapsamlı Sigorta',
-        price: 3,
-        isMandatory: true,
-        isActive: true,
-      },
-      {
-        id: '13',
-        name: 'Ek 400 Km Paketi',
-        price: 39,
-        isMandatory: false,
-        isActive: true,
-      },
-      {
-        id: '14',
-        name: 'Çocuk Koltuk Yükseltici',
-        price: 3,
-        isMandatory: false,
-        isActive: true,
-      },
-      {
-        id: '18',
-        name: 'Wifi-İnternet',
-        price: 4,
-        isMandatory: false,
-        isActive: true,
-      },
-    ];
-    
-    // Silinen öğeleri filtrele ve eklenen öğeleri ekle
-    const deletedIds = getDeletedExtras();
-    const addedExtras = getAddedExtras();
-    const filteredSample = sampleData.filter(item => !deletedIds.includes(item.id));
-    extras.value = [...filteredSample, ...addedExtras];
+    // Backend might return snake_case (is_active) or camelCase (isActive)
+    // Normalize the field names to camelCase
+    if (data && Array.isArray(data)) {
+      extras.value = data.map((extra: any) => ({
+        ...extra,
+        isActive: extra.isActive !== undefined ? extra.isActive : (extra.is_active !== undefined ? extra.is_active : true),
+        isMandatory: extra.isMandatory !== undefined ? extra.isMandatory : (extra.is_mandatory !== undefined ? extra.is_mandatory : false),
+        salesType: extra.salesType || extra.sales_type || 'daily',
+      }));
+    } else {
+      extras.value = [];
+    }
   } catch (error) {
     console.error('Failed to load extras:', error);
+    extras.value = [];
   } finally {
     loadingExtras.value = false;
   }
+};
+const getCurrencyIcon = (code: string): string => {
+  const icons: Record<string, string> = {
+    TRY: 'mdi-currency-try',
+    USD: 'mdi-currency-usd',
+    EUR: 'mdi-currency-eur',
+    GBP: 'mdi-currency-gbp',
+  };
+  return icons[code] || 'mdi-currency-usd';
+};
+
+const getCurrencySymbol = (code: string): string => {
+  const symbols: Record<string, string> = {
+    TRY: '₺',
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+  };
+  return symbols[code] || '$';
 };
 
 // Computed for extra form default language
@@ -1127,6 +1093,7 @@ const resetExtraForm = () => {
   extraForm.translations = {};
   extraForm.price = null;
   extraForm.isMandatory = false;
+  extraForm.isActive = true;
   extraForm.canIncreaseQuantity = false;
   extraForm.image = '';
   extraForm.value = '';
@@ -1159,89 +1126,29 @@ const saveExtra = async () => {
     const extraData = {
       tenantId: auth.tenant.id,
       name: defaultName,
-      translations: availableLanguages.value.map(lang => ({
-        languageId: lang.id,
-        name: extraForm.translations[lang.id] || '',
-      })),
       price: extraForm.price || 0,
-      isMandatory: extraForm.isMandatory,
-      canIncreaseQuantity: extraForm.canIncreaseQuantity,
-      image: extraForm.image,
-      value: extraForm.value,
-      inputName: extraForm.inputName,
-      type: extraForm.type,
-      salesType: extraForm.salesType,
-      isActive: true,
+      currencyCode: 'TRY', // Default currency
+      isMandatory: extraForm.isMandatory || false,
+      isActive: extraForm.isActive !== undefined ? extraForm.isActive : true,
+      salesType: extraForm.salesType || 'daily',
+      description: extraForm.value || null,
+      imageUrl: extraForm.image || null,
     };
     
-    // TODO: Backend API endpoint'i eklendiğinde buraya entegre edilecek
-    // if (editingExtra.value) {
-    //   await http.put(`/crm/extras/${editingExtra.value.id}`, extraData);
-    // } else {
-    //   await http.post('/crm/extras', extraData);
-    // }
-    
-    // Örnek veri için local state'e ekleme
-    if (!editingExtra.value) {
-      const newExtra: ExtraDto = {
-        id: Date.now().toString(),
-        name: defaultName,
-        price: extraForm.price || 0,
-        isMandatory: extraForm.isMandatory,
-        isActive: true,
-        canIncreaseQuantity: extraForm.canIncreaseQuantity,
-        image: extraForm.image,
-        value: extraForm.value,
-        inputName: extraForm.inputName,
-        type: extraForm.type,
-        salesType: extraForm.salesType,
-      };
-      extras.value.push(newExtra);
-      
-      // localStorage'a kaydet
-      const addedExtras = getAddedExtras();
-      addedExtras.push(newExtra);
-      saveAddedExtras(addedExtras);
+    // Backend API endpoint kullan
+    if (editingExtra.value) {
+      // Update existing extra - tenantId query param olarak gönder
+      const { tenantId, ...updateData } = extraData;
+      await http.put(`/rentacar/extras/${editingExtra.value.id}`, updateData, {
+        params: { tenantId: auth.tenant.id },
+      });
     } else {
-      // Update existing extra
-      const index = extras.value.findIndex(e => e.id === editingExtra.value?.id);
-      if (index !== -1) {
-        extras.value[index] = {
-          ...extras.value[index],
-          name: defaultName,
-          price: extraForm.price || 0,
-          isMandatory: extraForm.isMandatory,
-          canIncreaseQuantity: extraForm.canIncreaseQuantity,
-          image: extraForm.image,
-          value: extraForm.value,
-          inputName: extraForm.inputName,
-          type: extraForm.type,
-          salesType: extraForm.salesType,
-        };
-      }
-      
-      // localStorage'da güncelle
-      const addedExtras = getAddedExtras();
-      const addedIndex = addedExtras.findIndex(e => e.id === editingExtra.value?.id);
-      if (addedIndex !== -1) {
-        addedExtras[addedIndex] = {
-          ...addedExtras[addedIndex],
-          name: defaultName,
-          price: extraForm.price || 0,
-          isMandatory: extraForm.isMandatory,
-          canIncreaseQuantity: extraForm.canIncreaseQuantity,
-          image: extraForm.image,
-          value: extraForm.value,
-          inputName: extraForm.inputName,
-          type: extraForm.type,
-          salesType: extraForm.salesType,
-        };
-        saveAddedExtras(addedExtras);
-      }
+      // Create new extra
+      await http.post('/rentacar/extras', extraData);
     }
     
-    // loadExtras() çağrılmıyor çünkü zaten local state güncellendi
-    // await loadExtras();
+    // Reload extras from backend
+    await loadExtras();
     closeExtraDialog();
   } catch (error: any) {
     alert(error.response?.data?.message || 'Ekstra ürün kaydedilirken bir hata oluştu');
@@ -1259,6 +1166,7 @@ const editExtra = (extra: ExtraDto) => {
   // Set form values
   extraForm.price = extra.price;
   extraForm.isMandatory = extra.isMandatory;
+  extraForm.isActive = extra.isActive !== undefined ? extra.isActive : true;
   extraForm.canIncreaseQuantity = extra.canIncreaseQuantity ?? false;
   extraForm.image = extra.image || '';
   extraForm.value = extra.value || '';
@@ -1278,33 +1186,16 @@ const editExtra = (extra: ExtraDto) => {
 
 const deleteExtra = async (id: string) => {
   if (!confirm('Bu ekstra ürünü silmek istediğinizden emin misiniz?')) return;
+  if (!auth.tenant) return;
+  
   try {
-    // TODO: Backend API endpoint'i eklendiğinde buraya entegre edilecek
-    // await http.delete(`/crm/extras/${id}`);
+    // Backend API endpoint kullan
+    await http.delete(`/rentacar/extras/${id}`, {
+      params: { tenantId: auth.tenant.id },
+    });
     
-    // Örnek veri için local state'ten silme
-    const index = extras.value.findIndex(e => e.id === id);
-    if (index !== -1) {
-      extras.value.splice(index, 1);
-    }
-    
-    // Silinen ID'yi localStorage'a kaydet
-    const deletedIds = getDeletedExtras();
-    if (!deletedIds.includes(id)) {
-      deletedIds.push(id);
-      saveDeletedExtras(deletedIds);
-    }
-    
-    // Eklenen öğelerden de sil
-    const addedExtras = getAddedExtras();
-    const addedIndex = addedExtras.findIndex(e => e.id === id);
-    if (addedIndex !== -1) {
-      addedExtras.splice(addedIndex, 1);
-      saveAddedExtras(addedExtras);
-    }
-    
-    // Backend API hazır olduğunda yukarıdaki satırı kaldırıp loadExtras() kullanılacak
-    // await loadExtras();
+    // Reload extras from backend
+    await loadExtras();
   } catch (error: any) {
     alert(error.response?.data?.message || 'Ekstra ürün silinirken bir hata oluştu');
   }
@@ -1576,6 +1467,34 @@ const loadLanguages = async () => {
     console.error('Failed to load languages:', error);
   }
 };
+const loadDefaultCurrency = async () => {
+  if (!auth.tenant) return;
+  try {
+    const { data } = await http.get<{ 
+      defaultCurrency?: { 
+        id?: string;
+        code: string; 
+        symbol?: string;
+      } | null;
+    }>('/settings/site', {
+      params: { tenantId: auth.tenant.id },
+    });
+    
+    if (data?.defaultCurrency) {
+      defaultCurrency.value = {
+        code: data.defaultCurrency.code,
+        symbol: data.defaultCurrency.symbol,
+      };
+    } else {
+      // Fallback to TRY if no default currency is set
+      defaultCurrency.value = { code: 'TRY', symbol: '₺' };
+    }
+  } catch (error) {
+    console.error('Failed to load default currency:', error);
+    // Fallback to TRY if API fails
+    defaultCurrency.value = { code: 'TRY', symbol: '₺' };
+  }
+};
 
 onMounted(async () => {
   await Promise.all([
@@ -1583,6 +1502,7 @@ onMounted(async () => {
     loadExtras(),
     loadCampaigns(),
     loadVehicles(),
+    loadDefaultCurrency(), // Load default currency for location fee icons
     loadLocations(),
   ]);
   
@@ -1637,6 +1557,15 @@ onMounted(async () => {
 .extra-table :deep(.v-btn) {
   font-size: 0.75rem;
   letter-spacing: 0.5px;
+}
+
+.price-value {
+  font-size: 16px;
+  font-weight: 500;
+  color: #f44336;
+  text-align: right;
+  min-width: 25px;
+  display: inline-block;
 }
 
 .campaign-table {

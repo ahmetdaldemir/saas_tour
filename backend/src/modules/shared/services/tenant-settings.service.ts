@@ -8,6 +8,12 @@ export type SiteSettingsInput = {
   logoUrl?: string;
   faviconUrl?: string;
   defaultCurrencyId?: string | null;
+  companyName?: string;
+  companyAddress?: string;
+  companyPhone?: string;
+  companyEmail?: string;
+  companyWebsite?: string;
+  companyTaxNumber?: string;
 };
 
 export type MailSettingsInput = {
