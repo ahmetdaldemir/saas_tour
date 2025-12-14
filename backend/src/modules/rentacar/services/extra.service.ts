@@ -59,7 +59,9 @@ export class ExtraService {
       throw new Error('Extra not found');
     }
 
-    Object.assign(extra, input);
+    // tenantId'yi input'tan çıkar (UpdateExtraInput'da zaten yok ama emin olmak için)
+    const { tenantId: _, ...updateData } = input as any;
+    Object.assign(extra, updateData);
     return repo.save(extra);
   }
 

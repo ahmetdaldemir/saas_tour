@@ -22,6 +22,7 @@ import EmailTemplatesView from '../views/EmailTemplatesView.vue';
 import UsersView from '../views/UsersView.vue';
 import TransferView from '../views/TransferView.vue';
 import ChatView from '../views/ChatView.vue';
+import AdminDashboard from '../views/AdminDashboard.vue';
 import { useAuthStore } from '../stores/auth';
 
 const routes: RouteRecordRaw[] = [
@@ -159,6 +160,12 @@ const routes: RouteRecordRaw[] = [
     path: '/app/chat',
     name: 'chat',
     component: ChatView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/admin',
+    name: 'admin-dashboard',
+    component: AdminDashboard,
     meta: { requiresAuth: true, layout: 'admin' },
   },
   {

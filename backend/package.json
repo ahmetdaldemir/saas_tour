@@ -4,8 +4,10 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "dev:worker": "ts-node-dev --respawn --transpile-only src/workers/worker.ts",
     "build": "tsc",
     "start": "node dist/server.js",
+    "start:worker": "node dist/workers/worker.js",
     "lint": "tsc --noEmit",
     "seed": "ts-node src/seeds/seed.ts",
     "import:destinations": "ts-node --project tsconfig.json src/scripts/import-destinations.ts",
@@ -18,15 +20,18 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@types/dockerode": "^3.3.47",
     "@types/multer": "^2.0.0",
     "@types/nodemailer": "^7.0.4",
     "@types/socket.io": "^3.0.1",
+    "amqplib": "^0.10.3",
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "cors": "^2.8.5",
+    "dockerode": "^4.0.9",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
@@ -38,6 +43,7 @@
     "typeorm": "^0.3.27"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.10.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.5",

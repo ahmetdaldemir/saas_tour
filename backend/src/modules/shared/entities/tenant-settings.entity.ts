@@ -69,6 +69,25 @@ export class TenantSettings extends BaseEntity {
   @Column({ name: 'payment_default_method_id', type: 'uuid', nullable: true })
   paymentDefaultMethodId?: string | null;
 
+  // Company/Address Information (for email templates)
+  @Column({ name: 'company_name', length: 200, nullable: true })
+  companyName?: string;
+
+  @Column({ name: 'company_address', type: 'text', nullable: true })
+  companyAddress?: string;
+
+  @Column({ name: 'company_phone', length: 50, nullable: true })
+  companyPhone?: string;
+
+  @Column({ name: 'company_email', length: 160, nullable: true })
+  companyEmail?: string;
+
+  @Column({ name: 'company_website', length: 255, nullable: true })
+  companyWebsite?: string;
+
+  @Column({ name: 'company_tax_number', length: 50, nullable: true })
+  companyTaxNumber?: string;
+
   // Additional settings as JSONB for flexibility
   @Column({ type: 'jsonb', nullable: true })
   metadata?: Record<string, unknown>;

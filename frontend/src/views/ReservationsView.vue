@@ -484,7 +484,7 @@
                         </div>
                         <div class="text-body-2 font-weight-medium mb-1">{{ extra.name }}</div>
                         <div class="text-h6 font-weight-bold text-primary">
-                          {{ formatPrice(extra.price || 0, reservationForm.currencyCode) }}
+                          {{ formatPrice(getExtraDisplayPrice(extra), reservationForm.currencyCode) }}
                         </div>
                         <div class="text-caption text-medium-emphasis" v-if="extra.salesType === 'daily'">
                           Günlük
@@ -604,9 +604,10 @@
                           <v-list-item
                             v-for="extraId in selectedExtras"
                             :key="extraId"
-                            :title="extras.find(e => e.id === extraId)?.name || ''"
-                            :subtitle="formatPrice(extras.find(e => e.id === extraId)?.price || 0, reservationForm.currencyCode)"
-                          />
+                          >
+                            <template #title>{{ extras.find((e: ExtraDto) => e.id === extraId)?.name || '' }}</template>
+                            <template #subtitle>{{ formatPrice(getExtraDisplayPrice(extras.find((e: ExtraDto) => e.id === extraId)), reservationForm.currencyCode) }}</template>
+                          </v-list-item>
                         </v-list>
                       </v-card-text>
                     </v-card>
@@ -876,6 +877,8 @@
                               { label: 'Kadın', value: 'Kadın' },
                               { label: 'Diğer', value: 'Diğer' },
                             ]"
+                            item-title="label"
+                            item-value="value"
                             label="Cinsiyet"
                             density="compact"
                             variant="outlined"
@@ -1043,6 +1046,281 @@
         </v-window-item>
       </v-window>
     </v-card>
+
+    <!-- Müşteri Ekleme Dialog -->
+    <v-dialog v-model="showCustomerDialog" max-width="1400" fullscreen scrollable>
+      <v-card>
+        <v-card-title class="d-flex align-center justify-space-between">
+          <div class="d-flex align-center gap-2">
+            <v-icon icon="mdi-account-plus" size="24" />
+            <span class="text-h6">Müşteri Ekleme Formu</span>
+          </div>
+          <v-btn icon="mdi-close" variant="text" @click="closeCustomerDialog" />
+        </v-card-title>
+        <v-divider />
+        <v-card-text class="pa-0">
+          <v-form ref="newCustomerFormRef" v-model="newCustomerFormValid">
+            <v-tabs v-model="newCustomerFormTab" show-arrows class="px-4 pt-4">
+              <v-tab value="personal">
+                <v-icon start icon="mdi-account" />
+                Kişisel Bilgiler
+              </v-tab>
+              <v-tab value="personal-continued">
+                <v-icon start icon="mdi-account-details" />
+                Kişisel Bilgiler (Devam)
+              </v-tab>
+              <v-tab value="identity">
+                <v-icon start icon="mdi-card-account-details" />
+                Kimlik / Pasaport Bilgileri
+              </v-tab>
+              <v-tab value="license">
+                <v-icon start icon="mdi-license" />
+                Ehliyet Bilgileri
+              </v-tab>
+            </v-tabs>
+            <v-divider />
+            <v-window v-model="newCustomerFormTab" class="pa-6">
+              <!-- Kişisel Bilgiler Sekmesi -->
+              <v-window-item value="personal">
+                <v-row>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="newCustomerForm.firstName"
+                      label="Adı"
+                      prepend-inner-icon="mdi-account"
+                      required
+                      :rules="[v => !!v || 'Adı gereklidir']"
+                      class="mb-2"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="newCustomerForm.lastName"
+                      label="Soyadı"
+                      prepend-inner-icon="mdi-account"
+                      required
+                      :rules="[v => !!v || 'Soyadı gereklidir']"
+                      class="mb-2"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="newCustomerForm.birthPlace"
+                      label="Doğum Yeri"
+                      prepend-inner-icon="mdi-map-marker"
+                      class="mb-2"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="newCustomerForm.birthDate"
+                      label="Doğum Tarihi"
+                      type="date"
+                      prepend-inner-icon="mdi-calendar"
+                      class="mb-2"
+                    />
+                  </v-col>
+                  <v-col cols="12">
+                    <div class="mb-2">
+                      <label class="text-body-2 mb-2 d-block">Cinsiyet</label>
+                      <v-radio-group v-model="newCustomerForm.gender" inline>
+                        <v-radio label="Erkek" value="male" />
+                        <v-radio label="Kadın" value="female" />
+                      </v-radio-group>
+                    </div>
+                  </v-col>
+                </v-row>
+              </v-window-item>
+
+              <!-- Kişisel Bilgiler (Devam) Sekmesi -->
+              <v-window-item value="personal-continued">
+                <v-row>
+                  <v-col cols="12" md="6">
+                    <v-select
+                      v-model="newCustomerForm.languageId"
+                      :items="availableLanguages"
+                      item-title="name"
+                      item-value="id"
+                      label="Dil"
+                      prepend-inner-icon="mdi-translate"
+                      class="mb-2"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-select
+                      v-model="newCustomerForm.country"
+                      :items="countries"
+                      item-title="name"
+                      item-value="code"
+                      label="Ülke"
+                      prepend-inner-icon="mdi-earth"
+                      class="mb-2"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="newCustomerForm.mobilePhone"
+                      label="Cep Telefonu"
+                      class="mb-2"
+                    >
+                      <template #prepend-inner>
+                        <v-icon icon="mdi-phone" class="mr-2" />
+                        <span class="text-body-2 font-weight-medium">{{ selectedCountry?.dialCode || '' }}</span>
+                      </template>
+                    </v-text-field>
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="newCustomerForm.homePhone"
+                      label="Ev/İş Telefonu (Yedek)"
+                      prepend-inner-icon="mdi-phone"
+                      class="mb-2"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="newCustomerForm.taxOffice"
+                      label="Vergi Dairesi"
+                      prepend-inner-icon="mdi-office-building"
+                      class="mb-2"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="newCustomerForm.taxNumber"
+                      label="Vergi No"
+                      prepend-inner-icon="mdi-identifier"
+                      class="mb-2"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="newCustomerForm.email"
+                      label="Email"
+                      type="email"
+                      prepend-inner-icon="mdi-email"
+                      class="mb-2"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-textarea
+                      v-model="newCustomerForm.homeAddress"
+                      label="Ev/Haus/Tatil Adresi"
+                      prepend-inner-icon="mdi-home"
+                      rows="3"
+                      class="mb-2"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-textarea
+                      v-model="newCustomerForm.workAddress"
+                      label="Otel İsmi / Oda Numarası"
+                      prepend-inner-icon="mdi-office-building"
+                      rows="3"
+                      class="mb-2"
+                    />
+                  </v-col>
+                </v-row>
+              </v-window-item>
+
+              <!-- Kimlik / Pasaport Bilgileri Sekmesi -->
+              <v-window-item value="identity">
+                <v-row>
+                  <v-col cols="12" md="6">
+                    <v-select
+                      v-model="newCustomerForm.idType"
+                      :items="idTypeOptions"
+                      item-title="label"
+                      item-value="value"
+                      label="Kimlik Türü"
+                      prepend-inner-icon="mdi-card-account-details"
+                      class="mb-2"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="newCustomerForm.idNumber"
+                      :label="newCustomerForm.idType === 'tc' ? 'TCKN' : 'Passport No'"
+                      prepend-inner-icon="mdi-card-account-details"
+                      class="mb-2"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="newCustomerForm.idIssuePlace"
+                      label="Verildiği Yer"
+                      prepend-inner-icon="mdi-map-marker"
+                      class="mb-2"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="newCustomerForm.idIssueDate"
+                      label="Veriliş Tarihi"
+                      type="date"
+                      prepend-inner-icon="mdi-calendar"
+                      class="mb-2"
+                    />
+                  </v-col>
+                </v-row>
+              </v-window-item>
+
+              <!-- Ehliyet Bilgileri Sekmesi -->
+              <v-window-item value="license">
+                <v-row>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="newCustomerForm.licenseNumber"
+                      label="No"
+                      prepend-inner-icon="mdi-card-account-details"
+                      class="mb-2"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="newCustomerForm.licenseClass"
+                      label="Sınıfı"
+                      prepend-inner-icon="mdi-format-list-bulleted"
+                      class="mb-2"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="newCustomerForm.licenseIssuePlace"
+                      label="Verildiği Yer"
+                      prepend-inner-icon="mdi-map-marker"
+                      class="mb-2"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="newCustomerForm.licenseIssueDate"
+                      label="Veriliş Tarihi"
+                      type="date"
+                      prepend-inner-icon="mdi-calendar"
+                      class="mb-2"
+                    />
+                  </v-col>
+                </v-row>
+              </v-window-item>
+            </v-window>
+          </v-form>
+        </v-card-text>
+        <v-divider />
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="closeCustomerDialog">İptal</v-btn>
+          <v-btn 
+            color="primary" 
+            @click="saveNewCustomer" 
+            :loading="savingNewCustomer" 
+            :disabled="!newCustomerFormValid"
+          >
+            Kaydet
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -1050,6 +1328,7 @@
 import { computed, reactive, ref, onMounted, watch, nextTick } from 'vue';
 import { http } from '../modules/http';
 import { useAuthStore } from '../stores/auth';
+import { COUNTRIES, type Country } from '../data/countries';
 
 const auth = useAuthStore();
 
@@ -1183,12 +1462,20 @@ interface LocationDto {
 interface CustomerDto {
   id: string;
   fullName: string;
+  firstName?: string;
+  lastName?: string;
   email?: string;
   phone?: string;
+  mobilePhone?: string;
+  homePhone?: string;
   country?: string;
   birthDate?: string;
+  birthPlace?: string;
   gender?: 'male' | 'female' | 'other';
   isBlacklisted?: boolean;
+  isActive?: boolean;
+  languageId?: string;
+  language?: { id: string; name: string; code: string };
 }
 
 interface VehicleDto {
@@ -1251,12 +1538,12 @@ interface ExtraDto {
   price: number;
   isMandatory: boolean;
   isActive: boolean;
+  salesType?: 'daily' | 'per_rental' | string;
   canIncreaseQuantity?: boolean;
   image?: string;
   value?: string;
   inputName?: string;
   type?: 'insurance' | 'extra';
-  salesType?: 'daily' | 'per_rental';
 }
 
 // Location type options
@@ -1957,6 +2244,10 @@ const getAddedCustomers = (): CustomerDto[] => {
   }
 };
 
+const saveAddedCustomers = (customers: CustomerDto[]) => {
+  localStorage.setItem('crm_added_customers', JSON.stringify(customers));
+};
+
 const loadCustomerReservationStats = async (customerId: string) => {
   if (!auth.tenant || !customerId) return;
   try {
@@ -1987,41 +2278,19 @@ const loadCustomers = async () => {
   if (!auth.tenant) return;
   loadingCustomers.value = true;
   try {
-    // TODO: Backend API endpoint'i eklendiğinde buraya entegre edilecek
-    // const { data } = await http.get<CustomerDto[]>('/crm/customers', {
-    //   params: { tenantId: auth.tenant.id },
-    // });
-    // customers.value = data;
+    // Backend API'den müşteri listesini çek
+    const { data } = await http.get<CustomerDto[]>('/crm/customers', {
+      params: { tenantId: auth.tenant.id },
+    });
     
-    // Örnek veri (CrmView'dan aynı)
-    const sampleData: CustomerDto[] = [
-      {
-        id: '1',
-        fullName: 'KARL ALEXANDER KROSTİNA',
-        gender: 'male',
-        phone: '(+49) 1704630767',
-        email: 'kkroshina@googlemail.com',
-      },
-      {
-        id: '2',
-        fullName: 'OLEG BASALAEV',
-        gender: 'male',
-        phone: '(+7) 9633689689',
-        email: 'laybol@yandex.ru',
-      },
-    ];
-    
-    // Silinen öğeleri filtrele ve eklenen öğeleri ekle
-    const deletedIds = getDeletedCustomers();
-    const addedCustomers = getAddedCustomers();
+    // Backend'den gelen veriyi kullan
     const blacklistedIds = getBlacklistedCustomers();
-    const filteredSample = sampleData.filter(item => !deletedIds.includes(item.id));
-    const allCustomers = [...filteredSample, ...addedCustomers];
     
     // Kara liste durumunu ekle
-    customers.value = allCustomers.map(customer => ({
+    customers.value = (data || []).map(customer => ({
       ...customer,
       isBlacklisted: blacklistedIds.includes(customer.id),
+      phone: customer.mobilePhone || customer.homePhone || customer.phone || '',
     }));
   } catch (error) {
     console.error('Failed to load customers:', error);
@@ -2341,9 +2610,9 @@ const onCustomerSelect = async (customerId: string) => {
   customerInfo.country = customer.country || '';
   customerInfo.fullName = customer.fullName || '';
   customerInfo.email = customer.email || '';
-  customerInfo.mobile = customer.phone || '';
-  customerInfo.phone = customer.phone || '';
-  customerInfo.birthDate = customer.birthDate || '';
+  customerInfo.mobile = customer.mobilePhone || customer.homePhone || customer.phone || '';
+  customerInfo.phone = customer.mobilePhone || customer.homePhone || customer.phone || '';
+  customerInfo.birthDate = customer.birthDate ? (typeof customer.birthDate === 'string' ? customer.birthDate : new Date(customer.birthDate).toISOString().split('T')[0]) : '';
   customerInfo.gender = customer.gender === 'male' ? 'Erkek' : customer.gender === 'female' ? 'Kadın' : 'Diğer';
   customerInfo.isBlacklisted = blacklistedIds.includes(customerId);
   customerInfo.totalPoints = 0; // TODO: Load from backend
@@ -2410,8 +2679,88 @@ watch(
 // Watch: Araç seçildiğinde otomatik olarak ekstralar adımına geç (zaten selectVehicle'da yapılıyor)
 
 const showCustomerDialog = ref(false);
+const savingNewCustomer = ref(false);
+const newCustomerFormRef = ref();
+const newCustomerFormValid = ref(false);
+const newCustomerFormTab = ref('personal');
+const availableLanguages = ref<Array<{ id: string; name: string; code: string; isActive: boolean; isDefault?: boolean }>>([]);
+
+const countries = COUNTRIES;
+
+const idTypeOptions = [
+  { label: 'T.C. Kimlik', value: 'tc' },
+  { label: 'Passport', value: 'passport' },
+];
+
+const newCustomerForm = reactive({
+  firstName: '',
+  lastName: '',
+  birthPlace: '',
+  birthDate: '',
+  gender: 'male' as 'male' | 'female',
+  languageId: '',
+  mobilePhone: '',
+  homePhone: '',
+  taxOffice: '',
+  taxNumber: '',
+  email: '',
+  country: 'TR',
+  licenseNumber: '',
+  licenseClass: '',
+  licenseIssuePlace: '',
+  licenseIssueDate: '',
+  idNumber: '',
+  idType: 'tc' as 'tc' | 'passport',
+  idIssuePlace: '',
+  idIssueDate: '',
+  homeAddress: '',
+  workAddress: '',
+});
+
+const selectedCountry = computed(() => {
+  return countries.find(c => c.code === newCustomerForm.country);
+});
+
+const loadLanguages = async () => {
+  try {
+    const { data } = await http.get<Array<{ id: string; name: string; code: string; isActive: boolean; isDefault?: boolean }>>('/languages');
+    availableLanguages.value = data.filter(lang => lang.isActive);
+    
+    // Set default language (Turkish)
+    const defaultLang = availableLanguages.value.find(l => l.code === 'tr' || l.isDefault) || availableLanguages.value[0];
+    if (defaultLang) {
+      newCustomerForm.languageId = defaultLang.id;
+    }
+  } catch (error) {
+    console.error('Failed to load languages:', error);
+  }
+};
 
 const openCustomerDialog = () => {
+  // Reset form
+  newCustomerForm.firstName = '';
+  newCustomerForm.lastName = '';
+  newCustomerForm.birthPlace = '';
+  newCustomerForm.birthDate = '';
+  newCustomerForm.gender = 'male';
+  newCustomerForm.languageId = availableLanguages.value.find(l => l.code === 'tr' || l.isDefault)?.id || '';
+  newCustomerForm.mobilePhone = '';
+  newCustomerForm.homePhone = '';
+  newCustomerForm.taxOffice = '';
+  newCustomerForm.taxNumber = '';
+  newCustomerForm.email = '';
+  newCustomerForm.country = 'TR';
+  newCustomerForm.licenseNumber = '';
+  newCustomerForm.licenseClass = '';
+  newCustomerForm.licenseIssuePlace = '';
+  newCustomerForm.licenseIssueDate = '';
+  newCustomerForm.idNumber = '';
+  newCustomerForm.idType = 'tc';
+  newCustomerForm.idIssuePlace = '';
+  newCustomerForm.idIssueDate = '';
+  newCustomerForm.homeAddress = '';
+  newCustomerForm.workAddress = '';
+  newCustomerFormTab.value = 'personal';
   showCustomerDialog.value = true;
 };
 
@@ -2419,10 +2768,60 @@ const closeCustomerDialog = () => {
   showCustomerDialog.value = false;
 };
 
-const saveCustomerAndRefresh = async () => {
-  // Müşteri kaydedildikten sonra listeyi yenile
-  await loadCustomers();
-  closeCustomerDialog();
+const saveNewCustomer = async () => {
+  if (!auth.tenant) return;
+  
+  const validated = await newCustomerFormRef.value?.validate();
+  if (!validated?.valid) return;
+  
+  savingNewCustomer.value = true;
+  try {
+    const customerData = {
+      tenantId: auth.tenant.id,
+      firstName: newCustomerForm.firstName,
+      lastName: newCustomerForm.lastName,
+      fullName: `${newCustomerForm.firstName} ${newCustomerForm.lastName}`,
+      birthPlace: newCustomerForm.birthPlace,
+      birthDate: newCustomerForm.birthDate,
+      gender: newCustomerForm.gender,
+      languageId: newCustomerForm.languageId,
+      mobilePhone: newCustomerForm.mobilePhone ? `${selectedCountry.value?.dialCode || ''} ${newCustomerForm.mobilePhone}`.trim() : '',
+      homePhone: newCustomerForm.homePhone,
+      taxOffice: newCustomerForm.taxOffice,
+      taxNumber: newCustomerForm.taxNumber,
+      email: newCustomerForm.email,
+      // Password otomatik olarak id_number'dan oluşturulacak
+      country: newCustomerForm.country,
+      licenseNumber: newCustomerForm.licenseNumber,
+      licenseClass: newCustomerForm.licenseClass,
+      licenseIssuePlace: newCustomerForm.licenseIssuePlace,
+      licenseIssueDate: newCustomerForm.licenseIssueDate,
+      idNumber: newCustomerForm.idNumber,
+      idType: newCustomerForm.idType,
+      idIssuePlace: newCustomerForm.idIssuePlace,
+      idIssueDate: newCustomerForm.idIssueDate,
+      homeAddress: newCustomerForm.homeAddress,
+      workAddress: newCustomerForm.workAddress,
+      isActive: true,
+    };
+    
+    // Backend API endpoint kullan
+    const { data: newCustomer } = await http.post('/crm/customers', customerData);
+    
+    // Müşteri listesini yenile
+    await loadCustomers();
+    
+    // Yeni eklenen müşteriyi otomatik seç
+    reservationForm.customerId = newCustomer.id;
+    await onCustomerSelect(newCustomer.id);
+    
+    closeCustomerDialog();
+  } catch (error: any) {
+    console.error('Failed to save customer:', error);
+    alert(error.response?.data?.message || error.message || 'Müşteri kaydedilirken bir hata oluştu');
+  } finally {
+    savingNewCustomer.value = false;
+  }
 };
 
 const saveReservation = async () => {
@@ -2521,6 +2920,14 @@ const availableExtras = computed(() => {
   return extras.value.filter(extra => extra.isActive);
 });
 
+// Get converted price for display (per unit)
+const getExtraDisplayPrice = (extra: ExtraDto | undefined): number => {
+  if (!extra) return 0;
+  const price = typeof extra.price === 'string' ? parseFloat(extra.price) || 0 : (extra.price || 0);
+  // Convert from default currency to selected currency
+  return convertCurrency(price, reservationForm.currencyCode);
+};
+
 const isExtraSelected = (extraId: string): boolean => {
   return selectedExtras.value.includes(extraId);
 };
@@ -2546,78 +2953,22 @@ const loadExtras = async () => {
     const { data } = await http.get<ExtraDto[]>('/rentacar/extras', {
       params: { tenantId: auth.tenant.id },
     });
-    extras.value = (data || []).filter(e => e.isActive);
     
-    // If no extras found, use sample data as fallback
-    if (extras.value.length === 0) {
-      const sampleData: ExtraDto[] = [
-      {
-        id: '1',
-        name: 'Mini Hasar Paketi',
-        price: 2,
-        isMandatory: true,
-        isActive: true,
-        salesType: 'daily',
-      },
-      {
-        id: '4',
-        name: 'Navigasyon',
-        price: 3,
-        isMandatory: false,
-        isActive: true,
-        salesType: 'daily',
-      },
-      {
-        id: '8',
-        name: 'Hızlı Geçiş HGS',
-        price: 19,
-        isMandatory: false,
-        isActive: true,
-        salesType: 'per_rental',
-      },
-      {
-        id: '9',
-        name: 'Çocuk Koltuğu',
-        price: 3,
-        isMandatory: false,
-        isActive: true,
-        salesType: 'daily',
-      },
-      {
-        id: '12',
-        name: 'Kapsamlı Sigorta',
-        price: 3,
-        isMandatory: true,
-        isActive: true,
-        salesType: 'daily',
-      },
-      {
-        id: '13',
-        name: 'Ek 400 Km Paketi',
-        price: 39,
-        isMandatory: false,
-        isActive: true,
-        salesType: 'per_rental',
-      },
-      {
-        id: '14',
-        name: 'Çocuk Koltuk Yükseltici',
-        price: 3,
-        isMandatory: false,
-        isActive: true,
-        salesType: 'daily',
-      },
-      {
-        id: '18',
-        name: 'Wifi-İnternet',
-        price: 4,
-        isMandatory: false,
-        isActive: true,
-        salesType: 'daily',
-      },
-    ];
+    // Backend might return snake_case (is_active) or camelCase (isActive)
+    // Normalize the field names to camelCase
+    if (data && Array.isArray(data)) {
+      extras.value = data.map((extra: any) => ({
+        ...extra,
+        isActive: extra.isActive !== undefined ? extra.isActive : (extra.is_active !== undefined ? extra.is_active : true),
+        isMandatory: extra.isMandatory !== undefined ? extra.isMandatory : (extra.is_mandatory !== undefined ? extra.is_mandatory : false),
+        salesType: extra.salesType || extra.sales_type || 'daily',
+      }));
       
-      extras.value = sampleData.filter(e => e.isActive);
+      console.log('Loaded extras (raw):', data);
+      console.log('Loaded extras (normalized):', extras.value);
+      console.log('Available extras (isActive=true):', extras.value.filter(e => e.isActive));
+    } else {
+      extras.value = [];
     }
   } catch (error) {
     console.error('Failed to load extras:', error);
@@ -2718,6 +3069,7 @@ onMounted(async () => {
   await Promise.all([
     loadCurrencies(),
     loadDefaultCurrency(),
+    loadLanguages(),
   ]);
   
   await Promise.all([

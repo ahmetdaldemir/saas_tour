@@ -18,8 +18,11 @@ import blogRouter from '../modules/shared/routes/blog.router';
 import translationRouter from '../modules/shared/routes/translation.router';
 import currencyRouter from '../modules/shared/routes/currency.router';
 import tenantSettingsRouter from '../modules/shared/routes/tenant-settings.router';
+import customerRouter from '../modules/shared/routes/customer.router';
 import surveyRouter from '../modules/shared/routes/survey.router';
 import reservationRouter from '../modules/shared/routes/reservation.router';
+import monitoringRouter from '../modules/admin/routes/monitoring.router';
+import tenantMonitoringRouter from '../modules/admin/routes/tenant-monitoring.router';
 import emailTemplateRouter from '../modules/shared/routes/email-template.router';
 import tenantUserRouter from '../modules/tenants/routes/tenant-user.router';
 import { transferVehicleRouter } from '../modules/transfer/routes/transfer-vehicle.router';
@@ -62,6 +65,7 @@ export const registerRoutes = (app: Express) => {
   app.use('/api/translation', translationRouter);
   app.use('/api/currencies', currencyRouter);
   app.use('/api/settings', tenantSettingsRouter);
+  app.use('/api/crm/customers', customerRouter);
   app.use('/api/surveys', surveyRouter);
   app.use('/api/reservations', reservationRouter);
   app.use('/api/email-templates', emailTemplateRouter);
@@ -71,4 +75,6 @@ export const registerRoutes = (app: Express) => {
   app.use('/api/transfer/reservations', transferReservationRouter);
   app.use('/api/transfer/drivers', transferDriverRouter);
   app.use('/api/chat', chatRouter);
+  app.use('/api/admin/monitoring', monitoringRouter);
+  app.use('/api/admin', tenantMonitoringRouter);
 };

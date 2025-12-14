@@ -302,7 +302,7 @@ interface EmailTemplateDto {
   tenantId: string;
   languageId?: string;
   language?: LanguageDto;
-  type: 'reservation_confirmation' | 'reservation_cancelled' | 'reservation_completed' | 'survey_invitation' | 'custom';
+  type: 'customer_welcome' | 'reservation_confirmation' | 'reservation_cancelled' | 'reservation_completed' | 'survey_invitation' | 'custom';
   name: string;
   subject: string;
   body: string;
@@ -339,6 +339,7 @@ const formByLanguage = ref<Record<string, {
 }>>({});
 
 const templateTypes = [
+  { label: 'Müşteri Hoş Geldin', value: 'customer_welcome' },
   { label: 'Rezervasyon Onayı', value: 'reservation_confirmation' },
   { label: 'Rezervasyon İptali', value: 'reservation_cancelled' },
   { label: 'Rezervasyon Tamamlandı', value: 'reservation_completed' },

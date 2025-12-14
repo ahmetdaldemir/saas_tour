@@ -229,6 +229,16 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
     # Backend'in başlamasını bekle
     echo -e "${YELLOW}⏳ Backend'in başlaması bekleniyor...${NC}"
     sleep 5
+    
+    # Worker'ın çalıştığını kontrol et
+    echo -e "${YELLOW}📧 Email Worker kontrolü...${NC}"
+    if docker ps --format '{{.Names}}' | grep -q "^saas-tour-worker$"; then
+        echo -e "${GREEN}✅ Worker container çalışıyor${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Worker container bulunamadı, kontrol ediliyor...${NC}"
+        # Worker container'ını başlat (eğer docker-compose'da tanımlıysa)
+        docker-compose up -d worker 2>/dev/null || echo -e "${YELLOW}⚠️  Worker service docker-compose.yml'de bulunamadı${NC}"
+    fi
 else
     echo -e "${RED}❌ Geçersiz mod: $MODE${NC}"
     exit 1
@@ -236,6 +246,7 @@ fi
 
 echo ""
 echo -e "${GREEN}✅ Deployment tamamlandı!${NC}"
+echo -e "${BLUE}📧 Email Worker: saas-tour-worker container'ında çalışıyor${NC}"
 echo ""
 echo -e "${BLUE}📊 Durum:${NC}"
 docker-compose ps
