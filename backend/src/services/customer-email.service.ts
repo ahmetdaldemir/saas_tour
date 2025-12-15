@@ -94,13 +94,25 @@ export const sendCustomerWelcomeEmailDirect = async (
   }
 
   // SMTP transporter oluştur
+  // Port ve secure ayarını otomatik belirle
+  const smtpPort = mailSettings.smtpPort || 587;
+  // Port 465 ise SSL kullan (secure: true), diğer durumlarda STARTTLS kullan (secure: false)
+  const useSecure = mailSettings.smtpSecure !== undefined 
+    ? mailSettings.smtpSecure 
+    : smtpPort === 465;
+  
   const transporter = nodemailer.createTransport({
     host: mailSettings.smtpHost,
-    port: mailSettings.smtpPort || 587,
-    secure: mailSettings.smtpSecure || false,
+    port: smtpPort,
+    secure: useSecure,
+    requireTLS: !useSecure && smtpPort === 587, // Port 587 için STARTTLS zorunlu
     auth: {
       user: mailSettings.smtpUser,
       pass: mailSettings.smtpPassword,
+    },
+    tls: {
+      // SSL sertifika doğrulamasını atla (development için)
+      rejectUnauthorized: false,
     },
   });
 

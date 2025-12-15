@@ -10,6 +10,7 @@
     "start:worker": "node dist/workers/worker.js",
     "lint": "tsc --noEmit",
     "seed": "ts-node src/seeds/seed.ts",
+    "seed:customer-welcome": "ts-node --project tsconfig.json src/scripts/seed-customer-welcome-template.ts",
     "import:destinations": "ts-node --project tsconfig.json src/scripts/import-destinations.ts",
     "import:hotels": "ts-node --project tsconfig.json src/scripts/import-hotels.ts",
     "seed:global": "ts-node --project tsconfig.json src/scripts/seed-global-destinations-hotels.ts",
