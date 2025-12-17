@@ -44,7 +44,7 @@
                   </v-col>
                   <v-col cols="12" md="6">
                     <v-select
-                      v-model="siteForm.defaultCurrencyId"
+                      v-model="tenantForm.defaultCurrencyId"
                       :items="currencies"
                       item-title="name"
                       item-value="id"
@@ -417,7 +417,16 @@ interface SiteSettingsDto {
   id?: string;
   siteName?: string;
   siteDescription?: string;
+}
+
+interface TenantDto {
+  id: string;
   defaultCurrencyId?: string | null;
+  defaultCurrency?: {
+    id: string;
+    code: string;
+    symbol?: string;
+  } | null;
 }
 
 interface MailSettingsDto {
@@ -451,6 +460,11 @@ const paymentFormValid = ref(true);
 const siteForm = ref<SiteSettingsDto>({
   siteName: '',
   siteDescription: '',
+});
+
+const tenantForm = ref<{
+  defaultCurrencyId: string | null;
+}>({
   defaultCurrencyId: null,
 });
 
@@ -519,23 +533,30 @@ const loadPaymentMethods = async () => {
 };
 
 const loadSiteSettings = async () => {
-  if (!auth.tenant) return;
   try {
-    const { data } = await http.get<SiteSettingsDto & { logoUrl?: string; faviconUrl?: string }>('/settings/site', {
-      params: { tenantId: auth.tenant.id },
-    });
-    if (data && data.id) {
+    // Load site settings (siteName, siteDescription, logo, favicon)
+    const { data: siteData } = await http.get<SiteSettingsDto & { logoUrl?: string; faviconUrl?: string }>('/settings/site');
+    if (siteData && siteData.id) {
       siteForm.value = {
-        siteName: data.siteName || '',
-        siteDescription: data.siteDescription || '',
-        defaultCurrencyId: data.defaultCurrencyId || null,
+        siteName: siteData.siteName || '',
+        siteDescription: siteData.siteDescription || '',
       };
       // Load logo and favicon URLs for preview (they're stored in backend but not in form)
-      if (data.logoUrl) {
-        uploadedLogoUrl.value = data.logoUrl;
+      if (siteData.logoUrl) {
+        uploadedLogoUrl.value = siteData.logoUrl;
       }
-      if (data.faviconUrl) {
-        uploadedFaviconUrl.value = data.faviconUrl;
+      if (siteData.faviconUrl) {
+        uploadedFaviconUrl.value = siteData.faviconUrl;
+      }
+    }
+
+    // Load tenant data (defaultCurrencyId)
+    if (auth.tenant) {
+      const { data: tenantData } = await http.get<TenantDto>(`/tenants/${auth.tenant.id}`);
+      if (tenantData) {
+        tenantForm.value = {
+          defaultCurrencyId: tenantData.defaultCurrencyId || null,
+        };
       }
     }
   } catch (error) {
@@ -544,11 +565,8 @@ const loadSiteSettings = async () => {
 };
 
 const loadMailSettings = async () => {
-  if (!auth.tenant) return;
   try {
-    const { data } = await http.get<MailSettingsDto>('/settings/mail', {
-      params: { tenantId: auth.tenant.id },
-    });
+    const { data } = await http.get<MailSettingsDto>('/settings/mail');
     if (data && data.id) {
       mailForm.value = {
         smtpHost: data.smtpHost || '',
@@ -566,11 +584,8 @@ const loadMailSettings = async () => {
 };
 
 const loadPaymentSettings = async () => {
-  if (!auth.tenant) return;
   try {
-    const { data } = await http.get<PaymentSettingsDto>('/settings/payment', {
-      params: { tenantId: auth.tenant.id },
-    });
+    const { data } = await http.get<PaymentSettingsDto>('/settings/payment');
     if (data && data.id) {
       paymentForm.value = {
         paymentDefaultMethodId: data.paymentDefaultMethodId || null,
@@ -583,13 +598,21 @@ const loadPaymentSettings = async () => {
 
 // Save functions
 const saveSiteSettings = async () => {
-  if (!auth.tenant || !siteFormValid.value) return;
+  if (!siteFormValid.value || !auth.tenant) return;
   savingSite.value = true;
   try {
+    // Save site settings (siteName, siteDescription, logo, favicon)
     await http.put('/settings/site', {
-      tenantId: auth.tenant.id,
       ...siteForm.value,
     });
+    
+    // Save tenant defaultCurrencyId separately
+    if (tenantForm.value.defaultCurrencyId !== undefined) {
+      await http.patch(`/tenants/${auth.tenant.id}/default-currency`, {
+        defaultCurrencyId: tenantForm.value.defaultCurrencyId,
+      });
+    }
+    
     // Success notification
   } catch (error) {
     console.error('Failed to save site settings:', error);
@@ -599,11 +622,10 @@ const saveSiteSettings = async () => {
 };
 
 const saveMailSettings = async () => {
-  if (!auth.tenant || !mailFormValid.value) return;
+  if (!mailFormValid.value) return;
   savingMail.value = true;
   try {
     await http.put('/settings/mail', {
-      tenantId: auth.tenant.id,
       ...mailForm.value,
     });
     // Success notification
@@ -615,11 +637,9 @@ const saveMailSettings = async () => {
 };
 
 const savePaymentSettings = async () => {
-  if (!auth.tenant) return;
   savingPayment.value = true;
   try {
     await http.put('/settings/payment', {
-      tenantId: auth.tenant.id,
       ...paymentForm.value,
     });
     // Success notification

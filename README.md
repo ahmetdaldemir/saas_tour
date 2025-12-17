@@ -15,7 +15,28 @@ Monorepo tasarımında Node.js (TypeORM) backend ve Vue.js frontend içeren çok
 
 ## 🚀 Hızlı Başlangıç
 
-### 1. Database Stack'i Başlat
+### Otomatik Deployment (Önerilen)
+
+Tüm sistemi tek komutla başlatmak için:
+
+```bash
+# Tam deployment (veriler korunur, migration'lar çalıştırılır)
+./deploy.sh
+
+# Veya database'i sıfırdan kurmak için (DİKKAT: Tüm veriler silinir!)
+./deploy.sh --fresh-db
+```
+
+Deploy script'i şunları yapar:
+- ✅ Database stack'i başlatır (veriler korunur)
+- ✅ Web network'ü oluşturur
+- ✅ Traefik'i başlatır (multi-tenant routing)
+- ✅ Backend ve Frontend'i build edip başlatır
+- ✅ Yeni migration varsa çalıştırır (veriler korunur)
+
+### Manuel Kurulum
+
+#### 1. Database Stack'i Başlat
 
 ```bash
 cd docker-datatabse-stack
@@ -24,7 +45,18 @@ cp env.example .env
 docker-compose up -d
 ```
 
-### 2. Backend ve Frontend'i Başlat
+#### 2. Traefik'i Başlat (Multi-Tenant Subdomain Routing)
+
+```bash
+# Docker web network'ünü oluştur (eğer yoksa)
+docker network create web
+
+# Traefik'i başlat
+cd infra/traefik
+docker-compose up -d
+```
+
+#### 3. Backend ve Frontend'i Başlat
 
 ```bash
 cd infra
@@ -36,12 +68,38 @@ cp ../backend/.env.example ../backend/.env
 docker-compose up -d --build
 ```
 
-### 3. Uygulamaya Erişim
+### 4. Local Domain Yapılandırması (Manuel kurulum için)
 
-- **Backend API**: http://localhost:4001/api
+Local development için `/etc/hosts` dosyasına tenant subdomain'lerini ekleyin:
+
+```bash
+sudo nano /etc/hosts
+```
+
+Aşağıdaki satırları ekleyin:
+
+```
+127.0.0.1 sunset.local.saastour360.test
+127.0.0.1 berg.local.saastour360.test
+127.0.0.1 traefik.local.saastour360.test
+```
+
+### 5. Uygulamaya Erişim
+
+**Multi-Tenant Subdomain ile (Traefik üzerinden):**
+- **Sunset Tenant**: http://sunset.local.saastour360.test:5001
+- **Berg Tenant**: http://berg.local.saastour360.test:5001
+- **Traefik Dashboard**: http://localhost:8080
+
+**Direkt Erişim (Mevcut sistemle uyumlu):**
 - **Frontend**: http://localhost:9001
+- **Backend API**: http://localhost:4001/api
 
-> **Not**: Portlar environment variable'lar ile değiştirilebilir (BACKEND_PORT, FRONTEND_PORT)
+**Production (Traefik ile):**
+- **Sunset Tenant**: https://sunset.saastour360.com (Traefik 80/443'te çalışır)
+- **Berg Tenant**: https://berg.saastour360.com (Traefik 80/443'te çalışır)
+
+> **Not**: Local development için Traefik kullanıyorsanız, port mapping'ler (BACKEND_PORT, FRONTEND_PORT) artık kullanılmaz. Tüm trafik Traefik üzerinden yönlendirilir.
 
 ## 🔧 Yapılandırma
 
@@ -91,22 +149,108 @@ export PROXY_NETWORK_NAME=nginx-proxy-cloudflare-full_default
 
 ## 🐳 Docker Compose Kullanımı
 
+### Multi-Tenant Wildcard Subdomain Mimarisi
+
+Bu proje **multi-tenant wildcard subdomain** mimarisi kullanmaktadır:
+
+- Her tenant kendi subdomain'i üzerinden erişilir
+- Tenant çözümleme Host header'ından otomatik yapılır
+- Yeni tenant eklemek için sadece database'e kayıt eklenmesi yeterlidir
+- Traefik wildcard routing ile otomatik SSL yönetimi sağlar
+
+**Örnek Tenant Subdomain'leri:**
+- `sunset.saastour360.com` → Sunset tenant (Production)
+- `berg.saastour360.com` → Berg tenant (Production)
+- `sunset.local.saastour360.test` → Sunset tenant (Local Development)
+
 ### Local Development
 
+**1. Traefik'i başlat:**
+```bash
+# Docker web network'ünü oluştur (eğer yoksa)
+docker network create web
+
+# Traefik'i başlat
+cd infra/traefik
+docker-compose up -d
+```
+
+**2. Backend ve Frontend'i başlat:**
 ```bash
 cd infra
 docker-compose up -d --build
 ```
+
+**3. /etc/hosts dosyasını yapılandır:**
+```bash
+sudo nano /etc/hosts
+# Aşağıdaki satırları ekleyin:
+127.0.0.1 sunset.local.saastour360.test
+127.0.0.1 berg.local.saastour360.test
+127.0.0.1 traefik.local.saastour360.test
+```
+
+**4. Tarayıcıda test edin:**
+- http://sunset.local.saastour360.test:5001 (Traefik üzerinden)
+- http://berg.local.saastour360.test:5001 (Traefik üzerinden)
+- http://localhost:9001 (Frontend - direkt erişim)
+- http://localhost:4001/api (Backend API - direkt erişim)
+- http://localhost:8080 (Traefik Dashboard)
 
 ### Production
 
+**1. Traefik'i başlat:**
+```bash
+cd infra/traefik
+docker-compose up -d
+```
+
+**2. Backend ve Frontend'i başlat:**
 ```bash
 cd infra
 export NODE_ENV=production
-export BACKEND_PORT=4001
-export FRONTEND_PORT=9001
 docker-compose up -d --build
 ```
+
+**3. DNS yapılandırması:**
+- Wildcard DNS kaydı: `*.saastour360.com` → Server IP
+- Production'da Traefik 80/443 portlarında çalışır (standart HTTP/HTTPS)
+- Local'de Traefik 5001/5443 portlarında çalışır (çakışma önleme)
+- Traefik otomatik olarak Let's Encrypt SSL sertifikası alacaktır
+
+### Yeni Tenant Ekleme
+
+Yeni bir tenant eklemek için:
+
+1. **Database'e tenant kaydı ekleyin:**
+   ```sql
+   INSERT INTO tenants (id, name, slug, category, is_active, created_at, updated_at)
+   VALUES (
+     gen_random_uuid(),
+     'New Tenant Name',
+     'newtenant',  -- Subdomain slug (örn: newtenant.saastour360.com)
+     'rentacar',   -- veya 'tour'
+     true,
+     NOW(),
+     NOW()
+   );
+   ```
+
+2. **DNS yapılandırması (Production):**
+   - Wildcard DNS kaydı (`*.saastour360.com`) zaten mevcut olduğu için ek işlem gerekmez
+   - Traefik otomatik olarak yeni subdomain'i tanıyacak ve SSL sertifikası alacaktır
+
+3. **Local Development:**
+   - `/etc/hosts` dosyasına yeni tenant için entry ekleyin:
+     ```
+     127.0.0.1 newtenant.local.saastour360.test
+     ```
+
+4. **Test:**
+   - http://newtenant.local.saastour360.test (local)
+   - https://newtenant.saastour360.com (production)
+
+> **Önemli:** Tenant slug'ı sadece küçük harf, rakam ve tire (-) içerebilir. Regex pattern: `^[a-z0-9-]+$`
 
 ### Komutlar
 

@@ -8,6 +8,7 @@ export type CreateTenantInput = {
   category: TenantCategory;
   defaultLanguage?: string;
   supportEmail?: string;
+  defaultCurrencyId?: string | null;
 };
 
 export class TenantService {
@@ -28,12 +29,60 @@ export class TenantService {
       category: input.category,
       defaultLanguage: input.defaultLanguage ?? 'en',
       supportEmail: input.supportEmail,
+      defaultCurrencyId: input.defaultCurrencyId,
     });
 
     return repo.save(tenant);
   }
 
   static listTenants(): Promise<Tenant[]> {
-    return this.repository().find();
+    return this.repository().find({
+      relations: ['defaultCurrency'],
+    });
+  }
+
+  static async getTenantById(id: string): Promise<Tenant | null> {
+    return this.repository().findOne({
+      where: { id },
+      relations: ['defaultCurrency'],
+    });
+  }
+
+  static async getTenantBySlug(slug: string): Promise<Tenant | null> {
+    return this.repository().findOne({
+      where: { slug, isActive: true },
+      relations: ['defaultCurrency'],
+    });
+  }
+
+  static async updateTenant(
+    id: string,
+    input: Partial<CreateTenantInput>
+  ): Promise<Tenant> {
+    const repo = this.repository();
+    const tenant = await repo.findOne({ where: { id } });
+    if (!tenant) {
+      throw new Error('Tenant not found');
+    }
+
+    Object.assign(tenant, input);
+    return repo.save(tenant);
+  }
+
+  static async updateDefaultCurrency(
+    tenantId: string,
+    currencyId: string | null
+  ): Promise<Tenant> {
+    const repo = this.repository();
+    const tenant = await repo.findOne({
+      where: { id: tenantId },
+      relations: ['defaultCurrency'],
+    });
+    if (!tenant) {
+      throw new Error('Tenant not found');
+    }
+
+    tenant.defaultCurrencyId = currencyId;
+    return repo.save(tenant);
   }
 }

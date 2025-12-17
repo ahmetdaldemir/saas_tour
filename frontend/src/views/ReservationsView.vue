@@ -3040,9 +3040,7 @@ const loadDefaultCurrency = async () => {
         rateToTry: number | string;
         symbol?: string;
       } | null;
-    }>('/settings/site', {
-      params: { tenantId: auth.tenant.id },
-    });
+    }>(`/tenants/${auth.tenant.id}`);
     
     if (data?.defaultCurrency) {
       const rateToTry = typeof data.defaultCurrency.rateToTry === 'string' 

@@ -7,7 +7,6 @@ export type SiteSettingsInput = {
   siteDescription?: string;
   logoUrl?: string;
   faviconUrl?: string;
-  defaultCurrencyId?: string | null;
   companyName?: string;
   companyAddress?: string;
   companyPhone?: string;
@@ -42,7 +41,6 @@ export class TenantSettingsService {
   static async getByTenant(tenantId: string): Promise<TenantSettings[]> {
     return this.repository().find({
       where: { tenantId },
-      relations: ['defaultCurrency'],
       order: { category: 'ASC' },
     });
   }
@@ -53,7 +51,6 @@ export class TenantSettingsService {
   ): Promise<TenantSettings | null> {
     return this.repository().findOne({
       where: { tenantId, category },
-      relations: ['defaultCurrency'],
     });
   }
 

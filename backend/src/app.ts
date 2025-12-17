@@ -6,6 +6,7 @@ import path from 'path';
 import fs from 'fs';
 import { registerRoutes } from './routes';
 import { requestLogger } from './middleware/request-logger.middleware';
+import { tenantMiddleware } from './middleware/tenant.middleware';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.middleware';
 import { logger } from './utils/logger';
 
@@ -17,6 +18,9 @@ export const createApp = (): Express => {
 
   // Request logging middleware (should be early in the chain)
   app.use(requestLogger);
+
+  // Tenant resolution middleware (extracts tenant from Host header)
+  app.use(tenantMiddleware);
 
   // Public klasörünü static olarak serve et (uploads için)
   let publicDir: string;

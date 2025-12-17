@@ -5,6 +5,7 @@ import { AppDataSource } from '../../../config/data-source';
 import { loadEnv } from '../../../config/env';
 import { TenantUser, TenantUserRole } from '../../tenants/entities/tenant-user.entity';
 import { Tenant, TenantCategory } from '../../tenants/entities/tenant.entity';
+import { TenantSettingsService } from '../../shared/services/tenant-settings.service';
 
 const env = loadEnv();
 
@@ -106,12 +107,32 @@ export class AuthService {
     const token = this.createToken(user);
 
     const tenantRepo = AppDataSource.getRepository(Tenant);
-    const tenant = await tenantRepo.findOne({ where: { id: user.tenantId } });
+    const tenant = await tenantRepo.findOne({ 
+      where: { id: user.tenantId },
+      relations: ['defaultCurrency'],
+    });
+
+    // Get tenant settings
+    const siteSettings = await TenantSettingsService.getSiteSettings(user.tenantId);
+    let mailSettings = await TenantSettingsService.getMailSettings(user.tenantId);
+    const paymentSettings = await TenantSettingsService.getPaymentSettings(user.tenantId);
+
+    // Mask password in mail settings
+    if (mailSettings && mailSettings.smtpPassword) {
+      mailSettings = { ...mailSettings, smtpPassword: '***' };
+    }
+
+    const settings = {
+      site: siteSettings || null,
+      mail: mailSettings || null,
+      payment: paymentSettings || null,
+    };
 
     return {
       token,
       user,
       tenant,
+      settings,
     };
   }
 
@@ -182,8 +203,27 @@ export class AuthService {
     }
 
     const tenantRepo = AppDataSource.getRepository(Tenant);
-    const tenant = await tenantRepo.findOne({ where: { id: user.tenantId } });
+    const tenant = await tenantRepo.findOne({ 
+      where: { id: user.tenantId },
+      relations: ['defaultCurrency'],
+    });
 
-    return { user, tenant };
+    // Get tenant settings
+    const siteSettings = await TenantSettingsService.getSiteSettings(user.tenantId);
+    let mailSettings = await TenantSettingsService.getMailSettings(user.tenantId);
+    const paymentSettings = await TenantSettingsService.getPaymentSettings(user.tenantId);
+
+    // Mask password in mail settings
+    if (mailSettings && mailSettings.smtpPassword) {
+      mailSettings = { ...mailSettings, smtpPassword: '***' };
+    }
+
+    const settings = {
+      site: siteSettings || null,
+      mail: mailSettings || null,
+      payment: paymentSettings || null,
+    };
+
+    return { user, tenant, settings };
   }
 }

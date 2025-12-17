@@ -1,10 +1,11 @@
-import { Column, Entity, OneToMany, Unique } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, Unique } from 'typeorm';
 import { BaseEntity } from '../../shared/entities/base.entity';
 import { PaymentMethod } from '../../shared/entities/payment-method.entity';
 import { Reservation } from '../../shared/entities/reservation.entity';
 import { Tour } from '../../tour/entities/tour.entity';
 import { Vehicle } from '../../rentacar/entities/vehicle.entity';
 import { TenantUser } from './tenant-user.entity';
+import { Currency } from '../../shared/entities/currency.entity';
 
 export enum TenantCategory {
   TOUR = 'tour',
@@ -31,6 +32,13 @@ export class Tenant extends BaseEntity {
 
   @Column({ name: 'support_email', nullable: true })
   supportEmail?: string;
+
+  @ManyToOne(() => Currency, { nullable: true })
+  @JoinColumn({ name: 'default_currency_id' })
+  defaultCurrency?: Currency | null;
+
+  @Column({ name: 'default_currency_id', type: 'uuid', nullable: true })
+  defaultCurrencyId?: string | null;
 
   @OneToMany(() => PaymentMethod, (payment) => payment.tenant)
   paymentMethods!: PaymentMethod[];
