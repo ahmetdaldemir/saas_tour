@@ -1,7 +1,7 @@
 import { In, Repository } from 'typeorm';
 import { AppDataSource } from '../../../config/data-source';
 import { TourFeature } from '../entities/tour-feature.entity';
-import { TourFeatureTranslation } from '../entities/tour-feature-translation.entity';
+import { Translation } from '../../shared/entities/translation.entity';
 import { Language } from '../../shared/entities/language.entity';
 
 export type CreateTourFeatureInput = {
@@ -24,13 +24,10 @@ export type UpdateTourFeatureInput = {
   isActive?: boolean;
 };
 
-export type TourFeatureWithTranslations = Omit<TourFeature, 'translations'> & {
-  translations: Array<{
-    id: string;
-    languageId: string;
-    languageCode: string;
-    name: string;
-  }>;
+const MODEL_NAME = 'TourFeature';
+
+export type TourFeatureWithTranslations = TourFeature & {
+  translations?: Translation[];
 };
 
 export class TourFeatureService {
@@ -38,8 +35,8 @@ export class TourFeatureService {
     return AppDataSource.getRepository(TourFeature);
   }
 
-  private static translationRepo(): Repository<TourFeatureTranslation> {
-    return AppDataSource.getRepository(TourFeatureTranslation);
+  private static translationRepo(): Repository<Translation> {
+    return AppDataSource.getRepository(Translation);
   }
 
   private static languageRepo(): Repository<Language> {
@@ -48,39 +45,58 @@ export class TourFeatureService {
 
   static async list(languageCode?: string): Promise<TourFeatureWithTranslations[]> {
     const features = await this.featureRepo().find({
-      relations: ['translations', 'translations.language'],
       order: { sortOrder: 'ASC', createdAt: 'DESC' },
     });
 
-    return features.map((feature) => ({
+    // Fetch translations for all features
+    const featureIds = features.map(f => f.id);
+    const translations = featureIds.length > 0
+      ? await this.translationRepo().find({
+          where: {
+            model: MODEL_NAME,
+            modelId: In(featureIds),
+          },
+          relations: ['language'],
+        })
+      : [];
+
+    // Group translations by feature
+    const translationsByFeature = new Map<string, Translation[]>();
+    translations.forEach(t => {
+      const key = t.modelId;
+      if (!translationsByFeature.has(key)) {
+        translationsByFeature.set(key, []);
+      }
+      translationsByFeature.get(key)!.push(t);
+    });
+
+    // Combine features with translations
+    return features.map(feature => ({
       ...feature,
-      translations: feature.translations.map((t) => ({
-        id: t.id,
-        languageId: t.languageId,
-        languageCode: t.language.code,
-        name: t.name,
-      })),
+      translations: translationsByFeature.get(feature.id) || [],
     }));
   }
 
   static async getById(id: string): Promise<TourFeatureWithTranslations | null> {
     const feature = await this.featureRepo().findOne({
       where: { id },
-      relations: ['translations', 'translations.language'],
     });
 
     if (!feature) {
       return null;
     }
 
+    const translations = await this.translationRepo().find({
+      where: {
+        model: MODEL_NAME,
+        modelId: id,
+      },
+      relations: ['language'],
+    });
+
     return {
       ...feature,
-      translations: feature.translations.map((t) => ({
-        id: t.id,
-        languageId: t.languageId,
-        languageCode: t.language.code,
-        name: t.name,
-      })),
+      translations,
     };
   }
 
@@ -104,11 +120,11 @@ export class TourFeatureService {
 
     const savedFeature = await this.featureRepo().save(feature);
 
-    // Create translations
+    // Create translations using generic Translation entity
     const translations = input.translations.map((t) =>
       this.translationRepo().create({
-        feature: savedFeature,
-        featureId: savedFeature.id,
+        model: MODEL_NAME,
+        modelId: savedFeature.id,
         languageId: t.languageId,
         name: t.name,
       })
@@ -151,13 +167,16 @@ export class TourFeatureService {
       }
 
       // Delete existing translations
-      await this.translationRepo().delete({ featureId: id });
+      await this.translationRepo().delete({
+        model: MODEL_NAME,
+        modelId: id,
+      });
 
-      // Create new translations
+      // Create new translations using generic Translation entity
       const translations = input.translations.map((t) =>
         this.translationRepo().create({
-          feature: feature,
-          featureId: id,
+          model: MODEL_NAME,
+          modelId: id,
           languageId: t.languageId,
           name: t.name,
         })
@@ -174,6 +193,12 @@ export class TourFeatureService {
     if (!feature) {
       throw new Error('Tour feature not found');
     }
+
+    // Delete translations first
+    await this.translationRepo().delete({
+      model: MODEL_NAME,
+      modelId: id,
+    });
 
     await this.featureRepo().remove(feature);
   }

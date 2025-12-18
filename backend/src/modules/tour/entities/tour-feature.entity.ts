@@ -1,6 +1,5 @@
-import { Column, Entity, OneToMany } from 'typeorm';
+import { Column, Entity } from 'typeorm';
 import { BaseEntity } from '../../shared/entities/base.entity';
-import { TourFeatureTranslation } from './tour-feature-translation.entity';
 
 @Entity({ name: 'tour_features' })
 export class TourFeature extends BaseEntity {
@@ -12,8 +11,5 @@ export class TourFeature extends BaseEntity {
 
   @Column({ name: 'sort_order', type: 'int', default: 0 })
   sortOrder!: number;
-
-  @OneToMany(() => TourFeatureTranslation, (translation) => translation.feature, { cascade: true })
-  translations!: TourFeatureTranslation[];
 }
 

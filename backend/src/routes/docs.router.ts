@@ -4,6 +4,7 @@
  */
 
 import { Router, Request, Response } from 'express';
+import swaggerUi from 'swagger-ui-express';
 import { getApiDocs } from '../docs/api-docs';
 
 const router = Router();
@@ -15,6 +16,25 @@ const router = Router();
 router.get('/docs', (req: Request, res: Response) => {
   res.json(getApiDocs());
 });
+
+/**
+ * GET /api/docs/ui
+ * Serves Swagger UI for interactive API documentation
+ */
+const swaggerUiSetup = swaggerUi.setup(getApiDocs(), {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'SaaS Tour API Documentation',
+  customfavIcon: '/favicon.ico',
+  swaggerOptions: {
+    persistAuthorization: true,
+    displayRequestDuration: true,
+    filter: true,
+    showExtensions: true,
+    showCommonExtensions: true,
+  },
+});
+
+router.use('/docs/ui', swaggerUi.serve, swaggerUiSetup);
 
 /**
  * GET /api/docs/readme

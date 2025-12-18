@@ -3783,7 +3783,7 @@ onMounted(async () => {
   });
 });
 
-// Load default currency from tenant settings
+// Load default currency from tenant
 const loadDefaultCurrency = async () => {
   if (!auth.tenant) return;
   try {
@@ -3793,9 +3793,7 @@ const loadDefaultCurrency = async () => {
         code: string; 
         symbol?: string;
       } | null;
-    }>('/settings/site', {
-      params: { tenantId: auth.tenant.id },
-    });
+    }>(`/tenants/${auth.tenant.id}`);
     
     if (data?.defaultCurrency) {
       defaultCurrency.value = {

@@ -100,13 +100,23 @@ export const sendReservationEmailDirect = async (
   }
 
   // SMTP transporter oluştur
+  // Port ve secure ayarını otomatik belirle
+  const smtpPort = mailSettings.smtpPort || 587;
+  const useSecure = mailSettings.smtpSecure !== undefined 
+    ? mailSettings.smtpSecure 
+    : smtpPort === 465;
+  
   const transporter = nodemailer.createTransport({
     host: mailSettings.smtpHost,
-    port: mailSettings.smtpPort || 587,
-    secure: mailSettings.smtpSecure || false,
+    port: smtpPort,
+    secure: useSecure,
+    requireTLS: !useSecure && smtpPort === 587,
     auth: {
       user: mailSettings.smtpUser,
       pass: mailSettings.smtpPassword,
+    },
+    tls: {
+      rejectUnauthorized: false,
     },
   });
 

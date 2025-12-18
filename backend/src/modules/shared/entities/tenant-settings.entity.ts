@@ -1,7 +1,6 @@
 import { Column, Entity, JoinColumn, ManyToOne, Unique } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { Tenant } from '../../tenants/entities/tenant.entity';
-import { Currency } from './currency.entity';
 
 export enum SettingsCategory {
   SITE = 'site',
@@ -35,13 +34,6 @@ export class TenantSettings extends BaseEntity {
 
   @Column({ name: 'favicon_url', type: 'text', nullable: true })
   faviconUrl?: string;
-
-  @ManyToOne(() => Currency, { nullable: true })
-  @JoinColumn({ name: 'default_currency_id' })
-  defaultCurrency?: Currency | null;
-
-  @Column({ name: 'default_currency_id', type: 'uuid', nullable: true })
-  defaultCurrencyId?: string | null;
 
   // Mail Settings
   @Column({ name: 'smtp_host', length: 200, nullable: true })

@@ -25,7 +25,7 @@ export class AuthController {
         return res.status(400).json({ message: 'email and password are required' });
       }
 
-      const { token, user, tenant } = await AuthService.login({ email, password });
+      const { token, user, tenant, settings } = await AuthService.login({ email, password });
       return res.json({
         token,
         user: {
@@ -36,6 +36,7 @@ export class AuthController {
           tenantId: user.tenantId,
         },
         tenant,
+        settings,
       });
     } catch (error) {
       return res.status(401).json({ message: (error as Error).message });
@@ -94,7 +95,7 @@ export class AuthController {
         return res.status(401).json({ message: 'Unauthorized' });
       }
 
-      const { user, tenant } = await AuthService.getProfile(req.auth.sub);
+      const { user, tenant, settings } = await AuthService.getProfile(req.auth.sub);
       return res.json({
         user: {
           id: user.id,
@@ -104,6 +105,7 @@ export class AuthController {
           tenantId: user.tenantId,
         },
         tenant,
+        settings,
       });
     } catch (error) {
       return res.status(400).json({ message: (error as Error).message });

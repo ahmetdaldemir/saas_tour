@@ -1,8 +1,7 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { Tenant } from '../../tenants/entities/tenant.entity';
 import { Location } from '../../rentacar/entities/location.entity';
-import { BlogTranslation } from './blog-translation.entity';
 
 export enum BlogStatus {
   DRAFT = 'draft',
@@ -40,7 +39,4 @@ export class Blog extends BaseEntity {
 
   @Column({ name: 'published_at', type: 'timestamp', nullable: true })
   publishedAt?: Date | null;
-
-  @OneToMany(() => BlogTranslation, (translation) => translation.blog)
-  translations!: BlogTranslation[];
 }

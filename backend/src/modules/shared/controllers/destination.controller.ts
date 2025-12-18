@@ -5,42 +5,160 @@ import { DestinationImportService } from '../services/destination-import.service
 
 export class DestinationController {
   static async list(_req: AuthenticatedRequest, res: Response) {
-    const destinations = await DestinationService.list();
-    res.json(destinations);
+    try {
+      const destinations = await DestinationService.list();
+      res.json({
+        success: true,
+        data: destinations,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: (error as Error).message,
+        },
+      });
+    }
+  }
+
+  static async getById(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { id } = req.params;
+      const destination = await DestinationService.getById(id);
+
+      if (!destination) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: 'Destination not found',
+          },
+        });
+      }
+
+      res.json({
+        success: true,
+        data: destination,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: (error as Error).message,
+        },
+      });
+    }
   }
 
   static async create(req: AuthenticatedRequest, res: Response) {
     try {
-      const { name, country, city } = req.body;
-      if (!name || !country || !city) {
-        return res.status(400).json({ message: 'name, country and city are required' });
+      const { image, isFeatured, translations } = req.body;
+
+      if (!translations || !Array.isArray(translations) || translations.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'At least one translation is required',
+          },
+        });
+      }
+
+      // Validate each translation
+      for (const translation of translations) {
+        if (!translation.languageId || !translation.title) {
+          return res.status(400).json({
+            success: false,
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'Each translation must have languageId and title',
+            },
+          });
+        }
       }
 
       const destination = await DestinationService.create({
-        name,
-        country,
-        city,
+        image,
+        isFeatured,
+        translations,
       });
 
-      res.status(201).json(destination);
+      res.status(201).json({
+        success: true,
+        data: destination,
+      });
     } catch (error) {
-      res.status(400).json({ message: (error as Error).message });
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: (error as Error).message,
+        },
+      });
     }
   }
 
   static async update(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
-      const { name, country, city } = req.body;
+      const { image, isFeatured, translations } = req.body;
+
+      // Validate translations if provided
+      if (translations !== undefined) {
+        if (!Array.isArray(translations)) {
+          return res.status(400).json({
+            success: false,
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'Translations must be an array',
+            },
+          });
+        }
+
+        for (const translation of translations) {
+          if (!translation.languageId || !translation.title) {
+            return res.status(400).json({
+              success: false,
+              error: {
+                code: 'VALIDATION_ERROR',
+                message: 'Each translation must have languageId and title',
+              },
+            });
+          }
+        }
+      }
+
       const destination = await DestinationService.update(id, {
-        name,
-        country,
-        city,
+        image,
+        isFeatured,
+        translations,
       });
 
-      res.json(destination);
+      res.json({
+        success: true,
+        data: destination,
+      });
     } catch (error) {
-      res.status(400).json({ message: (error as Error).message });
+      const errorMessage = (error as Error).message;
+      if (errorMessage.includes('not found')) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: errorMessage,
+          },
+        });
+      }
+
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: errorMessage,
+        },
+      });
     }
   }
 
@@ -50,7 +168,24 @@ export class DestinationController {
       await DestinationService.remove(id);
       res.status(204).send();
     } catch (error) {
-      res.status(400).json({ message: (error as Error).message });
+      const errorMessage = (error as Error).message;
+      if (errorMessage.includes('not found')) {
+        return res.status(404).json({
+          success: false,
+          error: {
+            code: 'NOT_FOUND',
+            message: errorMessage,
+          },
+        });
+      }
+
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: errorMessage,
+        },
+      });
     }
   }
 
@@ -58,7 +193,13 @@ export class DestinationController {
     try {
       const { city, radius, limit } = req.body;
       if (!city) {
-        return res.status(400).json({ message: 'city is required' });
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'city is required',
+          },
+        });
       }
 
       const result = await DestinationImportService.importGlobal({
@@ -67,9 +208,18 @@ export class DestinationController {
         limit,
       });
 
-      res.status(201).json(result);
+      res.status(201).json({
+        success: true,
+        data: result,
+      });
     } catch (error) {
-      res.status(400).json({ message: (error as Error).message });
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: (error as Error).message,
+        },
+      });
     }
   }
 }

@@ -5,7 +5,6 @@ import { Destination } from '../../shared/entities/destination.entity';
 import { Language } from '../../shared/entities/language.entity';
 import { TourSession } from './tour-session.entity';
 import { TourFeature } from './tour-feature.entity';
-import { TourTranslation } from './tour-translation.entity';
 import { TourInfoItem } from './tour-info-item.entity';
 import { TourImage } from './tour-image.entity';
 import { TourTimeSlot } from './tour-time-slot.entity';
@@ -100,9 +99,6 @@ export class Tour extends BaseEntity {
 
   @OneToMany(() => TourSession, (session) => session.tour)
   sessions!: TourSession[];
-
-  @OneToMany(() => TourTranslation, (translation) => translation.tour, { cascade: true })
-  translations!: TourTranslation[];
 
   @OneToMany(() => TourInfoItem, (item) => item.tour, { cascade: true })
   infoItems!: TourInfoItem[];

@@ -1,15 +1,16 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { TenantSettingsService } from '../services/tenant-settings.service';
-import { SettingsCategory } from '../entities/tenant-settings.entity';
+import { SettingsCategory, TenantSettings } from '../entities/tenant-settings.entity';
+import { AuthenticatedRequest } from '../../auth/middleware/auth.middleware';
 
 export class TenantSettingsController {
-  static async getAll(req: Request, res: Response) {
+  static async getAll(req: AuthenticatedRequest, res: Response) {
     try {
-      const tenantId = req.query.tenantId as string;
-      if (!tenantId) {
-        return res.status(400).json({ message: 'tenantId query param required' });
+      if (!req.auth) {
+        return res.status(401).json({ message: 'Unauthorized' });
       }
 
+      const tenantId = req.auth.tenantId;
       const settings = await TenantSettingsService.getByTenant(tenantId);
       res.json(settings);
     } catch (error) {
@@ -17,13 +18,13 @@ export class TenantSettingsController {
     }
   }
 
-  static async getSite(req: Request, res: Response) {
+  static async getSite(req: AuthenticatedRequest, res: Response) {
     try {
-      const tenantId = req.query.tenantId as string;
-      if (!tenantId) {
-        return res.status(400).json({ message: 'tenantId query param required' });
+      if (!req.auth) {
+        return res.status(401).json({ message: 'Unauthorized' });
       }
 
+      const tenantId = req.auth.tenantId;
       const settings = await TenantSettingsService.getSiteSettings(tenantId);
       res.json(settings || {});
     } catch (error) {
@@ -31,27 +32,33 @@ export class TenantSettingsController {
     }
   }
 
-  static async getMail(req: Request, res: Response) {
+  static async getMail(req: AuthenticatedRequest, res: Response) {
     try {
-      const tenantId = req.query.tenantId as string;
-      if (!tenantId) {
-        return res.status(400).json({ message: 'tenantId query param required' });
+      if (!req.auth) {
+        return res.status(401).json({ message: 'Unauthorized' });
       }
 
+      const tenantId = req.auth.tenantId;
       const settings = await TenantSettingsService.getMailSettings(tenantId);
+      
+      // Mask password in response
+      if (settings && settings.smtpPassword) {
+        settings.smtpPassword = '***';
+      }
+      
       res.json(settings || {});
     } catch (error) {
       res.status(500).json({ message: (error as Error).message });
     }
   }
 
-  static async getPayment(req: Request, res: Response) {
+  static async getPayment(req: AuthenticatedRequest, res: Response) {
     try {
-      const tenantId = req.query.tenantId as string;
-      if (!tenantId) {
-        return res.status(400).json({ message: 'tenantId query param required' });
+      if (!req.auth) {
+        return res.status(401).json({ message: 'Unauthorized' });
       }
 
+      const tenantId = req.auth.tenantId;
       const settings = await TenantSettingsService.getPaymentSettings(tenantId);
       res.json(settings || {});
     } catch (error) {
@@ -59,21 +66,20 @@ export class TenantSettingsController {
     }
   }
 
-  static async updateSite(req: Request, res: Response) {
+  static async updateSite(req: AuthenticatedRequest, res: Response) {
     try {
-      const tenantId = req.body.tenantId as string;
-      if (!tenantId) {
-        return res.status(400).json({ message: 'tenantId is required' });
+      if (!req.auth) {
+        return res.status(401).json({ message: 'Unauthorized' });
       }
 
-      const { siteName, siteDescription, logoUrl, faviconUrl, defaultCurrencyId } = req.body;
+      const tenantId = req.auth.tenantId;
+      const { siteName, siteDescription, logoUrl, faviconUrl } = req.body;
 
       const settings = await TenantSettingsService.updateSiteSettings(tenantId, {
         siteName,
         siteDescription,
         logoUrl,
         faviconUrl,
-        defaultCurrencyId,
       });
 
       res.json(settings);
@@ -82,13 +88,13 @@ export class TenantSettingsController {
     }
   }
 
-  static async updateMail(req: Request, res: Response) {
+  static async updateMail(req: AuthenticatedRequest, res: Response) {
     try {
-      const tenantId = req.body.tenantId as string;
-      if (!tenantId) {
-        return res.status(400).json({ message: 'tenantId is required' });
+      if (!req.auth) {
+        return res.status(401).json({ message: 'Unauthorized' });
       }
 
+      const tenantId = req.auth.tenantId;
       const {
         smtpHost,
         smtpPort,
@@ -121,13 +127,13 @@ export class TenantSettingsController {
     }
   }
 
-  static async updatePayment(req: Request, res: Response) {
+  static async updatePayment(req: AuthenticatedRequest, res: Response) {
     try {
-      const tenantId = req.body.tenantId as string;
-      if (!tenantId) {
-        return res.status(400).json({ message: 'tenantId is required' });
+      if (!req.auth) {
+        return res.status(401).json({ message: 'Unauthorized' });
       }
 
+      const tenantId = req.auth.tenantId;
       const { paymentDefaultMethodId } = req.body;
 
       const settings = await TenantSettingsService.updatePaymentSettings(tenantId, {

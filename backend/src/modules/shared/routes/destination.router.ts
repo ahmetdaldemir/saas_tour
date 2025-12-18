@@ -6,6 +6,7 @@ const router = Router();
 
 router.use(authenticate);
 router.get('/', DestinationController.list);
+router.get('/:id', DestinationController.getById);
 router.post('/', DestinationController.create);
 router.patch('/:id', DestinationController.update);
 router.delete('/:id', DestinationController.remove);
