@@ -2,7 +2,7 @@ import { In, Repository } from 'typeorm';
 import { AppDataSource } from '../../../config/data-source';
 import { Tour, DurationUnit } from '../entities/tour.entity';
 import { TourFeature } from '../entities/tour-feature.entity';
-import { TourTranslation } from '../entities/tour-translation.entity';
+import { Translation } from '../../shared/entities/translation.entity';
 import { TourInfoItem } from '../entities/tour-info-item.entity';
 import { TourImage } from '../entities/tour-image.entity';
 import { TourTimeSlot } from '../entities/tour-time-slot.entity';
@@ -82,16 +82,21 @@ export type CreateTourInput = {
 
 export type UpdateTourInput = Partial<Omit<CreateTourInput, 'tenantId'>>;
 
+const MODEL_NAME = 'Tour';
+
 export class TourService {
   private static tourRepo(): Repository<Tour> {
     return AppDataSource.getRepository(Tour);
+  }
+
+  private static translationRepo(): Repository<Translation> {
+    return AppDataSource.getRepository(Translation);
   }
 
   static async createTour(input: CreateTourInput): Promise<Tour> {
     const tenantRepo = AppDataSource.getRepository(Tenant);
     const destinationRepo = AppDataSource.getRepository(Destination);
     const languageRepo = AppDataSource.getRepository(Language);
-    const translationRepo = AppDataSource.getRepository(TourTranslation);
     const infoItemRepo = AppDataSource.getRepository(TourInfoItem);
     const imageRepo = AppDataSource.getRepository(TourImage);
     const timeSlotRepo = AppDataSource.getRepository(TourTimeSlot);
@@ -170,19 +175,25 @@ export class TourService {
 
     const savedTour = await this.tourRepo().save(tour);
 
-    // Create translations
+    // Create translations using generic Translation entity
     const translations = input.translations.map(t => {
-      const translation = new TourTranslation();
-      translation.tourId = savedTour.id;
-      translation.languageId = t.languageId;
-      translation.title = t.title;
-      translation.slug = t.slug || slugify(t.title);
-      translation.description = t.description;
-      translation.includedServices = t.includedServices ? JSON.stringify(t.includedServices) : undefined;
-      translation.excludedServices = t.excludedServices ? JSON.stringify(t.excludedServices) : undefined;
-      return translation;
+      // Combine description, includedServices, excludedServices into description field as JSON
+      const translationData: any = {
+        description: t.description || undefined,
+      };
+      if (t.includedServices) translationData.includedServices = t.includedServices;
+      if (t.excludedServices) translationData.excludedServices = t.excludedServices;
+      if (t.slug) translationData.slug = t.slug || slugify(t.title);
+
+      return this.translationRepo().create({
+        model: MODEL_NAME,
+        modelId: savedTour.id,
+        languageId: t.languageId,
+        name: t.title,
+        description: Object.keys(translationData).length > 0 ? JSON.stringify(translationData) : t.description,
+      });
     });
-    await translationRepo.save(translations);
+    await this.translationRepo().save(translations);
 
     // Create info items
     if (input.infoItems?.length) {
@@ -242,8 +253,8 @@ export class TourService {
     return this.getTourById(savedTour.id) as Promise<Tour>;
   }
 
-  static listTours(tenantId: string): Promise<Tour[]> {
-    return this.tourRepo().find({ 
+  static async listTours(tenantId: string): Promise<Tour[]> {
+    const tours = await this.tourRepo().find({ 
       where: { tenantId }, 
       relations: [
         'destination',
@@ -252,8 +263,6 @@ export class TourService {
         'features',
         'features.translations',
         'features.translations.language',
-        'translations',
-        'translations.language',
         'infoItems',
         'infoItems.language',
         'images',
@@ -262,10 +271,28 @@ export class TourService {
       ],
       order: { createdAt: 'DESC' },
     });
+
+    // Fetch translations for all tours
+    const tourIds = tours.map(t => t.id);
+    const translations = tourIds.length > 0
+      ? await this.translationRepo().find({
+          where: {
+            model: MODEL_NAME,
+            modelId: In(tourIds),
+          },
+          relations: ['language'],
+        })
+      : [];
+
+    // Attach translations to tours (Tour type doesn't have translations property, but we'll extend it)
+    return tours.map(tour => ({
+      ...tour,
+      translations: translations.filter(t => t.modelId === tour.id),
+    } as Tour & { translations: Translation[] }));
   }
 
   static async getTourById(id: string): Promise<Tour | null> {
-    return this.tourRepo().findOne({
+    const tour = await this.tourRepo().findOne({
       where: { id },
       relations: [
         'destination',
@@ -274,8 +301,6 @@ export class TourService {
         'features',
         'features.translations',
         'features.translations.language',
-        'translations',
-        'translations.language',
         'infoItems',
         'infoItems.language',
         'images',
@@ -283,6 +308,24 @@ export class TourService {
         'pricing',
       ],
     });
+
+    if (!tour) {
+      return null;
+    }
+
+    // Fetch translations
+    const translations = await this.translationRepo().find({
+      where: {
+        model: MODEL_NAME,
+        modelId: id,
+      },
+      relations: ['language'],
+    });
+
+    return {
+      ...tour,
+      translations,
+    } as Tour & { translations: Translation[] };
   }
 
   static async updateTour(id: string, input: UpdateTourInput): Promise<Tour> {
@@ -383,21 +426,30 @@ export class TourService {
     // Update translations
     if (input.translations !== undefined) {
       // Delete existing translations
-      await translationRepo.delete({ tourId: id });
-
-      // Create new translations
-      const translations = input.translations.map(t => {
-        const translation = new TourTranslation();
-        translation.tourId = id;
-        translation.languageId = t.languageId;
-        translation.title = t.title;
-        translation.slug = t.slug || slugify(t.title);
-        translation.description = t.description;
-        translation.includedServices = t.includedServices ? JSON.stringify(t.includedServices) : undefined;
-        translation.excludedServices = t.excludedServices ? JSON.stringify(t.excludedServices) : undefined;
-        return translation;
+      await this.translationRepo().delete({
+        model: MODEL_NAME,
+        modelId: id,
       });
-      await translationRepo.save(translations);
+
+      // Create new translations using generic Translation entity
+      const translations = input.translations.map(t => {
+        // Combine description, includedServices, excludedServices into description field as JSON
+        const translationData: any = {
+          description: t.description || undefined,
+        };
+        if (t.includedServices) translationData.includedServices = t.includedServices;
+        if (t.excludedServices) translationData.excludedServices = t.excludedServices;
+        if (t.slug) translationData.slug = t.slug || slugify(t.title);
+
+        return this.translationRepo().create({
+          model: MODEL_NAME,
+          modelId: id,
+          languageId: t.languageId,
+          name: t.title,
+          description: Object.keys(translationData).length > 0 ? JSON.stringify(translationData) : t.description,
+        });
+      });
+      await this.translationRepo().save(translations);
     }
 
     // Update info items
@@ -487,6 +539,13 @@ export class TourService {
     if (!tour) {
       throw new Error('Tour not found');
     }
+
+    // Delete translations first
+    await this.translationRepo().delete({
+      model: MODEL_NAME,
+      modelId: id,
+    });
+
     await this.tourRepo().remove(tour);
   }
 }

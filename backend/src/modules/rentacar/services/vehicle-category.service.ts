@@ -16,13 +16,10 @@ export type CreateVehicleCategoryInput = {
 
 export type UpdateVehicleCategoryInput = Partial<CreateVehicleCategoryInput>;
 
-export type VehicleCategoryWithTranslations = Omit<VehicleCategory, 'translations'> & {
-  translations: Array<{
-    id: string;
-    languageId: string;
-    languageCode: string;
-    name: string;
-  }>;
+const MODEL_NAME = 'VehicleCategory';
+
+export type VehicleCategoryWithTranslations = VehicleCategory & {
+  translations?: Translation[];
 };
 
 export class VehicleCategoryService {
@@ -30,8 +27,8 @@ export class VehicleCategoryService {
     return AppDataSource.getRepository(VehicleCategory);
   }
 
-  private static translationRepo(): Repository<VehicleCategoryTranslation> {
-    return AppDataSource.getRepository(VehicleCategoryTranslation);
+  private static translationRepo(): Repository<Translation> {
+    return AppDataSource.getRepository(Translation);
   }
 
   private static languageRepo(): Repository<Language> {
@@ -40,18 +37,35 @@ export class VehicleCategoryService {
 
   static async list(): Promise<VehicleCategoryWithTranslations[]> {
     const categories = await this.categoryRepo().find({
-      relations: ['translations', 'translations.language'],
       order: { sortOrder: 'ASC', createdAt: 'DESC' },
     });
 
-    return categories.map((category) => ({
+    // Fetch translations for all categories
+    const categoryIds = categories.map(c => c.id);
+    const translations = categoryIds.length > 0
+      ? await this.translationRepo().find({
+          where: {
+            model: MODEL_NAME,
+            modelId: In(categoryIds),
+          },
+          relations: ['language'],
+        })
+      : [];
+
+    // Group translations by category
+    const translationsByCategory = new Map<string, Translation[]>();
+    translations.forEach(t => {
+      const key = t.modelId;
+      if (!translationsByCategory.has(key)) {
+        translationsByCategory.set(key, []);
+      }
+      translationsByCategory.get(key)!.push(t);
+    });
+
+    // Combine categories with translations
+    return categories.map(category => ({
       ...category,
-      translations: category.translations.map((t) => ({
-        id: t.id,
-        languageId: t.languageId,
-        languageCode: t.language.code,
-        name: t.name,
-      })),
+      translations: translationsByCategory.get(category.id) || [],
     }));
   }
 
@@ -99,8 +113,9 @@ export class VehicleCategoryService {
         }
 
         return this.translationRepo().create({
-          category: savedCategory,
-          language,
+          model: MODEL_NAME,
+          modelId: savedCategory.id,
+          languageId: t.languageId,
           name,
         });
       })
@@ -114,21 +129,23 @@ export class VehicleCategoryService {
   static async getById(id: string): Promise<VehicleCategoryWithTranslations | null> {
     const category = await this.categoryRepo().findOne({
       where: { id },
-      relations: ['translations', 'translations.language'],
     });
 
     if (!category) {
       return null;
     }
 
+    const translations = await this.translationRepo().find({
+      where: {
+        model: MODEL_NAME,
+        modelId: id,
+      },
+      relations: ['language'],
+    });
+
     return {
       ...category,
-      translations: category.translations.map((t) => ({
-        id: t.id,
-        languageId: t.languageId,
-        languageCode: t.language.code,
-        name: t.name,
-      })),
+      translations,
     };
   }
 
@@ -144,7 +161,10 @@ export class VehicleCategoryService {
     const savedCategory = await this.categoryRepo().save(category);
 
     if (input.translations !== undefined) {
-      await this.translationRepo().delete({ categoryId: id });
+      await this.translationRepo().delete({
+        model: MODEL_NAME,
+        modelId: id,
+      });
 
       const defaultLanguage = await this.languageRepo().findOne({ where: { isDefault: true } });
       const defaultTranslation = input.translations.find(t => 
@@ -190,6 +210,13 @@ export class VehicleCategoryService {
     if (!category) {
       throw new Error('Vehicle category not found');
     }
+
+    // Delete translations first
+    await this.translationRepo().delete({
+      model: MODEL_NAME,
+      modelId: id,
+    });
+
     await this.categoryRepo().remove(category);
   }
 }

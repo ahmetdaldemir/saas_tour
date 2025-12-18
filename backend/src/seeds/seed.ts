@@ -6,6 +6,7 @@ import { TenantUser, TenantUserRole } from '../modules/tenants/entities/tenant-u
 import { Language } from '../modules/shared/entities/language.entity';
 import { PhoneCountry } from '../modules/shared/entities/phone-country.entity';
 import { Destination } from '../modules/shared/entities/destination.entity';
+import { DestinationService } from '../modules/shared/services/destination.service';
 import { Tour } from '../modules/tour/entities/tour.entity';
 import { TourSession } from '../modules/tour/entities/tour-session.entity';
 import { PaymentMethod, PaymentProvider } from '../modules/shared/entities/payment-method.entity';
@@ -120,17 +121,22 @@ const seed = async () => {
     throw new Error('Languages missing');
   }
 
-  const cappadocia = await destinationRepo.findOne({
-    where: { name: 'Kapadokya Balon Turu', city: 'Nevşehir', country: 'Türkiye' },
-  });
-  let cappadociaDestination = cappadocia;
+  // Get or create Cappadocia destination
+  const allDestinations = await DestinationService.list();
+  let cappadociaDestination = allDestinations.find(d =>
+    d.translations?.some(t => t.languageId === turkish.id && t.name === 'Kapadokya Balon Turu')
+  );
+  
   if (!cappadociaDestination) {
-    cappadociaDestination = destinationRepo.create({
-      name: 'Kapadokya Balon Turu',
-      country: 'Türkiye',
-      city: 'Nevşehir',
+    cappadociaDestination = await DestinationService.create({
+      translations: [
+        {
+          languageId: turkish.id,
+          title: 'Kapadokya Balon Turu',
+          description: 'Kapadokya, Nevşehir, Türkiye',
+        },
+      ],
     });
-    cappadociaDestination = await destinationRepo.save(cappadociaDestination);
   }
 
   let balloonTour = await tourRepo.findOne({ where: { slug: 'sunrise-cappadocia-flight', tenantId: tourTenant.id } });

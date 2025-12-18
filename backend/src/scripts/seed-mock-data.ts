@@ -55,7 +55,7 @@ const seedMockData = async () => {
     const languageRepo = AppDataSource.getRepository(Language);
     const currencyRepo = AppDataSource.getRepository(Currency);
     const phoneCountryRepo = AppDataSource.getRepository(PhoneCountry);
-    const destinationRepo = AppDataSource.getRepository(Destination);
+    // DestinationRepo no longer needed, using DestinationService instead
     const hotelRepo = AppDataSource.getRepository(Hotel);
     const paymentMethodRepo = AppDataSource.getRepository(PaymentMethod);
     const blogRepo = AppDataSource.getRepository(Blog);
@@ -168,6 +168,14 @@ const seedMockData = async () => {
 
     // 4. Destinations
     console.log('📍 Seeding destinations...');
+    const { DestinationService } = await import('../modules/shared/services/destination.service');
+    const { LanguageService } = await import('../modules/shared/services/language.service');
+    
+    const defaultLanguage = await LanguageService.getDefault();
+    if (!defaultLanguage) {
+      throw new Error('No default language found. Please set a default language first.');
+    }
+
     const destinationData = [
       { name: 'Istanbul', country: 'Turkey', city: 'Istanbul' },
       { name: 'Antalya', country: 'Turkey', city: 'Antalya' },
@@ -176,12 +184,25 @@ const seedMockData = async () => {
       { name: 'Pamukkale', country: 'Turkey', city: 'Denizli' },
     ];
     const destinations: Destination[] = [];
+    const allDestinations = await DestinationService.list();
+    
     for (const dest of destinationData) {
-      const existing = await destinationRepo.findOne({ where: { name: dest.name, city: dest.city } });
-      if (!existing) {
-        destinations.push(await destinationRepo.save(destinationRepo.create(dest)));
-      } else {
+      const existing = allDestinations.find(d =>
+        d.translations?.some(t => t.languageId === defaultLanguage.id && t.name === dest.name)
+      );
+      if (existing) {
         destinations.push(existing);
+      } else {
+        const created = await DestinationService.create({
+          translations: [
+            {
+              languageId: defaultLanguage.id,
+              title: dest.name,
+              description: `${dest.name}, ${dest.city}, ${dest.country}`,
+            },
+          ],
+        });
+        destinations.push(created);
       }
     }
 

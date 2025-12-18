@@ -2,6 +2,8 @@ import 'reflect-metadata';
 import { AppDataSource } from '../config/data-source';
 import { Destination } from '../modules/shared/entities/destination.entity';
 import { Hotel } from '../modules/shared/entities/hotel.entity';
+import { DestinationService } from '../modules/shared/services/destination.service';
+import { LanguageService } from '../modules/shared/services/language.service';
 
 const GLOBAL_DESTINATIONS: Array<{ key: string; name: string; city: string; country: string }> = [
   { key: 'antalya', name: 'Antalya', city: 'Antalya', country: 'Turkiye' },
@@ -103,26 +105,39 @@ const GLOBAL_HOTELS: Array<{
 async function seedGlobalDestinationsAndHotels() {
   await AppDataSource.initialize();
   try {
-    const destinationRepo = AppDataSource.getRepository(Destination);
     const hotelRepo = AppDataSource.getRepository(Hotel);
 
+    // Get default language
+    const defaultLanguage = await LanguageService.getDefault();
+    if (!defaultLanguage) {
+      throw new Error('No default language found. Please set a default language first.');
+    }
+
+    // Get all destinations to check if they exist
+    const allDestinations = await DestinationService.list();
     const destinationMap = new Map<string, Destination>();
 
     for (const dest of GLOBAL_DESTINATIONS) {
-      const existing = await destinationRepo.findOne({
-        where: { name: dest.name, city: dest.city, country: dest.country },
-      });
+      // Check if destination exists by name in default language
+      const existing = allDestinations.find(d =>
+        d.translations?.some(t => t.languageId === defaultLanguage.id && t.name === dest.name)
+      );
       if (existing) {
         destinationMap.set(dest.key, existing);
         continue;
       }
-      const created = destinationRepo.create({
-        name: dest.name,
-        country: dest.country,
-        city: dest.city,
+
+      // Create new destination with translation
+      const created = await DestinationService.create({
+        translations: [
+          {
+            languageId: defaultLanguage.id,
+            title: dest.name,
+            description: `${dest.name}, ${dest.city}, ${dest.country}`,
+          },
+        ],
       });
-      const saved = await destinationRepo.save(created);
-      destinationMap.set(dest.key, saved);
+      destinationMap.set(dest.key, created);
       console.log(`Created destination ${dest.name}`);
     }
 

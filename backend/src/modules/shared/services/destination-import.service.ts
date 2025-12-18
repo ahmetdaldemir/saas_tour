@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { DestinationService } from './destination.service';
+import { LanguageService } from './language.service';
 import { loadEnv } from '../../../config/env';
 
 const env = loadEnv();
@@ -79,6 +80,12 @@ export class DestinationImportService {
   static async importGlobal(input: ImportDestinationsInput): Promise<ImportDestinationsResult> {
     const { city, latitude, longitude, radius = 15, limit = 20 } = input;
 
+    // Get default language
+    const defaultLanguage = await LanguageService.getDefault();
+    if (!defaultLanguage) {
+      throw new Error('No default language found. Please set a default language first.');
+    }
+
     let coords = { lat: latitude, lon: longitude };
     if ((!coords.lat || !coords.lon) && city) {
       coords = await this.searchLocation(city);
@@ -99,16 +106,19 @@ export class DestinationImportService {
         continue;
       }
 
-      const cityName = place.address_obj?.city ?? city ?? 'Unknown';
-      const country = place.address_obj?.country ?? 'Unknown';
-
       try {
         const destination = await DestinationService.create({
-          name,
-          country,
-          city: cityName,
+          translations: [
+            {
+              languageId: defaultLanguage.id,
+              title: name,
+              description: `${place.address_obj?.city || city || 'Unknown'}, ${place.address_obj?.country || 'Unknown'}`,
+            },
+          ],
         });
-        imported.push(destination.name);
+        // Get name from translations for response
+        const title = destination.translations?.[0]?.name || name;
+        imported.push(title);
       } catch (error) {
         skipped.push(name);
       }

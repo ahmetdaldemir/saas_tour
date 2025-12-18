@@ -2,6 +2,7 @@ import axios from 'axios';
 import { Repository } from 'typeorm';
 import { loadEnv } from '../../../config/env';
 import { DestinationService } from './destination.service';
+import { LanguageService } from './language.service';
 import { HotelService } from './hotel.service';
 import { AppDataSource } from '../../../config/data-source';
 import { Hotel } from '../entities/hotel.entity';
@@ -99,6 +100,12 @@ export class HotelImportService {
   static async importByCity(input: ImportHotelsInput): Promise<ImportHotelsResult> {
     const { city, country, radius = 5, limit = 50 } = input;
 
+    // Get default language
+    const defaultLanguage = await LanguageService.getDefault();
+    if (!defaultLanguage) {
+      throw new Error('No default language found. Please set a default language first.');
+    }
+
     const coords = await this.geocodeCity(city, country);
     const hotels = await this.fetchHotels(coords.lat, coords.lon, radius, limit);
 
@@ -134,11 +141,23 @@ export class HotelImportService {
         continue;
       }
 
-      const destination = await DestinationService.create({
-        name: hotelCity,
-        city: hotelCity,
-        country: hotelCountry,
-      });
+      // Check if destination exists by checking all destinations and their translations
+      const allDestinations = await DestinationService.list();
+      let destination = allDestinations.find(dest =>
+        dest.translations?.some(t => t.languageId === defaultLanguage.id && t.name === hotelCity)
+      );
+
+      if (!destination) {
+        destination = await DestinationService.create({
+          translations: [
+            {
+              languageId: defaultLanguage.id,
+              title: hotelCity,
+              description: `${hotelCity}, ${hotelCountry}`,
+            },
+          ],
+        });
+      }
 
       const locationUrl =
         hotel.latitude && hotel.longitude

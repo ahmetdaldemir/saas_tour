@@ -2,9 +2,9 @@ import { DataSource } from 'typeorm';
 import { loadEnv } from './env';
 import { Tenant } from '../modules/tenants/entities/tenant.entity';
 import { Destination } from '../modules/shared/entities/destination.entity';
+import { Translation } from '../modules/shared/entities/translation.entity';
 import { Hotel } from '../modules/shared/entities/hotel.entity';
 import { Blog } from '../modules/shared/entities/blog.entity';
-import { BlogTranslation } from '../modules/shared/entities/blog-translation.entity';
 import { PhoneCountry } from '../modules/shared/entities/phone-country.entity';
 import { PaymentMethod } from '../modules/shared/entities/payment-method.entity';
 import { Reservation } from '../modules/shared/entities/reservation.entity';
@@ -13,8 +13,6 @@ import { Language } from '../modules/shared/entities/language.entity';
 import { Tour } from '../modules/tour/entities/tour.entity';
 import { TourSession } from '../modules/tour/entities/tour-session.entity';
 import { TourFeature } from '../modules/tour/entities/tour-feature.entity';
-import { TourFeatureTranslation } from '../modules/tour/entities/tour-feature-translation.entity';
-import { TourTranslation } from '../modules/tour/entities/tour-translation.entity';
 import { TourInfoItem } from '../modules/tour/entities/tour-info-item.entity';
 import { TourImage } from '../modules/tour/entities/tour-image.entity';
 import { TourTimeSlot } from '../modules/tour/entities/tour-time-slot.entity';
@@ -69,9 +67,9 @@ export const AppDataSource = new DataSource({
   entities: [
     Tenant,
     Destination,
+    Translation,
     Hotel,
     Blog,
-    BlogTranslation,
     PhoneCountry,
     PaymentMethod,
     Reservation,
@@ -80,8 +78,6 @@ export const AppDataSource = new DataSource({
     Tour,
     TourSession,
     TourFeature,
-    TourFeatureTranslation,
-    TourTranslation,
     TourInfoItem,
     TourImage,
     TourTimeSlot,
@@ -91,7 +87,6 @@ export const AppDataSource = new DataSource({
           VehiclePricingPeriod,
           VehicleReservationAssignment,
           VehicleCategory,
-          VehicleCategoryTranslation,
           VehicleBrand,
           VehicleModel,
           Location,

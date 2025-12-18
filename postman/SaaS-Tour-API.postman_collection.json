@@ -1,0 +1,5107 @@
+{
+  "info": {
+    "name": "SaaS Tour API",
+    "description": "API documentation for SaaS Tour platform - Rent a Car and Transfer management system",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "7c20b64d-0066-46d4-8cde-2635521b0b74"
+  },
+  "item": [
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "List tenants with stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/tenants",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "tenants"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get tenant details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/tenants/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "tenants",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get tenant activity",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/tenants/{id}/activity",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "tenants",
+                "{id}",
+                "activity"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "User login",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Authenticate user and get JWT token",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "User registration",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Register a new user",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"string\",\n  \"password\": \"string\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "User signup",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/signup",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "signup"
+              ]
+            },
+            "description": "Sign up a new user",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"string\",\n  \"password\": \"string\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get current user",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/auth/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "description": "Get authenticated user information",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Blogs",
+      "item": [
+        {
+          "name": "List blogs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/blogs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "blogs"
+              ],
+              "query": [
+                {
+                  "key": "tenantId",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Get list of all blog posts",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create blog",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/blogs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "blogs"
+              ]
+            },
+            "description": "Create a new blog post",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get blog by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/blogs/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "blogs",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update blog",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/blogs/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "blogs",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete blog",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/blogs/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "blogs",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "item": [
+        {
+          "name": "List chat rooms",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/chat/rooms",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chat",
+                "rooms"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create chat room",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/chat/rooms",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chat",
+                "rooms"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get chat room by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/chat/rooms/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chat",
+                "rooms",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Send message to chat room",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/chat/rooms/{id}/messages",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chat",
+                "rooms",
+                "{id}",
+                "messages"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Mark chat room as read",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/chat/rooms/{id}/read",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chat",
+                "rooms",
+                "{id}",
+                "read"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get widget token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/chat/widget-token",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chat",
+                "widget-token"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Regenerate widget token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/chat/widget-token/regenerate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "chat",
+                "widget-token",
+                "regenerate"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Currencies",
+      "item": [
+        {
+          "name": "List currencies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/currencies",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "currencies"
+              ]
+            },
+            "description": "Get list of all currencies"
+          }
+        },
+        {
+          "name": "Create currency",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/currencies",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "currencies"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update currency",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/currencies/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "currencies",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete currency",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/currencies/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "currencies",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Update currency rate",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/currencies/{code}/rate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "currencies",
+                "{code}",
+                "rate"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update all currency rates",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/currencies/update-rates",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "currencies",
+                "update-rates"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Update single currency rate",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/currencies/{code}/update-rate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "currencies",
+                "{code}",
+                "update-rate"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customers",
+      "item": [
+        {
+          "name": "List customers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/crm/customers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "crm",
+                "customers"
+              ],
+              "query": [
+                {
+                  "key": "tenantId",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Get list of all customers",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create customer",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/crm/customers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "crm",
+                "customers"
+              ]
+            },
+            "description": "Create a new customer",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get customer by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/crm/customers/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "crm",
+                "customers",
+                "{id}"
+              ],
+              "query": [
+                {
+                  "key": "tenantId",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update customer",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/crm/customers/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "crm",
+                "customers",
+                "{id}"
+              ],
+              "query": [
+                {
+                  "key": "tenantId",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete customer",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/crm/customers/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "crm",
+                "customers",
+                "{id}"
+              ],
+              "query": [
+                {
+                  "key": "tenantId",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Destinations",
+      "item": [
+        {
+          "name": "List destinations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/destinations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "destinations"
+              ]
+            },
+            "description": "Get list of all destinations",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create destination",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/destinations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "destinations"
+              ]
+            },
+            "description": "Create a new destination",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update destination",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/destinations/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "destinations",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete destination",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/destinations/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "destinations",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Import destinations from API",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/destinations/import",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "destinations",
+                "import"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Email Templates",
+      "item": [
+        {
+          "name": "List email templates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/email-templates",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "email-templates"
+              ],
+              "query": [
+                {
+                  "key": "tenantId",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create email template",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/email-templates",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "email-templates"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get email template by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/email-templates/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "email-templates",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update email template",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/email-templates/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "email-templates",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete email template",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/email-templates/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "email-templates",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Extras",
+      "item": [
+        {
+          "name": "List extras",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/extras",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "extras"
+              ],
+              "query": [
+                {
+                  "key": "tenantId",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Get list of all extra services",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create extra",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/extras",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "extras"
+              ]
+            },
+            "description": "Create a new extra service",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get extra by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/extras/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "extras",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update extra",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/extras/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "extras",
+                "{id}"
+              ],
+              "query": [
+                {
+                  "key": "tenantId",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete extra",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/extras/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "extras",
+                "{id}"
+              ],
+              "query": [
+                {
+                  "key": "tenantId",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Check if the API is running"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Hotels",
+      "item": [
+        {
+          "name": "List hotels",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/hotels",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hotels"
+              ]
+            },
+            "description": "Get list of all hotels",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create hotel",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/hotels",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hotels"
+              ]
+            },
+            "description": "Create a new hotel",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update hotel",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/hotels/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hotels",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete hotel",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/hotels/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hotels",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Languages",
+      "item": [
+        {
+          "name": "List languages",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/languages",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "languages"
+              ]
+            },
+            "description": "Get list of all languages"
+          }
+        },
+        {
+          "name": "Create language",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/languages",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "languages"
+              ]
+            },
+            "description": "Create a new language",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update language",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/languages/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "languages",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete language",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/languages/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "languages",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Set default language",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/languages/{id}/set-default",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "languages",
+                "{id}",
+                "set-default"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Location Delivery Pricing",
+      "item": [
+        {
+          "name": "List location delivery pricing",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/location-delivery-pricing",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "location-delivery-pricing"
+              ],
+              "query": [
+                {
+                  "key": "locationId",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Create location delivery pricing",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/location-delivery-pricing",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "location-delivery-pricing"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update location delivery pricing",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/location-delivery-pricing/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "location-delivery-pricing",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete location delivery pricing",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/location-delivery-pricing/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "location-delivery-pricing",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "Location Pricing",
+      "item": [
+        {
+          "name": "List location pricing",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/location-pricing",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "location-pricing"
+              ],
+              "query": [
+                {
+                  "key": "locationId",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Get location pricing list"
+          }
+        },
+        {
+          "name": "Upsert location pricing",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/location-pricing",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "location-pricing"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get pricing by location and vehicle",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/location-pricing/by-vehicle",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "location-pricing",
+                "by-vehicle"
+              ],
+              "query": [
+                {
+                  "key": "locationId",
+                  "value": "",
+                  "description": ""
+                },
+                {
+                  "key": "vehicleId",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Bulk upsert location pricing",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/location-pricing/bulk",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "location-pricing",
+                "bulk"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Bulk copy location pricing",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/location-pricing/bulk-copy",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "location-pricing",
+                "bulk-copy"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete location pricing",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/location-pricing/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "location-pricing",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "Locations",
+      "item": [
+        {
+          "name": "List locations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/locations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "locations"
+              ],
+              "query": [
+                {
+                  "key": "tenantId",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Get list of all rent a car locations"
+          }
+        },
+        {
+          "name": "Create location",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/locations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "locations"
+              ]
+            },
+            "description": "Create a new rent a car location",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get location by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/locations/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "locations",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Update location",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/locations/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "locations",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Partially update location",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/locations/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "locations",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete location",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/locations/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "locations",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "Monitoring",
+      "item": [
+        {
+          "name": "Get services status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/monitoring/services",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "monitoring",
+                "services"
+              ]
+            },
+            "description": "Get status of all Docker services",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get service logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/monitoring/services/{serviceName}/logs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "monitoring",
+                "services",
+                "{serviceName}",
+                "logs"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get system stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/monitoring/stats",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "monitoring",
+                "stats"
+              ]
+            },
+            "description": "Get system resource usage statistics",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Start service",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/monitoring/services/{serviceName}/start",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "monitoring",
+                "services",
+                "{serviceName}",
+                "start"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Stop service",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/monitoring/services/{serviceName}/stop",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "monitoring",
+                "services",
+                "{serviceName}",
+                "stop"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Restart service",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/monitoring/services/{serviceName}/restart",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "monitoring",
+                "services",
+                "{serviceName}",
+                "restart"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Send test email",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/admin/monitoring/test-email",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "monitoring",
+                "test-email"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reservations",
+      "item": [
+        {
+          "name": "Assign plate to reservation",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/reservations/{reservationId}/assignments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "reservations",
+                "{reservationId}",
+                "assignments"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "List reservations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reservations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reservations"
+              ],
+              "query": [
+                {
+                  "key": "tenantId",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Get list of all reservations"
+          }
+        },
+        {
+          "name": "Get reservation by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reservations/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reservations",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Update reservation",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reservations/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reservations",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update reservation status",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/reservations/{id}/status",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "reservations",
+                "{id}",
+                "status"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "item": [
+        {
+          "name": "Get site settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/settings/site",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings",
+                "site"
+              ],
+              "query": [
+                {
+                  "key": "tenantId",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Get tenant site settings",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update site settings",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/settings/site",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "settings",
+                "site"
+              ],
+              "query": [
+                {
+                  "key": "tenantId",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Update tenant site settings",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Surveys",
+      "item": [
+        {
+          "name": "List surveys",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/surveys",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "surveys"
+              ],
+              "query": [
+                {
+                  "key": "tenantId",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Get list of all surveys"
+          }
+        },
+        {
+          "name": "Create survey",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/surveys",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "surveys"
+              ]
+            },
+            "description": "Create a new survey",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get survey by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/surveys/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "surveys",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Update survey",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/surveys/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "surveys",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete survey",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/surveys/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "surveys",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Add question to survey",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/surveys/{surveyId}/questions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "surveys",
+                "{surveyId}",
+                "questions"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update survey question",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/surveys/questions/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "surveys",
+                "questions",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete survey question",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/surveys/questions/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "surveys",
+                "questions",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Submit survey response",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/surveys/responses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "surveys",
+                "responses"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get survey responses",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/surveys/{surveyId}/responses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "surveys",
+                "{surveyId}",
+                "responses"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Get responses by reservation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/surveys/reservations/{reservationId}/responses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "surveys",
+                "reservations",
+                "{reservationId}",
+                "responses"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenant Users",
+      "item": [
+        {
+          "name": "List tenant users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tenant-users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tenant-users"
+              ]
+            },
+            "description": "Get list of tenant users",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create tenant user",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tenant-users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tenant-users"
+              ]
+            },
+            "description": "Create a new tenant user",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get tenant user by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tenant-users/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tenant-users",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update tenant user",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tenant-users/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tenant-users",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete tenant user",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tenant-users/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tenant-users",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenants",
+      "item": [
+        {
+          "name": "List tenants",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tenants",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tenants"
+              ]
+            },
+            "description": "Get list of all tenants"
+          }
+        },
+        {
+          "name": "Create tenant",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tenants",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tenants"
+              ]
+            },
+            "description": "Create a new tenant",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"string\",\n  \"slug\": \"string\",\n  \"category\": \"string\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tour Features",
+      "item": [
+        {
+          "name": "List tour features",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tour-features",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tour-features"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Create tour feature",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tour-features",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tour-features"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get tour feature by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tour-features/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tour-features",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Update tour feature",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tour-features/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tour-features",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete tour feature",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tour-features/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tour-features",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tours",
+      "item": [
+        {
+          "name": "List tours",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tours",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tours"
+              ],
+              "query": [
+                {
+                  "key": "tenantId",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Get list of all tours"
+          }
+        },
+        {
+          "name": "Create tour",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tours",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tours"
+              ]
+            },
+            "description": "Create a new tour",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get tour by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tours/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tours",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Update tour",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tours/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tours",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete tour",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/tours/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "tours",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transfer Drivers",
+      "item": [
+        {
+          "name": "List transfer drivers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/drivers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "drivers"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create transfer driver",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/drivers",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "drivers"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get transfer driver by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/drivers/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "drivers",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update transfer driver",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/drivers/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "drivers",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete transfer driver",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/drivers/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "drivers",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transfer Pricing",
+      "item": [
+        {
+          "name": "List transfer pricing",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/pricings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "pricings"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create transfer pricing",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/pricings",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "pricings"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get transfer pricing by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/pricings/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "pricings",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update transfer pricing",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/pricings/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "pricings",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete transfer pricing",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/pricings/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "pricings",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transfer Reservations",
+      "item": [
+        {
+          "name": "List transfer reservations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/reservations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "reservations"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create transfer reservation",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/reservations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "reservations"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get transfer reservation by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/reservations/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "reservations",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update transfer reservation",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/reservations/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "reservations",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete transfer reservation",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/reservations/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "reservations",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transfer Routes",
+      "item": [
+        {
+          "name": "List transfer routes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/routes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "routes"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create transfer route",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/routes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "routes"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get transfer route by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/routes/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "routes",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update transfer route",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/routes/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "routes",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete transfer route",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/routes/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "routes",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transfer Vehicles",
+      "item": [
+        {
+          "name": "List transfer vehicles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/vehicles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "vehicles"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create transfer vehicle",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/vehicles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "vehicles"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get transfer vehicle by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/vehicles/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "vehicles",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update transfer vehicle",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/vehicles/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "vehicles",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete transfer vehicle",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/transfer/vehicles/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "transfer",
+                "vehicles",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Translations",
+      "item": [
+        {
+          "name": "Translate text",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/translation/translate",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "translation",
+                "translate"
+              ]
+            },
+            "description": "Translate text using DeepL API",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Translate multiple texts",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/translation/translate-multiple",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "translation",
+                "translate-multiple"
+              ]
+            },
+            "description": "Translate multiple texts using DeepL API",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vehicle Brands",
+      "item": [
+        {
+          "name": "List vehicle brands",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vehicle-brands",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vehicle-brands"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Create vehicle brand",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vehicle-brands",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vehicle-brands"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get vehicle brand by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vehicle-brands/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vehicle-brands",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Update vehicle brand",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vehicle-brands/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vehicle-brands",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Partially update vehicle brand",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vehicle-brands/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vehicle-brands",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete vehicle brand",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vehicle-brands/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vehicle-brands",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vehicle Categories",
+      "item": [
+        {
+          "name": "List vehicle categories",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vehicle-categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vehicle-categories"
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Create vehicle category",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vehicle-categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vehicle-categories"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get vehicle category by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vehicle-categories/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vehicle-categories",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Update vehicle category",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vehicle-categories/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vehicle-categories",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Partially update vehicle category",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vehicle-categories/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vehicle-categories",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete vehicle category",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vehicle-categories/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vehicle-categories",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vehicle Models",
+      "item": [
+        {
+          "name": "List vehicle models",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vehicle-models",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vehicle-models"
+              ],
+              "query": [
+                {
+                  "key": "brandId",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Create vehicle model",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vehicle-models",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vehicle-models"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get vehicle model by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vehicle-models/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vehicle-models",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Update vehicle model",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vehicle-models/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vehicle-models",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Partially update vehicle model",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vehicle-models/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vehicle-models",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete vehicle model",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/vehicle-models/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "vehicle-models",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vehicles",
+      "item": [
+        {
+          "name": "List vehicles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/vehicles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "vehicles"
+              ],
+              "query": [
+                {
+                  "key": "tenantId",
+                  "value": "",
+                  "description": ""
+                }
+              ]
+            },
+            "description": "Get list of all vehicles"
+          }
+        },
+        {
+          "name": "Create vehicle",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/vehicles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "vehicles"
+              ]
+            },
+            "description": "Create a new vehicle",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Get vehicle by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/vehicles/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "vehicles",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Update vehicle",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/vehicles/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "vehicles",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Partially update vehicle",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/vehicles/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "vehicles",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete vehicle",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/vehicles/{id}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "vehicles",
+                "{id}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Add plate to vehicle",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/vehicles/{vehicleId}/plates",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "vehicles",
+                "{vehicleId}",
+                "plates"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update vehicle plate",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/vehicles/{vehicleId}/plates/{plateId}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "vehicles",
+                "{vehicleId}",
+                "plates",
+                "{plateId}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Partially update vehicle plate",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/vehicles/{vehicleId}/plates/{plateId}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "vehicles",
+                "{vehicleId}",
+                "plates",
+                "{plateId}"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete vehicle plate",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/vehicles/{vehicleId}/plates/{plateId}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "vehicles",
+                "{vehicleId}",
+                "plates",
+                "{plateId}"
+              ],
+              "query": []
+            },
+            "description": ""
+          }
+        },
+        {
+          "name": "Upsert vehicle pricing",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/vehicles/{vehicleId}/pricing",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "vehicles",
+                "{vehicleId}",
+                "pricing"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update vehicle last return location",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/vehicles/{id}/last-return-location",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "vehicles",
+                "{id}",
+                "last-return-location"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Partially update vehicle last return location",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/rentacar/vehicles/{id}/last-return-location",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rentacar",
+                "vehicles",
+                "{id}",
+                "last-return-location"
+              ],
+              "query": []
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://berg.local.saastour360.test:5001/api",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tenant",
+      "value": "berg",
+      "type": "string"
+    }
+  ]
+}

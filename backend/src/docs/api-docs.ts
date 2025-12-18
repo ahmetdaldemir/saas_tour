@@ -17,12 +17,28 @@ export const apiDocumentation = {
   },
   servers: [
     {
-      url: 'http://localhost:4001/api',
-      description: 'Development server',
+      url: 'http://{tenant}.local.saastour360.test:5001/api',
+      description: 'Local development (multi-tenant)',
+      variables: {
+        tenant: {
+          default: 'berg',
+          description: 'Tenant slug (e.g., berg, sunset)',
+        },
+      },
     },
     {
-      url: 'https://api.saastour.com/api',
-      description: 'Production server',
+      url: 'https://{tenant}.saastour360.com/api',
+      description: 'Production (multi-tenant)',
+      variables: {
+        tenant: {
+          default: 'berg',
+          description: 'Tenant slug (e.g., berg, sunset)',
+        },
+      },
+    },
+    {
+      url: 'http://localhost:4001/api',
+      description: 'Local development (direct access)',
     },
   ],
   tags: [

@@ -1,7 +1,7 @@
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { AppDataSource } from '../../../config/data-source';
 import { Blog, BlogStatus } from '../entities/blog.entity';
-import { BlogTranslation } from '../entities/blog-translation.entity';
+import { Translation } from '../entities/translation.entity';
 import { Language } from '../entities/language.entity';
 import { TranslationService } from './translation.service';
 
@@ -25,6 +25,12 @@ export type CreateBlogDto = {
 
 export type UpdateBlogDto = Partial<Omit<CreateBlogDto, 'tenantId'>>;
 
+export type BlogWithTranslations = Blog & {
+  translations?: Translation[];
+};
+
+const MODEL_NAME = 'Blog';
+
 function slugify(text: string): string {
   return text
     .toString()
@@ -42,21 +48,18 @@ export class BlogService {
     return AppDataSource.getRepository(Blog);
   }
 
-  private static translationRepo(): Repository<BlogTranslation> {
-    return AppDataSource.getRepository(BlogTranslation);
+  private static translationRepo(): Repository<Translation> {
+    return AppDataSource.getRepository(Translation);
   }
 
   private static languageRepo(): Repository<Language> {
     return AppDataSource.getRepository(Language);
   }
 
-  static async list(tenantId: string, locationId?: string | null): Promise<Blog[]> {
+  static async list(tenantId: string, locationId?: string | null): Promise<BlogWithTranslations[]> {
     const query = this.repo()
       .createQueryBuilder('blog')
       .leftJoinAndSelect('blog.location', 'location')
-      .leftJoinAndSelect('location.translations', 'locationTranslations')
-      .leftJoinAndSelect('blog.translations', 'translations')
-      .leftJoinAndSelect('translations.language', 'language')
       .where('blog.tenantId = :tenantId', { tenantId })
       .orderBy('blog.createdAt', 'DESC');
 
@@ -71,14 +74,59 @@ export class BlogService {
       query.andWhere('(blog.locationId = :locationId OR blog.locationId IS NULL)', { locationId });
     }
 
-    return query.getMany();
+    const blogs = await query.getMany();
+    const blogIds = blogs.map(b => b.id);
+
+    // Fetch translations for all blogs
+    const translations = blogIds.length > 0
+      ? await this.translationRepo().find({
+          where: {
+            model: MODEL_NAME,
+            modelId: In(blogIds),
+          },
+          relations: ['language'],
+        })
+      : [];
+
+    // Group translations by blog
+    const translationsByBlog = new Map<string, Translation[]>();
+    translations.forEach(t => {
+      const key = t.modelId;
+      if (!translationsByBlog.has(key)) {
+        translationsByBlog.set(key, []);
+      }
+      translationsByBlog.get(key)!.push(t);
+    });
+
+    // Combine blogs with translations
+    return blogs.map(blog => ({
+      ...blog,
+      translations: translationsByBlog.get(blog.id) || [],
+    }));
   }
 
-  static async getById(id: string): Promise<Blog | null> {
-    return this.repo().findOne({
+  static async getById(id: string): Promise<BlogWithTranslations | null> {
+    const blog = await this.repo().findOne({
       where: { id },
-      relations: ['location', 'location.translations', 'translations', 'translations.language'],
+      relations: ['location'],
     });
+
+    if (!blog) {
+      return null;
+    }
+
+    const translations = await this.translationRepo().find({
+      where: {
+        model: MODEL_NAME,
+        modelId: id,
+      },
+      relations: ['language'],
+    });
+
+    return {
+      ...blog,
+      translations,
+    };
   }
 
   static async create(input: CreateBlogDto): Promise<Blog> {
@@ -124,7 +172,6 @@ export class BlogService {
 
           let title = t.title || '';
           let content = t.content || '';
-          let translationSlug = t.slug || slugify(t.title || '');
 
           // Auto-translate only if translation is empty and not default language
           if (!title && !content && defaultLanguage && t.languageId !== defaultLanguage.id && defaultTranslation) {
@@ -149,12 +196,13 @@ export class BlogService {
             }
           }
 
+          // Store content in description field (name = title)
           return this.translationRepo().create({
-            blog: savedBlog,
-            language,
-            title,
-            slug: translationSlug,
-            content,
+            model: MODEL_NAME,
+            modelId: savedBlog.id,
+            languageId: t.languageId,
+            name: title,
+            description: content,
           });
         })
       );
@@ -200,7 +248,10 @@ export class BlogService {
 
     // Handle translations if provided
     if (input.translations !== undefined) {
-      await this.translationRepo().delete({ blogId: id });
+      await this.translationRepo().delete({
+        model: MODEL_NAME,
+        modelId: id,
+      });
 
       if (input.translations.length > 0) {
         const defaultLanguage = await this.languageRepo().findOne({ where: { isDefault: true } });
@@ -217,7 +268,6 @@ export class BlogService {
 
             let title = t.title || '';
             let content = t.content || '';
-            let translationSlug = t.slug || slugify(t.title || '');
 
             // Auto-translate only if translation is empty and not default language
             if (!title && !content && defaultLanguage && t.languageId !== defaultLanguage.id && defaultTranslation) {
@@ -242,12 +292,13 @@ export class BlogService {
               }
             }
 
+            // Store content in description field (name = title)
             return this.translationRepo().create({
-              blog: savedBlog,
-              language,
-              title,
-              slug: translationSlug,
-              content,
+              model: MODEL_NAME,
+              modelId: id,
+              languageId: t.languageId,
+              name: title,
+              description: content,
             });
           })
         );
@@ -264,7 +315,13 @@ export class BlogService {
     if (!blog) {
       throw new Error('Blog not found');
     }
+
+    // Delete translations first
+    await this.translationRepo().delete({
+      model: MODEL_NAME,
+      modelId: id,
+    });
+
     await this.repo().remove(blog);
   }
 }
-
