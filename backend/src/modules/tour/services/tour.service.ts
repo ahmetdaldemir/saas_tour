@@ -351,7 +351,6 @@ export class TourService {
     const destinationRepo = AppDataSource.getRepository(Destination);
     const languageRepo = AppDataSource.getRepository(Language);
     const featureRepo = AppDataSource.getRepository(TourFeature);
-    const translationRepo = AppDataSource.getRepository(TourTranslation);
     const infoItemRepo = AppDataSource.getRepository(TourInfoItem);
     const imageRepo = AppDataSource.getRepository(TourImage);
     const timeSlotRepo = AppDataSource.getRepository(TourTimeSlot);

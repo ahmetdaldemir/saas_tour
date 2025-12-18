@@ -24,13 +24,10 @@ export type UpdateTourFeatureInput = {
   isActive?: boolean;
 };
 
-export type TourFeatureWithTranslations = Omit<TourFeature, 'translations'> & {
-  translations: Array<{
-    id: string;
-    languageId: string;
-    languageCode: string;
-    name: string;
-  }>;
+const MODEL_NAME = 'TourFeature';
+
+export type TourFeatureWithTranslations = TourFeature & {
+  translations?: Translation[];
 };
 
 export class TourFeatureService {

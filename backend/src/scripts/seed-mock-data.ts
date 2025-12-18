@@ -8,7 +8,7 @@ import { Destination } from '../modules/shared/entities/destination.entity';
 import { Hotel } from '../modules/shared/entities/hotel.entity';
 import { PaymentMethod, PaymentProvider } from '../modules/shared/entities/payment-method.entity';
 import { Blog, BlogStatus } from '../modules/shared/entities/blog.entity';
-import { BlogTranslation } from '../modules/shared/entities/blog-translation.entity';
+import { Translation } from '../modules/shared/entities/translation.entity';
 import { Survey, SurveyStatus } from '../modules/shared/entities/survey.entity';
 import { SurveyQuestion, QuestionType } from '../modules/shared/entities/survey-question.entity';
 import { EmailTemplate, EmailTemplateType } from '../modules/shared/entities/email-template.entity';
@@ -16,7 +16,6 @@ import { Operation } from '../modules/shared/entities/operation.entity';
 import { Reservation, ReservationType, ReservationStatus } from '../modules/shared/entities/reservation.entity';
 import { Vehicle, FuelType, TransmissionType } from '../modules/rentacar/entities/vehicle.entity';
 import { VehicleCategory } from '../modules/rentacar/entities/vehicle-category.entity';
-import { VehicleCategoryTranslation } from '../modules/rentacar/entities/vehicle-category-translation.entity';
 import { VehicleBrand } from '../modules/rentacar/entities/vehicle-brand.entity';
 import { VehicleModel } from '../modules/rentacar/entities/vehicle-model.entity';
 import { Location, LocationType } from '../modules/rentacar/entities/location.entity';
@@ -26,9 +25,7 @@ import { DayRange } from '../modules/rentacar/entities/location-vehicle-pricing.
 import { LocationVehiclePricing } from '../modules/rentacar/entities/location-vehicle-pricing.entity';
 import { LocationDeliveryPricing } from '../modules/rentacar/entities/location-delivery-pricing.entity';
 import { Tour } from '../modules/tour/entities/tour.entity';
-import { TourTranslation } from '../modules/tour/entities/tour-translation.entity';
 import { TourFeature } from '../modules/tour/entities/tour-feature.entity';
-import { TourFeatureTranslation } from '../modules/tour/entities/tour-feature-translation.entity';
 import { TourImage } from '../modules/tour/entities/tour-image.entity';
 import { TourInfoItem } from '../modules/tour/entities/tour-info-item.entity';
 import { TourPricing } from '../modules/tour/entities/tour-pricing.entity';
@@ -59,7 +56,7 @@ const seedMockData = async () => {
     const hotelRepo = AppDataSource.getRepository(Hotel);
     const paymentMethodRepo = AppDataSource.getRepository(PaymentMethod);
     const blogRepo = AppDataSource.getRepository(Blog);
-    const blogTranslationRepo = AppDataSource.getRepository(BlogTranslation);
+    const translationRepo = AppDataSource.getRepository(Translation);
     const surveyRepo = AppDataSource.getRepository(Survey);
     const surveyQuestionRepo = AppDataSource.getRepository(SurveyQuestion);
     const emailTemplateRepo = AppDataSource.getRepository(EmailTemplate);
@@ -67,7 +64,6 @@ const seedMockData = async () => {
     const reservationRepo = AppDataSource.getRepository(Reservation);
     const vehicleRepo = AppDataSource.getRepository(Vehicle);
     const vehicleCategoryRepo = AppDataSource.getRepository(VehicleCategory);
-    const vehicleCategoryTranslationRepo = AppDataSource.getRepository(VehicleCategoryTranslation);
     const vehicleBrandRepo = AppDataSource.getRepository(VehicleBrand);
     const vehicleModelRepo = AppDataSource.getRepository(VehicleModel);
     const locationRepo = AppDataSource.getRepository(Location);
@@ -76,9 +72,7 @@ const seedMockData = async () => {
     const locationVehiclePricingRepo = AppDataSource.getRepository(LocationVehiclePricing);
     const locationDeliveryPricingRepo = AppDataSource.getRepository(LocationDeliveryPricing);
     const tourRepo = AppDataSource.getRepository(Tour);
-    const tourTranslationRepo = AppDataSource.getRepository(TourTranslation);
     const tourFeatureRepo = AppDataSource.getRepository(TourFeature);
-    const tourFeatureTranslationRepo = AppDataSource.getRepository(TourFeatureTranslation);
     const tourImageRepo = AppDataSource.getRepository(TourImage);
     const tourInfoItemRepo = AppDataSource.getRepository(TourInfoItem);
     const tourPricingRepo = AppDataSource.getRepository(TourPricing);
@@ -256,9 +250,10 @@ const seedMockData = async () => {
         const category = vehicleCategoryRepo.create({ isActive: cat.isActive, sortOrder: cat.sortOrder });
         const savedCategory = await vehicleCategoryRepo.save(category);
         for (const trans of cat.translations) {
-          await vehicleCategoryTranslationRepo.save(vehicleCategoryTranslationRepo.create({
-            category: savedCategory,
-            language: trans.language,
+          await translationRepo.save(translationRepo.create({
+            model: 'VehicleCategory',
+            modelId: savedCategory.id,
+            languageId: trans.language.id,
             name: trans.name,
           }));
         }
@@ -396,10 +391,11 @@ const seedMockData = async () => {
           isActive: tour.isActive,
         }));
         for (const trans of tour.translations) {
-          await tourTranslationRepo.save(tourTranslationRepo.create({
-            tour: savedTour,
-            language: trans.language,
-            title: trans.title,
+          await translationRepo.save(translationRepo.create({
+            model: 'Tour',
+            modelId: savedTour.id,
+            languageId: trans.language.id,
+            name: trans.title,
             description: trans.description,
           }));
         }

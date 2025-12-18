@@ -1,7 +1,7 @@
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { AppDataSource } from '../../../config/data-source';
 import { VehicleCategory } from '../entities/vehicle-category.entity';
-import { VehicleCategoryTranslation } from '../entities/vehicle-category-translation.entity';
+import { Translation } from '../../shared/entities/translation.entity';
 import { Language } from '../../shared/entities/language.entity';
 import { TranslationService } from '../../shared/services/translation.service';
 
@@ -193,8 +193,9 @@ export class VehicleCategoryService {
           }
 
           return this.translationRepo().create({
-            category: savedCategory,
-            language,
+            model: MODEL_NAME,
+            modelId: savedCategory.id,
+            languageId: t.languageId,
             name,
           });
         })

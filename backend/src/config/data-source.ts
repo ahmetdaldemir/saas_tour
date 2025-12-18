@@ -22,7 +22,6 @@ import { VehiclePlate } from '../modules/rentacar/entities/vehicle-plate.entity'
 import { VehiclePricingPeriod } from '../modules/rentacar/entities/vehicle-pricing-period.entity';
 import { VehicleReservationAssignment } from '../modules/rentacar/entities/vehicle-reservation-assignment.entity';
 import { VehicleCategory } from '../modules/rentacar/entities/vehicle-category.entity';
-import { VehicleCategoryTranslation } from '../modules/rentacar/entities/vehicle-category-translation.entity';
 import { VehicleBrand } from '../modules/rentacar/entities/vehicle-brand.entity';
 import { VehicleModel } from '../modules/rentacar/entities/vehicle-model.entity';
 import { Location } from '../modules/rentacar/entities/location.entity';
