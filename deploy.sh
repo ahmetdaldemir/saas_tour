@@ -244,11 +244,18 @@ if [ "$SKIP_NPM_BUILD" = "false" ] && [ "$MODE" != "infra" ]; then
     # Backend npm install ve build
     echo -e "${YELLOW}📦 Backend dependencies yükleniyor...${NC}"
     cd backend
-    if [ ! -d "node_modules" ]; then
+    if [ ! -d "node_modules" ] || [ ! -f "node_modules/.package-lock.json" ]; then
         echo "npm install çalıştırılıyor..."
         npm install
     else
-        echo "node_modules mevcut, kontrol ediliyor..."
+        echo "node_modules mevcut, eksik paketler kontrol ediliyor..."
+        # Eksik paketleri kontrol et (swagger-ui-express örneği)
+        if [ ! -d "node_modules/swagger-ui-express" ]; then
+            echo "⚠️  Bazı paketler eksik, npm install çalıştırılıyor..."
+            npm install
+        else
+            echo "✅ Tüm paketler mevcut"
+        fi
     fi
     echo -e "${YELLOW}🔨 Backend build ediliyor...${NC}"
     npm run build
@@ -258,11 +265,11 @@ if [ "$SKIP_NPM_BUILD" = "false" ] && [ "$MODE" != "infra" ]; then
     # Frontend npm install ve build
     echo -e "${YELLOW}📦 Frontend dependencies yükleniyor...${NC}"
     cd frontend
-    if [ ! -d "node_modules" ]; then
+    if [ ! -d "node_modules" ] || [ ! -f "node_modules/.package-lock.json" ]; then
         echo "npm install çalıştırılıyor..."
         npm install
     else
-        echo "node_modules mevcut, kontrol ediliyor..."
+        echo "node_modules mevcut"
     fi
     echo -e "${YELLOW}🔨 Frontend build ediliyor...${NC}"
     npm run build
