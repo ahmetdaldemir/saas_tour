@@ -357,7 +357,45 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
     else
         # Full modunda - container'ları durdur ve yeniden başlat
         echo -e "${YELLOW}🔄 Application stack yeniden başlatılıyor...${NC}"
-        docker-compose down 2>/dev/null || true
+        
+        # Eski container'ları temizle (orphaned container'lar dahil)
+        echo -e "${YELLOW}🧹 Eski container'lar temizleniyor...${NC}"
+        docker-compose down --remove-orphans 2>/dev/null || true
+        
+        # Tüm eski container'ları zorla kaldır (project prefix ile başlayanlar dahil)
+        echo -e "${YELLOW}🔍 Eski container'lar aranıyor...${NC}"
+        ALL_CONTAINERS=$(docker ps -a --format "{{.Names}}" || true)
+        
+        if echo "$ALL_CONTAINERS" | grep -q "saas-tour-backend"; then
+            BACKEND_CONTAINERS=$(echo "$ALL_CONTAINERS" | grep "saas-tour-backend")
+            echo -e "${YELLOW}🗑️  Backend container'ları kaldırılıyor...${NC}"
+            echo "$BACKEND_CONTAINERS" | while read container; do
+                echo "   - $container"
+                docker rm -f "$container" 2>/dev/null || true
+            done
+        fi
+        
+        if echo "$ALL_CONTAINERS" | grep -q "saas-tour-frontend"; then
+            FRONTEND_CONTAINERS=$(echo "$ALL_CONTAINERS" | grep "saas-tour-frontend")
+            echo -e "${YELLOW}🗑️  Frontend container'ları kaldırılıyor...${NC}"
+            echo "$FRONTEND_CONTAINERS" | while read container; do
+                echo "   - $container"
+                docker rm -f "$container" 2>/dev/null || true
+            done
+        fi
+        
+        if echo "$ALL_CONTAINERS" | grep -q "saas-tour-worker"; then
+            WORKER_CONTAINERS=$(echo "$ALL_CONTAINERS" | grep "saas-tour-worker")
+            echo -e "${YELLOW}🗑️  Worker container'ları kaldırılıyor...${NC}"
+            echo "$WORKER_CONTAINERS" | while read container; do
+                echo "   - $container"
+                docker rm -f "$container" 2>/dev/null || true
+            done
+        fi
+        
+        # Kısa bir bekleme (container'ların tamamen kaldırılması için)
+        sleep 2
+        
         docker-compose up -d --build
     fi
 
