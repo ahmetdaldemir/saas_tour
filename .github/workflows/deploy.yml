@@ -80,7 +80,6 @@ jobs:
             --exclude='frontend/dist' \
             --exclude='backend/dist' \
             --exclude='docker-datatabse-stack' \
-            --exclude='infra' \
             ./ root@185.209.228.189:/var/www/html/saastour360/
       
       - name: Run Deployment Script on Server
