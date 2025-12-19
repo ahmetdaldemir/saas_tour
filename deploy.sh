@@ -181,6 +181,14 @@ if [ "$MODE" = "full" ] || [ "$CONTAINERS_RUNNING" = "false" ]; then
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${CYAN}🔀 TRAEFIK (Reverse Proxy & SSL)${NC}"
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    
+    # infra/traefik dizininin varlığını kontrol et
+    if [ ! -d "infra/traefik" ]; then
+        echo -e "${RED}❌ Hata: infra/traefik dizini bulunamadı!${NC}"
+        echo -e "${YELLOW}💡 infra/traefik dizini deployment için gereklidir.${NC}"
+        exit 1
+    fi
+    
     cd infra/traefik
 
     # acme.json dosyası kontrolü
