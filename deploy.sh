@@ -124,20 +124,32 @@ if [ "$MODE" = "full" ] || [ "$CONTAINERS_RUNNING" = "false" ]; then
         fi
     fi
 
-    # Fresh DB modu - Database'i sıfırdan kur
-    if [ "$FRESH_DB" = "true" ]; then
-        echo -e "${RED}🗑️  Database sıfırdan kuruluyor (tüm veriler silinecek!)...${NC}"
-        docker-compose down -v 2>/dev/null || true
-        echo -e "${YELLOW}⏳ 5 saniye bekleniyor...${NC}"
-        sleep 5
+    # Mevcut çalışan container'ları kontrol et
+    RUNNING_POSTGRES=$(docker ps --format "{{.Names}}" | grep -q "^global_postgres$" && echo "yes" || echo "no")
+    
+    if [ "$RUNNING_POSTGRES" = "yes" ]; then
+        echo -e "${YELLOW}⚠️  Database container'ları zaten çalışıyor (muhtemelen başka bir proje tarafından kullanılıyor)${NC}"
+        echo -e "${GREEN}💾 Mevcut container'lar korunacak ve paylaşılacak${NC}"
+        
+        # Sadece eksik container'ları başlat (docker-compose bunu otomatik yapar)
+        echo -e "${YELLOW}🚀 Eksik container'lar kontrol ediliyor ve başlatılıyor...${NC}"
+        docker-compose up -d
     else
-        echo -e "${GREEN}💾 Database verileri korunacak${NC}"
-        docker-compose down 2>/dev/null || true
+        # Container'lar çalışmıyor - normal akış
+        if [ "$FRESH_DB" = "true" ]; then
+            echo -e "${RED}🗑️  Database sıfırdan kuruluyor (tüm veriler silinecek!)...${NC}"
+            docker-compose down -v 2>/dev/null || true
+            echo -e "${YELLOW}⏳ 5 saniye bekleniyor...${NC}"
+            sleep 5
+        else
+            echo -e "${GREEN}💾 Database verileri korunacak${NC}"
+            docker-compose down 2>/dev/null || true
+        fi
+        
+        # Database stack'i başlat
+        echo -e "${YELLOW}🚀 Database Stack başlatılıyor...${NC}"
+        docker-compose up -d
     fi
-
-    # Database stack'i başlat
-    echo -e "${YELLOW}🚀 Database Stack başlatılıyor...${NC}"
-    docker-compose up -d
 
     # PostgreSQL'in hazır olmasını bekle
     echo -e "${YELLOW}⏳ PostgreSQL'in hazır olması bekleniyor...${NC}"
