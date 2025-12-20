@@ -39,4 +39,7 @@ export class Blog extends BaseEntity {
 
   @Column({ name: 'published_at', type: 'timestamp', nullable: true })
   publishedAt?: Date | null;
+
+  @Column({ type: 'text', nullable: true })
+  image?: string;
 }

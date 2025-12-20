@@ -3,9 +3,10 @@ import { VehicleService } from '../services/vehicle.service';
 import { SeasonName } from '../entities/vehicle-pricing-period.entity';
 import { AppDataSource } from '../../../config/data-source';
 import { Vehicle } from '../entities/vehicle.entity';
+import { asyncHandler } from '../../../utils/errors';
 
 export class RentacarController {
-  static async listVehicles(req: Request, res: Response) {
+  static listVehicles = asyncHandler(async (req: Request, res: Response) => {
     const tenantId = req.query.tenantId as string;
     if (!tenantId) {
       return res.status(400).json({ message: 'tenantId query param required' });
@@ -44,7 +45,7 @@ export class RentacarController {
     });
     
     res.json(vehiclesWithBrandModel);
-  }
+  });
 
   static async createVehicle(req: Request, res: Response) {
     try {

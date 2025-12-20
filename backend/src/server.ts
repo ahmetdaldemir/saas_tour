@@ -5,6 +5,7 @@ import { loadEnv } from './config/env';
 import { startCurrencyScheduler } from './services/currency-scheduler.service';
 import { ChatSocketServer } from './modules/chat/websocket/chat-socket.server';
 import { logger } from './utils/logger';
+import { getRedisClient } from './config/redis.config';
 
 const start = async () => {
   const config = loadEnv();
@@ -12,6 +13,18 @@ const start = async () => {
   // Initialize database connection
   await AppDataSource.initialize();
   logger.info('Database connection initialized');
+
+  // Initialize Redis connection
+  try {
+    const redis = getRedisClient();
+    await redis.connect();
+    logger.info('Redis connection initialized');
+  } catch (error) {
+    logger.warn('Redis connection failed, continuing without cache', { 
+      error: error instanceof Error ? error.message : String(error) 
+    });
+    // Continue without Redis - cache operations will gracefully fail
+  }
 
   // Migrations disabled - using TypeORM synchronize instead
   // All schema changes are handled via entity synchronize (DB_SYNC=true)

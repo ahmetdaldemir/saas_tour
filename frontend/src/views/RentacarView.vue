@@ -537,7 +537,14 @@
 
                   <template #item.actions="{ item }">
                     <v-btn icon="mdi-pencil" variant="text" size="small" color="success" @click="editLocation(item)" />
-                    <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="deleteLocation(item.id)" />
+                    <v-btn 
+                      icon="mdi-delete" 
+                      variant="text" 
+                      size="small" 
+                      color="error" 
+                      :loading="deletingLocation === item.id"
+                      @click="deleteLocation(item.id)" 
+                    />
                   </template>
                   </v-data-table>
                 </div>
@@ -1866,6 +1873,7 @@ const savingPricing = ref(false);
 const savingDeliveryPricing = ref(false);
 const updatingLocationField = ref(false);
 const deletingPlate = ref(false);
+const deletingLocation = ref<string | null>(null);
 const selectedVehicleForPlate = ref<VehicleDto | null>(null);
 const editingPlate = ref<VehiclePlateDto | null>(null);
 const editingLocation = ref<LocationDto | null>(null);
@@ -3368,12 +3376,18 @@ const editLocation = (location: LocationDto) => {
 };
 
 const deleteLocation = async (id: string) => {
-  if (!confirm('Bu lokasyonu silmek istediğinizden emin misiniz?')) return;
+  if (!confirm('Bu lokasyonu silmek istediğinizden emin misiniz? Bu işlem lokasyonu pasif hale getirecektir.')) return;
+  
+  deletingLocation.value = id;
   try {
     await http.delete(`/rentacar/locations/${id}`);
     await loadLocations();
   } catch (error: any) {
-    alert(error.response?.data?.message || 'Lokasyon silinirken bir hata oluştu');
+    const errorMessage = error.response?.data?.message || 'Lokasyon silinirken bir hata oluştu';
+    alert(errorMessage);
+    console.error('Failed to delete location:', error);
+  } finally {
+    deletingLocation.value = null;
   }
 };
 

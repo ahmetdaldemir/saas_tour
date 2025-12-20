@@ -3,6 +3,7 @@ import { BlogService } from '../services/blog.service';
 import { AuthenticatedRequest } from '../../auth/middleware/auth.middleware';
 import { asyncHandler, ValidationError, NotFoundError } from '../../../utils/errors';
 import { logger } from '../../../utils/logger';
+import { AiContentService } from '../services/ai-content.service';
 
 export class BlogController {
   static list = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
@@ -48,6 +49,29 @@ export class BlogController {
     await BlogService.remove(id);
     logger.info(`Deleted blog ${id}`);
     res.status(204).send();
+  });
+
+  /**
+   * POST /api/blogs/generate-content
+   * Generate AI content for blog (Turkish + auto-translations)
+   * Returns JSON with content in all languages (no DB write)
+   */
+  static generateContent = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const { title } = req.body;
+
+    if (!title || !title.trim()) {
+      throw new ValidationError('title is required');
+    }
+
+    const result = await AiContentService.generateBlogContent({
+      title: title.trim(),
+    });
+
+    logger.info('Generated blog content', { title });
+    res.json({
+      success: true,
+      data: result,
+    });
   });
 }
 

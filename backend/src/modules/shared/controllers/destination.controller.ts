@@ -4,6 +4,7 @@ import { AuthenticatedRequest } from '../../auth/middleware/auth.middleware';
 import { DestinationImportService } from '../services/destination-import.service';
 import { TenantRequest } from '../../../middleware/tenant.middleware';
 import { LanguageService } from '../services/language.service';
+import { AiContentService } from '../services/ai-content.service';
 
 export class DestinationController {
   static async list(req: AuthenticatedRequest & TenantRequest, res: Response) {
@@ -258,6 +259,45 @@ export class DestinationController {
         success: false,
         error: {
           code: 'VALIDATION_ERROR',
+          message: (error as Error).message,
+        },
+      });
+    }
+  }
+
+  /**
+   * POST /api/destinations/generate-content
+   * Generate AI content for destination (Turkish + auto-translations)
+   * Returns JSON with content in all languages (no DB write)
+   */
+  static async generateContent(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { title } = req.body;
+
+      if (!title || !title.trim()) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'title is required',
+          },
+        });
+      }
+
+      const result = await AiContentService.generateDestinationContent({
+        title: title.trim(),
+      });
+
+      res.json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      console.error('Content generation error:', error);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
           message: (error as Error).message,
         },
       });

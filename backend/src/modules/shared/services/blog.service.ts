@@ -20,6 +20,7 @@ export type CreateBlogDto = {
   content: string;
   status?: BlogStatus;
   publishedAt?: Date | null;
+  image?: string;
   translations?: BlogTranslationInput[];
 };
 
@@ -152,6 +153,7 @@ export class BlogService {
       content: input.content,
       status: input.status || BlogStatus.DRAFT,
       publishedAt: input.publishedAt || (input.status === BlogStatus.PUBLISHED ? new Date() : null),
+      image: input.image,
     });
 
     const savedBlog = await this.repo().save(blog);
@@ -242,6 +244,9 @@ export class BlogService {
     }
     if (input.publishedAt !== undefined) {
       blog.publishedAt = input.publishedAt;
+    }
+    if (input.image !== undefined) {
+      blog.image = input.image;
     }
 
     const savedBlog = await this.repo().save(blog);

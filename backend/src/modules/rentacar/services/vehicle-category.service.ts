@@ -4,6 +4,7 @@ import { VehicleCategory } from '../entities/vehicle-category.entity';
 import { Translation } from '../../shared/entities/translation.entity';
 import { Language } from '../../shared/entities/language.entity';
 import { TranslationService } from '../../shared/services/translation.service';
+import { Vehicle } from '../entities/vehicle.entity';
 
 export type CreateVehicleCategoryInput = {
   translations: Array<{
@@ -35,19 +36,28 @@ export class VehicleCategoryService {
     return AppDataSource.getRepository(Language);
   }
 
-  static async list(): Promise<VehicleCategoryWithTranslations[]> {
+  static async list(languageId?: string): Promise<VehicleCategoryWithTranslations[]> {
     const categories = await this.categoryRepo().find({
       order: { sortOrder: 'ASC', createdAt: 'DESC' },
     });
 
     // Fetch translations for all categories
     const categoryIds = categories.map(c => c.id);
+    
+    // Build translation where clause
+    const translationWhere: any = {
+      model: MODEL_NAME,
+      modelId: In(categoryIds),
+    };
+    
+    // Filter by languageId if provided
+    if (languageId) {
+      translationWhere.languageId = languageId;
+    }
+
     const translations = categoryIds.length > 0
       ? await this.translationRepo().find({
-          where: {
-            model: MODEL_NAME,
-            modelId: In(categoryIds),
-          },
+          where: translationWhere,
           relations: ['language'],
         })
       : [];
@@ -210,6 +220,18 @@ export class VehicleCategoryService {
     const category = await this.categoryRepo().findOne({ where: { id } });
     if (!category) {
       throw new Error('Vehicle category not found');
+    }
+
+    // Check if there are any vehicles using this category
+    const vehicleRepo = AppDataSource.getRepository(Vehicle);
+    const vehiclesCount = await vehicleRepo.count({
+      where: { categoryId: id },
+    });
+
+    if (vehiclesCount > 0) {
+      throw new Error(
+        `Bu kategori silinemez çünkü ${vehiclesCount} adet araç bu kategoriye bağlı. Lütfen önce bu araçların kategorilerini değiştirin veya araçları silin.`
+      );
     }
 
     // Delete translations first

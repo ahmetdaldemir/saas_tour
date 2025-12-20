@@ -80,7 +80,19 @@
                       prepend-inner-icon="mdi-format-title"
                       required
                       :rules="[v => !!v || 'Başlık zorunludur']"
-                    />
+                    >
+                      <template v-if="lang.code === 'tr' && form.translations[lang.id].title" #append-inner>
+                        <v-btn
+                          icon="mdi-auto-fix"
+                          size="small"
+                          variant="text"
+                          color="primary"
+                          :loading="generatingContent"
+                          @click="generateContent"
+                          title="AI ile İçerik Oluştur"
+                        />
+                      </template>
+                    </v-text-field>
                   </v-col>
                   <v-col cols="12">
                     <v-textarea
@@ -221,6 +233,7 @@ const form = reactive({
 
 const imageFile = ref<File | null>(null);
 const uploadingImage = ref(false);
+const generatingContent = ref(false);
 
 const dialogTitle = computed(() => (editingId.value ? 'Destinasyonu duzenle' : 'Yeni destinasyon'));
 
@@ -266,7 +279,24 @@ const loadLanguages = async () => {
 const loadDestinations = async () => {
   loading.value = true;
   try {
-    const { data } = await http.get<{ success: boolean; data: Destination[] }>('/destinations');
+    // Find Turkish language (code: "tr")
+    const turkishLanguage = availableLanguages.value.find(lang => lang.code === 'tr');
+    
+    if (!turkishLanguage) {
+      console.warn('Turkish language not found, loading destinations without language filter');
+      const { data } = await http.get<{ success: boolean; data: Destination[] }>('/destinations');
+      if (data.success && Array.isArray(data.data)) {
+        destinations.value = data.data;
+      } else {
+        destinations.value = [];
+      }
+      return;
+    }
+
+    // Load destinations filtered by Turkish language ID
+    const { data } = await http.get<{ success: boolean; data: Destination[] }>(
+      `/destinations?languageId=${turkishLanguage.id}`
+    );
     if (data.success && Array.isArray(data.data)) {
       destinations.value = data.data;
     } else {
@@ -477,13 +507,79 @@ const getImageUrl = (url: string): string => {
   if (url.startsWith('http://') || url.startsWith('https://')) {
     return url;
   }
-  // Relative URL ise API base URL'ini ekle
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001/api';
-  return `${apiBaseUrl.replace('/api', '')}${url.startsWith('/') ? url : '/' + url}`;
+  // Relative URL ise - window.location.origin kullan (multi-tenant yapısında subdomain korunur)
+  // Backend'de /uploads route'u express.static ile serve ediliyor
+  const origin = window.location.origin;
+  
+  // URL zaten / ile başlıyorsa direkt ekle
+  if (url.startsWith('/')) {
+    return origin + url;
+  }
+  return origin + '/' + url;
+};
+
+// Generate AI content for destination
+const generateContent = async () => {
+  // Find Turkish language
+  const turkishLang = availableLanguages.value.find(lang => lang.code === 'tr');
+  if (!turkishLang) {
+    formError.value = 'Türkçe dil bulunamadı';
+    return;
+  }
+
+  const turkishTitle = form.translations[turkishLang.id]?.title?.trim();
+  if (!turkishTitle) {
+    formError.value = 'Lütfen önce Türkçe başlık girin';
+    return;
+  }
+
+  generatingContent.value = true;
+  formError.value = '';
+
+  try {
+    // Call AI content generation endpoint
+    const { data } = await http.post<{
+      success: boolean;
+      data: {
+        [languageCode: string]: {
+          title: string;
+          short_description: string;
+          description: string;
+        };
+      };
+    }>('/destinations/generate-content', {
+      title: turkishTitle,
+    });
+
+    if (!data.success || !data.data) {
+      throw new Error('İçerik oluşturulamadı');
+    }
+
+    // Fill form with generated content for all languages
+    for (const [langCode, content] of Object.entries(data.data)) {
+      const language = availableLanguages.value.find(lang => lang.code === langCode);
+      if (language && form.translations[language.id]) {
+        form.translations[language.id] = {
+          title: content.title,
+          shortDescription: content.short_description,
+          description: content.description,
+        };
+      }
+    }
+
+    // Show success message or feedback
+    console.log('İçerik başarıyla oluşturuldu ve form dolduruldu');
+  } catch (err: any) {
+    console.error('Failed to generate content:', err);
+    formError.value = err.response?.data?.error?.message || err.message || 'İçerik oluşturulurken bir hata oluştu';
+  } finally {
+    generatingContent.value = false;
+  }
 };
 
 onMounted(async () => {
   await loadLanguages();
+  // Load destinations after languages are loaded so we can find Turkish language
   await loadDestinations();
 });
 </script>

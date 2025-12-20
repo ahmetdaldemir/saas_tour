@@ -11,5 +11,6 @@ router.post('/', DestinationController.create);
 router.patch('/:id', DestinationController.update);
 router.delete('/:id', DestinationController.remove);
 router.post('/import', DestinationController.importFromApi);
+router.post('/generate-content', DestinationController.generateContent);
 
 export default router;

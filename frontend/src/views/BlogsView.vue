@@ -139,7 +139,19 @@
                       :label="`Başlık (${lang.name})`"
                       prepend-inner-icon="mdi-format-title"
                       required
-                    />
+                    >
+                      <template v-if="lang.code === 'tr' && blogForm.translations[lang.id].title" #append-inner>
+                        <v-btn
+                          icon="mdi-auto-fix"
+                          size="small"
+                          variant="text"
+                          color="primary"
+                          :loading="generatingContent"
+                          @click="generateContent"
+                          title="AI ile İçerik Oluştur"
+                        />
+                      </template>
+                    </v-text-field>
                   </v-col>
                   <v-col cols="12" md="4">
                     <v-text-field
@@ -162,6 +174,50 @@
                 </v-row>
               </v-window-item>
             </v-window>
+
+            <!-- Common Fields (Outside tabs) -->
+            <v-row class="mt-4">
+              <v-col cols="12">
+                <div>
+                  <v-file-input
+                    v-model="imageFile"
+                    label="Görsel Yükle"
+                    prepend-inner-icon="mdi-image"
+                    variant="outlined"
+                    density="comfortable"
+                    accept="image/*"
+                    :rules="[(v: any) => {
+                      if (!v) return true;
+                      if (v && typeof v === 'object' && 'size' in v) {
+                        return v.size < 5000000 || 'Dosya boyutu 5MB\'dan küçük olmalıdır';
+                      }
+                      return true;
+                    }]"
+                    :loading="uploadingImage"
+                    show-size
+                    clearable
+                  />
+                  <v-btn
+                    v-if="imageFile && !uploadingImage"
+                    color="primary"
+                    size="small"
+                    prepend-icon="mdi-upload"
+                    @click="handleImageUpload"
+                    class="mt-2"
+                  >
+                    Görsel Yükle
+                  </v-btn>
+                  <v-img
+                    v-if="blogForm.image"
+                    :src="getImageUrl(blogForm.image)"
+                    max-height="200"
+                    max-width="300"
+                    contain
+                    class="mt-2 rounded"
+                  />
+                </div>
+              </v-col>
+            </v-row>
           </v-form>
         </v-card-text>
         <v-divider />
@@ -248,7 +304,12 @@ const blogForm = reactive({
   translations: {} as Record<string, { title: string; slug: string; content: string }>,
   locationId: null as string | null,
   status: 'draft' as 'draft' | 'published' | 'archived',
+  image: '',
 });
+
+const imageFile = ref<File | null>(null);
+const uploadingImage = ref(false);
+const generatingContent = ref(false);
 
 // Options
 const statusOptions = [
@@ -380,6 +441,10 @@ const resetBlogForm = () => {
   
   blogForm.locationId = null;
   blogForm.status = 'draft';
+  blogForm.image = '';
+  imageFile.value = null;
+  uploadingImage.value = false;
+  generatingContent.value = false;
 };
 
 const saveBlog = async () => {
@@ -416,6 +481,7 @@ const saveBlog = async () => {
       content: defaultTranslation.content,
       locationId: blogForm.locationId === 'general' ? null : blogForm.locationId,
       status: blogForm.status,
+      image: blogForm.image || undefined,
       translations,
     };
     
@@ -452,6 +518,7 @@ const editBlog = (blog: BlogDto) => {
   
   blogForm.locationId = blog.locationId || 'general';
   blogForm.status = blog.status;
+  blogForm.image = (blog as any).image || '';
   showBlogDialog.value = true;
 };
 
@@ -462,6 +529,117 @@ const deleteBlog = async (id: string) => {
     await loadBlogs();
   } catch (error: any) {
     alert(error.response?.data?.message || 'Blog silinirken bir hata oluştu');
+  }
+};
+
+// File upload handler
+const handleImageUpload = async () => {
+  if (!imageFile.value || !(imageFile.value instanceof File)) {
+    return;
+  }
+  
+  uploadingImage.value = true;
+  try {
+    const formData = new FormData();
+    formData.append('file', imageFile.value);
+
+    const { data } = await http.post('/settings/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    if (data.url) {
+      blogForm.image = data.url;
+      imageFile.value = null;
+    }
+  } catch (error: any) {
+    console.error('Failed to upload image:', error);
+    const errorMessage = error.response?.data?.message || 'Görsel yüklenirken bir hata oluştu';
+    alert(errorMessage);
+  } finally {
+    uploadingImage.value = false;
+  }
+};
+
+// Get full image URL
+const getImageUrl = (url: string): string => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  const origin = window.location.origin;
+  if (url.startsWith('/')) {
+    return origin + url;
+  }
+  return origin + '/' + url;
+};
+
+// Generate AI content for blog
+const generateContent = async () => {
+  const turkishLang = availableLanguages.value.find(lang => lang.code === 'tr');
+  if (!turkishLang) {
+    alert('Türkçe dil bulunamadı');
+    return;
+  }
+
+  const turkishTitle = blogForm.translations[turkishLang.id]?.title?.trim();
+  if (!turkishTitle) {
+    alert('Lütfen önce Türkçe başlık girin');
+    return;
+  }
+
+  generatingContent.value = true;
+
+  try {
+    const { data } = await http.post<{
+      success: boolean;
+      data: {
+        [languageCode: string]: {
+          title: string;
+          content: string;
+        };
+      };
+    }>('/blogs/generate-content', {
+      title: turkishTitle,
+    });
+
+    if (!data.success || !data.data) {
+      throw new Error('İçerik oluşturulamadı');
+    }
+
+    // Slugify helper
+    const slugify = (text: string): string => {
+      return text
+        .toString()
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w\-]+/g, '')
+        .replace(/\-\-+/g, '-')
+        .replace(/^-+/, '')
+        .replace(/-+$/, '');
+    };
+
+    // Fill form with generated content for all languages
+    for (const [langCode, content] of Object.entries(data.data)) {
+      const language = availableLanguages.value.find(lang => lang.code === langCode);
+      if (language && blogForm.translations[language.id]) {
+        blogForm.translations[language.id] = {
+          title: content.title,
+          slug: blogForm.translations[language.id].slug || slugify(content.title),
+          content: content.content,
+        };
+      }
+    }
+
+    console.log('İçerik başarıyla oluşturuldu ve form dolduruldu');
+  } catch (err: any) {
+    console.error('Failed to generate content:', err);
+    const errorMessage = err.response?.data?.error?.message || err.message || 'İçerik oluşturulurken bir hata oluştu';
+    alert(errorMessage);
+  } finally {
+    generatingContent.value = false;
   }
 };
 

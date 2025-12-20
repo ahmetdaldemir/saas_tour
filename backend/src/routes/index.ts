@@ -55,9 +55,9 @@ export const registerRoutes = (app: Express) => {
   app.use('/api/tours', tourRouter);
   app.use('/api/tour-features', tourFeatureRouter);
   app.use('/api/rentacar', rentacarRouter);
-  app.use('/api/vehicle-categories', vehicleCategoryRouter);
-  app.use('/api/vehicle-brands', vehicleBrandRouter);
-  app.use('/api/vehicle-models', vehicleModelRouter);
+  app.use('/api/rentacar/vehicle-categories', vehicleCategoryRouter);
+  app.use('/api/rentacar/vehicle-brands', vehicleBrandRouter);
+  app.use('/api/rentacar/vehicle-models', vehicleModelRouter);
   app.use('/api/rentacar/locations', locationRouter);
   app.use('/api/rentacar/location-pricing', locationPricingRouter);
   app.use('/api/rentacar/location-delivery-pricing', locationDeliveryPricingRouter);

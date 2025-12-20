@@ -5,11 +5,14 @@ export class LocationController {
   static async list(req: Request, res: Response) {
     try {
       const tenantId = req.query.tenantId as string;
+      const parentId = req.query.parentId as string | undefined;
+      const languageId = req.query.languageId as string | undefined;
+
       if (!tenantId) {
         return res.status(400).json({ message: 'tenantId query param required' });
       }
 
-      const locations = await LocationService.list(tenantId);
+      const locations = await LocationService.list(tenantId, parentId, languageId);
       res.json(locations);
     } catch (error) {
       res.status(500).json({ message: (error as Error).message });
