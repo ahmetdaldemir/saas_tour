@@ -196,13 +196,13 @@ export class BlogService {
             }
           }
 
-          // Store content in description field (name = title)
+          // Store content in value field (name = title)
           return this.translationRepo().create({
             model: MODEL_NAME,
             modelId: savedBlog.id,
             languageId: t.languageId,
             name: title,
-            description: content,
+            value: content ? JSON.stringify({ content }) : undefined,
           });
         })
       );
@@ -292,13 +292,13 @@ export class BlogService {
               }
             }
 
-            // Store content in description field (name = title)
+            // Store content in value field (name = title)
             return this.translationRepo().create({
               model: MODEL_NAME,
               modelId: id,
               languageId: t.languageId,
               name: title,
-              description: content,
+              value: content ? JSON.stringify({ content }) : undefined,
             });
           })
         );

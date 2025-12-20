@@ -13,24 +13,11 @@ const start = async () => {
   await AppDataSource.initialize();
   logger.info('Database connection initialized');
 
-  // Run pending migrations in production (if synchronize is disabled)
-  if (config.nodeEnv === 'production' && !AppDataSource.options.synchronize) {
-    try {
-      logger.info('Checking for pending migrations...');
-      const migrations = await AppDataSource.runMigrations();
-      if (migrations && migrations.length > 0) {
-        logger.info(`${migrations.length} migration(s) completed successfully`, {
-          migrations: migrations.map(m => m.name),
-        });
-      } else {
-        logger.info('No pending migrations');
-      }
-    } catch (error: any) {
-      logger.error('Migration error', error);
-      logger.warn('Server will continue despite migration errors');
-      logger.warn('Tip: If tables are missing, set DB_SYNC=true in .env to auto-create schema');
-    }
-  }
+  // Migrations disabled - using TypeORM synchronize instead
+  // All schema changes are handled via entity synchronize (DB_SYNC=true)
+  // if (config.nodeEnv === 'production' && !AppDataSource.options.synchronize) {
+  //   // Migration code removed - using synchronize instead
+  // }
 
   const app = createApp();
   const port = config.app.port;

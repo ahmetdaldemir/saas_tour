@@ -113,6 +113,7 @@ export class DestinationImportService {
               languageId: defaultLanguage.id,
               title: name,
               description: `${place.address_obj?.city || city || 'Unknown'}, ${place.address_obj?.country || 'Unknown'}`,
+              shortDescription: undefined,
             },
           ],
         });

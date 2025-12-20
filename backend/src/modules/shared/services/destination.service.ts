@@ -38,19 +38,27 @@ export class DestinationService {
     return AppDataSource.getRepository(Translation);
   }
 
-  static async list(): Promise<DestinationWithTranslations[]> {
+  static async list(languageId?: string): Promise<DestinationWithTranslations[]> {
     const destinations = await this.repo().find({
       order: { createdAt: 'DESC' },
     });
 
     // Fetch translations for all destinations
     const destinationIds = destinations.map(d => d.id);
+    
+    // Build translation query - filter by languageId if provided
+    const translationWhere: any = {
+      model: MODEL_NAME,
+      modelId: In(destinationIds),
+    };
+    
+    if (languageId) {
+      translationWhere.languageId = languageId;
+    }
+    
     const translations = destinationIds.length > 0
       ? await this.translationRepo().find({
-          where: {
-            model: MODEL_NAME,
-            modelId: In(destinationIds),
-          },
+          where: translationWhere,
           relations: ['language'],
         })
       : [];
@@ -66,23 +74,37 @@ export class DestinationService {
     });
 
     // Combine destinations with translations
-    return destinations.map(dest => ({
+    // If languageId provided, only return destinations that have translation in that language
+    let filteredDestinations = destinations;
+    if (languageId) {
+      filteredDestinations = destinations.filter(dest => 
+        translationsByDestination.has(dest.id)
+      );
+    }
+
+    return filteredDestinations.map(dest => ({
       ...dest,
       translations: translationsByDestination.get(dest.id) || [],
     }));
   }
 
-  static async getById(id: string): Promise<DestinationWithTranslations | null> {
+  static async getById(id: string, languageId?: string): Promise<DestinationWithTranslations | null> {
     const destination = await this.repo().findOne({ where: { id } });
     if (!destination) {
       return null;
     }
 
+    const translationWhere: any = {
+      model: MODEL_NAME,
+      modelId: id,
+    };
+    
+    if (languageId) {
+      translationWhere.languageId = languageId;
+    }
+
     const translations = await this.translationRepo().find({
-      where: {
-        model: MODEL_NAME,
-        modelId: id,
-      },
+      where: translationWhere,
       relations: ['language'],
     });
 
@@ -118,19 +140,24 @@ export class DestinationService {
     const savedDestination = await this.repo().save(destination);
 
     // Create translations
-    const translations = input.translations.map((t) =>
-      this.translationRepo().create({
+    const translations = input.translations.map((t) => {
+      // Store description and shortDescription as JSON in value field
+      const valueData: any = {};
+      if (t.description) valueData.description = t.description;
+      if (t.shortDescription) valueData.shortDescription = t.shortDescription;
+      
+      return this.translationRepo().create({
         model: MODEL_NAME,
         modelId: savedDestination.id,
         languageId: t.languageId,
         name: t.title,
-        description: t.description || t.shortDescription,
-      })
-    );
+        value: Object.keys(valueData).length > 0 ? JSON.stringify(valueData) : undefined,
+      });
+    });
 
     await this.translationRepo().save(translations);
 
-    return this.getById(savedDestination.id) as Promise<DestinationWithTranslations>;
+    return this.getById(savedDestination.id, undefined) as Promise<DestinationWithTranslations>;
   }
 
   static async update(id: string, input: UpdateDestinationDto): Promise<DestinationWithTranslations> {
@@ -171,15 +198,20 @@ export class DestinationService {
       });
 
       // Create new translations
-      const translations = input.translations.map((t) =>
-        this.translationRepo().create({
+      const translations = input.translations.map((t) => {
+        // Store description and shortDescription as JSON in value field
+        const valueData: any = {};
+        if (t.description) valueData.description = t.description;
+        if (t.shortDescription) valueData.shortDescription = t.shortDescription;
+        
+        return this.translationRepo().create({
           model: MODEL_NAME,
           modelId: id,
           languageId: t.languageId,
           name: t.title,
-          description: t.description || t.shortDescription,
-        })
-      );
+          value: Object.keys(valueData).length > 0 ? JSON.stringify(valueData) : undefined,
+        });
+      });
 
       await this.translationRepo().save(translations);
     }

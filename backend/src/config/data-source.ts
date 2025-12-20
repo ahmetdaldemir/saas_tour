@@ -112,5 +112,6 @@ export const AppDataSource = new DataSource({
           ChatParticipant,
           ChatWidgetToken,
   ],
-  migrations: ['dist/migrations/*.js'],
+  // Migrations disabled - using TypeORM synchronize instead
+  // migrations: ['dist/migrations/*.js'],
 });

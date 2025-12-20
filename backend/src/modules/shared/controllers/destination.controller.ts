@@ -2,11 +2,32 @@ import { Response } from 'express';
 import { DestinationService } from '../services/destination.service';
 import { AuthenticatedRequest } from '../../auth/middleware/auth.middleware';
 import { DestinationImportService } from '../services/destination-import.service';
+import { TenantRequest } from '../../../middleware/tenant.middleware';
+import { LanguageService } from '../services/language.service';
 
 export class DestinationController {
-  static async list(_req: AuthenticatedRequest, res: Response) {
+  static async list(req: AuthenticatedRequest & TenantRequest, res: Response) {
     try {
-      const destinations = await DestinationService.list();
+      // Get languageId from query param or use tenant's default language
+      let languageId: string | undefined = req.query.languageId as string | undefined;
+      
+      // If no languageId provided and tenant exists, use tenant's default language
+      if (!languageId && req.tenant?.defaultLanguage) {
+        const defaultLanguage = await LanguageService.getByCode(req.tenant.defaultLanguage);
+        if (defaultLanguage) {
+          languageId = defaultLanguage.id;
+        }
+      }
+      
+      // If still no languageId, get system default language
+      if (!languageId) {
+        const systemDefaultLanguage = await LanguageService.getDefault();
+        if (systemDefaultLanguage) {
+          languageId = systemDefaultLanguage.id;
+        }
+      }
+
+      const destinations = await DestinationService.list(languageId);
       res.json({
         success: true,
         data: destinations,
@@ -22,10 +43,30 @@ export class DestinationController {
     }
   }
 
-  static async getById(req: AuthenticatedRequest, res: Response) {
+  static async getById(req: AuthenticatedRequest & TenantRequest, res: Response) {
     try {
       const { id } = req.params;
-      const destination = await DestinationService.getById(id);
+      
+      // Get languageId from query param or use tenant's default language
+      let languageId: string | undefined = req.query.languageId as string | undefined;
+      
+      // If no languageId provided and tenant exists, use tenant's default language
+      if (!languageId && req.tenant?.defaultLanguage) {
+        const defaultLanguage = await LanguageService.getByCode(req.tenant.defaultLanguage);
+        if (defaultLanguage) {
+          languageId = defaultLanguage.id;
+        }
+      }
+      
+      // If still no languageId, get system default language
+      if (!languageId) {
+        const systemDefaultLanguage = await LanguageService.getDefault();
+        if (systemDefaultLanguage) {
+          languageId = systemDefaultLanguage.id;
+        }
+      }
+
+      const destination = await DestinationService.getById(id, languageId);
 
       if (!destination) {
         return res.status(404).json({

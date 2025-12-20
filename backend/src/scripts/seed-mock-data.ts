@@ -391,12 +391,15 @@ const seedMockData = async () => {
           isActive: tour.isActive,
         }));
         for (const trans of tour.translations) {
+          const valueData: any = {};
+          if (trans.description) valueData.description = trans.description;
+          
           await translationRepo.save(translationRepo.create({
             model: 'Tour',
             modelId: savedTour.id,
             languageId: trans.language.id,
             name: trans.title,
-            description: trans.description,
+            value: Object.keys(valueData).length > 0 ? JSON.stringify(valueData) : undefined,
           }));
         }
       }

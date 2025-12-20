@@ -190,7 +190,7 @@ export class TourService {
         modelId: savedTour.id,
         languageId: t.languageId,
         name: t.title,
-        description: Object.keys(translationData).length > 0 ? JSON.stringify(translationData) : t.description,
+        value: Object.keys(translationData).length > 0 ? JSON.stringify(translationData) : undefined,
       });
     });
     await this.translationRepo().save(translations);
@@ -445,7 +445,7 @@ export class TourService {
           modelId: id,
           languageId: t.languageId,
           name: t.title,
-          description: Object.keys(translationData).length > 0 ? JSON.stringify(translationData) : t.description,
+          value: Object.keys(translationData).length > 0 ? JSON.stringify(translationData) : undefined,
         });
       });
       await this.translationRepo().save(translations);

@@ -154,6 +154,7 @@ export class HotelImportService {
               languageId: defaultLanguage.id,
               title: hotelCity,
               description: `${hotelCity}, ${hotelCountry}`,
+              shortDescription: undefined,
             },
           ],
         });
