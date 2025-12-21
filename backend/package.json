@@ -21,7 +21,8 @@
     "seed:global": "ts-node --project tsconfig.json src/scripts/seed-global-destinations-hotels.ts",
     "seed:mock": "ts-node --project tsconfig.json src/scripts/seed-mock-data.ts",
     "update:destinations-tenant": "ts-node --project tsconfig.json src/scripts/update-destinations-tenant.ts",
-    "fix:destinations-tenant": "ts-node --project tsconfig.json src/scripts/set-tenant-id-not-null.ts"
+    "fix:destinations-tenant": "ts-node --project tsconfig.json src/scripts/set-tenant-id-not-null.ts",
+    "fix:destinations-tenant-sync": "ts-node --project tsconfig.json src/scripts/fix-destinations-tenant-sync.ts"
   },
   "keywords": [],
   "author": "",
