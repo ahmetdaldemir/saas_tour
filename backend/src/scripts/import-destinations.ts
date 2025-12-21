@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { AppDataSource } from '../config/data-source';
 import { DestinationImportService } from '../modules/shared/services/destination-import.service';
+import { TenantService } from '../modules/tenants/services/tenant.service';
 import { loadEnv } from '../config/env';
 
 const env = loadEnv();
@@ -41,6 +42,14 @@ async function run() {
 
   await AppDataSource.initialize();
 
+  // Get first tenant or create a default one
+  const tenants = await TenantService.listTenants();
+  if (tenants.length === 0) {
+    console.error('No tenants found. Please create a tenant first.');
+    process.exit(1);
+  }
+  const tenant = tenants[0];
+
   const results: Array<{ city: string; imported: number; skipped: number }> = [];
 
   try {
@@ -48,6 +57,7 @@ async function run() {
       console.log(`Importing destinations for ${cityConfig.city}...`);
       try {
         const result = await DestinationImportService.importGlobal({
+          tenantId: tenant.id,
           city: cityConfig.city,
           radius: cityConfig.radius,
           limit: cityConfig.limit,

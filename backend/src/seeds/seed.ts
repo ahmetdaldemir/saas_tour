@@ -122,13 +122,14 @@ const seed = async () => {
   }
 
   // Get or create Cappadocia destination
-  const allDestinations = await DestinationService.list();
+  const allDestinations = await DestinationService.list(tourTenant.id);
   let cappadociaDestination = allDestinations.find(d =>
     d.translations?.some(t => t.languageId === turkish.id && t.name === 'Kapadokya Balon Turu')
   );
   
   if (!cappadociaDestination) {
     cappadociaDestination = await DestinationService.create({
+      tenantId: tourTenant.id,
       translations: [
         {
           languageId: turkish.id,

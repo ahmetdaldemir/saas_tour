@@ -20,6 +20,7 @@ export type CreateBlogDto = {
   content: string;
   status?: BlogStatus;
   publishedAt?: Date | null;
+  image?: string;
   translations?: BlogTranslationInput[];
 };
 
@@ -56,7 +57,7 @@ export class BlogService {
     return AppDataSource.getRepository(Language);
   }
 
-  static async list(tenantId: string, locationId?: string | null): Promise<BlogWithTranslations[]> {
+  static async list(tenantId: string, languageId?: string, locationId?: string | null): Promise<BlogWithTranslations[]> {
     const query = this.repo()
       .createQueryBuilder('blog')
       .leftJoinAndSelect('blog.location', 'location')
@@ -77,13 +78,20 @@ export class BlogService {
     const blogs = await query.getMany();
     const blogIds = blogs.map(b => b.id);
 
+    // Build translation query - filter by languageId if provided
+    const translationWhere: any = {
+      model: MODEL_NAME,
+      modelId: In(blogIds),
+    };
+    
+    if (languageId) {
+      translationWhere.languageId = languageId;
+    }
+
     // Fetch translations for all blogs
     const translations = blogIds.length > 0
       ? await this.translationRepo().find({
-          where: {
-            model: MODEL_NAME,
-            modelId: In(blogIds),
-          },
+          where: translationWhere,
           relations: ['language'],
         })
       : [];
@@ -98,14 +106,22 @@ export class BlogService {
       translationsByBlog.get(key)!.push(t);
     });
 
+    // If languageId provided, only return blogs that have translation in that language
+    let filteredBlogs = blogs;
+    if (languageId) {
+      filteredBlogs = blogs.filter(blog => 
+        translationsByBlog.has(blog.id)
+      );
+    }
+
     // Combine blogs with translations
-    return blogs.map(blog => ({
+    return filteredBlogs.map(blog => ({
       ...blog,
       translations: translationsByBlog.get(blog.id) || [],
     }));
   }
 
-  static async getById(id: string): Promise<BlogWithTranslations | null> {
+  static async getById(id: string, languageId?: string): Promise<BlogWithTranslations | null> {
     const blog = await this.repo().findOne({
       where: { id },
       relations: ['location'],
@@ -115,11 +131,17 @@ export class BlogService {
       return null;
     }
 
+    const translationWhere: any = {
+      model: MODEL_NAME,
+      modelId: id,
+    };
+    
+    if (languageId) {
+      translationWhere.languageId = languageId;
+    }
+
     const translations = await this.translationRepo().find({
-      where: {
-        model: MODEL_NAME,
-        modelId: id,
-      },
+      where: translationWhere,
       relations: ['language'],
     });
 
@@ -152,6 +174,7 @@ export class BlogService {
       content: input.content,
       status: input.status || BlogStatus.DRAFT,
       publishedAt: input.publishedAt || (input.status === BlogStatus.PUBLISHED ? new Date() : null),
+      image: input.image,
     });
 
     const savedBlog = await this.repo().save(blog);
@@ -196,13 +219,13 @@ export class BlogService {
             }
           }
 
-          // Store content in description field (name = title)
+          // Store content in value field (name = title)
           return this.translationRepo().create({
             model: MODEL_NAME,
             modelId: savedBlog.id,
             languageId: t.languageId,
             name: title,
-            description: content,
+            value: content ? JSON.stringify({ content }) : undefined,
           });
         })
       );
@@ -242,6 +265,9 @@ export class BlogService {
     }
     if (input.publishedAt !== undefined) {
       blog.publishedAt = input.publishedAt;
+    }
+    if (input.image !== undefined) {
+      blog.image = input.image;
     }
 
     const savedBlog = await this.repo().save(blog);
@@ -292,13 +318,13 @@ export class BlogService {
               }
             }
 
-            // Store content in description field (name = title)
+            // Store content in value field (name = title)
             return this.translationRepo().create({
               model: MODEL_NAME,
               modelId: id,
               languageId: t.languageId,
               name: title,
-              description: content,
+              value: content ? JSON.stringify({ content }) : undefined,
             });
           })
         );

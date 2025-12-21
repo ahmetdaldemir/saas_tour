@@ -23,6 +23,6 @@ export class Translation extends BaseEntity {
   name!: string; // Title/Name field
 
   @Column({ type: 'text', nullable: true })
-  description?: string;
+  value?: string; // Generic value field for description, shortDescription, or any other content
 }
 

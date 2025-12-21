@@ -24,6 +24,10 @@ export class LanguageService {
     return this.repo().findOne({ where: { isDefault: true } });
   }
 
+  static async getByCode(code: string): Promise<Language | null> {
+    return this.repo().findOne({ where: { code, isActive: true } });
+  }
+
   static async create(input: CreateLanguageDto): Promise<Language> {
     const existing = await this.repo().findOne({ where: { code: input.code } });
     if (existing) {

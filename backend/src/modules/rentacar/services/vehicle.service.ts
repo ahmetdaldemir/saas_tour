@@ -1,4 +1,4 @@
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { AppDataSource } from '../../../config/data-source';
 import { Vehicle, FuelType, TransmissionType } from '../entities/vehicle.entity';
 import { VehiclePlate } from '../entities/vehicle-plate.entity';
@@ -10,6 +10,7 @@ import { VehicleModel } from '../entities/vehicle-model.entity';
 import { Location } from '../entities/location.entity';
 import { Tenant, TenantCategory } from '../../tenants/entities/tenant.entity';
 import { Reservation, ReservationStatus, ReservationType } from '../../shared/entities/reservation.entity';
+import { Translation } from '../../shared/entities/translation.entity';
 
 export type CreateVehicleInput = {
   tenantId: string;
@@ -455,12 +456,49 @@ export class VehicleService {
     return this.vehicleRepo().save(vehicle);
   }
 
-  static listVehicles(tenantId: string): Promise<Vehicle[]> {
-    return this.vehicleRepo().find({
+  static async listVehicles(tenantId: string): Promise<Vehicle[]> {
+    const vehicles = await this.vehicleRepo().find({
       where: { tenantId },
-      relations: ['category', 'category.translations', 'category.translations.language', 'brand', 'model', 'plates', 'pricingPeriods', 'lastReturnLocation'],
+      relations: ['category', 'brand', 'model', 'plates', 'pricingPeriods', 'lastReturnLocation'],
       order: { order: 'ASC', createdAt: 'DESC' },
     });
+
+    // Load translations separately for categories to avoid nested relation issues
+    if (vehicles.length > 0) {
+      const categoryIds = vehicles
+        .map(v => v.categoryId)
+        .filter((id): id is string => id !== null && id !== undefined);
+      
+      if (categoryIds.length > 0) {
+        const translationRepo = AppDataSource.getRepository(Translation);
+        const translations = await translationRepo.find({
+          where: {
+            model: 'VehicleCategory',
+            modelId: In(categoryIds),
+          },
+          relations: ['language'],
+        });
+
+        // Group translations by category ID
+        const translationsByCategory = new Map<string, typeof translations>();
+        translations.forEach(t => {
+          const key = t.modelId;
+          if (!translationsByCategory.has(key)) {
+            translationsByCategory.set(key, []);
+          }
+          translationsByCategory.get(key)!.push(t);
+        });
+
+        // Attach translations to category entities
+        vehicles.forEach(vehicle => {
+          if (vehicle.category && vehicle.categoryId) {
+            (vehicle.category as any).translations = translationsByCategory.get(vehicle.categoryId) || [];
+          }
+        });
+      }
+    }
+
+    return vehicles;
   }
 
   static async updateLastReturnLocation(vehicleId: string, locationId: string | null): Promise<Vehicle> {

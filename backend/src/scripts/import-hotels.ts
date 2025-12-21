@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { AppDataSource } from '../config/data-source';
 import { HotelImportService } from '../modules/shared/services/hotel-import.service';
+import { TenantService } from '../modules/tenants/services/tenant.service';
 
 const parseArgs = () => {
   const args = process.argv.slice(2);
@@ -35,9 +36,17 @@ async function run() {
 
   await AppDataSource.initialize();
 
+  // Get first tenant or create a default one
+  const tenants = await TenantService.listTenants();
+  if (tenants.length === 0) {
+    throw new Error('No tenants found. Please create a tenant first.');
+  }
+  const tenant = tenants[0];
+
   try {
     console.log(`Importing hotels for ${city}...`);
     const result = await HotelImportService.importByCity({
+      tenantId: tenant.id,
       city,
       country,
       radius,

@@ -6,6 +6,7 @@ import { loadEnv } from '../../../config/env';
 const env = loadEnv();
 
 export type ImportDestinationsInput = {
+  tenantId: string;
   city?: string;
   latitude?: number;
   longitude?: number;
@@ -108,11 +109,13 @@ export class DestinationImportService {
 
       try {
         const destination = await DestinationService.create({
+          tenantId: input.tenantId,
           translations: [
             {
               languageId: defaultLanguage.id,
               title: name,
               description: `${place.address_obj?.city || city || 'Unknown'}, ${place.address_obj?.country || 'Unknown'}`,
+              shortDescription: undefined,
             },
           ],
         });

@@ -22,6 +22,7 @@ export type AppConfig = {
   integrations: {
     rapidApiKey?: string;
     rapidApiTravelAdvisorHost?: string;
+    openAiApiKey?: string;
   };
 };
 
@@ -44,6 +45,7 @@ export const loadEnv = (): AppConfig => {
     JWT_EXPIRES_IN = '12h',
     RAPIDAPI_KEY,
     RAPIDAPI_TRAVEL_ADVISOR_HOST,
+    OPENAI_API_KEY,
   } = process.env;
 
   cachedConfig = {
@@ -65,6 +67,7 @@ export const loadEnv = (): AppConfig => {
     integrations: {
       rapidApiKey: RAPIDAPI_KEY,
       rapidApiTravelAdvisorHost: RAPIDAPI_TRAVEL_ADVISOR_HOST,
+      openAiApiKey: OPENAI_API_KEY,
     },
   };
 

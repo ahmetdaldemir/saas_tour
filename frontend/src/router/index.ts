@@ -25,12 +25,47 @@ import ChatView from '../views/ChatView.vue';
 import AdminDashboard from '../views/AdminDashboard.vue';
 import { useAuthStore } from '../stores/auth';
 
+/**
+ * Check if current hostname is a subdomain
+ * Examples:
+ *   - saastour360.com -> false (main domain)
+ *   - berg.saastour360.com -> true (subdomain)
+ *   - sunset.local.saastour360.test -> true (subdomain)
+ */
+function isSubdomain(): boolean {
+  const hostname = window.location.hostname;
+  
+  // Remove port if present
+  const cleanHostname = hostname.split(':')[0];
+  
+  // Split by dots
+  const parts = cleanHostname.split('.');
+  
+  // Check if it's a subdomain pattern
+  // Main domain: saastour360.com (2 parts)
+  // Subdomain: berg.saastour360.com (3+ parts) or sunset.local.saastour360.test (4+ parts)
+  if (parts.length >= 3) {
+    const firstPart = parts[0];
+    // Validate first part is not www
+    if (firstPart === 'www') {
+      return false; // www is treated as main domain
+    }
+    // Check if it matches subdomain pattern (not main domain)
+    const slugRegex = /^[a-z0-9-]+$/;
+    if (slugRegex.test(firstPart)) {
+      return true; // It's a subdomain
+    }
+  }
+  
+  return false; // Main domain
+}
+
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'home',
     component: HomeView,
-    meta: { layout: 'public' },
+    meta: { layout: 'public', isPublicSite: true },
   },
   {
     path: '/corporate',
@@ -182,12 +217,33 @@ export const router = createRouter({
 export const setupRouterGuards = (pinia: Pinia) => {
   router.beforeEach(async (to, _from, next) => {
     const auth = useAuthStore(pinia);
+    const isSubdomainRoute = isSubdomain();
+    
+    // Ana domain (saastour360.com) için: Sadece public sayfalar erişilebilir
+    if (!isSubdomainRoute) {
+      // Ana domain'de login/register/admin route'larına erişim yok
+      if (to.name === 'login' || to.name === 'register' || to.meta.requiresAuth) {
+        // Ana domain'de bu route'lara erişim yok, home'a yönlendir
+        return next({ name: 'home' });
+      }
+      // Public sayfalara erişim izni ver
+      return next();
+    }
+    
+    // Subdomain (berg.saastour360.com) için: Login gerekli
     await auth.ensureSession();
 
+    // Subdomain'de ana sayfa (/) login'e yönlendir
+    if (to.name === 'home' && !auth.isAuthenticated) {
+      return next({ name: 'login' });
+    }
+
+    // Auth gerektiren route'lar için kontrol
     if (to.meta.requiresAuth === true && !auth.isAuthenticated) {
       return next({ name: 'login', query: { redirect: to.fullPath } });
     }
 
+    // Login sayfasındayken zaten authenticated ise dashboard'a yönlendir
     if (to.name === 'login' && auth.isAuthenticated) {
       return next({ name: 'dashboard' });
     }

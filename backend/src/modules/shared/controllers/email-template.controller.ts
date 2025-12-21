@@ -1,15 +1,17 @@
 import { Request, Response } from 'express';
 import { EmailTemplateService } from '../services/email-template.service';
 import { EmailTemplateType } from '../entities/email-template.entity';
+import { AuthenticatedRequest } from '../../auth/middleware/auth.middleware';
 
 export class EmailTemplateController {
   static async list(req: Request, res: Response) {
     try {
-      const tenantId = req.query.tenantId as string;
+      // Get tenantId from query parameter (no authentication required)
+      const tenantId = req.query.tenantId as string | undefined;
       const languageId = req.query.languageId as string | undefined;
 
       if (!tenantId) {
-        return res.status(400).json({ message: 'tenantId query param required' });
+        return res.status(400).json({ message: 'tenantId is required' });
       }
 
       const templates = await EmailTemplateService.list(tenantId, languageId);
@@ -19,7 +21,7 @@ export class EmailTemplateController {
     }
   }
 
-  static async getById(req: Request, res: Response) {
+  static async getById(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       const template = await EmailTemplateService.getById(id);
@@ -36,12 +38,13 @@ export class EmailTemplateController {
 
   static async getByType(req: Request, res: Response) {
     try {
-      const tenantId = req.query.tenantId as string;
+      // Get tenantId from query parameter (no authentication required)
+      const tenantId = req.query.tenantId as string | undefined;
       const type = req.query.type as EmailTemplateType;
       const languageId = req.query.languageId as string | undefined;
 
       if (!tenantId || !type) {
-        return res.status(400).json({ message: 'tenantId and type query params required' });
+        return res.status(400).json({ message: 'tenantId and type query params are required' });
       }
 
       if (!Object.values(EmailTemplateType).includes(type)) {
@@ -55,12 +58,14 @@ export class EmailTemplateController {
     }
   }
 
-  static async create(req: Request, res: Response) {
+  static async create(req: AuthenticatedRequest, res: Response) {
     try {
-      const { tenantId, languageId, type, name, subject, body, isActive, description } = req.body;
+      // Get tenantId from authenticated user's token (security: prevent tenant spoofing)
+      const tenantId = req.auth?.tenantId;
+      const { languageId, type, name, subject, body, isActive, description } = req.body;
 
       if (!tenantId || !type || !name || !subject || !body) {
-        return res.status(400).json({ message: 'tenantId, type, name, subject, and body are required' });
+        return res.status(400).json({ message: 'Authentication required, type, name, subject, and body are required' });
       }
 
       if (!Object.values(EmailTemplateType).includes(type)) {
@@ -68,7 +73,7 @@ export class EmailTemplateController {
       }
 
       const template = await EmailTemplateService.create({
-        tenantId,
+        tenantId, // Always use authenticated user's tenantId
         languageId,
         type,
         name,
@@ -84,12 +89,12 @@ export class EmailTemplateController {
     }
   }
 
-  static async update(req: Request, res: Response) {
+  static async update(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
-      const updateData = req.body;
+      const updateData = req.body as any;
 
-      if (updateData.type && !Object.values(EmailTemplateType).includes(updateData.type)) {
+      if (updateData?.type && !Object.values(EmailTemplateType).includes(updateData.type)) {
         return res.status(400).json({ message: 'Invalid template type' });
       }
 
@@ -100,7 +105,7 @@ export class EmailTemplateController {
     }
   }
 
-  static async delete(req: Request, res: Response) {
+  static async delete(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       await EmailTemplateService.delete(id);

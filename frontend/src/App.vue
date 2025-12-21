@@ -9,8 +9,11 @@
           <v-btn variant="text" to="/">Anasayfa</v-btn>
           <v-btn variant="text" to="/corporate">Kurumsal</v-btn>
           <v-btn variant="text" to="/contact">İletişim</v-btn>
-          <v-btn variant="text" to="/login">Giriş Yap</v-btn>
-          <v-btn color="primary" to="/register">Kayıt Ol</v-btn>
+          <!-- Login/Register sadece subdomain'lerde gösterilir -->
+          <template v-if="isSubdomain()">
+            <v-btn variant="text" to="/login">Giriş Yap</v-btn>
+            <v-btn color="primary" to="/register">Kayıt Ol</v-btn>
+          </template>
         </div>
         <v-menu class="d-md-none">
           <template #activator="{ props }">
@@ -20,8 +23,11 @@
             <v-list-item to="/" title="Anasayfa" />
             <v-list-item to="/corporate" title="Kurumsal" />
             <v-list-item to="/contact" title="İletişim" />
-            <v-list-item to="/login" title="Giriş Yap" />
-            <v-list-item to="/register" title="Kayıt Ol" />
+            <!-- Login/Register sadece subdomain'lerde gösterilir -->
+            <template v-if="isSubdomain()">
+              <v-list-item to="/login" title="Giriş Yap" />
+              <v-list-item to="/register" title="Kayıt Ol" />
+            </template>
           </v-list>
         </v-menu>
       </v-app-bar>
@@ -83,7 +89,45 @@ const router = useRouter();
 const route = useRoute();
 const drawer = ref(true);
 
-const layout = computed(() => (route.meta.layout as string) ?? (route.meta.requiresAuth ? 'admin' : 'public'));
+/**
+ * Check if current hostname is a subdomain
+ * Examples:
+ *   - saastour360.com -> false (main domain)
+ *   - berg.saastour360.com -> true (subdomain)
+ *   - sunset.local.saastour360.test -> true (subdomain)
+ */
+function isSubdomain(): boolean {
+  const hostname = window.location.hostname;
+  const cleanHostname = hostname.split(':')[0];
+  const parts = cleanHostname.split('.');
+  
+  // Check if it's a subdomain pattern
+  // Main domain: saastour360.com (2 parts)
+  // Subdomain: berg.saastour360.com (3+ parts) or sunset.local.saastour360.test (4+ parts)
+  if (parts.length >= 3) {
+    const firstPart = parts[0];
+    // Validate first part is not www
+    if (firstPart === 'www') {
+      return false; // www is treated as main domain
+    }
+    // Check if it matches subdomain pattern (not main domain)
+    const slugRegex = /^[a-z0-9-]+$/;
+    if (slugRegex.test(firstPart)) {
+      return true; // It's a subdomain
+    }
+  }
+  
+  return false; // Main domain
+}
+
+const layout = computed(() => {
+  // Ana domain'de her zaman public layout
+  if (!isSubdomain()) {
+    return 'public';
+  }
+  // Subdomain'de route meta'dan layout al
+  return (route.meta.layout as string) ?? (route.meta.requiresAuth ? 'admin' : 'public');
+});
 const tenantName = computed(() => auth.tenant?.name ?? 'SaaS Yönetim Paneli');
 
 const navigationItems = computed(() => {

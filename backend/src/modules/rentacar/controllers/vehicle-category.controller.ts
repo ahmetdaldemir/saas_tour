@@ -2,9 +2,10 @@ import { Request, Response } from 'express';
 import { VehicleCategoryService } from '../services/vehicle-category.service';
 
 export class VehicleCategoryController {
-  static async list(_req: Request, res: Response) {
+  static async list(req: Request, res: Response) {
     try {
-      const categories = await VehicleCategoryService.list();
+      const languageId = req.query.languageId as string | undefined;
+      const categories = await VehicleCategoryService.list(languageId);
       res.json(categories);
     } catch (error) {
       res.status(500).json({ message: (error as Error).message });
