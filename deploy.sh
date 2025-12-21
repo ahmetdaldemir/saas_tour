@@ -299,7 +299,7 @@ if [ "$MODE" = "full" ]; then
         fi
     fi
     
-    # DB_SYNC kontrolü - Fresh DB modunda otomatik aç, yoksa kapalı bırak
+    # DB_SYNC kontrolü - Mevcut değeri koru, sadece yoksa veya fresh-db modunda ayarla
     if [ "$FRESH_DB" = "true" ]; then
         echo -e "${YELLOW}🔄 Fresh DB modu: DB_SYNC=true ayarlanıyor (ilk kurulum için)${NC}"
         if grep -q "DB_SYNC=" .env; then
@@ -308,9 +308,18 @@ if [ "$MODE" = "full" ]; then
             echo "DB_SYNC=true" >> .env
         fi
     else
-        echo -e "${GREEN}💾 Database sync kapalı (migration'lar kullanılacak, veriler korunacak)${NC}"
+        # Mevcut DB_SYNC değerini kontrol et
         if grep -q "DB_SYNC=" .env; then
-            sed -i.bak 's/^DB_SYNC=.*/DB_SYNC=false/' .env
+            CURRENT_DB_SYNC=$(grep "^DB_SYNC=" .env | cut -d'=' -f2)
+            if [ "$CURRENT_DB_SYNC" = "true" ]; then
+                echo -e "${GREEN}💾 DB_SYNC=true mevcut, korunuyor (entity'ler otomatik güncellenecek)${NC}"
+            else
+                echo -e "${GREEN}💾 DB_SYNC=false mevcut, korunuyor (migration'lar kullanılacak)${NC}"
+            fi
+        else
+            # DB_SYNC değişkeni yoksa, varsayılan olarak false ekle
+            echo -e "${YELLOW}⚠️  DB_SYNC değişkeni bulunamadı, DB_SYNC=false ekleniyor${NC}"
+            echo "DB_SYNC=false" >> .env
         fi
     fi
     
