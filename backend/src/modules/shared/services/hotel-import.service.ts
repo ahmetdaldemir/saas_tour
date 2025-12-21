@@ -24,6 +24,7 @@ type RapidHotel = {
 };
 
 export type ImportHotelsInput = {
+  tenantId: string;
   city: string;
   country?: string;
   radius?: number;
@@ -142,13 +143,14 @@ export class HotelImportService {
       }
 
       // Check if destination exists by checking all destinations and their translations
-      const allDestinations = await DestinationService.list();
+      const allDestinations = await DestinationService.list(input.tenantId);
       let destination = allDestinations.find(dest =>
         dest.translations?.some(t => t.languageId === defaultLanguage.id && t.name === hotelCity)
       );
 
       if (!destination) {
         destination = await DestinationService.create({
+          tenantId: input.tenantId,
           translations: [
             {
               languageId: defaultLanguage.id,

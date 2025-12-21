@@ -18,6 +18,8 @@ const start = async () => {
   try {
     const redis = getRedisClient();
     await redis.connect();
+    // Test connection with a simple command
+    await redis.ping();
     logger.info('Redis connection initialized');
   } catch (error) {
     logger.warn('Redis connection failed, continuing without cache', { 

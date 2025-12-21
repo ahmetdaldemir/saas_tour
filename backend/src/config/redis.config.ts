@@ -11,27 +11,45 @@ export const getRedisClient = (): Redis => {
   const config = loadEnv();
   const redisHost = process.env.REDIS_HOST || 'localhost';
   const redisPort = Number(process.env.REDIS_PORT || 6379);
-  const redisPassword = process.env.REDIS_PASSWORD || undefined;
+  const redisPassword = process.env.REDIS_PASSWORD?.trim() || undefined;
 
-  redisClient = new Redis({
+  // Only include password if it's provided and not empty
+  const redisConfig: any = {
     host: redisHost,
     port: redisPort,
-    password: redisPassword,
-    retryStrategy: (times) => {
+    retryStrategy: (times: number) => {
       const delay = Math.min(times * 50, 2000);
       return delay;
     },
     maxRetriesPerRequest: 3,
     enableReadyCheck: true,
     lazyConnect: true, // Connect manually in server.ts
-  });
+  };
+
+  // Only add password if it's provided
+  if (redisPassword && redisPassword.length > 0) {
+    redisConfig.password = redisPassword;
+  }
+
+  redisClient = new Redis(redisConfig);
 
   redisClient.on('error', (error) => {
-    console.error('❌ Redis connection error:', error);
+    // Only log if it's not a connection error (to avoid spam)
+    if (!error.message?.includes('NOAUTH') && !error.message?.includes('ECONNREFUSED')) {
+      console.error('❌ Redis connection error:', error);
+    }
   });
 
   redisClient.on('connect', () => {
     console.log('✅ Redis connected');
+  });
+
+  redisClient.on('ready', () => {
+    console.log('✅ Redis ready');
+  });
+
+  redisClient.on('close', () => {
+    console.log('⚠️  Redis connection closed');
   });
 
   return redisClient;

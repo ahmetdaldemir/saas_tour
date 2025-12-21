@@ -4,6 +4,7 @@ import { Destination } from '../modules/shared/entities/destination.entity';
 import { Hotel } from '../modules/shared/entities/hotel.entity';
 import { DestinationService } from '../modules/shared/services/destination.service';
 import { LanguageService } from '../modules/shared/services/language.service';
+import { TenantService } from '../modules/tenants/services/tenant.service';
 
 const GLOBAL_DESTINATIONS: Array<{ key: string; name: string; city: string; country: string }> = [
   { key: 'antalya', name: 'Antalya', city: 'Antalya', country: 'Turkiye' },
@@ -107,6 +108,13 @@ async function seedGlobalDestinationsAndHotels() {
   try {
     const hotelRepo = AppDataSource.getRepository(Hotel);
 
+    // Get first tenant or create a default one
+    const tenants = await TenantService.listTenants();
+    if (tenants.length === 0) {
+      throw new Error('No tenants found. Please create a tenant first.');
+    }
+    const tenant = tenants[0];
+
     // Get default language
     const defaultLanguage = await LanguageService.getDefault();
     if (!defaultLanguage) {
@@ -114,7 +122,7 @@ async function seedGlobalDestinationsAndHotels() {
     }
 
     // Get all destinations to check if they exist
-    const allDestinations = await DestinationService.list();
+    const allDestinations = await DestinationService.list(tenant.id);
     const destinationMap = new Map<string, Destination>();
 
     for (const dest of GLOBAL_DESTINATIONS) {
@@ -129,6 +137,7 @@ async function seedGlobalDestinationsAndHotels() {
 
       // Create new destination with translation
       const created = await DestinationService.create({
+        tenantId: tenant.id,
         translations: [
           {
             languageId: defaultLanguage.id,

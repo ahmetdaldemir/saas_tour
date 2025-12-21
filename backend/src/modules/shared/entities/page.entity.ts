@@ -2,8 +2,8 @@ import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { Tenant } from '../../tenants/entities/tenant.entity';
 
-@Entity({ name: 'destinations' })
-export class Destination extends BaseEntity {
+@Entity({ name: 'pages' })
+export class Page extends BaseEntity {
   @ManyToOne(() => Tenant, { nullable: false })
   @JoinColumn({ name: 'tenant_id' })
   tenant!: Tenant;
@@ -11,9 +11,10 @@ export class Destination extends BaseEntity {
   @Column({ name: 'tenant_id' })
   tenantId!: string;
 
-  @Column({ type: 'text', nullable: true })
-  image?: string;
+  @Column({ length: 100 })
+  category!: string; // e.g., 'kurumsal', 'destek'
 
-  @Column({ name: 'is_featured', default: false })
-  isFeatured!: boolean;
+  @Column({ type: 'simple-array', nullable: true })
+  images?: string[]; // Array of image URLs
 }
+

@@ -1,13 +1,15 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { ReservationService } from '../services/reservation.service';
 import { ReservationStatus } from '../entities/reservation.entity';
+import { AuthenticatedRequest } from '../../auth/middleware/auth.middleware';
 
 export class ReservationController {
-  static async list(req: Request, res: Response) {
+  static async list(req: AuthenticatedRequest, res: Response) {
     try {
-      const tenantId = req.query.tenantId as string;
+      // Get tenantId from authenticated user's token (security)
+      const tenantId = req.auth?.tenantId;
       if (!tenantId) {
-        return res.status(400).json({ message: 'tenantId query param required' });
+        return res.status(401).json({ message: 'Authentication required' });
       }
       const reservations = await ReservationService.list(tenantId);
       res.json(reservations);
@@ -16,7 +18,7 @@ export class ReservationController {
     }
   }
 
-  static async getById(req: Request, res: Response) {
+  static async getById(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       const reservation = await ReservationService.getById(id);
@@ -29,10 +31,10 @@ export class ReservationController {
     }
   }
 
-  static async updateStatus(req: Request, res: Response) {
+  static async updateStatus(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
-      const { status, checkIn, checkOut } = req.body;
+      const { status, checkIn, checkOut } = req.body as any;
 
       if (!status || !Object.values(ReservationStatus).includes(status)) {
         return res.status(400).json({ message: 'Valid status is required' });
@@ -54,21 +56,21 @@ export class ReservationController {
     }
   }
 
-  static async update(req: Request, res: Response) {
+  static async update(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
-      const updateData = req.body;
+      const updateData = req.body as any;
 
       // Status'u ReservationStatus enum'una dönüştür
-      if (updateData.status && !Object.values(ReservationStatus).includes(updateData.status)) {
+      if (updateData?.status && !Object.values(ReservationStatus).includes(updateData.status)) {
         return res.status(400).json({ message: 'Invalid status value' });
       }
 
       // Tarih alanlarını Date'e dönüştür
-      if (updateData.checkIn) {
+      if (updateData?.checkIn) {
         updateData.checkIn = new Date(updateData.checkIn);
       }
-      if (updateData.checkOut) {
+      if (updateData?.checkOut) {
         updateData.checkOut = new Date(updateData.checkOut);
       }
 

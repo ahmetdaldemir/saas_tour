@@ -15,6 +15,7 @@ import languageRouter from '../modules/shared/routes/language.router';
 import destinationRouter from '../modules/shared/routes/destination.router';
 import hotelRouter from '../modules/shared/routes/hotel.router';
 import blogRouter from '../modules/shared/routes/blog.router';
+import pageRouter from '../modules/shared/routes/page.router';
 import translationRouter from '../modules/shared/routes/translation.router';
 import currencyRouter from '../modules/shared/routes/currency.router';
 import tenantSettingsRouter from '../modules/shared/routes/tenant-settings.router';
@@ -50,6 +51,7 @@ export const registerRoutes = (app: Express) => {
   app.use('/api/destinations', destinationRouter);
   app.use('/api/hotels', hotelRouter);
   app.use('/api/blogs', blogRouter);
+  app.use('/api/pages', pageRouter);
   app.use('/api/tenants', tenantRouter);
   app.use('/api/tenant-users', tenantUserRouter);
   app.use('/api/tours', tourRouter);
@@ -58,6 +60,10 @@ export const registerRoutes = (app: Express) => {
   app.use('/api/rentacar/vehicle-categories', vehicleCategoryRouter);
   app.use('/api/rentacar/vehicle-brands', vehicleBrandRouter);
   app.use('/api/rentacar/vehicle-models', vehicleModelRouter);
+  // Also register at root level for convenience
+  app.use('/api/vehicle-categories', vehicleCategoryRouter);
+  app.use('/api/vehicle-brands', vehicleBrandRouter);
+  app.use('/api/vehicle-models', vehicleModelRouter);
   app.use('/api/rentacar/locations', locationRouter);
   app.use('/api/rentacar/location-pricing', locationPricingRouter);
   app.use('/api/rentacar/location-delivery-pricing', locationDeliveryPricingRouter);

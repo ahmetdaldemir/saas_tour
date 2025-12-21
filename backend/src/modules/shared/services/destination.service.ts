@@ -12,6 +12,7 @@ export type DestinationTranslationInput = {
 };
 
 export type CreateDestinationDto = {
+  tenantId: string;
   image?: string;
   isFeatured?: boolean;
   translations: DestinationTranslationInput[];
@@ -38,20 +39,24 @@ export class DestinationService {
     return AppDataSource.getRepository(Translation);
   }
 
-  static async list(languageId?: string): Promise<DestinationWithTranslations[]> {
+  static async list(tenantId: string, languageId?: string): Promise<DestinationWithTranslations[]> {
+    // Always filter by tenantId
     const destinations = await this.repo().find({
+      where: { tenantId },
       order: { createdAt: 'DESC' },
     });
 
     // Fetch translations for all destinations
     const destinationIds = destinations.map(d => d.id);
     
-    // Build translation query - filter by languageId if provided
+    // Build translation query
     const translationWhere: any = {
       model: MODEL_NAME,
       modelId: In(destinationIds),
     };
     
+    // If languageId provided (API request), filter by languageId
+    // If languageId not provided (Panel request), get all translations
     if (languageId) {
       translationWhere.languageId = languageId;
     }
@@ -74,7 +79,8 @@ export class DestinationService {
     });
 
     // Combine destinations with translations
-    // If languageId provided, only return destinations that have translation in that language
+    // If languageId provided (API request), only return destinations that have translation in that language
+    // If languageId not provided (Panel request), return all destinations with all their translations
     let filteredDestinations = destinations;
     if (languageId) {
       filteredDestinations = destinations.filter(dest => 
@@ -120,6 +126,10 @@ export class DestinationService {
       throw new Error('At least one translation is required');
     }
 
+    if (!input.tenantId) {
+      throw new Error('tenantId is required');
+    }
+
     // Validate languages
     const languageIds = input.translations.map((t) => t.languageId);
     const languageRepo = AppDataSource.getRepository(Language);
@@ -133,6 +143,7 @@ export class DestinationService {
 
     // Create destination
     const destination = this.repo().create({
+      tenantId: input.tenantId,
       image: input.image,
       isFeatured: input.isFeatured ?? false,
     });

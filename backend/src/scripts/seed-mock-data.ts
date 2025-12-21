@@ -178,7 +178,10 @@ const seedMockData = async () => {
       { name: 'Pamukkale', country: 'Turkey', city: 'Denizli' },
     ];
     const destinations: Destination[] = [];
-    const allDestinations = await DestinationService.list();
+    
+    // Use first tenant for destinations (or create tenant-specific destinations)
+    const firstTenant = tenants[0];
+    const allDestinations = await DestinationService.list(firstTenant.id);
     
     for (const dest of destinationData) {
       const existing = allDestinations.find(d =>
@@ -188,6 +191,7 @@ const seedMockData = async () => {
         destinations.push(existing);
       } else {
         const created = await DestinationService.create({
+          tenantId: firstTenant.id,
           translations: [
             {
               languageId: defaultLanguage.id,

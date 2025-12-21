@@ -85,6 +85,71 @@
             </v-card>
 
             <v-card variant="outlined" class="mb-4">
+              <v-card-title class="text-h6">Şirket Bilgileri</v-card-title>
+              <v-card-text>
+                <v-row>
+                  <v-col cols="12">
+                    <v-text-field
+                      v-model="siteForm.companyName"
+                      label="Şirket Adı"
+                      prepend-inner-icon="mdi-office-building"
+                      variant="outlined"
+                      density="comfortable"
+                    />
+                  </v-col>
+                  <v-col cols="12">
+                    <v-textarea
+                      v-model="siteForm.companyAddress"
+                      label="Şirket Adresi"
+                      prepend-inner-icon="mdi-map-marker"
+                      variant="outlined"
+                      density="comfortable"
+                      rows="3"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="siteForm.companyEmail"
+                      label="Şirket E-posta"
+                      prepend-inner-icon="mdi-email"
+                      variant="outlined"
+                      density="comfortable"
+                      type="email"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="siteForm.companyPhone"
+                      label="Şirket Telefon"
+                      prepend-inner-icon="mdi-phone"
+                      variant="outlined"
+                      density="comfortable"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="siteForm.companyWebsite"
+                      label="Şirket Web Sitesi"
+                      prepend-inner-icon="mdi-web"
+                      variant="outlined"
+                      density="comfortable"
+                      type="url"
+                    />
+                  </v-col>
+                  <v-col cols="12" md="6">
+                    <v-text-field
+                      v-model="siteForm.companyTaxNumber"
+                      label="Vergi Numarası"
+                      prepend-inner-icon="mdi-receipt"
+                      variant="outlined"
+                      density="comfortable"
+                    />
+                  </v-col>
+                </v-row>
+              </v-card-text>
+            </v-card>
+
+            <v-card variant="outlined" class="mb-4">
               <v-card-title class="text-h6">Görsel Ayarlar</v-card-title>
               <v-card-text>
                 <v-row>
@@ -417,6 +482,12 @@ interface SiteSettingsDto {
   id?: string;
   siteName?: string;
   siteDescription?: string;
+  companyName?: string;
+  companyAddress?: string;
+  companyEmail?: string;
+  companyPhone?: string;
+  companyWebsite?: string;
+  companyTaxNumber?: string;
 }
 
 interface TenantDto {
@@ -460,6 +531,12 @@ const paymentFormValid = ref(true);
 const siteForm = ref<SiteSettingsDto>({
   siteName: '',
   siteDescription: '',
+  companyName: '',
+  companyAddress: '',
+  companyEmail: '',
+  companyPhone: '',
+  companyWebsite: '',
+  companyTaxNumber: '',
 });
 
 const tenantForm = ref<{
@@ -534,12 +611,28 @@ const loadPaymentMethods = async () => {
 
 const loadSiteSettings = async () => {
   try {
-    // Load site settings (siteName, siteDescription, logo, favicon)
-    const { data: siteData } = await http.get<SiteSettingsDto & { logoUrl?: string; faviconUrl?: string }>('/settings/site');
+    // Ensure auth session is initialized
+    await auth.ensureSession();
+    
+    if (!auth.tenant) {
+      console.warn('Tenant not found, cannot load site settings');
+      return;
+    }
+
+    // Load site settings (siteName, siteDescription, logo, favicon, companyEmail, companyPhone)
+    const { data: siteData } = await http.get<SiteSettingsDto & { logoUrl?: string; faviconUrl?: string }>('/settings/site', {
+      params: { tenantId: auth.tenant.id },
+    });
     if (siteData && siteData.id) {
       siteForm.value = {
         siteName: siteData.siteName || '',
         siteDescription: siteData.siteDescription || '',
+        companyName: siteData.companyName || '',
+        companyAddress: siteData.companyAddress || '',
+        companyEmail: siteData.companyEmail || '',
+        companyPhone: siteData.companyPhone || '',
+        companyWebsite: siteData.companyWebsite || '',
+        companyTaxNumber: siteData.companyTaxNumber || '',
       };
       // Load logo and favicon URLs for preview (they're stored in backend but not in form)
       if (siteData.logoUrl) {
@@ -566,7 +659,17 @@ const loadSiteSettings = async () => {
 
 const loadMailSettings = async () => {
   try {
-    const { data } = await http.get<MailSettingsDto>('/settings/mail');
+    // Ensure auth session is initialized
+    await auth.ensureSession();
+    
+    if (!auth.tenant) {
+      console.warn('Tenant not found, cannot load mail settings');
+      return;
+    }
+
+    const { data } = await http.get<MailSettingsDto>('/settings/mail', {
+      params: { tenantId: auth.tenant.id },
+    });
     if (data && data.id) {
       mailForm.value = {
         smtpHost: data.smtpHost || '',
@@ -585,7 +688,17 @@ const loadMailSettings = async () => {
 
 const loadPaymentSettings = async () => {
   try {
-    const { data } = await http.get<PaymentSettingsDto>('/settings/payment');
+    // Ensure auth session is initialized
+    await auth.ensureSession();
+    
+    if (!auth.tenant) {
+      console.warn('Tenant not found, cannot load payment settings');
+      return;
+    }
+
+    const { data } = await http.get<PaymentSettingsDto>('/settings/payment', {
+      params: { tenantId: auth.tenant.id },
+    });
     if (data && data.id) {
       paymentForm.value = {
         paymentDefaultMethodId: data.paymentDefaultMethodId || null,

@@ -1,14 +1,16 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
 import { SurveyService } from '../services/survey.service';
 import { SurveyStatus } from '../entities/survey.entity';
 import { QuestionType } from '../entities/survey-question.entity';
+import { AuthenticatedRequest } from '../../auth/middleware/auth.middleware';
 
 export class SurveyController {
-  static async list(req: Request, res: Response) {
+  static async list(req: AuthenticatedRequest, res: Response) {
     try {
-      const tenantId = req.query.tenantId as string;
+      // Get tenantId from authenticated user's token (security)
+      const tenantId = req.auth?.tenantId;
       if (!tenantId) {
-        return res.status(400).json({ message: 'tenantId query param required' });
+        return res.status(401).json({ message: 'Authentication required' });
       }
 
       const surveys = await SurveyService.list(tenantId);
@@ -18,7 +20,7 @@ export class SurveyController {
     }
   }
 
-  static async getById(req: Request, res: Response) {
+  static async getById(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       const survey = await SurveyService.getById(id);
@@ -31,10 +33,11 @@ export class SurveyController {
     }
   }
 
-  static async create(req: Request, res: Response) {
+  static async create(req: AuthenticatedRequest, res: Response) {
     try {
+      // Get tenantId from authenticated user's token (security: prevent tenant spoofing)
+      const tenantId = req.auth?.tenantId;
       const {
-        tenantId,
         title,
         description,
         status,
@@ -47,11 +50,11 @@ export class SurveyController {
       } = req.body;
 
       if (!tenantId || !title) {
-        return res.status(400).json({ message: 'tenantId and title are required' });
+        return res.status(400).json({ message: 'Authentication required and title is required' });
       }
 
       const survey = await SurveyService.create({
-        tenantId,
+        tenantId, // Always use authenticated user's tenantId
         title,
         description,
         status,
@@ -69,7 +72,7 @@ export class SurveyController {
     }
   }
 
-  static async update(req: Request, res: Response) {
+  static async update(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       const {
@@ -81,7 +84,7 @@ export class SurveyController {
         sendAfterDays,
         emailSubject,
         emailTemplate,
-      } = req.body;
+      } = req.body as any;
 
       const survey = await SurveyService.update(id, {
         title,
@@ -100,7 +103,7 @@ export class SurveyController {
     }
   }
 
-  static async delete(req: Request, res: Response) {
+  static async delete(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       await SurveyService.delete(id);
@@ -111,10 +114,10 @@ export class SurveyController {
   }
 
   // Question endpoints
-  static async addQuestion(req: Request, res: Response) {
+  static async addQuestion(req: AuthenticatedRequest, res: Response) {
     try {
       const { surveyId } = req.params;
-      const { type, question, description, options, isRequired, sortOrder } = req.body;
+      const { type, question, description, options, isRequired, sortOrder } = req.body as any;
 
       if (!type || !question) {
         return res.status(400).json({ message: 'type and question are required' });
@@ -135,10 +138,10 @@ export class SurveyController {
     }
   }
 
-  static async updateQuestion(req: Request, res: Response) {
+  static async updateQuestion(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
-      const { type, question, description, options, isRequired, sortOrder } = req.body;
+      const { type, question, description, options, isRequired, sortOrder } = req.body as any;
 
       const questionResult = await SurveyService.updateQuestion(id, {
         type,
@@ -155,7 +158,7 @@ export class SurveyController {
     }
   }
 
-  static async deleteQuestion(req: Request, res: Response) {
+  static async deleteQuestion(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       await SurveyService.deleteQuestion(id);
@@ -166,7 +169,7 @@ export class SurveyController {
   }
 
   // Response endpoints
-  static async submitResponse(req: Request, res: Response) {
+  static async submitResponse(req: AuthenticatedRequest, res: Response) {
     try {
       const {
         surveyId,
@@ -177,7 +180,7 @@ export class SurveyController {
         answerArray,
         customerEmail,
         customerName,
-      } = req.body;
+      } = req.body as any;
 
       if (!surveyId || !questionId) {
         return res.status(400).json({ message: 'surveyId and questionId are required' });
@@ -200,7 +203,7 @@ export class SurveyController {
     }
   }
 
-  static async getResponses(req: Request, res: Response) {
+  static async getResponses(req: AuthenticatedRequest, res: Response) {
     try {
       const { surveyId } = req.params;
       const responses = await SurveyService.getResponses(surveyId);
@@ -210,7 +213,7 @@ export class SurveyController {
     }
   }
 
-  static async getResponsesByReservation(req: Request, res: Response) {
+  static async getResponsesByReservation(req: AuthenticatedRequest, res: Response) {
     try {
       const { reservationId } = req.params;
       const responses = await SurveyService.getResponsesByReservation(reservationId);

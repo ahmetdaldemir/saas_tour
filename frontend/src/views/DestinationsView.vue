@@ -179,6 +179,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import { http } from '../modules/http';
+import { useAuthStore } from '../stores/auth';
 
 interface Translation {
   id: string;
@@ -235,6 +236,8 @@ const imageFile = ref<File | null>(null);
 const uploadingImage = ref(false);
 const generatingContent = ref(false);
 
+const auth = useAuthStore();
+
 const dialogTitle = computed(() => (editingId.value ? 'Destinasyonu duzenle' : 'Yeni destinasyon'));
 
 // Get display name from translations (use default language or first available)
@@ -279,23 +282,21 @@ const loadLanguages = async () => {
 const loadDestinations = async () => {
   loading.value = true;
   try {
-    // Find Turkish language (code: "tr")
-    const turkishLanguage = availableLanguages.value.find(lang => lang.code === 'tr');
+    // Ensure auth session is initialized
+    await auth.ensureSession();
     
-    if (!turkishLanguage) {
-      console.warn('Turkish language not found, loading destinations without language filter');
-      const { data } = await http.get<{ success: boolean; data: Destination[] }>('/destinations');
-      if (data.success && Array.isArray(data.data)) {
-        destinations.value = data.data;
-      } else {
-        destinations.value = [];
-      }
+    if (!auth.tenant) {
+      console.warn('Tenant not found, cannot load destinations');
+      destinations.value = [];
       return;
     }
 
-    // Load destinations filtered by Turkish language ID
+    // Get tenantId from auth store (from /auth/me endpoint)
+    const tenantId = auth.tenant.id;
+
+    // Load destinations with tenantId
     const { data } = await http.get<{ success: boolean; data: Destination[] }>(
-      `/destinations?languageId=${turkishLanguage.id}`
+      `/destinations?tenantId=${tenantId}`
     );
     if (data.success && Array.isArray(data.data)) {
       destinations.value = data.data;

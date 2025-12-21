@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { DestinationService } from '../services/destination.service';
 import { AuthenticatedRequest } from '../../auth/middleware/auth.middleware';
 import { DestinationImportService } from '../services/destination-import.service';
@@ -7,28 +7,25 @@ import { LanguageService } from '../services/language.service';
 import { AiContentService } from '../services/ai-content.service';
 
 export class DestinationController {
-  static async list(req: AuthenticatedRequest & TenantRequest, res: Response) {
+  static async list(req: Request & TenantRequest, res: Response) {
     try {
-      // Get languageId from query param or use tenant's default language
-      let languageId: string | undefined = req.query.languageId as string | undefined;
+      // Get tenantId from query parameter or tenant middleware (no authentication required)
+      const tenantId = (req.query.tenantId as string | undefined) || (req as any).tenant?.id;
       
-      // If no languageId provided and tenant exists, use tenant's default language
-      if (!languageId && req.tenant?.defaultLanguage) {
-        const defaultLanguage = await LanguageService.getByCode(req.tenant.defaultLanguage);
-        if (defaultLanguage) {
-          languageId = defaultLanguage.id;
-        }
-      }
-      
-      // If still no languageId, get system default language
-      if (!languageId) {
-        const systemDefaultLanguage = await LanguageService.getDefault();
-        if (systemDefaultLanguage) {
-          languageId = systemDefaultLanguage.id;
-        }
+      if (!tenantId) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'tenantId is required',
+          },
+        });
       }
 
-      const destinations = await DestinationService.list(languageId);
+      // Get languageId from query parameter
+      const languageId: string | undefined = req.query.languageId as string | undefined;
+
+      const destinations = await DestinationService.list(tenantId, languageId);
       res.json({
         success: true,
         data: destinations,
@@ -44,28 +41,12 @@ export class DestinationController {
     }
   }
 
-  static async getById(req: AuthenticatedRequest & TenantRequest, res: Response) {
+  static async getById(req: Request, res: Response) {
     try {
       const { id } = req.params;
       
-      // Get languageId from query param or use tenant's default language
-      let languageId: string | undefined = req.query.languageId as string | undefined;
-      
-      // If no languageId provided and tenant exists, use tenant's default language
-      if (!languageId && req.tenant?.defaultLanguage) {
-        const defaultLanguage = await LanguageService.getByCode(req.tenant.defaultLanguage);
-        if (defaultLanguage) {
-          languageId = defaultLanguage.id;
-        }
-      }
-      
-      // If still no languageId, get system default language
-      if (!languageId) {
-        const systemDefaultLanguage = await LanguageService.getDefault();
-        if (systemDefaultLanguage) {
-          languageId = systemDefaultLanguage.id;
-        }
-      }
+      // Get languageId from query parameter
+      const languageId: string | undefined = req.query.languageId as string | undefined;
 
       const destination = await DestinationService.getById(id, languageId);
 
@@ -94,8 +75,21 @@ export class DestinationController {
     }
   }
 
-  static async create(req: AuthenticatedRequest, res: Response) {
+  static async create(req: AuthenticatedRequest & TenantRequest, res: Response) {
     try {
+      // Get tenantId from authenticated user's token (security: prevent tenant spoofing)
+      const tenantId = req.auth?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(401).json({
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Authentication required',
+          },
+        });
+      }
+
       const { image, isFeatured, translations } = req.body;
 
       if (!translations || !Array.isArray(translations) || translations.length === 0) {
@@ -122,6 +116,7 @@ export class DestinationController {
       }
 
       const destination = await DestinationService.create({
+        tenantId,
         image,
         isFeatured,
         translations,
@@ -231,8 +226,21 @@ export class DestinationController {
     }
   }
 
-  static async importFromApi(req: AuthenticatedRequest, res: Response) {
+  static async importFromApi(req: AuthenticatedRequest & TenantRequest, res: Response) {
     try {
+      // Get tenantId from req.tenant (from Host header)
+      const tenantId = req.tenant?.id;
+      
+      if (!tenantId) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Tenant is required',
+          },
+        });
+      }
+
       const { city, radius, limit } = req.body;
       if (!city) {
         return res.status(400).json({
@@ -245,6 +253,7 @@ export class DestinationController {
       }
 
       const result = await DestinationImportService.importGlobal({
+        tenantId,
         city,
         radius,
         limit,

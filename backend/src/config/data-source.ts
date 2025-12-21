@@ -47,6 +47,7 @@ import { ChatParticipant } from '../modules/chat/entities/chat-participant.entit
 import { ChatWidgetToken } from '../modules/chat/entities/chat-widget-token.entity';
 import { Customer } from '../modules/shared/entities/customer.entity';
 import { CustomerEmail } from '../modules/shared/entities/customer-email.entity';
+import { Page } from '../modules/shared/entities/page.entity';
 
 const env = loadEnv();
 
@@ -111,6 +112,7 @@ export const AppDataSource = new DataSource({
           ChatMessage,
           ChatParticipant,
           ChatWidgetToken,
+          Page,
   ],
   // Migrations disabled - using TypeORM synchronize instead
   // migrations: ['dist/migrations/*.js'],
