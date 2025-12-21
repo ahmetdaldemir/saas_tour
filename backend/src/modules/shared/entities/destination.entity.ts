@@ -4,12 +4,12 @@ import { Tenant } from '../../tenants/entities/tenant.entity';
 
 @Entity({ name: 'destinations' })
 export class Destination extends BaseEntity {
-  @ManyToOne(() => Tenant, { nullable: false })
+  @ManyToOne(() => Tenant, { nullable: true })
   @JoinColumn({ name: 'tenant_id' })
-  tenant!: Tenant;
+  tenant?: Tenant;
 
-  @Column({ name: 'tenant_id' })
-  tenantId!: string;
+  @Column({ name: 'tenant_id', nullable: true })
+  tenantId?: string;
 
   @Column({ type: 'text', nullable: true })
   image?: string;
