@@ -243,6 +243,30 @@ export const setupRouterGuards = (pinia: Pinia) => {
       return next({ name: 'login', query: { redirect: to.fullPath } });
     }
 
+    // Role-based authorization check
+    if (to.meta.requiresAuth === true && auth.isAuthenticated && auth.user) {
+      const requiredPermission = to.meta.requiredPermission as string | undefined;
+      const requiredRole = to.meta.requiredRole as string | string[] | undefined;
+      
+      // Check permission if specified
+      if (requiredPermission) {
+        const { hasPermission } = await import('../utils/permissions');
+        if (!hasPermission(auth.user, requiredPermission as any)) {
+          // User doesn't have required permission, redirect to dashboard
+          return next({ name: 'dashboard' });
+        }
+      }
+      
+      // Check role if specified
+      if (requiredRole) {
+        const roles = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
+        if (!roles.includes(auth.user.role)) {
+          // User doesn't have required role, redirect to dashboard
+          return next({ name: 'dashboard' });
+        }
+      }
+    }
+
     // Login sayfasındayken zaten authenticated ise dashboard'a yönlendir
     if (to.name === 'login' && auth.isAuthenticated) {
       return next({ name: 'dashboard' });
