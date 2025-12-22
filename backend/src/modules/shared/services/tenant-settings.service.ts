@@ -29,8 +29,13 @@ export type PaymentSettingsInput = {
   paymentDefaultMethodId?: string | null;
 };
 
+export type AiSettingsInput = {
+  aiEnabled?: boolean;
+  openaiApiKey?: string;
+};
+
 export type UpdateTenantSettingsInput = Partial<
-  SiteSettingsInput & MailSettingsInput & PaymentSettingsInput
+  SiteSettingsInput & MailSettingsInput & PaymentSettingsInput & AiSettingsInput
 >;
 
 export class TenantSettingsService {
@@ -64,6 +69,10 @@ export class TenantSettingsService {
 
   static async getPaymentSettings(tenantId: string): Promise<TenantSettings | null> {
     return this.getByCategory(tenantId, SettingsCategory.PAYMENT);
+  }
+
+  static async getAiSettings(tenantId: string): Promise<TenantSettings | null> {
+    return this.getByCategory(tenantId, SettingsCategory.AI);
   }
 
   static async updateSiteSettings(
@@ -128,6 +137,37 @@ export class TenantSettingsService {
       });
     } else {
       Object.assign(settings, input);
+    }
+
+    return repo.save(settings);
+  }
+
+  static async updateAiSettings(
+    tenantId: string,
+    input: AiSettingsInput
+  ): Promise<TenantSettings> {
+    const repo = this.repository();
+    let settings = await repo.findOne({
+      where: { tenantId, category: SettingsCategory.AI },
+    });
+
+    // Store AI settings in metadata JSONB
+    const metadata: Record<string, unknown> = {
+      aiEnabled: input.aiEnabled ?? false,
+      openaiApiKey: input.openaiApiKey || undefined,
+    };
+
+    if (!settings) {
+      settings = repo.create({
+        tenantId,
+        category: SettingsCategory.AI,
+        metadata,
+      });
+    } else {
+      settings.metadata = {
+        ...(settings.metadata || {}),
+        ...metadata,
+      };
     }
 
     return repo.save(settings);

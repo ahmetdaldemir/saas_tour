@@ -754,7 +754,7 @@ const handleImageError = (event: Event) => {
   const img = event.target as HTMLImageElement;
   console.error('[TourDetailView] Failed to load image URL:', img.src);
   // Set a placeholder image on error
-  img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="800" height="400"%3E%3Crect fill="%23f5f5f5" width="800" height="400"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em" font-family="Arial" font-size="20"%3EGörsel yüklenemedi%3C/text%3E%3C/svg%3E';
+  img.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="800" height="400"%3E%3Crect fill="%23f5f5f5" width="800" height="400"/%3E%3Ctext fill="%23999" x="50%25" y="50%25" text-anchor="middle" dy=".3em" font-family="Roboto" font-size="20"%3EGörsel yüklenemedi%3C/text%3E%3C/svg%3E';
 };
 
 const handleImageLoad = () => {

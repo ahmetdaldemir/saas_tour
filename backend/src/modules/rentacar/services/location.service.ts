@@ -1,6 +1,7 @@
-import { Repository, In } from 'typeorm';
+import { Repository, In, IsNull } from 'typeorm';
 import { AppDataSource } from '../../../config/data-source';
 import { Location, LocationType } from '../entities/location.entity';
+import { LocationDeliveryPricingService, LocationDeliveryPricingDto } from './location-delivery-pricing.service';
 import { getRedisClient } from '../../../config/redis.config';
 
 export type CreateLocationInput = {
@@ -21,6 +22,7 @@ export type UpdateLocationInput = Partial<CreateLocationInput>;
 export type LocationDto = Omit<Location, 'tenant' | 'parent' | 'children'> & {
   parent?: LocationDto | null;
   children?: LocationDto[];
+  drops?: LocationDeliveryPricingDto[]; // Delivery pricing data for this location
 };
 
 export class LocationService {
@@ -31,11 +33,12 @@ export class LocationService {
   static async list(
     tenantId: string,
     parentId?: string | null,
-    languageId?: string
+    languageId?: string,
+    isActive?: boolean
   ): Promise<LocationDto[]> {
     try {
       // Redis cache key
-      const cacheKey = `locations:tenant:${tenantId}:parent:${parentId ?? 'null'}:lang:${languageId ?? 'all'}`;
+      const cacheKey = `locations:tenant:${tenantId}:parent:${parentId ?? 'null'}:lang:${languageId ?? 'all'}:isActive:${isActive ?? 'all'}`;
       const redis = getRedisClient();
       
       // Try to get from cache
@@ -49,38 +52,51 @@ export class LocationService {
         console.warn('Redis cache read error, falling back to database:', cacheError);
       }
 
-      const whereCondition: any = { tenantId, isActive: true };
-      
       // Check if we need to include children (when parentId is null or not provided, show top-level with children)
       const includeChildren = parentId === undefined || parentId === null || parentId === '' || parentId === 'null' || parentId === 'general';
       
-      // Filter by parentId if provided and not requesting top-level
-      if (!includeChildren) {
-        whereCondition.parentId = parentId;
-      } else {
-        // Requesting top-level locations (parentId is null)
-        whereCondition.parentId = null;
+      // Build where condition for isActive filter
+      const whereCondition: any = { tenantId };
+      if (isActive !== undefined) {
+        whereCondition.isActive = isActive;
       }
-
-      const locations = await this.locationRepo().find({
-        where: whereCondition,
-        relations: ['parent'],
-        order: { sort: 'ASC', createdAt: 'DESC' },
-      });
-
+      
       let result: LocationDto[];
 
-      // If we need to include children for top-level locations
-      if (includeChildren && locations.length > 0) {
-        const topLevelIds = locations.map(loc => loc.id);
+      if (includeChildren) {
+        // Requesting top-level locations (parentId is null) with their children
+        // Step 1: Get ONLY top-level locations (parentId IS NULL) for this tenant
+        const topLevelWhere: any = {
+          ...whereCondition,
+          parentId: IsNull(), // Explicitly null - only top-level locations
+        };
         
-        // Fetch all children of top-level locations
+        const topLevelLocations = await this.locationRepo().find({
+          where: topLevelWhere,
+          relations: ['parent'],
+          order: { sort: 'ASC', createdAt: 'DESC' },
+        });
+
+        if (topLevelLocations.length === 0) {
+          return [];
+        }
+
+        // Step 2: Get children of these top-level locations ONLY
+        // If isActive parameter is provided, filter children by isActive status
+        // If isActive is not provided, return all children (active + inactive)
+        const topLevelIds = topLevelLocations.map(loc => loc.id);
+        const childrenWhere: any = {
+          tenantId,
+          parentId: In(topLevelIds), // Only direct children of top-level locations
+        };
+        
+        // Apply isActive filter to children if parameter is provided
+        if (isActive !== undefined) {
+          childrenWhere.isActive = isActive;
+        }
+        
         const children = await this.locationRepo().find({
-          where: {
-            tenantId,
-            parentId: In(topLevelIds),
-            isActive: true,
-          },
+          where: childrenWhere,
           relations: ['parent'],
           order: { sort: 'ASC', createdAt: 'DESC' },
         });
@@ -92,20 +108,79 @@ export class LocationService {
           if (!childrenByParent.has(parentKey)) {
             childrenByParent.set(parentKey, []);
           }
+          // Children should not have their own children in this response
           childrenByParent.get(parentKey)!.push(this.mapLocationToDto(child, []));
         });
 
-        // Map top-level locations with their children
-        // parent field will be null since these are top-level locations
-        result = locations.map(location => {
-          const dto = this.mapLocationToDto(location, []);
-          dto.children = childrenByParent.get(location.id) || [];
-          // Top-level locations have no parent, so parent remains null
-          return dto;
-        });
+        // Map top-level locations with their direct children only
+        // If isActive parameter was provided, children are already filtered by isActive status
+        result = await Promise.all(
+          topLevelLocations.map(async (location) => {
+            const dto = this.mapLocationToDto(location, []);
+            // Get children for this parent (already filtered by isActive if parameter was provided)
+            dto.children = childrenByParent.get(location.id) || [];
+            dto.parent = null; // Top-level locations have no parent
+            
+            // Fetch delivery pricing (drops) for this location
+            try {
+              dto.drops = await LocationDeliveryPricingService.listByLocation(location.id);
+            } catch (error) {
+              console.error(`Failed to fetch delivery pricing for location ${location.id}:`, error);
+              dto.drops = [];
+            }
+            
+            return dto;
+          })
+        );
+        
+        // Also add drops to children
+        for (const locationDto of result) {
+          if (locationDto.children && locationDto.children.length > 0) {
+            locationDto.children = await Promise.all(
+              locationDto.children.map(async (child) => {
+                try {
+                  child.drops = await LocationDeliveryPricingService.listByLocation(child.id);
+                } catch (error) {
+                  console.error(`Failed to fetch delivery pricing for child location ${child.id}:`, error);
+                  child.drops = [];
+                }
+                return child;
+              })
+            );
+          }
+        }
       } else {
-        // Note: Location entity doesn't have translations yet, but languageId parameter is prepared for future use
-        result = locations.map(location => this.mapLocationToDto(location, []));
+        // Filter by specific parentId
+        const parentWhere: any = {
+          tenantId,
+          parentId: parentId,
+        };
+        if (isActive !== undefined) {
+          parentWhere.isActive = isActive;
+        }
+        
+        const locations = await this.locationRepo().find({
+          where: parentWhere,
+          relations: ['parent'],
+          order: { sort: 'ASC', createdAt: 'DESC' },
+        });
+
+        // Map locations and add delivery pricing (drops) for each
+        result = await Promise.all(
+          locations.map(async (location) => {
+            const dto = this.mapLocationToDto(location, []);
+            
+            // Fetch delivery pricing (drops) for this location
+            try {
+              dto.drops = await LocationDeliveryPricingService.listByLocation(location.id);
+            } catch (error) {
+              console.error(`Failed to fetch delivery pricing for location ${location.id}:`, error);
+              dto.drops = [];
+            }
+            
+            return dto;
+          })
+        );
       }
 
       // Cache the result (TTL: 1 hour)
@@ -154,6 +229,7 @@ export class LocationService {
       minDayCount: location.minDayCount,
       isActive: location.isActive,
       children: children,
+      drops: undefined, // Will be populated by the calling method
     };
   }
 
@@ -261,6 +337,29 @@ export class LocationService {
         location,
         children.map(child => this.mapLocationToDto(child, []))
       );
+
+      // Fetch delivery pricing (drops) for the main location
+      try {
+        result.drops = await LocationDeliveryPricingService.listByLocation(location.id);
+      } catch (error) {
+        console.error(`Failed to fetch delivery pricing for location ${location.id}:`, error);
+        result.drops = [];
+      }
+
+      // Fetch delivery pricing (drops) for children
+      if (result.children && result.children.length > 0) {
+        result.children = await Promise.all(
+          result.children.map(async (child) => {
+            try {
+              child.drops = await LocationDeliveryPricingService.listByLocation(child.id);
+            } catch (error) {
+              console.error(`Failed to fetch delivery pricing for child location ${child.id}:`, error);
+              child.drops = [];
+            }
+            return child;
+          })
+        );
+      }
 
       // Cache the result (TTL: 1 hour)
       try {

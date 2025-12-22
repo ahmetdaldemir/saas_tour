@@ -468,13 +468,15 @@
                   </template>
 
                   <template #item.status="{ item }">
-                    <v-chip 
-                      size="small" 
-                      :color="item.isActive ? 'success' : 'error'" 
-                      variant="flat"
+                    <v-switch
+                      v-model="item.isActive"
+                      color="success"
+                      hide-details
+                      density="compact"
+                      @update:model-value="updateLocationStatus(item, $event as boolean)"
                     >
-                      {{ item.isActive ? 'Aktif' : 'Pasif' }}
-                    </v-chip>
+                  
+                    </v-switch>
                   </template>
 
                   <template #item.pricing="{ item }">
@@ -3388,6 +3390,28 @@ const deleteLocation = async (id: string) => {
     console.error('Failed to delete location:', error);
   } finally {
     deletingLocation.value = null;
+  }
+};
+
+const updateLocationStatus = async (location: LocationDto, isActive: boolean) => {
+  if (!location.id) return;
+  
+  try {
+    const updateData = {
+      isActive,
+    };
+    await http.put(`/rentacar/locations/${location.id}`, updateData);
+    
+    // Update local state - displayedLocations is computed, so updating locations will auto-update it
+    const index = locations.value.findIndex(loc => loc.id === location.id);
+    if (index !== -1) {
+      locations.value[index].isActive = isActive;
+    }
+  } catch (error: any) {
+    console.error('Failed to update location status:', error);
+    // Revert the change on error
+    location.isActive = !isActive;
+    alert(error.response?.data?.message || 'Lokasyon durumu güncellenirken bir hata oluştu');
   }
 };
 

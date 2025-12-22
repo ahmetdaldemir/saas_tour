@@ -25,14 +25,8 @@ export class Blog extends BaseEntity {
   @Column({ name: 'location_id', nullable: true })
   locationId?: string | null;
 
-  @Column({ length: 200 })
-  title!: string;
-
-  @Column({ length: 200 })
-  slug!: string;
-
-  @Column({ type: 'text' })
-  content!: string;
+  // title, content, slug are stored in translations table
+  // No columns for these fields in blog entity
 
   @Column({ type: 'enum', enum: BlogStatus, default: BlogStatus.DRAFT })
   status!: BlogStatus;

@@ -7,6 +7,7 @@ export enum SettingsCategory {
   MAIL = 'mail',
   PAYMENT = 'payment',
   GENERAL = 'general',
+  AI = 'ai',
 }
 
 @Entity({ name: 'tenant_settings' })

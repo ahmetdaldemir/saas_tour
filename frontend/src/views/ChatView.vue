@@ -176,7 +176,7 @@
         <v-card-text class="pa-6">
           <div class="mb-4">
             <p class="text-body-2 mb-2">Aşağıdaki kodu web sitenizin HTML'ine ekleyin:</p>
-            <pre class="pa-4" style="display: block; background: #f5f5f5; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; font-family: monospace;" v-text="embedCode"></pre>
+            <pre class="pa-4" style="display: block; background: #f5f5f5; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; font-family: 'Roboto', monospace;" v-text="embedCode"></pre>
           </div>
           <v-alert type="info" variant="tonal" class="mb-4">
             Widget'ı ekledikten sonra sitenizde canlı chat butonu görünecektir.
