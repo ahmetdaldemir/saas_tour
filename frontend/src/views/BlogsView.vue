@@ -323,13 +323,16 @@ const locationOptions = computed(() => {
     { label: 'Genel (Tüm Lokasyonlar)', value: 'general' },
   ];
   
-  locations.value.forEach(location => {
-    const locationName = getLocationName(location);
-    options.push({
-      label: locationName,
-      value: location.id,
+  // locations.value'nin array olduğundan emin ol
+  if (Array.isArray(locations.value)) {
+    locations.value.forEach(location => {
+      const locationName = getLocationName(location);
+      options.push({
+        label: locationName,
+        value: location.id,
+      });
     });
-  });
+  }
   
   return options;
 });
@@ -345,6 +348,9 @@ const tableHeaders = [
 
 // Methods
 const getLocationName = (location: LocationDto): string => {
+  if (!Array.isArray(availableLanguages.value) || availableLanguages.value.length === 0) {
+    return location.name || 'Lokasyon';
+  }
   const defaultLang = availableLanguages.value.find(l => l.isDefault) || availableLanguages.value[0];
   if (!defaultLang || !location.translations) return location.name || 'Lokasyon';
   const translation = location.translations.find(t => t.languageId === defaultLang.id);
@@ -378,22 +384,27 @@ const formatDate = (dateString: string): string => {
 
 const loadLanguages = async () => {
   try {
-    const { data } = await http.get('/languages');
-    availableLanguages.value = data.filter((lang: any) => lang.isActive);
+    const { data } = await http.get<{ success?: boolean; data?: any[] }>('/languages');
+    // Backend response formatını kontrol et
+    const languages = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
+    availableLanguages.value = languages.filter((lang: any) => lang.isActive);
   } catch (error) {
     console.error('Failed to load languages:', error);
+    availableLanguages.value = []; // Hata durumunda boş array
   }
 };
 
 const loadLocations = async () => {
   if (!auth.tenant) return;
   try {
-    const { data } = await http.get<LocationDto[]>('/rentacar/locations', {
+    const { data } = await http.get<{ success?: boolean; data?: LocationDto[] }>('/rentacar/locations', {
       params: { tenantId: auth.tenant.id },
     });
-    locations.value = data;
+    // Backend response formatını kontrol et
+    locations.value = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
   } catch (error) {
     console.error('Failed to load locations:', error);
+    locations.value = []; // Hata durumunda boş array
   }
 };
 
@@ -406,10 +417,12 @@ const loadBlogs = async () => {
       params.locationId = selectedLocationId.value === 'general' ? null : selectedLocationId.value;
     }
     
-    const { data } = await http.get<BlogDto[]>('/blogs', { params });
-    blogs.value = data;
+    const { data } = await http.get<{ success: boolean; data: BlogDto[] }>('/blogs', { params });
+    // Backend { success: true, data: [...] } formatında dönüyor
+    blogs.value = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
   } catch (error) {
     console.error('Failed to load blogs:', error);
+    blogs.value = []; // Hata durumunda boş array
   } finally {
     loadingBlogs.value = false;
   }
@@ -427,6 +440,13 @@ const closeBlogDialog = () => {
 };
 
 const resetBlogForm = () => {
+  // availableLanguages.value'nin array olduğundan emin ol
+  if (!Array.isArray(availableLanguages.value) || availableLanguages.value.length === 0) {
+    blogForm.translations = {};
+    blogLanguageTab.value = '';
+    return;
+  }
+  
   const defaultLang = availableLanguages.value.find(l => l.isDefault) || availableLanguages.value[0];
   blogLanguageTab.value = defaultLang?.id || '';
   
@@ -467,6 +487,12 @@ const saveBlog = async () => {
   
   savingBlog.value = true;
   try {
+    // availableLanguages.value'nin array olduğundan emin ol
+    if (!Array.isArray(availableLanguages.value) || availableLanguages.value.length === 0) {
+      alert('Dil listesi yüklenemedi. Lütfen sayfayı yenileyin.');
+      return;
+    }
+    
     const translations = availableLanguages.value.map(lang => ({
       languageId: lang.id,
       title: blogForm.translations[lang.id]?.title || '',
@@ -502,6 +528,12 @@ const saveBlog = async () => {
 
 const editBlog = (blog: BlogDto) => {
   editingBlog.value = blog;
+  
+  // availableLanguages.value'nin array olduğundan emin ol
+  if (!Array.isArray(availableLanguages.value) || availableLanguages.value.length === 0) {
+    alert('Dil listesi yüklenemedi. Lütfen sayfayı yenileyin.');
+    return;
+  }
   
   const defaultLang = availableLanguages.value.find(l => l.isDefault) || availableLanguages.value[0];
   blogLanguageTab.value = defaultLang?.id || '';
@@ -678,12 +710,14 @@ watch(
 // Watch for automatic translation of content
 watch(
   () => {
+    if (!Array.isArray(availableLanguages.value) || availableLanguages.value.length === 0) return '';
     const defaultLang = availableLanguages.value.find(l => l.isDefault);
     if (!defaultLang) return '';
     return blogForm.translations[defaultLang.id]?.content || '';
   },
   async (newValue, oldValue) => {
     if (!newValue || newValue === oldValue) return;
+    if (!Array.isArray(availableLanguages.value) || availableLanguages.value.length === 0) return;
     
     const defaultLang = availableLanguages.value.find(l => l.isDefault);
     if (!defaultLang) return;
@@ -715,17 +749,19 @@ onMounted(async () => {
   ]);
   
   // Initialize form after languages are loaded
-  const defaultLang = availableLanguages.value.find(l => l.isDefault) || availableLanguages.value[0];
-  if (defaultLang) {
-    blogLanguageTab.value = defaultLang.id;
-    
-    availableLanguages.value.forEach(lang => {
-      blogForm.translations[lang.id] = {
-        title: '',
-        slug: '',
-        content: '',
-      };
-    });
+  if (Array.isArray(availableLanguages.value) && availableLanguages.value.length > 0) {
+    const defaultLang = availableLanguages.value.find(l => l.isDefault) || availableLanguages.value[0];
+    if (defaultLang) {
+      blogLanguageTab.value = defaultLang.id;
+      
+      availableLanguages.value.forEach(lang => {
+        blogForm.translations[lang.id] = {
+          title: '',
+          slug: '',
+          content: '',
+        };
+      });
+    }
   }
 });
 </script>

@@ -612,6 +612,6 @@ onMounted(async () => {
 }
 
 :deep(.email-preview) {
-  font-family: Arial, sans-serif;
+  font-family: 'Roboto', sans-serif;
 }
 </style>

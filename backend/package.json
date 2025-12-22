@@ -23,7 +23,9 @@
     "update:destinations-tenant": "ts-node --project tsconfig.json src/scripts/update-destinations-tenant.ts",
     "fix:destinations-tenant": "ts-node --project tsconfig.json src/scripts/set-tenant-id-not-null.ts",
     "fix:destinations-tenant-sync": "ts-node --project tsconfig.json src/scripts/fix-destinations-tenant-sync.ts",
-    "seed:tenant": "ts-node --project tsconfig.json src/scripts/seed-tenant.ts"
+    "seed:tenant": "ts-node --project tsconfig.json src/scripts/seed-tenant.ts",
+    "clear:cache": "ts-node --project tsconfig.json src/scripts/clear-blog-cache.ts",
+    "clear:cache:stats": "ts-node --project tsconfig.json src/scripts/clear-blog-cache.ts -- --stats"
   },
   "keywords": [],
   "author": "",
@@ -47,6 +49,7 @@
     "ioredis": "^5.8.2",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.0.2",
+    "node-cron": "^4.2.1",
     "nodemailer": "^7.0.11",
     "openai": "^6.15.0",
     "pg": "^8.16.3",
@@ -62,6 +65,7 @@
     "@types/express": "^5.0.5",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.10.0",
+    "@types/node-cron": "^3.0.11",
     "@types/swagger-ui-express": "^4.1.6",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",

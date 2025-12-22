@@ -58,7 +58,7 @@
       </v-navigation-drawer>
 
       <v-app-bar flat color="surface" app>
-        <v-app-bar-nav-icon class="d-lg-none" @click="drawer = !drawer" />
+        <v-app-bar-nav-icon @click="drawer = !drawer" />
         <v-toolbar-title>{{ tenantName }}</v-toolbar-title>
         <v-spacer />
         <div class="d-flex align-center gap-4 pr-4" v-if="auth.user">

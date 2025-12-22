@@ -370,41 +370,68 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
         
         # Eski container'ları temizle (orphaned container'lar dahil)
         echo -e "${YELLOW}🧹 Eski container'lar temizleniyor...${NC}"
+        
+        # Önce docker-compose down ile temizle
         docker-compose down --remove-orphans 2>/dev/null || true
         
-        # Tüm eski container'ları zorla kaldır (project prefix ile başlayanlar dahil)
+        # Tüm eski container'ları zorla kaldır (isim bazlı)
         echo -e "${YELLOW}🔍 Eski container'lar aranıyor...${NC}"
         ALL_CONTAINERS=$(docker ps -a --format "{{.Names}}" || true)
         
+        # Backend container'larını kaldır (tüm varyasyonlar)
         if echo "$ALL_CONTAINERS" | grep -q "saas-tour-backend"; then
             BACKEND_CONTAINERS=$(echo "$ALL_CONTAINERS" | grep "saas-tour-backend")
             echo -e "${YELLOW}🗑️  Backend container'ları kaldırılıyor...${NC}"
             echo "$BACKEND_CONTAINERS" | while read container; do
-                echo "   - $container"
-                docker rm -f "$container" 2>/dev/null || true
+                if [ -n "$container" ]; then
+                    echo "   - $container"
+                    docker stop "$container" 2>/dev/null || true
+                    docker rm -f "$container" 2>/dev/null || true
+                fi
             done
         fi
         
+        # Frontend container'larını kaldır
         if echo "$ALL_CONTAINERS" | grep -q "saas-tour-frontend"; then
             FRONTEND_CONTAINERS=$(echo "$ALL_CONTAINERS" | grep "saas-tour-frontend")
             echo -e "${YELLOW}🗑️  Frontend container'ları kaldırılıyor...${NC}"
             echo "$FRONTEND_CONTAINERS" | while read container; do
-                echo "   - $container"
-                docker rm -f "$container" 2>/dev/null || true
+                if [ -n "$container" ]; then
+                    echo "   - $container"
+                    docker stop "$container" 2>/dev/null || true
+                    docker rm -f "$container" 2>/dev/null || true
+                fi
             done
         fi
         
+        # Worker container'larını kaldır
         if echo "$ALL_CONTAINERS" | grep -q "saas-tour-worker"; then
             WORKER_CONTAINERS=$(echo "$ALL_CONTAINERS" | grep "saas-tour-worker")
             echo -e "${YELLOW}🗑️  Worker container'ları kaldırılıyor...${NC}"
             echo "$WORKER_CONTAINERS" | while read container; do
-                echo "   - $container"
-                docker rm -f "$container" 2>/dev/null || true
+                if [ -n "$container" ]; then
+                    echo "   - $container"
+                    docker stop "$container" 2>/dev/null || true
+                    docker rm -f "$container" 2>/dev/null || true
+                fi
             done
         fi
         
+        # Docker Compose'un oluşturduğu tüm container'ları kaldır (project prefix ile başlayanlar)
+        echo -e "${YELLOW}🔍 Docker Compose project container'ları temizleniyor...${NC}"
+        # Docker Compose project name'i al (dizin adından)
+        PROJECT_NAME=$(basename "$(pwd)" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]//g')
+        # Tüm container'ları kontrol et ve project prefix ile başlayanları kaldır
+        docker ps -a --format "{{.Names}}" | grep -E "^${PROJECT_NAME}_" | while read container; do
+            if [ -n "$container" ]; then
+                echo "   - $container"
+                docker stop "$container" 2>/dev/null || true
+                docker rm -f "$container" 2>/dev/null || true
+            fi
+        done || true
+        
         # Kısa bir bekleme (container'ların tamamen kaldırılması için)
-        sleep 2
+        sleep 3
         
         docker-compose up -d --build
     fi

@@ -21,6 +21,8 @@
    - [Cloudflare Subdomain Kurulumu](#cloudflare-subdomain-kurulumu)
 8. [Geliştirme Kılavuzu](#geliştirme-kılavuzu)
 9. [Sorun Giderme](#sorun-giderme)
+10. [Email Queue System](#-email-queue-system-rabbitmq)
+11. [Seed Komutları](#-seed-komutları)
 
 ---
 
@@ -758,6 +760,228 @@ docker-compose up -d
 3. SSH bağlantısını test edin
 4. Secrets'ların doğru eklendiğini kontrol edin
 
+### 502 Bad Gateway Hatası
+
+**Sorun:** Traefik backend container'ına erişemiyor.
+
+**Çözüm:**
+1. Container'ların `web` network'üne bağlı olduğunu kontrol edin:
+   ```bash
+   docker network inspect web
+   ```
+2. Backend ve Frontend container'larını `web` network'üne bağlayın:
+   ```bash
+   docker network connect web saas-tour-backend
+   docker network connect web saas-tour-frontend
+   ```
+3. Docker Compose dosyasında network tanımlarını kontrol edin
+
+### HTTPS 502 Bad Gateway
+
+**Sorun:** Cloudflare'den gelen trafik Traefik'e ulaşamıyor.
+
+**Çözüm:**
+1. Traefik port ayarlarını kontrol edin (production'da 443:443 olmalı)
+2. Certificate resolver'ın çalıştığını kontrol edin
+3. `acme.json` dosyasının izinlerini kontrol edin
+
+### Node Modules Sorunu (Sunucuda)
+
+**Sorun:** macOS'ta kurulmuş `node_modules` Linux'ta çalışmıyor.
+
+**Çözüm:**
+```bash
+# Sunucuda node_modules'i sil
+rm -rf frontend/node_modules backend/node_modules
+
+# Docker ile rebuild yap
+cd infra
+docker-compose down
+docker-compose up -d --build
+```
+
+### Database Migration Sorunları
+
+**Destinations tenant_id Sorunu:**
+```bash
+# Production'da fix script'i çalıştır
+cd backend
+npm run fix:destinations-tenant-sync
+```
+
+Bu script:
+- NULL değerleri günceller
+- Kolonu NOT NULL yapar
+- Foreign key constraint ekler
+
+### Container Name Conflict Hatası
+
+**Sorun:** `Error response from daemon: Conflict. The container name "/d70f8adbd74a_saas-tour-backend" is already in use`
+
+**Çözüm:**
+`deploy.sh` script'i artık otomatik olarak:
+- Eski container'ları temizler
+- Docker Compose project prefix'li container'ları kaldırır
+- Container'ları kaldırmadan önce durdurur
+
+Eğer hala sorun yaşıyorsanız:
+```bash
+# Tüm eski container'ları manuel temizle
+docker ps -a | grep saas-tour | awk '{print $1}' | xargs docker rm -f
+cd infra
+docker-compose down --remove-orphans
+docker-compose up -d --build
+```
+
+---
+
+## 🏭 Production Deployment
+
+### Production Checklist
+
+#### 1. Database Volume Yapılandırması ✅
+- ✅ PostgreSQL volume tanımlı: `postgres_data:/var/lib/postgresql/data`
+- ✅ `deploy.sh` script'i database verilerini koruyor
+- ✅ Normal mod: `docker-compose down` (volume'lar korunur)
+- ✅ Fresh DB modu: `docker-compose down -v` (sadece `--fresh-db` ile)
+
+#### 2. DB_SYNC Ayarları ✅
+- ✅ Production'da `DB_SYNC=false` olmalı
+- ✅ `deploy.sh` script'i otomatik olarak ayarlıyor
+- ⚠️ Production'da `backend/.env` dosyasında `DB_SYNC=false` kontrol edin
+
+#### 3. Network Yapılandırması ✅
+- ✅ `web` network: External (Traefik için)
+- ✅ `global_databases_network`: External (Database bağlantıları için)
+- ✅ `saas_tour_internal`: Internal iletişim için
+
+#### 4. Container Restart Politikaları ✅
+- ✅ Tüm önemli container'lar: `restart: unless-stopped`
+- ✅ Sunucu yeniden başlatıldığında container'lar otomatik başlayacak
+
+### Production Domain Kurulumu
+
+#### DNS Ayarları
+
+**Wildcard A Record (Tüm subdomain'ler için):**
+```
+Type: A
+Name: *
+Value: 185.209.228.189
+TTL: 3600
+```
+
+**VEYA** her tenant için ayrı ayrı:
+```
+Type: A
+Name: berg
+Value: 185.209.228.189
+TTL: 3600
+```
+
+#### Traefik Port Ayarları
+
+Production'da Traefik'in port 80 ve 443'ü direkt kullanması gerekiyor:
+- Port 80: HTTP
+- Port 443: HTTPS
+- Let's Encrypt certificate resolver aktif olmalı
+
+#### Multi-Project Database Setup
+
+Aynı sunucuda birden fazla proje çalıştırırken:
+
+**Çözüm:** Tüm projeler aynı database stack'i paylaşmalı
+- ✅ Kaynak kullanımı optimize olur
+- ✅ Container isim çakışması olmaz
+- ✅ Database yönetimi kolaylaşır
+
+**Nasıl Çalışır:**
+1. İlk proje database stack'i başlatır
+2. İkinci proje mevcut container'ları tespit eder ve kullanır
+3. Her iki proje de aynı PostgreSQL/Redis/MongoDB instance'larını kullanır
+4. Farklı database'ler kullanarak veriler ayrı tutulur
+
+### Production Ready Summary
+
+✅ **Doğru Yapılandırılmış:**
+- Database Volume Yapılandırması
+- Network Yapılandırması
+- Container Restart Politikaları
+- Database Bağlantı Yapılandırması
+- Environment Variable Yapısı
+
+✅ **Düzeltilen Sorunlar:**
+- DB_SYNC Ayarı (otomatik yönetiliyor)
+- Container Name Conflict (deploy.sh'de düzeltildi)
+
+---
+
+## 📧 Email Queue System (RabbitMQ)
+
+Proje email gönderme işlemlerini RabbitMQ kuyruk sistemi üzerinden yönetir.
+
+### Kurulum
+
+1. **Docker Stack'i Başlat:**
+   ```bash
+   cd docker-datatabse-stack
+   docker-compose up -d
+   ```
+
+2. **RabbitMQ Management UI:**
+   - URL: http://localhost:15672
+   - Username: admin
+   - Password: admin_pass
+
+3. **Environment Variables:**
+   ```env
+   RABBITMQ_HOST=localhost
+   RABBITMQ_PORT=5672
+   RABBITMQ_USER=admin
+   RABBITMQ_PASSWORD=admin_pass
+   RABBITMQ_VHOST=/
+   USE_EMAIL_QUEUE=true
+   ```
+
+### Kullanım
+
+**Development:**
+```bash
+# API Server
+npm run dev
+
+# Worker (ayrı terminal)
+npm run dev:worker
+```
+
+**Production:**
+```bash
+# API Server
+npm start
+
+# Worker (ayrı process)
+npm run start:worker
+```
+
+### Email Tipleri
+
+- Customer Welcome Email
+- Reservation Confirmation
+- Reservation Cancelled
+- Reservation Completed
+
+### Queue Yapısı
+
+- **Exchange**: `email_exchange` (direct type)
+- **Queues**: `email_queue`, `email_queue_high_priority`
+
+### Troubleshooting
+
+- RabbitMQ'nun çalıştığını kontrol edin: `docker ps | grep rabbitmq`
+- Worker'ın çalıştığını kontrol edin
+- Queue'da mesaj var mı kontrol edin (RabbitMQ Management UI)
+- `USE_EMAIL_QUEUE=false` ile fallback mode (direkt gönderim)
+
 ---
 
 ## 📝 Ek Kaynaklar
@@ -777,3 +1001,215 @@ docker-compose up -d
 **Son Güncelleme:** 2025-12-13  
 **Dokümantasyon Versiyonu:** 1.0.0
 
+
+## 🌱 Seed Komutları
+
+Tüm seed ve import komutları tek bir shell script ile yönetilir. Kullanıcı işlemlerini kolaylaştırmak için tüm komutlar ve açıklamaları:
+
+### 🚀 Hızlı Başlangıç
+
+**Tek Script ile Tüm Seed İşlemleri:**
+```bash
+./seed.sh [komut]
+```
+
+**Yardım:**
+```bash
+./seed.sh help
+```
+
+### Tenant İşlemleri
+
+#### Yeni Tenant Oluşturma
+```bash
+./seed.sh tenant
+```
+veya
+```bash
+cd backend && npm run seed:tenant
+```
+**Açıklama:** Yeni tenant, tenant settings ve admin kullanıcı oluşturur.  
+**Kullanım:** `backend/src/scripts/seed-tenant.ts` dosyasındaki bilgileri güncelleyip çalıştırın.  
+**Oluşturduğu:** Tenant, Tenant Settings (site, mail, payment), Tenant User (admin)
+
+### Ana Seed (Tüm Veriler)
+
+#### Tam Seed (Tüm Veriler)
+```bash
+./seed.sh full
+```
+veya
+```bash
+cd backend && npm run seed
+```
+**Açıklama:** Tüm temel verileri oluşturur (languages, phone countries, tenants, users, destinations, tours, vehicles, vb.)
+
+### Mock/Test Verileri
+
+#### Mock Data Seed
+```bash
+./seed.sh mock
+```
+veya
+```bash
+cd backend && npm run seed:mock
+```
+**Açıklama:** Test için mock veriler oluşturur (tours, vehicles, reservations, vb.)
+
+#### Global Destinations & Hotels Seed
+```bash
+./seed.sh global
+```
+veya
+```bash
+cd backend && npm run seed:global
+```
+**Açıklama:** Global destinasyonlar ve otelleri seed eder
+
+### Import İşlemleri
+
+#### Destinasyon Import (RapidAPI)
+```bash
+./seed.sh import:destinations
+```
+veya
+```bash
+cd backend && npm run import:destinations
+```
+**Açıklama:** RapidAPI'den Türkiye'deki turizm bölgelerini import eder
+
+#### Otel Import (RapidAPI)
+```bash
+./seed.sh import:hotels --city Antalya --limit 100 --radius 5
+```
+veya
+```bash
+cd backend && npm run import:hotels -- --city Antalya --limit 100 --radius 5
+```
+**Açıklama:** RapidAPI'den belirli bir şehir için otelleri import eder  
+**Parametreler:**
+- `--city`: Şehir adı (örn: Antalya, Side, Kemer)
+- `--limit`: Maksimum sonuç sayısı (default: 50)
+- `--radius`: Yarıçap (km) (default: 5)
+
+### Rentacar Seed İşlemleri
+
+#### Vehicle Brands & Models Seed
+```bash
+./seed.sh vehicles
+```
+veya
+```bash
+cd backend && npm run seed:vehicles
+```
+**Açıklama:** Araç markaları ve modellerini seed eder
+
+#### Vehicle Variations Seed
+```bash
+./seed.sh vehicle-variations
+```
+veya
+```bash
+cd backend && npm run seed:vehicle-variations
+```
+**Açıklama:** Araç varyasyonlarını seed eder
+
+#### Vehicle Plates Seed
+```bash
+./seed.sh vehicle-plates
+```
+veya
+```bash
+cd backend && npm run seed:vehicle-plates
+```
+**Açıklama:** Araç plakalarını seed eder
+
+### Lokasyon Seed İşlemleri
+
+#### Türkiye İlleri Seed
+```bash
+./seed.sh provinces
+```
+veya
+```bash
+cd backend && npm run seed:provinces
+```
+**Açıklama:** Türkiye'nin tüm illerini seed eder
+
+#### İl Alt Lokasyonları Seed
+```bash
+./seed.sh province-sub-locations
+```
+veya
+```bash
+cd backend && npm run seed:province-sub-locations
+```
+**Açıklama:** İllerin alt lokasyonlarını (ilçeler, mahalleler) seed eder
+
+### Email Template Seed
+
+#### Customer Welcome Email Template
+```bash
+./seed.sh customer-welcome
+```
+veya
+```bash
+cd backend && npm run seed:customer-welcome
+```
+**Açıklama:** Müşteri hoş geldin email template'ini oluşturur
+
+### Fix/Migration İşlemleri
+
+#### Destinations Tenant ID Sync Fix
+```bash
+./seed.sh fix:destinations
+```
+veya
+```bash
+cd backend && npm run fix:destinations-tenant-sync
+```
+**Açıklama:** Synchronize sonrası destinations tenant_id sorunlarını düzeltir (NULL değerleri günceller, NOT NULL yapar)
+
+### Kullanım Örnekleri
+
+#### Yeni Tenant Ekleme
+1. `backend/src/scripts/seed-tenant.ts` dosyasını açın
+2. `TENANT_CONFIG`, `ADMIN_USER`, `SITE_SETTINGS` bilgilerini güncelleyin
+3. `./seed.sh tenant` çalıştırın
+
+#### İlk Kurulum (Tüm Veriler)
+```bash
+# 1. Temel veriler
+./seed.sh full
+
+# 2. Global destinations & hotels
+./seed.sh global
+
+# 3. Lokasyonlar
+./seed.sh provinces
+./seed.sh province-sub-locations
+
+# 4. Rentacar verileri
+./seed.sh vehicles
+./seed.sh vehicle-variations
+```
+
+#### Test Ortamı İçin Mock Veriler
+```bash
+./seed.sh mock
+```
+
+### Script Özellikleri
+
+- **Otomatik Docker Algılama:** Docker container çalışıyorsa otomatik olarak container içinde çalıştırır
+- **Yerel Ortam Desteği:** Docker yoksa yerel ortamda çalışır
+- **Renkli Çıktı:** İşlem durumunu gösteren renkli mesajlar
+- **Yardım Sistemi:** `./seed.sh help` ile tüm komutları görebilirsiniz
+
+### Notlar
+
+- Script proje root dizininden çalıştırılmalıdır (`./seed.sh`)
+- Production'da seed çalıştırmadan önce backup alın
+- `seed:tenant` komutu mevcut tenant kontrolü yapar (aynı slug varsa uyarı verir)
+- Import komutları RapidAPI key gerektirir (`.env` dosyasında `RAPIDAPI_KEY`)
+- Docker kullanıyorsanız, backend container'ının çalışıyor olması gerekir

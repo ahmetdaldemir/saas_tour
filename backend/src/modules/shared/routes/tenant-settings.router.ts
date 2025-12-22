@@ -12,12 +12,14 @@ router.get('/', TenantSettingsController.getAll);
 router.get('/site', TenantSettingsController.getSite);
 router.get('/mail', TenantSettingsController.getMail);
 router.get('/payment', TenantSettingsController.getPayment);
+router.get('/ai', TenantSettingsController.getAi);
 
 // Protected PUT endpoints - authentication required
 router.use(authenticate);
 router.put('/site', TenantSettingsController.updateSite);
 router.put('/mail', TenantSettingsController.updateMail);
 router.put('/payment', TenantSettingsController.updatePayment);
+router.put('/ai', TenantSettingsController.updateAi);
 
 export default router;
 
