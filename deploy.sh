@@ -378,9 +378,9 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
         echo -e "${YELLOW}🔍 Eski container'lar aranıyor...${NC}"
         ALL_CONTAINERS=$(docker ps -a --format "{{.Names}}" || true)
         
-        # Backend container'larını kaldır (tüm varyasyonlar)
-        if echo "$ALL_CONTAINERS" | grep -q "saas-tour-backend"; then
-            BACKEND_CONTAINERS=$(echo "$ALL_CONTAINERS" | grep "saas-tour-backend")
+        # Backend container'larını kaldır (tüm varyasyonlar - tam isim ve prefix'li isimler)
+        BACKEND_CONTAINERS=$(echo "$ALL_CONTAINERS" | grep -E "(^saas-tour-backend$|.*_saas-tour-backend$|saas-tour-backend)" || true)
+        if [ -n "$BACKEND_CONTAINERS" ]; then
             echo -e "${YELLOW}🗑️  Backend container'ları kaldırılıyor...${NC}"
             echo "$BACKEND_CONTAINERS" | while read container; do
                 if [ -n "$container" ]; then
@@ -392,8 +392,8 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
         fi
         
         # Frontend container'larını kaldır
-        if echo "$ALL_CONTAINERS" | grep -q "saas-tour-frontend"; then
-            FRONTEND_CONTAINERS=$(echo "$ALL_CONTAINERS" | grep "saas-tour-frontend")
+        FRONTEND_CONTAINERS=$(echo "$ALL_CONTAINERS" | grep -E "(^saas-tour-frontend$|.*_saas-tour-frontend$|saas-tour-frontend)" || true)
+        if [ -n "$FRONTEND_CONTAINERS" ]; then
             echo -e "${YELLOW}🗑️  Frontend container'ları kaldırılıyor...${NC}"
             echo "$FRONTEND_CONTAINERS" | while read container; do
                 if [ -n "$container" ]; then
@@ -405,8 +405,8 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
         fi
         
         # Worker container'larını kaldır
-        if echo "$ALL_CONTAINERS" | grep -q "saas-tour-worker"; then
-            WORKER_CONTAINERS=$(echo "$ALL_CONTAINERS" | grep "saas-tour-worker")
+        WORKER_CONTAINERS=$(echo "$ALL_CONTAINERS" | grep -E "(^saas-tour-worker$|.*_saas-tour-worker$|saas-tour-worker)" || true)
+        if [ -n "$WORKER_CONTAINERS" ]; then
             echo -e "${YELLOW}🗑️  Worker container'ları kaldırılıyor...${NC}"
             echo "$WORKER_CONTAINERS" | while read container; do
                 if [ -n "$container" ]; then
@@ -422,13 +422,29 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
         # Docker Compose project name'i al (dizin adından)
         PROJECT_NAME=$(basename "$(pwd)" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]//g')
         # Tüm container'ları kontrol et ve project prefix ile başlayanları kaldır
-        docker ps -a --format "{{.Names}}" | grep -E "^${PROJECT_NAME}_" | while read container; do
-            if [ -n "$container" ]; then
-                echo "   - $container"
-                docker stop "$container" 2>/dev/null || true
-                docker rm -f "$container" 2>/dev/null || true
-            fi
-        done || true
+        COMPOSE_CONTAINERS=$(docker ps -a --format "{{.Names}}" | grep -E "^${PROJECT_NAME}_" || true)
+        if [ -n "$COMPOSE_CONTAINERS" ]; then
+            echo "$COMPOSE_CONTAINERS" | while read container; do
+                if [ -n "$container" ]; then
+                    echo "   - $container"
+                    docker stop "$container" 2>/dev/null || true
+                    docker rm -f "$container" 2>/dev/null || true
+                fi
+            done
+        fi
+        
+        # Ek güvenlik: Hash prefix'li container'ları da temizle (örn: ca18ed3f0846_saas-tour-backend)
+        echo -e "${YELLOW}🔍 Hash prefix'li container'lar temizleniyor...${NC}"
+        HASH_PREFIXED=$(docker ps -a --format "{{.Names}}" | grep -E "^[a-f0-9]+_saas-tour-(backend|frontend|worker)" || true)
+        if [ -n "$HASH_PREFIXED" ]; then
+            echo "$HASH_PREFIXED" | while read container; do
+                if [ -n "$container" ]; then
+                    echo "   - $container (hash-prefixed)"
+                    docker stop "$container" 2>/dev/null || true
+                    docker rm -f "$container" 2>/dev/null || true
+                fi
+            done
+        fi
         
         # Kısa bir bekleme (container'ların tamamen kaldırılması için)
         sleep 3
