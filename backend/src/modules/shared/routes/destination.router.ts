@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { DestinationController } from '../controllers/destination.controller';
 import { authenticate } from '../../auth/middleware/auth.middleware';
+import { authorize } from '../../auth/middleware/authorize.middleware';
+import { Permission } from '../../auth/permissions';
 
 const router = Router();
 
@@ -8,12 +10,12 @@ const router = Router();
 router.get('/', DestinationController.list);
 router.get('/:id', DestinationController.getById);
 
-// Protected endpoints - authentication required
+// Protected endpoints - authentication and authorization required
 router.use(authenticate);
-router.post('/', DestinationController.create);
-router.patch('/:id', DestinationController.update);
-router.delete('/:id', DestinationController.remove);
-router.post('/import', DestinationController.importFromApi);
-router.post('/generate-content', DestinationController.generateContent);
+router.post('/', authorize(Permission.DESTINATION_CREATE), DestinationController.create);
+router.patch('/:id', authorize(Permission.DESTINATION_UPDATE), DestinationController.update);
+router.delete('/:id', authorize(Permission.DESTINATION_DELETE), DestinationController.remove);
+router.post('/import', authorize(Permission.DESTINATION_CREATE), DestinationController.importFromApi);
+router.post('/generate-content', authorize(Permission.DESTINATION_CREATE), DestinationController.generateContent);
 
 export default router;

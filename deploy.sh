@@ -249,8 +249,8 @@ if [ "$SKIP_NPM_BUILD" = "false" ] && [ "$MODE" != "infra" ]; then
         npm install
     else
         echo "node_modules mevcut, eksik paketler kontrol ediliyor..."
-        # Eksik paketleri kontrol et (swagger-ui-express örneği)
-        if [ ! -d "node_modules/swagger-ui-express" ]; then
+        # Eksik paketleri kontrol et (swagger-ui-express ve node-cron örneği)
+        if [ ! -d "node_modules/swagger-ui-express" ] || [ ! -d "node_modules/node-cron" ]; then
             echo "⚠️  Bazı paketler eksik, npm install çalıştırılıyor..."
             npm install
         else
