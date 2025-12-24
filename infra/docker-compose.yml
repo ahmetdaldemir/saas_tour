@@ -18,6 +18,8 @@ services:
       - DB_NAME=${DB_NAME:-tour_saas}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      # Uploads klasörünü kalıcı hale getir (production'da)
+      - uploads_data:/app/dist/public/uploads
     networks:
       - internal
       - web
@@ -37,6 +39,18 @@ services:
       - "traefik.http.routers.backend-https.tls=true"
       - "traefik.http.routers.backend-https.tls.certresolver=le"
       - "traefik.http.routers.backend-https.priority=10"
+      # HTTP Router for uploads (static files)
+      - "traefik.http.routers.backend-uploads-http.rule=(HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) || HostRegexp(`[a-z0-9-]+\\.local\\.saastour360\\.test`)) && PathPrefix(`/uploads`)"
+      - "traefik.http.routers.backend-uploads-http.entrypoints=web"
+      - "traefik.http.routers.backend-uploads-http.service=backend"
+      - "traefik.http.routers.backend-uploads-http.priority=10"
+      # HTTPS Router for uploads (static files)
+      - "traefik.http.routers.backend-uploads-https.rule=HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) && PathPrefix(`/uploads`)"
+      - "traefik.http.routers.backend-uploads-https.entrypoints=websecure"
+      - "traefik.http.routers.backend-uploads-https.service=backend"
+      - "traefik.http.routers.backend-uploads-https.tls=true"
+      - "traefik.http.routers.backend-uploads-https.tls.certresolver=le"
+      - "traefik.http.routers.backend-uploads-https.priority=10"
       # Service
       - "traefik.http.services.backend.loadbalancer.server.port=3000"
 
@@ -92,6 +106,10 @@ services:
       - "traefik.http.routers.frontend-https.priority=1"
       # Service
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
+
+volumes:
+  uploads_data:
+    driver: local
 
 networks:
   internal:
