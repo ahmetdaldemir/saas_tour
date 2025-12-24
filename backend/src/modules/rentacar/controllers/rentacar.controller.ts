@@ -1,10 +1,14 @@
 import { Request, Response } from 'express';
 import { VehicleService } from '../services/vehicle.service';
+import { VehicleImageService } from '../services/vehicle-image.service';
 import { SeasonName } from '../entities/vehicle-pricing-period.entity';
 import { AppDataSource } from '../../../config/data-source';
 import { Vehicle } from '../entities/vehicle.entity';
 import { AuthenticatedRequest } from '../../auth/middleware/auth.middleware';
 import { asyncHandler } from '../../../utils/errors';
+import path from 'path';
+import fs from 'fs';
+import { processImageTo72DPI } from '../../../utils/image-processor';
 
 export class RentacarController {
   static listVehicles = asyncHandler(async (req: Request, res: Response) => {
@@ -232,6 +236,136 @@ export class RentacarController {
       const { locationId } = req.body as any;
       const vehicle = await VehicleService.updateLastReturnLocation(id, locationId || null);
       res.json(vehicle);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  }
+
+  static async uploadVehicleImage(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { vehicleId } = req.params;
+      const tenantId = req.auth?.tenantId;
+
+      if (!tenantId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ message: 'No file uploaded' });
+      }
+
+      // Get uploads directory
+      let uploadsDir: string;
+      if (__dirname.includes('dist')) {
+        uploadsDir = path.join(__dirname, '../../../public/uploads');
+      } else {
+        uploadsDir = path.join(__dirname, '../../../public/uploads');
+      }
+
+      const originalPath = path.join(uploadsDir, req.file.filename);
+      
+      // Process image to 72 DPI
+      const processedFilename = `vehicle-${Date.now()}-${Math.round(Math.random() * 1e9)}.jpg`;
+      const processedPath = path.join(uploadsDir, processedFilename);
+      
+      await processImageTo72DPI(originalPath, processedPath);
+      
+      // Delete original file
+      if (fs.existsSync(originalPath)) {
+        fs.unlinkSync(originalPath);
+      }
+
+      // Create public URL
+      const fileUrl = `/uploads/${processedFilename}`;
+
+      // Save image record
+      const image = await VehicleImageService.create(
+        {
+          vehicleId,
+          url: fileUrl,
+          alt: req.body.alt,
+          order: req.body.order ? parseInt(req.body.order) : undefined,
+          isPrimary: req.body.isPrimary === 'true' || req.body.isPrimary === true,
+        },
+        tenantId
+      );
+
+      res.status(201).json(image);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  }
+
+  static async listVehicleImages(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { vehicleId } = req.params;
+      const tenantId = req.auth?.tenantId;
+
+      if (!tenantId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      const images = await VehicleImageService.list(vehicleId, tenantId);
+      res.json(images);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  }
+
+  static async updateVehicleImage(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { vehicleId, imageId } = req.params;
+      const tenantId = req.auth?.tenantId;
+
+      if (!tenantId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      const image = await VehicleImageService.update(
+        imageId,
+        vehicleId,
+        tenantId,
+        {
+          alt: req.body.alt,
+          order: req.body.order,
+          isPrimary: req.body.isPrimary,
+        }
+      );
+
+      res.json(image);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  }
+
+  static async deleteVehicleImage(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { vehicleId, imageId } = req.params;
+      const tenantId = req.auth?.tenantId;
+
+      if (!tenantId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      // Get image to delete file
+      const image = await VehicleImageService.getById(imageId, vehicleId, tenantId);
+      if (image) {
+        // Delete file from filesystem
+        let uploadsDir: string;
+        if (__dirname.includes('dist')) {
+          uploadsDir = path.join(__dirname, '../../../public/uploads');
+        } else {
+          uploadsDir = path.join(__dirname, '../../../public/uploads');
+        }
+
+        const filePath = path.join(uploadsDir, path.basename(image.url));
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+
+      await VehicleImageService.delete(imageId, vehicleId, tenantId);
+      res.status(204).send();
     } catch (error) {
       res.status(400).json({ message: (error as Error).message });
     }

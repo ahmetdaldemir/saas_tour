@@ -24,6 +24,7 @@ import { VehicleReservationAssignment } from '../modules/rentacar/entities/vehic
 import { VehicleCategory } from '../modules/rentacar/entities/vehicle-category.entity';
 import { VehicleBrand } from '../modules/rentacar/entities/vehicle-brand.entity';
 import { VehicleModel } from '../modules/rentacar/entities/vehicle-model.entity';
+import { VehicleImage } from '../modules/rentacar/entities/vehicle-image.entity';
 import { Location } from '../modules/rentacar/entities/location.entity';
 import { LocationVehiclePricing } from '../modules/rentacar/entities/location-vehicle-pricing.entity';
 import { LocationDeliveryPricing } from '../modules/rentacar/entities/location-delivery-pricing.entity';
@@ -93,6 +94,7 @@ export const AppDataSource = new DataSource({
           LocationVehiclePricing,
           LocationDeliveryPricing,
           Extra,
+          VehicleImage,
           TenantUser,
           Currency,
           TenantSettings,

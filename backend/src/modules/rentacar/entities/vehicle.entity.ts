@@ -7,6 +7,7 @@ import { VehicleCategory } from './vehicle-category.entity';
 import { VehicleBrand } from './vehicle-brand.entity';
 import { VehicleModel } from './vehicle-model.entity';
 import { Location } from './location.entity';
+import { VehicleImage } from './vehicle-image.entity';
 
 export enum TransmissionType {
   AUTOMATIC = 'automatic',
@@ -141,4 +142,7 @@ export class Vehicle extends BaseEntity {
 
   @OneToMany(() => VehiclePricingPeriod, (pricing) => pricing.vehicle)
   pricingPeriods!: VehiclePricingPeriod[];
+
+  @OneToMany(() => VehicleImage, (image) => image.vehicle)
+  images!: VehicleImage[];
 }

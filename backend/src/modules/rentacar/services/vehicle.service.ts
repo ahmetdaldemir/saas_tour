@@ -459,7 +459,7 @@ export class VehicleService {
   static async listVehicles(tenantId: string): Promise<Vehicle[]> {
     const vehicles = await this.vehicleRepo().find({
       where: { tenantId },
-      relations: ['category', 'brand', 'model', 'plates', 'pricingPeriods', 'lastReturnLocation'],
+      relations: ['category', 'brand', 'model', 'plates', 'pricingPeriods', 'lastReturnLocation', 'images'],
       order: { order: 'ASC', createdAt: 'DESC' },
     });
 
