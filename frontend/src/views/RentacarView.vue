@@ -183,6 +183,7 @@
             </template>
 
             <template #item.actions="{ item }">
+              <v-btn icon="mdi-image-multiple" variant="text" size="small" color="primary" @click="openImageDialog(item.vehicle)" title="Resimler" />
               <v-btn icon="mdi-pencil" variant="text" size="small" @click="editVehicle(item.vehicle)" />
               <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="deleteVehicle(item.vehicle.id)" />
             </template>
@@ -1705,6 +1706,131 @@
           </v-card-actions>
         </v-card>
       </v-dialog>
+
+      <!-- Vehicle Images Dialog -->
+      <v-dialog v-model="showImageDialog" max-width="800px" scrollable>
+        <v-card>
+          <v-card-title class="d-flex align-center justify-space-between">
+            <span class="text-h6">Araç Resimleri - {{ selectedVehicleForImages?.name }}</span>
+            <v-btn icon="mdi-close" variant="text" @click="closeImageDialog" />
+          </v-card-title>
+          <v-divider />
+          <v-card-text class="pa-4">
+            <div v-if="loadingImages" class="text-center py-8">
+              <v-progress-circular indeterminate color="primary" />
+            </div>
+            <div v-else>
+              <!-- Image Upload Section -->
+              <v-card variant="outlined" class="mb-4">
+                <v-card-title class="text-subtitle-1">Yeni Resim Ekle (Maksimum 8 resim)</v-card-title>
+                <v-card-text>
+                  <v-file-input
+                    v-model="imageFile"
+                    label="Resim Seç"
+                    prepend-inner-icon="mdi-image"
+                    variant="outlined"
+                    accept="image/*"
+                    :disabled="vehicleImages.length >= 8 || uploadingImage"
+                    :rules="[
+                      (v: any) => {
+                        if (!v) return true;
+                        if (vehicleImages.length >= 8) return 'Maksimum 8 resim eklenebilir';
+                        if (v && typeof v === 'object' && 'size' in v) {
+                          return v.size < 5000000 || 'Dosya boyutu 5MB\'dan küçük olmalıdır';
+                        }
+                        return true;
+                      }
+                    ]"
+                    show-size
+                    clearable
+                  />
+                  <v-btn
+                    v-if="imageFile && !uploadingImage && vehicleImages.length < 8"
+                    color="primary"
+                    prepend-icon="mdi-upload"
+                    @click="uploadVehicleImage"
+                    :loading="uploadingImage"
+                    class="mt-2"
+                  >
+                    Resim Yükle
+                  </v-btn>
+                  <v-alert
+                    v-if="vehicleImages.length >= 8"
+                    type="warning"
+                    variant="tonal"
+                    class="mt-2"
+                  >
+                    Maksimum 8 resim eklenebilir. Yeni resim eklemek için önce bir resim silin.
+                  </v-alert>
+                </v-card-text>
+              </v-card>
+
+              <!-- Images Grid -->
+              <div v-if="vehicleImages.length > 0" class="mb-4">
+                <h3 class="text-subtitle-1 mb-3">Yüklenen Resimler ({{ vehicleImages.length }}/8)</h3>
+                <v-row>
+                  <v-col
+                    v-for="(image, index) in vehicleImages"
+                    :key="image.id"
+                    cols="12"
+                    sm="6"
+                    md="4"
+                  >
+                    <v-card variant="outlined">
+                      <v-img
+                        :src="getImageUrl(image.url)"
+                        height="200"
+                        cover
+                        class="bg-grey-lighten-2"
+                      >
+                        <template v-slot:placeholder>
+                          <div class="d-flex align-center justify-center fill-height">
+                            <v-progress-circular color="grey-lighten-5" indeterminate />
+                          </div>
+                        </template>
+                      </v-img>
+                      <v-card-actions>
+                        <v-chip
+                          v-if="image.isPrimary"
+                          color="primary"
+                          size="small"
+                          prepend-icon="mdi-star"
+                        >
+                          Ana Resim
+                        </v-chip>
+                        <v-spacer />
+                        <v-btn
+                          icon="mdi-star"
+                          variant="text"
+                          size="small"
+                          :color="image.isPrimary ? 'primary' : 'grey'"
+                          @click="setPrimaryImage(image.id)"
+                          :disabled="image.isPrimary"
+                        />
+                        <v-btn
+                          icon="mdi-delete"
+                          variant="text"
+                          size="small"
+                          color="error"
+                          @click="deleteVehicleImage(image.id)"
+                          :loading="deletingImageId === image.id"
+                        />
+                      </v-card-actions>
+                    </v-card>
+                  </v-col>
+                </v-row>
+              </div>
+              <v-alert v-else type="info" variant="tonal">
+                Bu araç için henüz resim eklenmemiş.
+              </v-alert>
+            </div>
+          </v-card-text>
+          <v-card-actions>
+            <v-spacer />
+            <v-btn variant="text" @click="closeImageDialog">Kapat</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </template>
   </div>
 </template>
@@ -1751,6 +1877,16 @@ interface VehicleModelDto {
   name: string;
   isActive: boolean;
   sortOrder: number;
+}
+
+interface VehicleImageDto {
+  id: string;
+  vehicleId: string;
+  url: string;
+  alt?: string;
+  order: number;
+  isPrimary: boolean;
+  createdAt?: string;
 }
 
 interface VehiclePlateDto {
@@ -1812,6 +1948,7 @@ interface VehicleDto {
   currencyCode?: string;
   plates?: VehiclePlateDto[];
   pricingPeriods?: any[];
+  images?: VehicleImageDto[];
   createdAt?: string;
   lastReturnLocationId?: string | null;
   lastReturnLocation?: LocationDto | null;
@@ -1858,6 +1995,7 @@ const showDeliveryPricingDialog = ref(false);
 const showCategoryDialog = ref(false);
 const showBrandDialog = ref(false);
 const showModelDialog = ref(false);
+const showImageDialog = ref(false);
 const loadingVehicles = ref(false);
 const loadingLocations = ref(false);
 const loadingCategories = ref(false);
@@ -1877,7 +2015,13 @@ const updatingLocationField = ref(false);
 const deletingPlate = ref(false);
 const deletingLocation = ref<string | null>(null);
 const selectedVehicleForPlate = ref<VehicleDto | null>(null);
+const selectedVehicleForImages = ref<VehicleDto | null>(null);
 const editingPlate = ref<VehiclePlateDto | null>(null);
+const vehicleImages = ref<VehicleImageDto[]>([]);
+const imageFile = ref<File | null>(null);
+const uploadingImage = ref(false);
+const loadingImages = ref(false);
+const deletingImageId = ref<string | null>(null);
 const editingLocation = ref<LocationDto | null>(null);
 const selectedLocationForPricing = ref<LocationDto | null>(null);
 const selectedLocationForDeliveryPricing = ref<LocationDto | null>(null);
@@ -3190,6 +3334,107 @@ watch(() => form.brandId, (newBrandId) => {
 const categoryDefaultLanguageId = computed(() => {
   return availableLanguages.value.find(l => l.isDefault)?.id || availableLanguages.value[0]?.id;
 });
+
+// Vehicle Image Functions
+const openImageDialog = async (vehicle: VehicleDto) => {
+  selectedVehicleForImages.value = vehicle;
+  showImageDialog.value = true;
+  await loadVehicleImages(vehicle.id);
+};
+
+const closeImageDialog = () => {
+  showImageDialog.value = false;
+  selectedVehicleForImages.value = null;
+  vehicleImages.value = [];
+  imageFile.value = null;
+};
+
+const loadVehicleImages = async (vehicleId: string) => {
+  loadingImages.value = true;
+  try {
+    const { data } = await http.get<VehicleImageDto[]>(`/rentacar/vehicles/${vehicleId}/images`);
+    vehicleImages.value = data.sort((a, b) => a.order - b.order);
+  } catch (error: any) {
+    console.error('Failed to load vehicle images:', error);
+    alert(error.response?.data?.message || 'Resimler yüklenirken bir hata oluştu');
+  } finally {
+    loadingImages.value = false;
+  }
+};
+
+const uploadVehicleImage = async () => {
+  if (!selectedVehicleForImages.value || !imageFile.value) return;
+
+  uploadingImage.value = true;
+  try {
+    const formData = new FormData();
+    formData.append('file', imageFile.value);
+
+    await http.post(`/rentacar/vehicles/${selectedVehicleForImages.value.id}/images`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    // Reload images
+    await loadVehicleImages(selectedVehicleForImages.value.id);
+    imageFile.value = null;
+  } catch (error: any) {
+    console.error('Failed to upload image:', error);
+    alert(error.response?.data?.message || 'Resim yüklenirken bir hata oluştu');
+  } finally {
+    uploadingImage.value = false;
+  }
+};
+
+const deleteVehicleImage = async (imageId: string) => {
+  if (!selectedVehicleForImages.value) return;
+
+  if (!confirm('Bu resmi silmek istediğinizden emin misiniz?')) {
+    return;
+  }
+
+  deletingImageId.value = imageId;
+  try {
+    await http.delete(`/rentacar/vehicles/${selectedVehicleForImages.value.id}/images/${imageId}`);
+    await loadVehicleImages(selectedVehicleForImages.value.id);
+    // Also reload vehicles list to update image count
+    await loadVehicles();
+  } catch (error: any) {
+    console.error('Failed to delete image:', error);
+    alert(error.response?.data?.message || 'Resim silinirken bir hata oluştu');
+  } finally {
+    deletingImageId.value = null;
+  }
+};
+
+const setPrimaryImage = async (imageId: string) => {
+  if (!selectedVehicleForImages.value) return;
+
+  try {
+    // Note: This endpoint might not exist, you may need to add it to the backend
+    // For now, we'll just reload and show a message
+    await http.put(`/rentacar/vehicles/${selectedVehicleForImages.value.id}/images/${imageId}`, {
+      isPrimary: true,
+    });
+    await loadVehicleImages(selectedVehicleForImages.value.id);
+  } catch (error: any) {
+    console.error('Failed to set primary image:', error);
+    alert(error.response?.data?.message || 'Ana resim ayarlanırken bir hata oluştu');
+  }
+};
+
+const getImageUrl = (url: string): string => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  const origin = window.location.origin;
+  if (url.startsWith('/')) {
+    return origin + url;
+  }
+  return origin + '/' + url;
+};
 
 watch(
   () => {

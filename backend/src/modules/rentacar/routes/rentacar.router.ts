@@ -4,6 +4,7 @@ import { AuthenticatedRequest } from '../../auth/middleware/auth.middleware';
 import { authenticate } from '../../auth/middleware/auth.middleware';
 import { authorize } from '../../auth/middleware/authorize.middleware';
 import { Permission } from '../../auth/permissions';
+import { upload } from '../../shared/controllers/file-upload.controller';
 
 const router = Router();
 
@@ -25,5 +26,9 @@ router.post('/vehicles/:vehicleId/pricing', authorize(Permission.VEHICLE_UPDATE)
 router.put('/vehicles/:id/last-return-location', authorize(Permission.VEHICLE_UPDATE), (req, res, next) => RentacarController.updateLastReturnLocation(req as AuthenticatedRequest, res).catch(next));
 router.patch('/vehicles/:id/last-return-location', authorize(Permission.VEHICLE_UPDATE), (req, res, next) => RentacarController.updateLastReturnLocation(req as AuthenticatedRequest, res).catch(next));
 router.post('/reservations/:reservationId/assignments', authorize(Permission.RESERVATION_UPDATE), (req, res, next) => RentacarController.assignPlate(req as AuthenticatedRequest, res).catch(next));
+router.get('/vehicles/:vehicleId/images', authenticate, authorize(Permission.VEHICLE_VIEW), (req, res, next) => RentacarController.listVehicleImages(req as AuthenticatedRequest, res).catch(next));
+router.post('/vehicles/:vehicleId/images', authenticate, authorize(Permission.VEHICLE_UPDATE), upload.single('file'), (req, res, next) => RentacarController.uploadVehicleImage(req as AuthenticatedRequest, res).catch(next));
+router.put('/vehicles/:vehicleId/images/:imageId', authenticate, authorize(Permission.VEHICLE_UPDATE), (req, res, next) => RentacarController.updateVehicleImage(req as AuthenticatedRequest, res).catch(next));
+router.delete('/vehicles/:vehicleId/images/:imageId', authenticate, authorize(Permission.VEHICLE_UPDATE), (req, res, next) => RentacarController.deleteVehicleImage(req as AuthenticatedRequest, res).catch(next));
 
 export default router;
