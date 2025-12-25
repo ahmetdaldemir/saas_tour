@@ -17,29 +17,28 @@ async function seedTurkeyProvinceSubLocations() {
     console.log('✅ Database connected');
 
     const tenantRepo = AppDataSource.getRepository(Tenant);
-    const tenants = await tenantRepo.find();
+    const tenants = await tenantRepo.findOne({ where: { id: '9930c947-f720-463c-ba1d-e1af921d5ffb' } });
 
-    if (tenants.length === 0) {
+
+    if (!tenants) {
       console.log('⚠️  No tenants found. Please create at least one tenant first.');
       await AppDataSource.destroy();
       return;
     }
 
-    console.log(`📋 Found ${tenants.length} tenant(s). Adding sub-locations for all provinces...\n`);
+    console.log(`📋 Found ${tenants?.name} tenant(s). Adding sub-locations for all provinces...\n`);
 
     let totalSubLocationsCreated = 0;
     let totalSubLocationsSkipped = 0;
 
-    for (const tenant of tenants) {
-      console.log(`\n🏢 Processing tenant: ${tenant.name} (${tenant.slug})`);
-
       // Get all top-level locations (provinces) for this tenant
-      const allLocations = await LocationService.list(tenant.id);
+      const allLocations = await LocationService.list('9930c947-f720-463c-ba1d-e1af921d5ffb');
       const provinces = allLocations.filter((loc) => loc.parentId === null);
 
       if (provinces.length === 0) {
         console.log(`  ⚠️  No provinces found for this tenant. Please run seed:provinces first.`);
-        continue;
+        await AppDataSource.destroy();
+        return;
       }
 
       console.log(`  📍 Found ${provinces.length} provinces`);
@@ -57,7 +56,7 @@ async function seedTurkeyProvinceSubLocations() {
         for (const subLocation of subLocationTypes) {
           try {
             // Check if sub-location already exists
-            const existingLocations = await LocationService.list(tenant.id);
+            const existingLocations = await LocationService.list('9930c947-f720-463c-ba1d-e1af921d5ffb');
             const exists = existingLocations.some(
               (loc) =>
                 loc.name === subLocation.name &&
@@ -73,7 +72,7 @@ async function seedTurkeyProvinceSubLocations() {
 
             // Create sub-location
             await LocationService.create({
-              tenantId: tenant.id,
+              tenantId: '9930c947-f720-463c-ba1d-e1af921d5ffb',
               name: subLocation.name,
               metaTitle: `${subLocation.name} Araç Kiralama`,
               parentId: province.id, // Parent is the province
@@ -95,15 +94,14 @@ async function seedTurkeyProvinceSubLocations() {
 
       console.log(`\n  📊 Tenant summary: ${subLocationsCreated} created, ${subLocationsSkipped} skipped`);
       totalSubLocationsCreated += subLocationsCreated;
-      totalSubLocationsSkipped += subLocationsSkipped;
-    }
+    totalSubLocationsSkipped += subLocationsSkipped;
 
     console.log('\n' + '='.repeat(60));
     console.log('📊 Overall Summary:');
-    console.log(`   Tenants processed: ${tenants.length}`);
+    console.log(`   Tenants processed: ${tenants?.name}`);
     console.log(`   Total sub-locations created: ${totalSubLocationsCreated}`);
     console.log(`   Total sub-locations skipped: ${totalSubLocationsSkipped}`);
-    console.log(`   Expected: ~${tenants.length * 81 * 3} sub-locations (81 provinces × 3 types per tenant)`);
+    console.log(`   Expected: ~${81 * 3} sub-locations (81 provinces × 3 types)`);
     console.log('='.repeat(60));
     console.log('\n✅ Turkey province sub-locations seeding completed!');
 

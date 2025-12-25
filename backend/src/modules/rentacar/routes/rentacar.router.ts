@@ -30,5 +30,6 @@ router.get('/vehicles/:vehicleId/images', authenticate, authorize(Permission.VEH
 router.post('/vehicles/:vehicleId/images', authenticate, authorize(Permission.VEHICLE_UPDATE), upload.single('file'), (req, res, next) => RentacarController.uploadVehicleImage(req as AuthenticatedRequest, res).catch(next));
 router.put('/vehicles/:vehicleId/images/:imageId', authenticate, authorize(Permission.VEHICLE_UPDATE), (req, res, next) => RentacarController.updateVehicleImage(req as AuthenticatedRequest, res).catch(next));
 router.delete('/vehicles/:vehicleId/images/:imageId', authenticate, authorize(Permission.VEHICLE_UPDATE), (req, res, next) => RentacarController.deleteVehicleImage(req as AuthenticatedRequest, res).catch(next));
+router.post('/vehicles/:vehicleId/images/reorder', authenticate, authorize(Permission.VEHICLE_UPDATE), (req, res, next) => RentacarController.reorderVehicleImages(req as AuthenticatedRequest, res).catch(next));
 
 export default router;

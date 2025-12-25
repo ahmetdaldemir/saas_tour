@@ -27,6 +27,16 @@
       <v-window v-model="activeTab" class="pa-6">
         <!-- Site Ayarları -->
         <v-window-item value="site">
+          <v-alert
+            v-if="siteMessage.text"
+            :type="siteMessage.type"
+            variant="tonal"
+            closable
+            @click:close="siteMessage.text = ''"
+            class="mb-4"
+          >
+            {{ siteMessage.text }}
+          </v-alert>
           <v-form ref="siteFormRef" v-model="siteFormValid" @submit.prevent="saveSiteSettings">
             <v-card variant="outlined" class="mb-4">
               <v-card-title class="text-h6">Site Genel Ayarları</v-card-title>
@@ -572,6 +582,11 @@ const savingSite = ref(false);
 const savingMail = ref(false);
 const savingPayment = ref(false);
 
+// Notification messages
+const siteMessage = ref<{ type: 'success' | 'error'; text: string }>({ type: 'success', text: '' });
+const mailMessage = ref<{ type: 'success' | 'error'; text: string }>({ type: 'success', text: '' });
+const paymentMessage = ref<{ type: 'success' | 'error'; text: string }>({ type: 'success', text: '' });
+
 // File uploads
 const logoFile = ref<File | null>(null);
 const faviconFile = ref<File | null>(null);
@@ -713,22 +728,31 @@ const loadPaymentSettings = async () => {
 const saveSiteSettings = async () => {
   if (!siteFormValid.value || !auth.tenant) return;
   savingSite.value = true;
+  siteMessage.value = { type: 'success', text: '' };
   try {
     // Save site settings (siteName, siteDescription, logo, favicon)
     await http.put('/settings/site', {
       ...siteForm.value,
     });
     
-    // Save tenant defaultCurrencyId separately
-    if (tenantForm.value.defaultCurrencyId !== undefined) {
-      await http.patch(`/tenants/${auth.tenant.id}/default-currency`, {
-        defaultCurrencyId: tenantForm.value.defaultCurrencyId,
-      });
+    // Save tenant defaultCurrencyId separately (always send, including null)
+    const { data } = await http.patch(`/tenants/${auth.tenant.id}/default-currency`, {
+      defaultCurrencyId: tenantForm.value.defaultCurrencyId ?? null,
+    });
+    
+    // Verify the update was successful
+    if (data && data.defaultCurrencyId !== (tenantForm.value.defaultCurrencyId ?? null)) {
+      throw new Error('Para birimi güncellenemedi. Lütfen tekrar deneyin.');
     }
     
-    // Success notification
-  } catch (error) {
+    siteMessage.value = { type: 'success', text: 'Site ayarları başarıyla kaydedildi.' };
+    setTimeout(() => {
+      siteMessage.value = { type: 'success', text: '' };
+    }, 5000);
+  } catch (error: any) {
     console.error('Failed to save site settings:', error);
+    const errorMessage = error?.response?.data?.message || error?.message || 'Ayarlar kaydedilirken bir hata oluştu.';
+    siteMessage.value = { type: 'error', text: errorMessage };
   } finally {
     savingSite.value = false;
   }
@@ -843,9 +867,15 @@ const getImageUrl = (url: string): string => {
   if (url.startsWith('http://') || url.startsWith('https://')) {
     return url;
   }
-  // Relative URL ise API base URL'ini ekle
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4001/api';
-  return `${apiBaseUrl.replace('/api', '')}${url.startsWith('/') ? url : '/' + url}`;
+  // Relative URL ise - window.location.origin kullan (multi-tenant yapısında subdomain korunur)
+  // Backend'de /uploads route'u express.static ile serve ediliyor
+  const origin = window.location.origin;
+  
+  // URL zaten / ile başlıyorsa direkt ekle
+  if (url.startsWith('/')) {
+    return origin + url;
+  }
+  return origin + '/' + url;
 };
 
 onMounted(() => {

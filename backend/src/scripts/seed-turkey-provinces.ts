@@ -101,42 +101,36 @@ async function seedTurkeyProvinces() {
     console.log('✅ Database connected');
 
     const tenantRepo = AppDataSource.getRepository(Tenant);
-    const tenants = await tenantRepo.find();
+    const tenants = await tenantRepo.findOne({ where: { id: '9930c947-f720-463c-ba1d-e1af921d5ffb' } });
 
-    if (tenants.length === 0) {
+    if (!tenants) {
       console.log('⚠️  No tenants found. Please create at least one tenant first.');
       await AppDataSource.destroy();
       return;
     }
 
-    console.log(`📋 Found ${tenants.length} tenant(s). Adding provinces for all tenants...\n`);
+    console.log(`📋 Found ${tenants?.name} tenant(s). Adding provinces for all tenants...\n`);
 
     let totalLocationsCreated = 0;
     let totalLocationsSkipped = 0;
 
-    for (const tenant of tenants) {
-      console.log(`\n🏢 Processing tenant: ${tenant.name} (${tenant.slug})`);
-      
-      let locationsCreated = 0;
-      let locationsSkipped = 0;
-
       for (const province of TURKEY_PROVINCES) {
         try {
           // Check if location already exists for this tenant
-          const existingLocations = await LocationService.list(tenant.id);
+          const existingLocations = await LocationService.list('9930c947-f720-463c-ba1d-e1af921d5ffb');
           const exists = existingLocations.some(
             (loc) => loc.name === province.name && loc.parentId === null
           );
 
           if (exists) {
-            locationsSkipped++;
+            totalLocationsSkipped++;
             console.log(`  ⏭️  ${province.name} already exists`);
             continue;
           }
 
           // Create location (parentId is null - üst lokasyon)
           await LocationService.create({
-            tenantId: tenant.id,
+            tenantId: '9930c947-f720-463c-ba1d-e1af921d5ffb',
             name: province.name,
             metaTitle: `${province.name} Araç Kiralama`,
             parentId: null, // Üst lokasyon
@@ -147,7 +141,7 @@ async function seedTurkeyProvinces() {
             isActive: true,
           });
 
-          locationsCreated++;
+          totalLocationsCreated++;
           console.log(`  ✅ Created: ${province.name} (Plaka: ${province.code})`);
         } catch (error: any) {
           console.error(`  ❌ Error creating ${province.name}:`, error.message);
@@ -155,14 +149,9 @@ async function seedTurkeyProvinces() {
         }
       }
 
-      console.log(`\n  📊 Tenant summary: ${locationsCreated} created, ${locationsSkipped} skipped`);
-      totalLocationsCreated += locationsCreated;
-      totalLocationsSkipped += locationsSkipped;
-    }
-
     console.log('\n' + '='.repeat(60));
     console.log('📊 Overall Summary:');
-    console.log(`   Tenants processed: ${tenants.length}`);
+    console.log(`   Tenants processed: ${tenants?.name}`);
     console.log(`   Total locations created: ${totalLocationsCreated}`);
     console.log(`   Total locations skipped: ${totalLocationsSkipped}`);
     console.log(`   Total provinces per tenant: ${TURKEY_PROVINCES.length}`);

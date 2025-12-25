@@ -2,7 +2,7 @@ import { Repository, In, IsNull } from 'typeorm';
 import { AppDataSource } from '../../../config/data-source';
 import { Location, LocationType } from '../entities/location.entity';
 import { LocationDeliveryPricingService, LocationDeliveryPricingDto } from './location-delivery-pricing.service';
-import { getRedisClient } from '../../../config/redis.config';
+import { getRedisClient, isRedisAvailable } from '../../../config/redis.config';
 
 export type CreateLocationInput = {
   tenantId: string;
@@ -39,17 +39,18 @@ export class LocationService {
     try {
       // Redis cache key
       const cacheKey = `locations:tenant:${tenantId}:parent:${parentId ?? 'null'}:lang:${languageId ?? 'all'}:isActive:${isActive ?? 'all'}`;
-      const redis = getRedisClient();
       
-      // Try to get from cache
-      try {
-        const cached = await redis.get(cacheKey);
-        if (cached) {
-          return JSON.parse(cached);
+      // Try to get from cache (only if Redis is available)
+      if (isRedisAvailable()) {
+        try {
+          const redis = getRedisClient();
+          const cached = await redis.get(cacheKey);
+          if (cached) {
+            return JSON.parse(cached);
+          }
+        } catch (cacheError) {
+          // Redis error, continue with database query (silent fail)
         }
-      } catch (cacheError) {
-        // Redis error, continue with database query
-        console.warn('Redis cache read error, falling back to database:', cacheError);
       }
 
       // Check if we need to include children (when parentId is null or not provided, show top-level with children)
@@ -183,12 +184,14 @@ export class LocationService {
         );
       }
 
-      // Cache the result (TTL: 1 hour)
-      try {
-        await redis.setex(cacheKey, 3600, JSON.stringify(result));
-      } catch (cacheError) {
-        // Redis error, continue without caching
-        console.warn('Redis cache write error:', cacheError);
+      // Cache the result (TTL: 1 hour) - only if Redis is available
+      if (isRedisAvailable()) {
+        try {
+          const redis = getRedisClient();
+          await redis.setex(cacheKey, 3600, JSON.stringify(result));
+        } catch (cacheError) {
+          // Redis error, continue without caching (silent fail)
+        }
       }
 
       return result;
@@ -237,6 +240,10 @@ export class LocationService {
    * Invalidate cache for a tenant's locations
    */
   private static async invalidateCache(tenantId: string): Promise<void> {
+    if (!isRedisAvailable()) {
+      return;
+    }
+    
     try {
       const redis = getRedisClient();
       const pattern = `locations:tenant:${tenantId}:*`;
@@ -247,8 +254,7 @@ export class LocationService {
         await redis.del(...keys);
       }
     } catch (error) {
-      // Redis error, continue without cache invalidation
-      console.warn('Redis cache invalidation error:', error);
+      // Redis error, continue without cache invalidation (silent fail)
     }
   }
 
@@ -304,17 +310,18 @@ export class LocationService {
     try {
       // Redis cache key
       const cacheKey = `location:id:${id}`;
-      const redis = getRedisClient();
       
-      // Try to get from cache
-      try {
-        const cached = await redis.get(cacheKey);
-        if (cached) {
-          return JSON.parse(cached);
+      // Try to get from cache (only if Redis is available)
+      if (isRedisAvailable()) {
+        try {
+          const redis = getRedisClient();
+          const cached = await redis.get(cacheKey);
+          if (cached) {
+            return JSON.parse(cached);
+          }
+        } catch (cacheError) {
+          // Redis error, continue with database query (silent fail)
         }
-      } catch (cacheError) {
-        // Redis error, continue with database query
-        console.warn('Redis cache read error, falling back to database:', cacheError);
       }
 
       const location = await this.locationRepo().findOne({
@@ -361,12 +368,14 @@ export class LocationService {
         );
       }
 
-      // Cache the result (TTL: 1 hour)
-      try {
-        await redis.setex(cacheKey, 3600, JSON.stringify(result));
-      } catch (cacheError) {
-        // Redis error, continue without caching
-        console.warn('Redis cache write error:', cacheError);
+      // Cache the result (TTL: 1 hour) - only if Redis is available
+      if (isRedisAvailable()) {
+        try {
+          const redis = getRedisClient();
+          await redis.setex(cacheKey, 3600, JSON.stringify(result));
+        } catch (cacheError) {
+          // Redis error, continue without caching (silent fail)
+        }
       }
 
       return result;

@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { TenantService } from '../services/tenant.service';
 import { TenantCategory } from '../entities/tenant.entity';
+import { logger } from '../../../utils/logger';
+import { ValidationError, sendErrorResponse } from '../../../utils/errors';
 
 export class TenantController {
   static async create(req: Request, res: Response) {
@@ -73,10 +75,24 @@ export class TenantController {
       const { id } = req.params;
       const { defaultCurrencyId } = req.body;
 
-      const tenant = await TenantService.updateDefaultCurrency(id, defaultCurrencyId);
+      logger.info(`Update default currency request`, {
+        tenantId: id,
+        defaultCurrencyId,
+        body: req.body,
+      });
+
+      if (defaultCurrencyId === undefined) {
+        return sendErrorResponse(res, new ValidationError('defaultCurrencyId is required'));
+      }
+
+      const tenant = await TenantService.updateDefaultCurrency(id, defaultCurrencyId ?? null);
       res.json(tenant);
     } catch (error) {
-      res.status(400).json({ message: (error as Error).message });
+      logger.error('Failed to update default currency', error as Error, {
+        tenantId: req.params.id,
+        body: req.body,
+      });
+      sendErrorResponse(res, error as Error);
     }
   }
 }

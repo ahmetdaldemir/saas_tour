@@ -4,13 +4,19 @@
 # Database verilerini koruyarak tüm mimariyi yeni baştan çalıştırır
 #
 # Kullanım:
-#   ./deploy.sh              - Tam deployment (veriler korunur)
+#   ./deploy.sh              - Tam deployment (veriler korunur) + Otomatik sunucuya deploy
+#   ./deploy.sh local        - Sadece lokal deployment (sunucuya deploy etmez)
 #   ./deploy.sh --fresh-db   - Database'i sıfırdan kurar (DİKKAT: Tüm veriler silinir!)
 #   ./deploy.sh build        - Sadece Docker build (container'lar çalışıyorsa)
-#   ./deploy.sh infra        - Sadece infra stack'ini build et
+#   ./deploy.sh infra        - Sadece infra stack'ini build et (sunucuda kullanılır)
 #   ./deploy.sh full         - Tam deployment (npm install dahil)
 #   ./deploy.sh seed         - Database seed çalıştır (Docker container içinden)
 #   ./deploy.sh seed:global  - Global destinations/hotels seed çalıştır
+#
+# Otomatik Sunucuya Deploy:
+#   - Varsayılan olarak lokal işlemler tamamlandıktan sonra sunucuya otomatik deploy eder
+#   - Sadece lokal için: ./deploy.sh local
+#   - Sunucu bilgileri: SFTP_HOST, SFTP_USERNAME, SFTP_PASSWORD env variable'ları ile override edilebilir
 
 set -e
 
@@ -22,9 +28,17 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
+# Sunucu deployment ayarları (environment variable veya default)
+SFTP_HOST="${SFTP_HOST:-185.209.228.189}"
+SFTP_USERNAME="${SFTP_USERNAME:-root}"
+SFTP_PASSWORD="${SFTP_PASSWORD:-@198711Ad@}"
+SFTP_PORT="${SFTP_PORT:-22}"
+SFTP_REMOTE_PATH="${SFTP_REMOTE_PATH:-/var/www/html/saastour360}"
+
 # Komut satırı argümanları
 MODE=${1:-full}
 FRESH_DB=false
+DEPLOY_TO_SERVER=true
 
 # --fresh-db parametresi kontrolü
 if [[ "$*" == *"--fresh-db"* ]]; then
@@ -35,6 +49,12 @@ if [[ "$*" == *"--fresh-db"* ]]; then
         echo -e "${YELLOW}❌ İşlem iptal edildi${NC}"
         exit 0
     fi
+fi
+
+# local modu kontrolü (sadece lokal, sunucuya deploy etme)
+if [ "$MODE" = "local" ]; then
+    DEPLOY_TO_SERVER=false
+    MODE="full"
 fi
 
 echo -e "${BLUE}🚀 SaaS Tour Platform - Multi-Tenant Deployment${NC}"
@@ -374,17 +394,18 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
         # Önce docker-compose down ile temizle (volumes korunur)
         docker-compose down --remove-orphans 2>/dev/null || true
         
-        # Ek güvenlik: Tüm saas-tour container'larını temizle (container ID ile)
-        echo -e "${YELLOW}🔍 Tüm saas-tour container'ları temizleniyor...${NC}"
-        SAAS_TOUR_CONTAINERS=$(docker ps -a --filter "name=saas-tour" --format "{{.ID}}" || true)
-        if [ -n "$SAAS_TOUR_CONTAINERS" ]; then
+        # Tüm container'ları durdur ve kaldır (hash prefix'li olanlar dahil)
+        echo -e "${YELLOW}🔍 Tüm container'lar temizleniyor (ID bazlı)...${NC}"
+        # Tüm çalışan ve durmuş container'ları al (ID ile)
+        ALL_CONTAINER_IDS=$(docker ps -a --format "{{.ID}} {{.Names}}" | grep -E "saas-tour|infra_" | awk '{print $1}' || true)
+        if [ -n "$ALL_CONTAINER_IDS" ]; then
             while IFS= read -r container_id; do
                 if [ -n "$container_id" ]; then
                     echo "   - Container ID: $container_id"
                     docker stop "$container_id" 2>/dev/null || true
                     docker rm -f "$container_id" 2>/dev/null || true
                 fi
-            done <<< "$SAAS_TOUR_CONTAINERS"
+            done <<< "$ALL_CONTAINER_IDS"
         fi
         
         # Tüm eski container'ları zorla kaldır (isim bazlı)
@@ -450,7 +471,6 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
         echo -e "${YELLOW}🔍 Hash prefix'li container'lar temizleniyor...${NC}"
         HASH_PREFIXED=$(docker ps -a --format "{{.Names}}" | grep -E "^[a-f0-9]+_saas-tour-(backend|frontend|worker)" || true)
         if [ -n "$HASH_PREFIXED" ]; then
-            # Process substitution yerine while loop kullan (subshell sorununu önlemek için)
             while IFS= read -r container; do
                 if [ -n "$container" ]; then
                     echo "   - $container (hash-prefixed)"
@@ -460,11 +480,16 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
             done <<< "$HASH_PREFIXED"
         fi
         
+        
+        # Docker prune (stopped container'ları temizle)
+        echo -e "${YELLOW}🧹 Stopped container'lar temizleniyor...${NC}"
+        docker container prune -f 2>/dev/null || true
+        
         # Kısa bir bekleme (container'ların tamamen kaldırılması için)
         sleep 3
         
         # Force recreate ile container'ları yeniden oluştur
-        docker-compose up -d --build --force-recreate
+        docker-compose up -d --build --force-recreate --remove-orphans
     fi
 
     # Backend'in başlamasını bekle
@@ -556,3 +581,81 @@ if [ "$FRESH_DB" = "true" ]; then
 fi
 
 cd ..
+
+# ============================================================
+# 9. OTOMATIK SUNUCUYA DEPLOY (opsiyonel)
+# ============================================================
+if [ "$DEPLOY_TO_SERVER" = "true" ] && [ "$MODE" != "seed" ] && [ "$MODE" != "seed:global" ]; then
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    echo -e "${CYAN}🌐 OTOMATIK SUNUCUYA DEPLOY${NC}"
+    echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    
+    # Sunucu bilgileri (yukarıda tanımlı)
+    REMOTE_HOST="$SFTP_HOST"
+    REMOTE_USER="$SFTP_USERNAME"
+    REMOTE_PATH="$SFTP_REMOTE_PATH"
+    
+    # SSH ve rsync kontrolü
+    if ! command -v sshpass &> /dev/null; then
+        echo -e "${YELLOW}⚠️  sshpass bulunamadı. Sunucuya deploy için yükleniyor...${NC}"
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            # macOS
+            if command -v brew &> /dev/null; then
+                brew install hudochenkov/sshpass/sshpass 2>/dev/null || echo -e "${YELLOW}⚠️  Homebrew ile sshpass yüklenemedi. Manuel yükleyin: brew install hudochenkov/sshpass/sshpass${NC}"
+            fi
+        elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+            # Linux
+            sudo apt-get update && sudo apt-get install -y sshpass 2>/dev/null || echo -e "${YELLOW}⚠️  sshpass yüklenemedi${NC}"
+        fi
+    fi
+    
+    if command -v sshpass &> /dev/null; then
+        echo -e "${YELLOW}📤 Sunucuya dosyalar yükleniyor...${NC}"
+        
+        # RSync ile dosyaları yükle (exclude listesi ile)
+        export SSHPASS="$SFTP_PASSWORD"
+        sshpass -e rsync -avz --delete \
+            -e "ssh -p 22 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='.vscode' \
+            --exclude='.github' \
+            --exclude='.env' \
+            --exclude='.env.*' \
+            --exclude='*.log' \
+            --exclude='.DS_Store' \
+            --exclude='frontend/node_modules' \
+            --exclude='backend/node_modules' \
+            --exclude='frontend/dist' \
+            --exclude='backend/dist' \
+            --exclude='docker-datatabse-stack' \
+            --exclude='backend/public/uploads/*' \
+            --exclude='backend/dist/public/uploads/*' \
+            ./ ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/ || {
+                echo -e "${RED}❌ Dosya yükleme hatası${NC}"
+                exit 1
+            }
+        
+        echo -e "${GREEN}✅ Dosyalar sunucuya yüklendi${NC}"
+        
+        echo -e "${YELLOW}🚀 Sunucuda deployment başlatılıyor...${NC}"
+        
+        # Sunucuda deployment script'ini çalıştır
+        sshpass -e ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            ${REMOTE_USER}@${REMOTE_HOST} << ENDSSH
+            set -e
+            echo "📦 Sunucuda deployment başlatılıyor..."
+            cd ${REMOTE_PATH} || { echo "❌ Error: Cannot change to directory"; exit 1; }
+            chmod +x deploy.sh || true
+            ./deploy.sh infra
+            echo "✅ Sunucu deployment tamamlandı!"
+ENDSSH
+        
+        echo -e "${GREEN}✅ Sunucu deployment tamamlandı!${NC}"
+    else
+        echo -e "${YELLOW}⚠️  sshpass bulunamadı. Sunucuya manuel deploy yapın.${NC}"
+        echo -e "${YELLOW}   Veya: ./deploy.sh local (sadece lokal deployment)${NC}"
+    fi
+else
+    echo -e "${BLUE}⏭️  Sunucuya deploy atlandı (local modu veya seed modu)${NC}"
+fi

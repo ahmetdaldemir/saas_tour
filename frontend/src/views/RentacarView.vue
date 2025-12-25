@@ -1767,7 +1767,13 @@
 
               <!-- Images Grid -->
               <div v-if="vehicleImages.length > 0" class="mb-4">
-                <h3 class="text-subtitle-1 mb-3">Yüklenen Resimler ({{ vehicleImages.length }}/8)</h3>
+                <h3 class="text-subtitle-1 mb-3">
+                  Yüklenen Resimler ({{ vehicleImages.length }}/8)
+                  <v-chip size="small" color="info" variant="tonal" class="ml-2">
+                    <v-icon start size="small">mdi-drag</v-icon>
+                    Sürükle-bırak ile sıralayın
+                  </v-chip>
+                </h3>
                 <v-row>
                   <v-col
                     v-for="(image, index) in vehicleImages"
@@ -1776,7 +1782,21 @@
                     sm="6"
                     md="4"
                   >
-                    <v-card variant="outlined">
+                    <v-card
+                      variant="outlined"
+                      :class="{ 'drag-over': draggedOverIndex === index, 'dragging': draggedImageId === image.id }"
+                      class="image-card"
+                      draggable="true"
+                      @dragstart="handleDragStart($event, image.id, index)"
+                      @dragover.prevent="handleDragOver($event, index)"
+                      @dragleave="handleDragLeave($event, index)"
+                      @drop.prevent="handleDrop($event, index)"
+                      @dragend="handleDragEnd"
+                    >
+                      <div class="drag-handle">
+                        <v-icon size="small" color="grey">mdi-drag-vertical</v-icon>
+                        <span class="text-caption text-grey">#{{ index + 1 }}</span>
+                      </div>
                       <v-img
                         :src="getImageUrl(image.url)"
                         height="200"
@@ -1804,7 +1824,7 @@
                           variant="text"
                           size="small"
                           :color="image.isPrimary ? 'primary' : 'grey'"
-                          @click="setPrimaryImage(image.id)"
+                          @click.stop="setPrimaryImage(image.id)"
                           :disabled="image.isPrimary"
                         />
                         <v-btn
@@ -1812,7 +1832,7 @@
                           variant="text"
                           size="small"
                           color="error"
-                          @click="deleteVehicleImage(image.id)"
+                          @click.stop="deleteVehicleImage(image.id)"
                           :loading="deletingImageId === image.id"
                         />
                       </v-card-actions>
@@ -1966,6 +1986,7 @@ interface LocationDto {
   dropFee?: number;
   minDayCount?: number;
   isActive?: boolean;
+  children?: LocationDto[];
 }
 
 const auth = useAuthStore();
@@ -2022,6 +2043,10 @@ const imageFile = ref<File | null>(null);
 const uploadingImage = ref(false);
 const loadingImages = ref(false);
 const deletingImageId = ref<string | null>(null);
+const draggedImageId = ref<string | null>(null);
+const draggedImageIndex = ref<number | null>(null);
+const draggedOverIndex = ref<number | null>(null);
+const reorderingImages = ref(false);
 const editingLocation = ref<LocationDto | null>(null);
 const selectedLocationForPricing = ref<LocationDto | null>(null);
 const selectedLocationForDeliveryPricing = ref<LocationDto | null>(null);
@@ -2180,6 +2205,7 @@ const fuelTypeOptions = [
 ];
 
 const engineSizeOptions = [
+  '1000 cm3\'e kadar',
   '1300 cm3\'e kadar',
   '1300-1600 cm3',
   '1600-2000 cm3',
@@ -2192,7 +2218,8 @@ const bodyTypeOptions = [
   'SUV',
   'Station Wagon',
   'Coupe',
-  'Convertible',
+  'Minivan',
+  'Van',
 ];
 
 const horsepowerOptions = [
@@ -3436,6 +3463,83 @@ const getImageUrl = (url: string): string => {
   return origin + '/' + url;
 };
 
+// Drag & Drop handlers
+const handleDragStart = (event: DragEvent, imageId: string, index: number) => {
+  draggedImageId.value = imageId;
+  draggedImageIndex.value = index;
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/html', imageId);
+  }
+  (event.target as HTMLElement).style.opacity = '0.5';
+};
+
+const handleDragOver = (event: DragEvent, index: number) => {
+  event.preventDefault();
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'move';
+  }
+  if (draggedImageIndex.value !== null && draggedImageIndex.value !== index) {
+    draggedOverIndex.value = index;
+  }
+};
+
+const handleDragLeave = (event: DragEvent, index: number) => {
+  draggedOverIndex.value = null;
+};
+
+const handleDrop = async (event: DragEvent, dropIndex: number) => {
+  event.preventDefault();
+  
+  if (draggedImageIndex.value === null || draggedImageIndex.value === dropIndex || !selectedVehicleForImages.value) {
+    draggedOverIndex.value = null;
+    return;
+  }
+
+  const newImages = [...vehicleImages.value];
+  const draggedImage = newImages[draggedImageIndex.value];
+  
+  // Remove from old position
+  newImages.splice(draggedImageIndex.value, 1);
+  // Insert at new position
+  newImages.splice(dropIndex, 0, draggedImage);
+
+  // Update local state immediately for better UX
+  vehicleImages.value = newImages;
+
+  // Save to backend
+  await reorderVehicleImages(newImages.map(img => img.id));
+  
+  draggedOverIndex.value = null;
+};
+
+const handleDragEnd = (event: DragEvent) => {
+  (event.target as HTMLElement).style.opacity = '1';
+  draggedImageId.value = null;
+  draggedImageIndex.value = null;
+  draggedOverIndex.value = null;
+};
+
+const reorderVehicleImages = async (imageIds: string[]) => {
+  if (!selectedVehicleForImages.value) return;
+
+  reorderingImages.value = true;
+  try {
+    await http.post(`/rentacar/vehicles/${selectedVehicleForImages.value.id}/images/reorder`, {
+      imageIds,
+    });
+    // Reload to get updated order values
+    await loadVehicleImages(selectedVehicleForImages.value.id);
+  } catch (error: any) {
+    console.error('Failed to reorder images:', error);
+    // Revert on error
+    await loadVehicleImages(selectedVehicleForImages.value.id);
+    alert(error.response?.data?.message || 'Resim sırası güncellenirken bir hata oluştu');
+  } finally {
+    reorderingImages.value = false;
+  }
+};
+
 watch(
   () => {
     const defaultLangId = categoryDefaultLanguageId.value;
@@ -3482,9 +3586,9 @@ const getLocationName = (location: LocationDto): string => {
 const displayedLocations = computed(() => {
   const result: Array<LocationDto & { isChild?: boolean }> = [];
   
-  // Sadece merkez tipindeki lokasyonları al ve sırala
+  // Sadece parent olmayan (top-level) merkez tipindeki lokasyonları al ve sırala
   const merkezLocations = locations.value
-    .filter(loc => loc.type === 'merkez')
+    .filter(loc => loc.type === 'merkez' && !loc.parentId)
     .sort((a, b) => (a.sort || 0) - (b.sort || 0));
   
   merkezLocations.forEach(merkez => {
@@ -3521,7 +3625,29 @@ const loadLocations = async () => {
     const { data } = await http.get<LocationDto[]>('/rentacar/locations', {
       params: { tenantId: auth.tenant.id },
     });
-    locations.value = data;
+    
+    // Flatten nested children structure into a flat array
+    const flattenLocations = (locs: LocationDto[]): LocationDto[] => {
+      const flatList: LocationDto[] = [];
+      
+      locs.forEach(loc => {
+        // Extract children before adding to flat list
+        const { children, ...locationWithoutChildren } = loc;
+        
+        // Add parent location (without children property)
+        flatList.push(locationWithoutChildren);
+        
+        // Recursively add children if they exist
+        if (children && children.length > 0) {
+          const flattenedChildren = flattenLocations(children);
+          flatList.push(...flattenedChildren);
+        }
+      });
+      
+      return flatList;
+    };
+    
+    locations.value = flattenLocations(data);
   } catch (error) {
     console.error('Failed to load locations:', error);
   } finally {
@@ -4151,5 +4277,41 @@ const loadDefaultCurrency = async () => {
 .location-table :deep(.v-btn) {
   font-size: 0.75rem;
   letter-spacing: 0.5px;
+}
+
+/* Drag & Drop Styles */
+.image-card {
+  position: relative;
+  cursor: move;
+  transition: all 0.2s ease;
+}
+
+.image-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.image-card.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.image-card.drag-over {
+  border: 2px dashed rgb(var(--v-theme-primary));
+  background-color: rgba(var(--v-theme-primary), 0.1);
+}
+
+.drag-handle {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  backdrop-filter: blur(4px);
 }
 </style>
