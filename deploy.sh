@@ -4,8 +4,10 @@
 # Database verilerini koruyarak tüm mimariyi yeni baştan çalıştırır
 #
 # Kullanım:
-#   ./deploy.sh              - Tam deployment (veriler korunur) + Otomatik sunucuya deploy
-#   ./deploy.sh local        - Sadece lokal deployment (sunucuya deploy etmez)
+#   ./deploy.sh              - Tam deployment (veriler korunur) + Otomatik sunucuya deploy (production modu)
+#   ./deploy.sh production   - Tam deployment + Otomatik sunucuya deploy
+#   ./deploy.sh development  - Sadece lokal deployment (sunucuya deploy etmez)
+#   ./deploy.sh local        - Sadece lokal deployment (sunucuya deploy etmez) - development ile aynı
 #   ./deploy.sh --fresh-db   - Database'i sıfırdan kurar (DİKKAT: Tüm veriler silinir!)
 #   ./deploy.sh build        - Sadece Docker build (container'lar çalışıyorsa)
 #   ./deploy.sh infra        - Sadece infra stack'ini build et (sunucuda kullanılır)
@@ -14,8 +16,8 @@
 #   ./deploy.sh seed:global  - Global destinations/hotels seed çalıştır
 #
 # Otomatik Sunucuya Deploy:
-#   - Varsayılan olarak lokal işlemler tamamlandıktan sonra sunucuya otomatik deploy eder
-#   - Sadece lokal için: ./deploy.sh local
+#   - production modu: Lokal işlemler tamamlandıktan sonra sunucuya otomatik deploy eder
+#   - development/local modu: Sadece lokal deployment yapar, sunucuya deploy etmez
 #   - Sunucu bilgileri: SFTP_HOST, SFTP_USERNAME, SFTP_PASSWORD env variable'ları ile override edilebilir
 
 set -e
@@ -36,7 +38,7 @@ SFTP_PORT="${SFTP_PORT:-22}"
 SFTP_REMOTE_PATH="${SFTP_REMOTE_PATH:-/var/www/html/saastour360}"
 
 # Komut satırı argümanları
-MODE=${1:-full}
+MODE=${1:-production}
 FRESH_DB=false
 DEPLOY_TO_SERVER=true
 
@@ -51,10 +53,15 @@ if [[ "$*" == *"--fresh-db"* ]]; then
     fi
 fi
 
-# local modu kontrolü (sadece lokal, sunucuya deploy etme)
-if [ "$MODE" = "local" ]; then
+# Mod kontrolü (development/local: sadece lokal, production: lokal + sunucuya deploy)
+if [ "$MODE" = "development" ] || [ "$MODE" = "local" ]; then
     DEPLOY_TO_SERVER=false
     MODE="full"
+    echo -e "${BLUE}🔧 Development modu: Sadece lokal deployment yapılacak, sunucuya deploy edilmeyecek${NC}"
+elif [ "$MODE" = "production" ]; then
+    DEPLOY_TO_SERVER=true
+    MODE="full"
+    echo -e "${GREEN}🚀 Production modu: Lokal deployment + Sunucuya deploy yapılacak${NC}"
 fi
 
 echo -e "${BLUE}🚀 SaaS Tour Platform - Multi-Tenant Deployment${NC}"
@@ -654,8 +661,8 @@ ENDSSH
         echo -e "${GREEN}✅ Sunucu deployment tamamlandı!${NC}"
     else
         echo -e "${YELLOW}⚠️  sshpass bulunamadı. Sunucuya manuel deploy yapın.${NC}"
-        echo -e "${YELLOW}   Veya: ./deploy.sh local (sadece lokal deployment)${NC}"
+        echo -e "${YELLOW}   Veya: ./deploy.sh development (sadece lokal deployment)${NC}"
     fi
 else
-    echo -e "${BLUE}⏭️  Sunucuya deploy atlandı (local modu veya seed modu)${NC}"
+    echo -e "${BLUE}⏭️  Sunucuya deploy atlandı (development/local modu veya seed modu)${NC}"
 fi

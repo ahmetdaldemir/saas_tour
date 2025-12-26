@@ -2,13 +2,21 @@ import { Request, Response } from 'express';
 import { AuthService } from '../services/auth.service';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
 import { TenantCategory } from '../../tenants/entities/tenant.entity';
+import { TenantRequest } from '../../../middleware/tenant.middleware';
 
 export class AuthController {
-  static async register(req: Request, res: Response) {
+  static async register(req: TenantRequest, res: Response) {
     try {
       const { tenantId, name, email, password, role } = req.body;
       if (!tenantId || !name || !email || !password) {
         return res.status(400).json({ message: 'tenantId, name, email and password are required' });
+      }
+
+      // If tenant is resolved from subdomain, verify it matches the provided tenantId
+      if (req.tenant && req.tenant.id !== tenantId) {
+        return res.status(403).json({ 
+          message: 'Tenant mismatch: Cannot register user for different tenant' 
+        });
       }
 
       const user = await AuthService.register({ tenantId, name, email, password, role });
@@ -18,7 +26,7 @@ export class AuthController {
     }
   }
 
-  static async login(req: Request, res: Response) {
+  static async login(req: TenantRequest, res: Response) {
     try {
       const { email, password } = req.body;
       if (!email || !password) {
@@ -26,6 +34,14 @@ export class AuthController {
       }
 
       const { token, user, tenant, settings } = await AuthService.login({ email, password });
+
+      // Verify that the user belongs to the tenant from subdomain
+      if (req.tenant && req.tenant.id !== user.tenantId) {
+        return res.status(403).json({ 
+          message: 'Tenant mismatch: This user does not belong to this tenant' 
+        });
+      }
+
       return res.json({
         token,
         user: {
@@ -89,13 +105,21 @@ export class AuthController {
     }
   }
 
-  static async me(req: AuthenticatedRequest, res: Response) {
+  static async me(req: AuthenticatedRequest & TenantRequest, res: Response) {
     try {
       if (!req.auth) {
         return res.status(401).json({ message: 'Unauthorized' });
       }
 
       const { user, tenant, settings } = await AuthService.getProfile(req.auth.sub);
+
+      // Verify that the user belongs to the tenant from subdomain
+      if (req.tenant && req.tenant.id !== user.tenantId) {
+        return res.status(403).json({ 
+          message: 'Tenant mismatch: This user does not belong to this tenant' 
+        });
+      }
+
       return res.json({
         user: {
           id: user.id,

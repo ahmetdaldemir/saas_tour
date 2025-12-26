@@ -459,7 +459,7 @@
                   </template>
 
                   <template #item.parent="{ item }">
-                    <span>{{ item.parent?.name || '-' }}</span>
+                    <span>{{ item.location?.parent?.name || '-' }}</span>
                   </template>
 
                   <template #item.type="{ item }">
@@ -1615,39 +1615,33 @@
             <v-form ref="locationFormRef" v-model="locationFormValid">
               <v-row>
                 <v-col cols="12">
-                  <v-text-field
-                    v-model="locationForm.name"
-                    label="Lokasyon Adı"
+                  <v-select
+                    v-model="locationForm.locationId"
+                    :items="availableMasterLocations"
+                    item-title="displayName"
+                    item-value="id"
+                    label="Lokasyon Seçin"
                     prepend-inner-icon="mdi-map-marker"
                     required
-                  />
+                    :loading="loadingMasterLocations"
+                    :disabled="!!editingLocation"
+                  >
+                    <template #item="{ item, props }">
+                      <v-list-item v-bind="props">
+                        <template #prepend>
+                          <v-icon :icon="item.raw.type === 'merkez' ? 'mdi-map-marker' : 'mdi-map-marker-outline'" />
+                        </template>
+                      </v-list-item>
+                    </template>
+                  </v-select>
+                  <v-alert v-if="editingLocation" type="info" density="compact" class="mt-2">
+                    Lokasyon düzenleme sırasında değiştirilemez. Farklı bir lokasyon için yeni lokasyon oluşturun.
+                  </v-alert>
                 </v-col>
                 <v-col cols="12">
                   <v-text-field
                     v-model="locationForm.metaTitle"
                     label="Meta Title"
-                    prepend-inner-icon="mdi-tag"
-                  />
-                </v-col>
-                <v-col cols="12" md="6">
-                  <v-select
-                    v-model="locationForm.parentId"
-                    :items="availableParentLocations"
-                    item-title="name"
-                    item-value="id"
-                    label="Üst Lokasyon"
-                    prepend-inner-icon="mdi-folder"
-                    clearable
-                    :placeholder="'Üst lokasyon seçin (opsiyonel)'"
-                  />
-                </v-col>
-                <v-col cols="12" md="6">
-                  <v-select
-                    v-model="locationForm.type"
-                    :items="locationTypeOptions"
-                    item-title="label"
-                    item-value="value"
-                    label="Tipi"
                     prepend-inner-icon="mdi-tag"
                   />
                 </v-col>
@@ -1974,19 +1968,32 @@ interface VehicleDto {
   lastReturnLocation?: LocationDto | null;
 }
 
-interface LocationDto {
+interface MasterLocationDto {
   id: string;
   name: string;
-  metaTitle?: string;
   parentId?: string | null;
-  parent?: LocationDto | null;
-  type?: 'merkez' | 'otel' | 'havalimani' | 'adres';
-  sort?: number;
-  deliveryFee?: number;
-  dropFee?: number;
+  parent?: MasterLocationDto | null;
+  type: 'merkez' | 'otel' | 'havalimani' | 'adres';
+  children?: MasterLocationDto[];
+}
+
+interface LocationDto {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  tenantId: string;
+  locationId: string;
+  location: MasterLocationDto;
+  name: string; // From location
+  type: 'merkez' | 'otel' | 'havalimani' | 'adres'; // From location
+  metaTitle?: string;
+  sort: number;
+  deliveryFee: number;
+  dropFee: number;
   minDayCount?: number;
-  isActive?: boolean;
+  isActive: boolean;
   children?: LocationDto[];
+  drops?: any[];
 }
 
 const auth = useAuthStore();
@@ -1999,6 +2006,8 @@ const vehicleBrands = ref<VehicleBrandDto[]>([]);
 const vehicleModels = ref<VehicleModelDto[]>([]);
 const availableLanguages = ref<LanguageDto[]>([]);
 const locations = ref<LocationDto[]>([]);
+const masterLocations = ref<MasterLocationDto[]>([]);
+const loadingMasterLocations = ref(false);
 const vehicleReservations = ref<Array<{ vehicleId: string; plateId: string; startDate: string; endDate: string }>>([]);
 
 // UI State
@@ -2140,10 +2149,8 @@ const editingModel = ref<VehicleModelDto | null>(null);
 
 // Location Form
 const locationForm = reactive({
-  name: '',
+  locationId: '' as string,
   metaTitle: '',
-  parentId: null as string | null,
-  type: 'merkez' as 'merkez' | 'otel' | 'havalimani' | 'adres',
   sort: 0,
   deliveryFee: 0,
   dropFee: 0,
@@ -2154,34 +2161,40 @@ const locationForm = reactive({
 // Default currency for location fees
 const defaultCurrency = ref<{ code: string; symbol?: string } | null>(null);
 
-// Available parent locations (excluding current location if editing)
-// Only show locations with type='merkez' as parent options
-const availableParentLocations = computed(() => {
-  if (!editingLocation.value) {
-    return locations.value
-      .filter(loc => loc.isActive && loc.type === 'merkez')
-      .map(loc => ({
+// Available master locations (flattened for selection)
+const availableMasterLocations = computed(() => {
+  const flattenMasterLocations = (locs: MasterLocationDto[]): Array<{ id: string; name: string; type: string; displayName: string }> => {
+    const result: Array<{ id: string; name: string; type: string; displayName: string }> = [];
+    
+    locs.forEach(loc => {
+      const displayName = loc.type === 'merkez' ? loc.name : `${loc.name} (${getLocationTypeLabel(loc.type)})`;
+      result.push({
         id: loc.id,
-        name: loc.name || 'Lokasyon',
-      }));
-  }
-  // Exclude current location and its children from parent selection
-  const excludeIds = new Set<string>([editingLocation.value.id]);
-  const findChildren = (parentId: string) => {
-    locations.value.forEach(loc => {
-      if (loc.parentId === parentId) {
-        excludeIds.add(loc.id);
-        findChildren(loc.id);
+        name: loc.name,
+        type: loc.type,
+        displayName,
+      });
+      
+      if (loc.children && loc.children.length > 0) {
+        const childItems = flattenMasterLocations(loc.children);
+        result.push(...childItems);
       }
     });
+    
+    return result;
   };
-  findChildren(editingLocation.value.id);
-  return locations.value
-    .filter(loc => loc.isActive && loc.type === 'merkez' && !excludeIds.has(loc.id))
-    .map(loc => ({
-      id: loc.id,
-      name: loc.name || 'Lokasyon',
-    }));
+  
+  // Filter out already mapped locations if editing
+  const mappedLocationIds = new Set(locations.value.map(loc => loc.locationId));
+  if (editingLocation.value) {
+    mappedLocationIds.delete(editingLocation.value.locationId); // Allow current location's master
+  }
+  
+  const allMasterLocs = flattenMasterLocations(masterLocations.value);
+  return allMasterLocs.filter(mloc => {
+    // Only show locations that are not already mapped (or if editing, allow current one)
+    return !mappedLocationIds.has(mloc.id) || (editingLocation.value && editingLocation.value.locationId === mloc.id);
+  });
 });
 
 const locationTypeOptions = [
@@ -3587,8 +3600,9 @@ const displayedLocations = computed(() => {
   const result: Array<LocationDto & { isChild?: boolean }> = [];
   
   // Sadece parent olmayan (top-level) merkez tipindeki lokasyonları al ve sırala
+  // Parent-child ilişkisi artık location.parentId ve location.children üzerinden yapılıyor
   const merkezLocations = locations.value
-    .filter(loc => loc.type === 'merkez' && !loc.parentId)
+    .filter(loc => loc.type === 'merkez' && (!loc.location?.parentId))
     .sort((a, b) => (a.sort || 0) - (b.sort || 0));
   
   merkezLocations.forEach(merkez => {
@@ -3597,8 +3611,10 @@ const displayedLocations = computed(() => {
     
     // Eğer merkez expand edilmişse, alt lokasyonlarını ekle
     if (expandedLocations.value.has(merkez.id)) {
+      // Children'ları location.children üzerinden bul
+      const childMasterLocationIds = merkez.location?.children?.map(c => c.id) || [];
       const childLocations = locations.value
-        .filter(loc => loc.parentId === merkez.id)
+        .filter(loc => childMasterLocationIds.includes(loc.locationId))
         .sort((a, b) => (a.sort || 0) - (b.sort || 0));
       
       childLocations.forEach(child => {
@@ -3618,6 +3634,20 @@ const toggleLocationExpansion = (locationId: string) => {
   }
 };
 
+const loadMasterLocations = async () => {
+  loadingMasterLocations.value = true;
+  try {
+    const { data } = await http.get<MasterLocationDto[]>('/master-locations', {
+      params: { parentId: null }
+    });
+    masterLocations.value = data;
+  } catch (error) {
+    console.error('Failed to load master locations:', error);
+  } finally {
+    loadingMasterLocations.value = false;
+  }
+};
+
 const loadLocations = async () => {
   if (!auth.tenant) return;
   loadingLocations.value = true;
@@ -3626,7 +3656,7 @@ const loadLocations = async () => {
       params: { tenantId: auth.tenant.id },
     });
     
-    // Flatten nested children structure into a flat array
+    // Flatten nested children structure into a flat array for display
     const flattenLocations = (locs: LocationDto[]): LocationDto[] => {
       const flatList: LocationDto[] = [];
       
@@ -3667,10 +3697,8 @@ const closeLocationDialog = () => {
 };
 
 const resetLocationForm = () => {
-  locationForm.name = '';
+  locationForm.locationId = '';
   locationForm.metaTitle = '';
-  locationForm.parentId = null;
-  locationForm.type = 'merkez';
   locationForm.sort = 0;
   locationForm.deliveryFee = 0;
   locationForm.dropFee = 0;
@@ -3684,32 +3712,17 @@ const saveLocation = async () => {
   const validated = await locationFormRef.value?.validate();
   if (!validated?.valid) return;
   
-  if (!locationForm.name) {
-    alert('Lokasyon adı gerekli');
+  if (!locationForm.locationId) {
+    alert('Lokasyon seçimi zorunludur');
     return;
-  }
-  
-  // Check if location with same name and type already exists (only for new locations)
-  if (!editingLocation.value) {
-    const existingLocation = locations.value.find(
-      loc => loc.name.toLowerCase().trim() === locationForm.name.toLowerCase().trim() 
-        && loc.type === locationForm.type
-    );
-    
-    if (existingLocation) {
-      alert(`Aynı isim (${locationForm.name}) ve tip (${getLocationTypeLabel(locationForm.type)}) ile bir lokasyon zaten mevcut.`);
-      return;
-    }
   }
   
   savingLocation.value = true;
   try {
     const locationData = {
       tenantId: auth.tenant.id,
-      name: locationForm.name,
+      locationId: locationForm.locationId,
       metaTitle: locationForm.metaTitle || undefined,
-      parentId: locationForm.parentId || null,
-      type: locationForm.type,
       sort: locationForm.sort || 0,
       deliveryFee: locationForm.deliveryFee || 0,
       dropFee: locationForm.dropFee || 0,
@@ -3735,10 +3748,8 @@ const saveLocation = async () => {
 const editLocation = (location: LocationDto) => {
   editingLocation.value = location;
   
-  locationForm.name = location.name || '';
+  locationForm.locationId = location.locationId;
   locationForm.metaTitle = location.metaTitle || '';
-  locationForm.parentId = location.parentId || null;
-  locationForm.type = location.type || 'merkez';
   locationForm.sort = location.sort || 0;
   locationForm.deliveryFee = location.deliveryFee || 0;
   locationForm.dropFee = location.dropFee || 0;
@@ -4170,6 +4181,7 @@ onMounted(async () => {
       loadVehicleBrands(),
       loadVehicleModels(), // Tüm modelleri yükle (marka filtresi olmadan)
       loadVehicles(),
+      loadMasterLocations(), // Load master locations first
       loadLocations(),
       loadDefaultCurrency(), // Load default currency for location fee icons
     ]);

@@ -18,7 +18,10 @@ import { Vehicle, FuelType, TransmissionType } from '../modules/rentacar/entitie
 import { VehicleCategory } from '../modules/rentacar/entities/vehicle-category.entity';
 import { VehicleBrand } from '../modules/rentacar/entities/vehicle-brand.entity';
 import { VehicleModel } from '../modules/rentacar/entities/vehicle-model.entity';
-import { Location, LocationType } from '../modules/rentacar/entities/location.entity';
+import { Location } from '../modules/rentacar/entities/location.entity';
+import { MasterLocationType } from '../modules/shared/entities/master-location.entity';
+import { MasterLocationService } from '../modules/shared/services/master-location.service';
+import { LocationService } from '../modules/rentacar/services/location.service';
 import { VehiclePlate } from '../modules/rentacar/entities/vehicle-plate.entity';
 import { VehiclePricingPeriod, SeasonName } from '../modules/rentacar/entities/vehicle-pricing-period.entity';
 import { DayRange } from '../modules/rentacar/entities/location-vehicle-pricing.entity';
@@ -301,20 +304,57 @@ const seedMockData = async () => {
         }
       }
 
-      // Locations
+      // Locations - Create master locations first, then map to tenant
       const locations: Location[] = [];
       const locationData = [
-        { tenant: rentacarTenant, name: 'Istanbul Airport', type: LocationType.HAVALIMANI, isActive: true, sort: 1 },
-        { tenant: rentacarTenant, name: 'Antalya Airport', type: LocationType.HAVALIMANI, isActive: true, sort: 2 },
-        { tenant: rentacarTenant, name: 'Bodrum Office', type: LocationType.MERKEZ, isActive: true, sort: 3 },
+        { name: 'Istanbul Airport', type: MasterLocationType.HAVALIMANI, sort: 1 },
+        { name: 'Antalya Airport', type: MasterLocationType.HAVALIMANI, sort: 2 },
+        { name: 'Bodrum Office', type: MasterLocationType.MERKEZ, sort: 3 },
       ];
-      for (const loc of locationData) {
-        const existing = await locationRepo.findOne({ where: { name: loc.name, tenantId: rentacarTenant.id } });
-        if (!existing) {
-          const savedLocation = await locationRepo.save(locationRepo.create(loc));
-          locations.push(savedLocation);
-        } else {
-          locations.push(existing);
+      for (const locData of locationData) {
+        try {
+          // Create or get master location
+          const existingMasterLocations = await MasterLocationService.list(null);
+          let masterLocation = existingMasterLocations.find(ml => ml.name === locData.name && !ml.parentId);
+          
+          if (!masterLocation) {
+            masterLocation = await MasterLocationService.create({
+              name: locData.name,
+              parentId: null,
+              type: locData.type,
+            });
+          }
+
+          // Check if tenant location already exists
+          const existingLocations = await LocationService.list(rentacarTenant.id);
+          const existingTenantLoc = existingLocations.find(loc => loc.locationId === masterLocation.id);
+          
+          if (existingTenantLoc) {
+            // Get the Location entity
+            const locationEntity = await locationRepo.findOne({ where: { id: existingTenantLoc.id } });
+            if (locationEntity) {
+              locations.push(locationEntity);
+            }
+            continue;
+          }
+
+          // Create tenant location mapping
+          const tenantLocationDto = await LocationService.create({
+            tenantId: rentacarTenant.id,
+            locationId: masterLocation.id,
+            sort: locData.sort,
+            deliveryFee: 0,
+            dropFee: 0,
+            isActive: true,
+          });
+
+          // Get the Location entity
+          const locationEntity = await locationRepo.findOne({ where: { id: tenantLocationDto.id } });
+          if (locationEntity) {
+            locations.push(locationEntity);
+          }
+        } catch (error: any) {
+          console.error(`Error creating location ${locData.name}:`, error.message);
         }
       }
 

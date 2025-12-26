@@ -1,15 +1,11 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, Index, Unique } from 'typeorm';
 import { BaseEntity } from '../../shared/entities/base.entity';
 import { Tenant } from '../../tenants/entities/tenant.entity';
-
-export enum LocationType {
-  MERKEZ = 'merkez',
-  OTEL = 'otel',
-  HAVALIMANI = 'havalimani',
-  ADRES = 'adres',
-}
+import { MasterLocation } from '../../shared/entities/master-location.entity';
 
 @Entity({ name: 'rentacar_locations' })
+@Index(['tenantId', 'locationId'])
+@Unique(['tenantId', 'locationId'])
 export class Location extends BaseEntity {
   @ManyToOne(() => Tenant, { nullable: false })
   @JoinColumn({ name: 'tenant_id' })
@@ -18,24 +14,15 @@ export class Location extends BaseEntity {
   @Column({ name: 'tenant_id' })
   tenantId!: string;
 
-  @Column({ length: 200 })
-  name!: string;
+  @ManyToOne(() => MasterLocation, { nullable: false })
+  @JoinColumn({ name: 'location_id' })
+  location!: MasterLocation;
+
+  @Column({ name: 'location_id' })
+  locationId!: string;
 
   @Column({ name: 'meta_title', length: 200, nullable: true })
   metaTitle?: string;
-
-  @ManyToOne(() => Location, { nullable: true })
-  @JoinColumn({ name: 'parent_id' })
-  parent?: Location | null;
-
-  @Column({ name: 'parent_id', nullable: true })
-  parentId?: string | null;
-
-  @OneToMany(() => Location, (location) => location.parent)
-  children!: Location[];
-
-  @Column({ type: 'enum', enum: LocationType, default: LocationType.MERKEZ })
-  type!: LocationType;
 
   @Column({ type: 'int', default: 0 })
   sort!: number;
