@@ -1629,13 +1629,22 @@
                     <template #item="{ item, props }">
                       <v-list-item v-bind="props">
                         <template #prepend>
-                          <v-icon :icon="item.raw.type === 'merkez' ? 'mdi-map-marker' : 'mdi-map-marker-outline'" />
+                          <v-icon :icon="item.raw.type === 'merkez' ? 'mdi-map-marker' : item.raw.type === 'havalimani' ? 'mdi-airplane' : item.raw.type === 'otel' ? 'mdi-bed' : 'mdi-map-marker-outline'" />
+                        </template>
+                        <template #title>
+                          <span :style="{ paddingLeft: item.raw.parentId ? '20px' : '0' }">
+                            {{ item.raw.displayName }}
+                            <span v-if="item.raw.parentId" class="text-caption text-grey ml-2">(Alt lokasyon)</span>
+                          </span>
                         </template>
                       </v-list-item>
                     </template>
                   </v-select>
                   <v-alert v-if="editingLocation" type="info" density="compact" class="mt-2">
                     Lokasyon düzenleme sırasında değiştirilemez. Farklı bir lokasyon için yeni lokasyon oluşturun.
+                  </v-alert>
+                  <v-alert type="info" density="compact" class="mt-2">
+                    Bir lokasyon seçtiğinizde, üst lokasyonları otomatik olarak eklenir.
                   </v-alert>
                 </v-col>
                 <v-col cols="12">
@@ -2161,40 +2170,35 @@ const locationForm = reactive({
 // Default currency for location fees
 const defaultCurrency = ref<{ code: string; symbol?: string } | null>(null);
 
-// Available master locations (flattened for selection)
+// Available master locations - ONLY top-level locations (parentId: null)
+// When a top-level location is selected, it will be added to rentacar_locations along with its children hierarchy
 const availableMasterLocations = computed(() => {
-  const flattenMasterLocations = (locs: MasterLocationDto[]): Array<{ id: string; name: string; type: string; displayName: string }> => {
-    const result: Array<{ id: string; name: string; type: string; displayName: string }> = [];
-    
-    locs.forEach(loc => {
-      const displayName = loc.type === 'merkez' ? loc.name : `${loc.name} (${getLocationTypeLabel(loc.type)})`;
-      result.push({
-        id: loc.id,
-        name: loc.name,
-        type: loc.type,
-        displayName,
-      });
-      
-      if (loc.children && loc.children.length > 0) {
-        const childItems = flattenMasterLocations(loc.children);
-        result.push(...childItems);
-      }
-    });
-    
-    return result;
-  };
-  
   // Filter out already mapped locations if editing
   const mappedLocationIds = new Set(locations.value.map(loc => loc.locationId));
   if (editingLocation.value) {
     mappedLocationIds.delete(editingLocation.value.locationId); // Allow current location's master
   }
   
-  const allMasterLocs = flattenMasterLocations(masterLocations.value);
-  return allMasterLocs.filter(mloc => {
-    // Only show locations that are not already mapped (or if editing, allow current one)
-    return !mappedLocationIds.has(mloc.id) || (editingLocation.value && editingLocation.value.locationId === mloc.id);
-  });
+  // Only show top-level locations (parentId: null or undefined)
+  return masterLocations.value
+    .filter(loc => {
+      // Only top-level locations (parentId is null or undefined)
+      return !loc.parentId;
+    })
+    .map(loc => {
+      const displayName = loc.type === 'merkez' ? loc.name : `${loc.name} (${getLocationTypeLabel(loc.type)})`;
+      return {
+        id: loc.id,
+        name: loc.name,
+        type: loc.type,
+        displayName,
+        parentId: loc.parentId,
+      };
+    })
+    .filter(mloc => {
+      // Only show locations that are not already mapped (or if editing, allow current one)
+      return !mappedLocationIds.has(mloc.id) || (editingLocation.value && editingLocation.value.locationId === mloc.id);
+    });
 });
 
 const locationTypeOptions = [
@@ -3653,7 +3657,7 @@ const loadLocations = async () => {
   loadingLocations.value = true;
   try {
     const { data } = await http.get<LocationDto[]>('/rentacar/locations', {
-      params: { tenantId: auth.tenant.id },
+      params: { tenantId: auth.tenant.id, parent_id: null },
     });
     
     // Flatten nested children structure into a flat array for display
@@ -3760,7 +3764,7 @@ const editLocation = (location: LocationDto) => {
 };
 
 const deleteLocation = async (id: string) => {
-  if (!confirm('Bu lokasyonu silmek istediğinizden emin misiniz? Bu işlem lokasyonu pasif hale getirecektir.')) return;
+  if (!confirm('Bu lokasyonu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve lokasyon listede gözükmeyecektir.')) return;
   
   deletingLocation.value = id;
   try {

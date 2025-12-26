@@ -26,7 +26,10 @@
     "fix:destinations-tenant-sync": "ts-node --project tsconfig.json src/scripts/fix-destinations-tenant-sync.ts",
     "seed:tenant": "ts-node --project tsconfig.json src/scripts/seed-tenant.ts",
     "clear:cache": "ts-node --project tsconfig.json src/scripts/clear-blog-cache.ts",
-    "clear:cache:stats": "ts-node --project tsconfig.json src/scripts/clear-blog-cache.ts -- --stats"
+    "clear:cache:stats": "ts-node --project tsconfig.json src/scripts/clear-blog-cache.ts -- --stats",
+    "check:locations": "ts-node --project tsconfig.json src/scripts/check-locations-table.ts",
+    "fix:rentacar-locations": "ts-node --project tsconfig.json src/scripts/fix-rentacar-locations-table.ts",
+    "fix:remove-old-location-columns": "ts-node --project tsconfig.json src/scripts/remove-old-location-columns.ts"
   },
   "keywords": [],
   "author": "",
