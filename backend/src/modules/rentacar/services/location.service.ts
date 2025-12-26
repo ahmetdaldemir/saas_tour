@@ -162,15 +162,13 @@ export class LocationService {
       }
 
       // Build result by combining master locations with tenant-specific data
-      const result: LocationDto[] = [];
-      
-      for (const masterLoc of masterLocations) {
+      // Recursive function to build hierarchical structure
+      const buildLocationDto = async (masterLoc: MasterLocationDto): Promise<LocationDto | null> => {
         const tenantLoc = tenantLocationMap.get(masterLoc.id);
         
         // Only show locations that are in rentacar_locations table
-        // Parent locations are automatically added by LocationService.create, so they should be in tenantLocationMap
         if (!tenantLoc) {
-          continue;
+          return null;
         }
 
         const locationDto: LocationDto = {
@@ -199,53 +197,36 @@ export class LocationService {
           locationDto.drops = [];
         }
 
-        // Handle children if master location has children
+        // Recursively handle children if master location has children
         if (masterLoc.children && masterLoc.children.length > 0) {
-          const childMasterLocationIds = masterLoc.children.map(c => c.id);
-          const childTenantLocations = tenantLocations.filter(loc => 
-            childMasterLocationIds.includes(loc.locationId)
-          );
-
           const childDtos: LocationDto[] = [];
+          
           for (const childMasterLoc of masterLoc.children) {
-            const childTenantLoc = childTenantLocations.find(loc => loc.locationId === childMasterLoc.id);
-            
-            if (!childTenantLoc) {
-              continue;
+            const childDto = await buildLocationDto(childMasterLoc);
+            if (childDto) {
+              childDtos.push(childDto);
             }
-
-            const childDto: LocationDto = {
-              id: childTenantLoc.id,
-              createdAt: childTenantLoc.createdAt,
-              updatedAt: childTenantLoc.updatedAt,
-              tenantId: childTenantLoc.tenantId,
-              locationId: childTenantLoc.locationId,
-              location: childMasterLoc,
-              name: childMasterLoc.name,
-              type: childMasterLoc.type,
-              metaTitle: childTenantLoc.metaTitle,
-              sort: childTenantLoc.sort,
-              deliveryFee: childTenantLoc.deliveryFee,
-              dropFee: childTenantLoc.dropFee,
-              minDayCount: childTenantLoc.minDayCount,
-              isActive: childTenantLoc.isActive,
-              children: [],
-            };
-
-            try {
-              childDto.drops = await LocationDeliveryPricingService.listByLocation(childTenantLoc.id);
-            } catch (error) {
-              console.error(`Failed to fetch delivery pricing for child location ${childTenantLoc.id}:`, error);
-              childDto.drops = [];
-            }
-
-            childDtos.push(childDto);
           }
           
           locationDto.children = childDtos;
         }
 
-        result.push(locationDto);
+        return locationDto;
+      };
+
+      // Build hierarchical result for top-level locations only (where parentId is null)
+      const result: LocationDto[] = [];
+      
+      for (const masterLoc of masterLocations) {
+        // Only process top-level locations (parentId is null)
+        if (masterLoc.parentId) {
+          continue;
+        }
+
+        const locationDto = await buildLocationDto(masterLoc);
+        if (locationDto) {
+          result.push(locationDto);
+        }
       }
 
       // Cache the result (TTL: 1 hour) - only if Redis is available

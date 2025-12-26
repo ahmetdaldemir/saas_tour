@@ -526,7 +526,7 @@
 
                   <template #item.deliveryPricing="{ item }">
                     <v-btn 
-                      v-if="!item.parentId"
+                      v-if="!item.location?.parentId"
                       color="success" 
                       variant="outlined" 
                       size="small"

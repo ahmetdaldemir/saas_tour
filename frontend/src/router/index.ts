@@ -23,6 +23,7 @@ import UsersView from '../views/UsersView.vue';
 import TransferView from '../views/TransferView.vue';
 import ChatView from '../views/ChatView.vue';
 import AdminDashboard from '../views/AdminDashboard.vue';
+import MasterLocationsView from '../views/MasterLocationsView.vue';
 import { useAuthStore } from '../stores/auth';
 
 /**
@@ -165,6 +166,12 @@ const routes: RouteRecordRaw[] = [
     path: '/app/settings',
     name: 'settings',
     component: SettingsView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/master-locations',
+    name: 'master-locations',
+    component: MasterLocationsView,
     meta: { requiresAuth: true, layout: 'admin' },
   },
   {

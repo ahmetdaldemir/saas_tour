@@ -159,6 +159,7 @@ const navigationItems = computed(() => {
   items.push({ title: 'Chat / Agency', to: '/app/chat', icon: 'mdi-chat-outline' });
 
   // Ortak menü öğeleri
+  items.push({ title: 'Master Lokasyonlar', to: '/app/master-locations', icon: 'mdi-map-marker-multiple' });
   items.push({ title: 'Kullanıcılar', to: '/app/users', icon: 'mdi-account-group-outline' });
   items.push({ title: 'Anketler', to: '/app/surveys', icon: 'mdi-clipboard-text-outline' });
   items.push({ title: 'Mail Şablonları', to: '/app/email-templates', icon: 'mdi-email-multiple-outline' });
