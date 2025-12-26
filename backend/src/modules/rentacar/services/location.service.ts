@@ -65,18 +65,7 @@ export class LocationService {
         }
       }
 
-      // Get master locations first (with parent-child structure)
-      const includeChildren = parentLocationId === undefined || parentLocationId === null || parentLocationId === '' || parentLocationId === 'null';
-      
-      const masterLocations = await MasterLocationService.list(
-        includeChildren ? null : parentLocationId
-      );
-
-      if (masterLocations.length === 0) {
-        return [];
-      }
-
-      // Get all tenant locations for this tenant
+      // Get all tenant locations for this tenant first
       const tenantLocationWhere: any = { tenantId };
       if (isActive !== undefined) {
         tenantLocationWhere.isActive = isActive;
@@ -87,11 +76,90 @@ export class LocationService {
         relations: ['location'],
       });
 
+      if (tenantLocations.length === 0) {
+        return [];
+      }
+
       // Create a map of tenant locations by locationId
       const tenantLocationMap = new Map<string, Location>();
       tenantLocations.forEach(loc => {
         tenantLocationMap.set(loc.locationId, loc);
       });
+
+      // Get all master locations that tenant has mapped (including parents and children)
+      // Since LocationService.create automatically adds parent chain, all needed locations should be in tenantLocations
+      const mappedLocationIds = Array.from(tenantLocationMap.keys());
+      
+      // Get all master locations (with full hierarchy)
+      const allMasterLocations = await MasterLocationService.list(null);
+      
+      // Helper function to find master location by ID in the hierarchy
+      const findMasterLocationById = (locations: MasterLocationDto[], id: string): MasterLocationDto | null => {
+        for (const loc of locations) {
+          if (loc.id === id) return loc;
+          if (loc.children) {
+            const found = findMasterLocationById(loc.children, id);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+
+      // Build a set of all master location IDs we need (mapped locations + their parents for hierarchy)
+      const neededMasterLocationIds = new Set<string>(mappedLocationIds);
+      
+      // For each mapped location, add its parents to the needed set
+      mappedLocationIds.forEach(locationId => {
+        const masterLoc = findMasterLocationById(allMasterLocations, locationId);
+        if (masterLoc) {
+          // Add all parents
+          let current = masterLoc;
+          while (current.parentId) {
+            neededMasterLocationIds.add(current.parentId);
+            const parent = findMasterLocationById(allMasterLocations, current.parentId);
+            if (parent) {
+              current = parent;
+            } else {
+              break;
+            }
+          }
+        }
+      });
+
+      // Filter master locations to only include needed ones and their children
+      const filterAndIncludeChildren = (locations: MasterLocationDto[]): MasterLocationDto[] => {
+        const result: MasterLocationDto[] = [];
+        
+        locations.forEach(loc => {
+          // Include if it's in the needed set
+          if (neededMasterLocationIds.has(loc.id)) {
+            const filteredLoc = {
+              ...loc,
+              children: loc.children ? filterAndIncludeChildren(loc.children) : [],
+            };
+            result.push(filteredLoc);
+          } else if (loc.children) {
+            // Check children recursively
+            const filteredChildren = filterAndIncludeChildren(loc.children);
+            if (filteredChildren.length > 0) {
+              // If any child is needed, include this parent too for hierarchy
+              neededMasterLocationIds.add(loc.id);
+              result.push({
+                ...loc,
+                children: filteredChildren,
+              });
+            }
+          }
+        });
+        
+        return result;
+      };
+
+      const masterLocations = filterAndIncludeChildren(allMasterLocations);
+
+      if (masterLocations.length === 0) {
+        return [];
+      }
 
       // Build result by combining master locations with tenant-specific data
       const result: LocationDto[] = [];
@@ -99,14 +167,8 @@ export class LocationService {
       for (const masterLoc of masterLocations) {
         const tenantLoc = tenantLocationMap.get(masterLoc.id);
         
-        // Only include locations that are mapped in tenant (if filtering by isActive, only include active ones)
-        if (!tenantLoc && isActive !== undefined && !isActive) {
-          // If we want inactive locations and this master location is not mapped, skip it
-          continue;
-        }
-        
-        // If master location is not mapped but we want all locations (isActive === undefined), we can create a default entry
-        // But typically we only show mapped locations to tenant
+        // Only show locations that are in rentacar_locations table
+        // Parent locations are automatically added by LocationService.create, so they should be in tenantLocationMap
         if (!tenantLoc) {
           continue;
         }
@@ -252,34 +314,65 @@ export class LocationService {
       throw new Error('Location already exists for this tenant');
     }
 
-    // Build parent chain (from root to the selected location)
-    // Start from the selected location's parent and go up to root
+    // Build parent chain (from root to the selected location) - going UP
     const parentChain: string[] = [];
     let currentMasterLoc = masterLocation;
     
+    console.log(`[LocationService.create] Building parent chain for location: ${masterLocation.name} (id: ${locationId})`);
+    console.log(`[LocationService.create] Initial parentId: ${masterLocation.parentId}`);
+    
     // Traverse up the parent chain to collect all parent IDs
     while (currentMasterLoc.parentId) {
+      console.log(`[LocationService.create] Found parent: ${currentMasterLoc.parentId}`);
       parentChain.push(currentMasterLoc.parentId);
       const parentMasterLoc = await MasterLocationService.getById(currentMasterLoc.parentId);
       if (!parentMasterLoc) {
+        console.log(`[LocationService.create] Parent location not found: ${currentMasterLoc.parentId}`);
         break;
       }
+      console.log(`[LocationService.create] Parent location found: ${parentMasterLoc.name} (parentId: ${parentMasterLoc.parentId})`);
       currentMasterLoc = parentMasterLoc;
     }
     
     // Reverse to get root-to-leaf order (root first, then children)
     parentChain.reverse();
+    
+    console.log(`[LocationService.create] Parent chain (${parentChain.length} parents):`, parentChain);
 
-    // Now create locations for all parent chain + the selected location
-    // Process from root to leaf (parentChain is already in correct order)
+    // Build children chain (all children of the selected location) - going DOWN
+    const childrenChain: string[] = [];
+    
+    // Recursive function to collect all children IDs (including grandchildren, etc.)
+    const collectChildren = async (parentId: string) => {
+      // Get direct children
+      const directChildren = await MasterLocationService.list(parentId);
+      for (const child of directChildren) {
+        childrenChain.push(child.id);
+        console.log(`[LocationService.create] Found child: ${child.name} (id: ${child.id})`);
+        // Recursively collect grandchildren and deeper descendants
+        await collectChildren(child.id);
+      }
+    };
+    
+    // If selected location is a top-level (parentId is null), collect all its children
+    if (!masterLocation.parentId) {
+      console.log(`[LocationService.create] Selected location is top-level, collecting all children recursively...`);
+      await collectChildren(locationId);
+      console.log(`[LocationService.create] Children chain (${childrenChain.length} total children):`, childrenChain);
+    }
+
+    // Now create locations for: parent chain + selected location + children chain
     const locationsToCreate: Array<{ locationId: string; isSelected: boolean }> = [
       ...parentChain.map(id => ({ locationId: id, isSelected: false })),
-      { locationId, isSelected: true }, // Selected location is last
+      { locationId, isSelected: true }, // Selected location
+      ...childrenChain.map(id => ({ locationId: id, isSelected: false })), // All children
     ];
+
+    console.log(`[LocationService.create] Locations to create (${locationsToCreate.length} total):`, locationsToCreate.map(l => ({ id: l.locationId, isSelected: l.isSelected })));
 
     let savedLocation: Location | null = null;
 
-    // Create all parent locations first, then the selected one
+    // Create all locations: parents first, then selected, then children
     for (const locData of locationsToCreate) {
       // Check if this location already exists for tenant
       const existing = await this.locationRepo().findOne({
@@ -287,12 +380,15 @@ export class LocationService {
       });
 
       if (existing) {
+        console.log(`[LocationService.create] Location ${locData.locationId} already exists for tenant, skipping`);
         // If it's the selected location and already exists, we already checked above
         if (locData.isSelected) {
           savedLocation = existing;
         }
-        continue; // Skip if parent already exists
+        continue; // Skip if already exists
       }
+
+      console.log(`[LocationService.create] Creating location entry: ${locData.locationId} (isSelected: ${locData.isSelected})`);
 
       // Create location entry
       const location = this.locationRepo().create({
@@ -305,10 +401,11 @@ export class LocationService {
         minDayCount: locData.isSelected ? minDayCount : undefined,
         isActive: locData.isSelected 
           ? (isActive !== undefined ? isActive : true)
-          : true, // Parents are active by default
+          : true, // Parents and children are active by default
       });
 
       const saved = await this.locationRepo().save(location);
+      console.log(`[LocationService.create] ✅ Created location entry: ${saved.id} for master location: ${locData.locationId}`);
       
       if (locData.isSelected) {
         savedLocation = saved;
@@ -515,9 +612,8 @@ export class LocationService {
       throw new Error('Location not found');
     }
 
-    // Soft delete: set isActive to false instead of removing
-    location.isActive = false;
-    await this.locationRepo().save(location);
+    // Soft delete: Use TypeORM soft remove
+    await this.locationRepo().softRemove(location);
 
     // Invalidate cache
     await this.invalidateCache(location.tenantId);

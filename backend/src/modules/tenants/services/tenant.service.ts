@@ -51,10 +51,69 @@ export class TenantService {
   }
 
   static async getTenantBySlug(slug: string): Promise<Tenant | null> {
-    return this.repository().findOne({
-      where: { slug, isActive: true },
-      relations: ['defaultCurrency'],
-    });
+    try {
+      // Ensure database connection is initialized
+      if (!AppDataSource.isInitialized) {
+        logger.warn('Database not initialized, attempting to initialize...');
+        await AppDataSource.initialize();
+      }
+
+      // First, try to get tenant with defaultCurrency relation
+      try {
+        const tenant = await this.repository().findOne({
+          where: { slug, isActive: true },
+          relations: ['defaultCurrency'],
+        });
+        
+        if (tenant) {
+          return tenant;
+        }
+      } catch (relationError) {
+        // If relation loading fails (e.g., deleted_at column missing in currencies table),
+        // fallback to loading tenant without relation and manually load currency
+        if (relationError instanceof Error && relationError.message.includes('deleted_at')) {
+          logger.warn('DefaultCurrency relation failed due to deleted_at, loading tenant without relation', {
+            slug,
+            error: relationError.message,
+          });
+          
+          const tenant = await this.repository().findOne({
+            where: { slug, isActive: true },
+          });
+          
+          // Manually load defaultCurrency if tenant has defaultCurrencyId
+          if (tenant && tenant.defaultCurrencyId) {
+            try {
+              const currencyRepo = AppDataSource.getRepository(Currency);
+              const currency = await currencyRepo.findOne({
+                where: { id: tenant.defaultCurrencyId },
+              });
+              tenant.defaultCurrency = currency || null;
+            } catch (currencyError) {
+              logger.warn('Failed to load defaultCurrency manually', {
+                currencyId: tenant.defaultCurrencyId,
+                error: currencyError instanceof Error ? currencyError.message : String(currencyError),
+              });
+              tenant.defaultCurrency = null;
+            }
+          }
+          
+          return tenant;
+        }
+        // If error is not related to deleted_at, rethrow it
+        throw relationError;
+      }
+
+      return null;
+    } catch (error) {
+      logger.error('Error getting tenant by slug', {
+        slug,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        dbInitialized: AppDataSource.isInitialized,
+      });
+      throw error;
+    }
   }
 
   static async updateTenant(

@@ -96,12 +96,18 @@ export const tenantMiddleware = async (
 
     next();
   } catch (error) {
-    logger.error('Error in tenant middleware', error);
+    logger.error('Error in tenant middleware', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      host: req.get('host'),
+      tenantSlug: extractTenantSlug(req.get('host')),
+    });
     res.status(500).json({
       success: false,
       error: {
         code: 'INTERNAL_ERROR',
         message: 'Failed to resolve tenant',
+        details: error instanceof Error ? error.message : String(error),
       },
     });
     return;
