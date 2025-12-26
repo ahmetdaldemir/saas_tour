@@ -26,6 +26,7 @@ import { VehicleBrand } from '../modules/rentacar/entities/vehicle-brand.entity'
 import { VehicleModel } from '../modules/rentacar/entities/vehicle-model.entity';
 import { VehicleImage } from '../modules/rentacar/entities/vehicle-image.entity';
 import { Location } from '../modules/rentacar/entities/location.entity';
+import { MasterLocation } from '../modules/shared/entities/master-location.entity';
 import { LocationVehiclePricing } from '../modules/rentacar/entities/location-vehicle-pricing.entity';
 import { LocationDeliveryPricing } from '../modules/rentacar/entities/location-delivery-pricing.entity';
 import { Extra } from '../modules/rentacar/entities/extra.entity';
@@ -76,6 +77,7 @@ export const AppDataSource = new DataSource({
     Reservation,
     Operation,
     Language,
+    MasterLocation,
     Tour,
     TourSession,
     TourFeature,

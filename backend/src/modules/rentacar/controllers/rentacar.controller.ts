@@ -370,4 +370,26 @@ export class RentacarController {
       res.status(400).json({ message: (error as Error).message });
     }
   }
+
+  static async reorderVehicleImages(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { vehicleId } = req.params;
+      const tenantId = req.auth?.tenantId;
+
+      if (!tenantId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      const { imageIds } = req.body;
+
+      if (!Array.isArray(imageIds)) {
+        return res.status(400).json({ message: 'imageIds must be an array' });
+      }
+
+      const images = await VehicleImageService.reorder(vehicleId, tenantId, imageIds);
+      res.json(images);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  }
 }

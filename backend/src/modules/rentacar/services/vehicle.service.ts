@@ -494,6 +494,10 @@ export class VehicleService {
           if (vehicle.category && vehicle.categoryId) {
             (vehicle.category as any).translations = translationsByCategory.get(vehicle.categoryId) || [];
           }
+          // Sort images by order field for public API
+          if (vehicle.images && vehicle.images.length > 0) {
+            vehicle.images.sort((a, b) => a.order - b.order);
+          }
         });
       }
     }

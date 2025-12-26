@@ -459,7 +459,7 @@
                   </template>
 
                   <template #item.parent="{ item }">
-                    <span>{{ item.parent?.name || '-' }}</span>
+                    <span>{{ item.location?.parent?.name || '-' }}</span>
                   </template>
 
                   <template #item.type="{ item }">
@@ -1615,39 +1615,33 @@
             <v-form ref="locationFormRef" v-model="locationFormValid">
               <v-row>
                 <v-col cols="12">
-                  <v-text-field
-                    v-model="locationForm.name"
-                    label="Lokasyon Adı"
+                  <v-select
+                    v-model="locationForm.locationId"
+                    :items="availableMasterLocations"
+                    item-title="displayName"
+                    item-value="id"
+                    label="Lokasyon Seçin"
                     prepend-inner-icon="mdi-map-marker"
                     required
-                  />
+                    :loading="loadingMasterLocations"
+                    :disabled="!!editingLocation"
+                  >
+                    <template #item="{ item, props }">
+                      <v-list-item v-bind="props">
+                        <template #prepend>
+                          <v-icon :icon="item.raw.type === 'merkez' ? 'mdi-map-marker' : 'mdi-map-marker-outline'" />
+                        </template>
+                      </v-list-item>
+                    </template>
+                  </v-select>
+                  <v-alert v-if="editingLocation" type="info" density="compact" class="mt-2">
+                    Lokasyon düzenleme sırasında değiştirilemez. Farklı bir lokasyon için yeni lokasyon oluşturun.
+                  </v-alert>
                 </v-col>
                 <v-col cols="12">
                   <v-text-field
                     v-model="locationForm.metaTitle"
                     label="Meta Title"
-                    prepend-inner-icon="mdi-tag"
-                  />
-                </v-col>
-                <v-col cols="12" md="6">
-                  <v-select
-                    v-model="locationForm.parentId"
-                    :items="availableParentLocations"
-                    item-title="name"
-                    item-value="id"
-                    label="Üst Lokasyon"
-                    prepend-inner-icon="mdi-folder"
-                    clearable
-                    :placeholder="'Üst lokasyon seçin (opsiyonel)'"
-                  />
-                </v-col>
-                <v-col cols="12" md="6">
-                  <v-select
-                    v-model="locationForm.type"
-                    :items="locationTypeOptions"
-                    item-title="label"
-                    item-value="value"
-                    label="Tipi"
                     prepend-inner-icon="mdi-tag"
                   />
                 </v-col>
@@ -1767,7 +1761,13 @@
 
               <!-- Images Grid -->
               <div v-if="vehicleImages.length > 0" class="mb-4">
-                <h3 class="text-subtitle-1 mb-3">Yüklenen Resimler ({{ vehicleImages.length }}/8)</h3>
+                <h3 class="text-subtitle-1 mb-3">
+                  Yüklenen Resimler ({{ vehicleImages.length }}/8)
+                  <v-chip size="small" color="info" variant="tonal" class="ml-2">
+                    <v-icon start size="small">mdi-drag</v-icon>
+                    Sürükle-bırak ile sıralayın
+                  </v-chip>
+                </h3>
                 <v-row>
                   <v-col
                     v-for="(image, index) in vehicleImages"
@@ -1776,7 +1776,21 @@
                     sm="6"
                     md="4"
                   >
-                    <v-card variant="outlined">
+                    <v-card
+                      variant="outlined"
+                      :class="{ 'drag-over': draggedOverIndex === index, 'dragging': draggedImageId === image.id }"
+                      class="image-card"
+                      draggable="true"
+                      @dragstart="handleDragStart($event, image.id, index)"
+                      @dragover.prevent="handleDragOver($event, index)"
+                      @dragleave="handleDragLeave($event, index)"
+                      @drop.prevent="handleDrop($event, index)"
+                      @dragend="handleDragEnd"
+                    >
+                      <div class="drag-handle">
+                        <v-icon size="small" color="grey">mdi-drag-vertical</v-icon>
+                        <span class="text-caption text-grey">#{{ index + 1 }}</span>
+                      </div>
                       <v-img
                         :src="getImageUrl(image.url)"
                         height="200"
@@ -1804,7 +1818,7 @@
                           variant="text"
                           size="small"
                           :color="image.isPrimary ? 'primary' : 'grey'"
-                          @click="setPrimaryImage(image.id)"
+                          @click.stop="setPrimaryImage(image.id)"
                           :disabled="image.isPrimary"
                         />
                         <v-btn
@@ -1812,7 +1826,7 @@
                           variant="text"
                           size="small"
                           color="error"
-                          @click="deleteVehicleImage(image.id)"
+                          @click.stop="deleteVehicleImage(image.id)"
                           :loading="deletingImageId === image.id"
                         />
                       </v-card-actions>
@@ -1954,18 +1968,32 @@ interface VehicleDto {
   lastReturnLocation?: LocationDto | null;
 }
 
-interface LocationDto {
+interface MasterLocationDto {
   id: string;
   name: string;
-  metaTitle?: string;
   parentId?: string | null;
-  parent?: LocationDto | null;
-  type?: 'merkez' | 'otel' | 'havalimani' | 'adres';
-  sort?: number;
-  deliveryFee?: number;
-  dropFee?: number;
+  parent?: MasterLocationDto | null;
+  type: 'merkez' | 'otel' | 'havalimani' | 'adres';
+  children?: MasterLocationDto[];
+}
+
+interface LocationDto {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  tenantId: string;
+  locationId: string;
+  location: MasterLocationDto;
+  name: string; // From location
+  type: 'merkez' | 'otel' | 'havalimani' | 'adres'; // From location
+  metaTitle?: string;
+  sort: number;
+  deliveryFee: number;
+  dropFee: number;
   minDayCount?: number;
-  isActive?: boolean;
+  isActive: boolean;
+  children?: LocationDto[];
+  drops?: any[];
 }
 
 const auth = useAuthStore();
@@ -1978,6 +2006,8 @@ const vehicleBrands = ref<VehicleBrandDto[]>([]);
 const vehicleModels = ref<VehicleModelDto[]>([]);
 const availableLanguages = ref<LanguageDto[]>([]);
 const locations = ref<LocationDto[]>([]);
+const masterLocations = ref<MasterLocationDto[]>([]);
+const loadingMasterLocations = ref(false);
 const vehicleReservations = ref<Array<{ vehicleId: string; plateId: string; startDate: string; endDate: string }>>([]);
 
 // UI State
@@ -2022,6 +2052,10 @@ const imageFile = ref<File | null>(null);
 const uploadingImage = ref(false);
 const loadingImages = ref(false);
 const deletingImageId = ref<string | null>(null);
+const draggedImageId = ref<string | null>(null);
+const draggedImageIndex = ref<number | null>(null);
+const draggedOverIndex = ref<number | null>(null);
+const reorderingImages = ref(false);
 const editingLocation = ref<LocationDto | null>(null);
 const selectedLocationForPricing = ref<LocationDto | null>(null);
 const selectedLocationForDeliveryPricing = ref<LocationDto | null>(null);
@@ -2115,10 +2149,8 @@ const editingModel = ref<VehicleModelDto | null>(null);
 
 // Location Form
 const locationForm = reactive({
-  name: '',
+  locationId: '' as string,
   metaTitle: '',
-  parentId: null as string | null,
-  type: 'merkez' as 'merkez' | 'otel' | 'havalimani' | 'adres',
   sort: 0,
   deliveryFee: 0,
   dropFee: 0,
@@ -2129,34 +2161,40 @@ const locationForm = reactive({
 // Default currency for location fees
 const defaultCurrency = ref<{ code: string; symbol?: string } | null>(null);
 
-// Available parent locations (excluding current location if editing)
-// Only show locations with type='merkez' as parent options
-const availableParentLocations = computed(() => {
-  if (!editingLocation.value) {
-    return locations.value
-      .filter(loc => loc.isActive && loc.type === 'merkez')
-      .map(loc => ({
+// Available master locations (flattened for selection)
+const availableMasterLocations = computed(() => {
+  const flattenMasterLocations = (locs: MasterLocationDto[]): Array<{ id: string; name: string; type: string; displayName: string }> => {
+    const result: Array<{ id: string; name: string; type: string; displayName: string }> = [];
+    
+    locs.forEach(loc => {
+      const displayName = loc.type === 'merkez' ? loc.name : `${loc.name} (${getLocationTypeLabel(loc.type)})`;
+      result.push({
         id: loc.id,
-        name: loc.name || 'Lokasyon',
-      }));
-  }
-  // Exclude current location and its children from parent selection
-  const excludeIds = new Set<string>([editingLocation.value.id]);
-  const findChildren = (parentId: string) => {
-    locations.value.forEach(loc => {
-      if (loc.parentId === parentId) {
-        excludeIds.add(loc.id);
-        findChildren(loc.id);
+        name: loc.name,
+        type: loc.type,
+        displayName,
+      });
+      
+      if (loc.children && loc.children.length > 0) {
+        const childItems = flattenMasterLocations(loc.children);
+        result.push(...childItems);
       }
     });
+    
+    return result;
   };
-  findChildren(editingLocation.value.id);
-  return locations.value
-    .filter(loc => loc.isActive && loc.type === 'merkez' && !excludeIds.has(loc.id))
-    .map(loc => ({
-      id: loc.id,
-      name: loc.name || 'Lokasyon',
-    }));
+  
+  // Filter out already mapped locations if editing
+  const mappedLocationIds = new Set(locations.value.map(loc => loc.locationId));
+  if (editingLocation.value) {
+    mappedLocationIds.delete(editingLocation.value.locationId); // Allow current location's master
+  }
+  
+  const allMasterLocs = flattenMasterLocations(masterLocations.value);
+  return allMasterLocs.filter(mloc => {
+    // Only show locations that are not already mapped (or if editing, allow current one)
+    return !mappedLocationIds.has(mloc.id) || (editingLocation.value && editingLocation.value.locationId === mloc.id);
+  });
 });
 
 const locationTypeOptions = [
@@ -2180,6 +2218,7 @@ const fuelTypeOptions = [
 ];
 
 const engineSizeOptions = [
+  '1000 cm3\'e kadar',
   '1300 cm3\'e kadar',
   '1300-1600 cm3',
   '1600-2000 cm3',
@@ -2192,7 +2231,8 @@ const bodyTypeOptions = [
   'SUV',
   'Station Wagon',
   'Coupe',
-  'Convertible',
+  'Minivan',
+  'Van',
 ];
 
 const horsepowerOptions = [
@@ -3436,6 +3476,83 @@ const getImageUrl = (url: string): string => {
   return origin + '/' + url;
 };
 
+// Drag & Drop handlers
+const handleDragStart = (event: DragEvent, imageId: string, index: number) => {
+  draggedImageId.value = imageId;
+  draggedImageIndex.value = index;
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/html', imageId);
+  }
+  (event.target as HTMLElement).style.opacity = '0.5';
+};
+
+const handleDragOver = (event: DragEvent, index: number) => {
+  event.preventDefault();
+  if (event.dataTransfer) {
+    event.dataTransfer.dropEffect = 'move';
+  }
+  if (draggedImageIndex.value !== null && draggedImageIndex.value !== index) {
+    draggedOverIndex.value = index;
+  }
+};
+
+const handleDragLeave = (event: DragEvent, index: number) => {
+  draggedOverIndex.value = null;
+};
+
+const handleDrop = async (event: DragEvent, dropIndex: number) => {
+  event.preventDefault();
+  
+  if (draggedImageIndex.value === null || draggedImageIndex.value === dropIndex || !selectedVehicleForImages.value) {
+    draggedOverIndex.value = null;
+    return;
+  }
+
+  const newImages = [...vehicleImages.value];
+  const draggedImage = newImages[draggedImageIndex.value];
+  
+  // Remove from old position
+  newImages.splice(draggedImageIndex.value, 1);
+  // Insert at new position
+  newImages.splice(dropIndex, 0, draggedImage);
+
+  // Update local state immediately for better UX
+  vehicleImages.value = newImages;
+
+  // Save to backend
+  await reorderVehicleImages(newImages.map(img => img.id));
+  
+  draggedOverIndex.value = null;
+};
+
+const handleDragEnd = (event: DragEvent) => {
+  (event.target as HTMLElement).style.opacity = '1';
+  draggedImageId.value = null;
+  draggedImageIndex.value = null;
+  draggedOverIndex.value = null;
+};
+
+const reorderVehicleImages = async (imageIds: string[]) => {
+  if (!selectedVehicleForImages.value) return;
+
+  reorderingImages.value = true;
+  try {
+    await http.post(`/rentacar/vehicles/${selectedVehicleForImages.value.id}/images/reorder`, {
+      imageIds,
+    });
+    // Reload to get updated order values
+    await loadVehicleImages(selectedVehicleForImages.value.id);
+  } catch (error: any) {
+    console.error('Failed to reorder images:', error);
+    // Revert on error
+    await loadVehicleImages(selectedVehicleForImages.value.id);
+    alert(error.response?.data?.message || 'Resim sırası güncellenirken bir hata oluştu');
+  } finally {
+    reorderingImages.value = false;
+  }
+};
+
 watch(
   () => {
     const defaultLangId = categoryDefaultLanguageId.value;
@@ -3482,9 +3599,10 @@ const getLocationName = (location: LocationDto): string => {
 const displayedLocations = computed(() => {
   const result: Array<LocationDto & { isChild?: boolean }> = [];
   
-  // Sadece merkez tipindeki lokasyonları al ve sırala
+  // Sadece parent olmayan (top-level) merkez tipindeki lokasyonları al ve sırala
+  // Parent-child ilişkisi artık location.parentId ve location.children üzerinden yapılıyor
   const merkezLocations = locations.value
-    .filter(loc => loc.type === 'merkez')
+    .filter(loc => loc.type === 'merkez' && (!loc.location?.parentId))
     .sort((a, b) => (a.sort || 0) - (b.sort || 0));
   
   merkezLocations.forEach(merkez => {
@@ -3493,8 +3611,10 @@ const displayedLocations = computed(() => {
     
     // Eğer merkez expand edilmişse, alt lokasyonlarını ekle
     if (expandedLocations.value.has(merkez.id)) {
+      // Children'ları location.children üzerinden bul
+      const childMasterLocationIds = merkez.location?.children?.map(c => c.id) || [];
       const childLocations = locations.value
-        .filter(loc => loc.parentId === merkez.id)
+        .filter(loc => childMasterLocationIds.includes(loc.locationId))
         .sort((a, b) => (a.sort || 0) - (b.sort || 0));
       
       childLocations.forEach(child => {
@@ -3514,6 +3634,20 @@ const toggleLocationExpansion = (locationId: string) => {
   }
 };
 
+const loadMasterLocations = async () => {
+  loadingMasterLocations.value = true;
+  try {
+    const { data } = await http.get<MasterLocationDto[]>('/master-locations', {
+      params: { parentId: null }
+    });
+    masterLocations.value = data;
+  } catch (error) {
+    console.error('Failed to load master locations:', error);
+  } finally {
+    loadingMasterLocations.value = false;
+  }
+};
+
 const loadLocations = async () => {
   if (!auth.tenant) return;
   loadingLocations.value = true;
@@ -3521,7 +3655,29 @@ const loadLocations = async () => {
     const { data } = await http.get<LocationDto[]>('/rentacar/locations', {
       params: { tenantId: auth.tenant.id },
     });
-    locations.value = data;
+    
+    // Flatten nested children structure into a flat array for display
+    const flattenLocations = (locs: LocationDto[]): LocationDto[] => {
+      const flatList: LocationDto[] = [];
+      
+      locs.forEach(loc => {
+        // Extract children before adding to flat list
+        const { children, ...locationWithoutChildren } = loc;
+        
+        // Add parent location (without children property)
+        flatList.push(locationWithoutChildren);
+        
+        // Recursively add children if they exist
+        if (children && children.length > 0) {
+          const flattenedChildren = flattenLocations(children);
+          flatList.push(...flattenedChildren);
+        }
+      });
+      
+      return flatList;
+    };
+    
+    locations.value = flattenLocations(data);
   } catch (error) {
     console.error('Failed to load locations:', error);
   } finally {
@@ -3541,10 +3697,8 @@ const closeLocationDialog = () => {
 };
 
 const resetLocationForm = () => {
-  locationForm.name = '';
+  locationForm.locationId = '';
   locationForm.metaTitle = '';
-  locationForm.parentId = null;
-  locationForm.type = 'merkez';
   locationForm.sort = 0;
   locationForm.deliveryFee = 0;
   locationForm.dropFee = 0;
@@ -3558,32 +3712,17 @@ const saveLocation = async () => {
   const validated = await locationFormRef.value?.validate();
   if (!validated?.valid) return;
   
-  if (!locationForm.name) {
-    alert('Lokasyon adı gerekli');
+  if (!locationForm.locationId) {
+    alert('Lokasyon seçimi zorunludur');
     return;
-  }
-  
-  // Check if location with same name and type already exists (only for new locations)
-  if (!editingLocation.value) {
-    const existingLocation = locations.value.find(
-      loc => loc.name.toLowerCase().trim() === locationForm.name.toLowerCase().trim() 
-        && loc.type === locationForm.type
-    );
-    
-    if (existingLocation) {
-      alert(`Aynı isim (${locationForm.name}) ve tip (${getLocationTypeLabel(locationForm.type)}) ile bir lokasyon zaten mevcut.`);
-      return;
-    }
   }
   
   savingLocation.value = true;
   try {
     const locationData = {
       tenantId: auth.tenant.id,
-      name: locationForm.name,
+      locationId: locationForm.locationId,
       metaTitle: locationForm.metaTitle || undefined,
-      parentId: locationForm.parentId || null,
-      type: locationForm.type,
       sort: locationForm.sort || 0,
       deliveryFee: locationForm.deliveryFee || 0,
       dropFee: locationForm.dropFee || 0,
@@ -3609,10 +3748,8 @@ const saveLocation = async () => {
 const editLocation = (location: LocationDto) => {
   editingLocation.value = location;
   
-  locationForm.name = location.name || '';
+  locationForm.locationId = location.locationId;
   locationForm.metaTitle = location.metaTitle || '';
-  locationForm.parentId = location.parentId || null;
-  locationForm.type = location.type || 'merkez';
   locationForm.sort = location.sort || 0;
   locationForm.deliveryFee = location.deliveryFee || 0;
   locationForm.dropFee = location.dropFee || 0;
@@ -4044,6 +4181,7 @@ onMounted(async () => {
       loadVehicleBrands(),
       loadVehicleModels(), // Tüm modelleri yükle (marka filtresi olmadan)
       loadVehicles(),
+      loadMasterLocations(), // Load master locations first
       loadLocations(),
       loadDefaultCurrency(), // Load default currency for location fee icons
     ]);
@@ -4151,5 +4289,41 @@ const loadDefaultCurrency = async () => {
 .location-table :deep(.v-btn) {
   font-size: 0.75rem;
   letter-spacing: 0.5px;
+}
+
+/* Drag & Drop Styles */
+.image-card {
+  position: relative;
+  cursor: move;
+  transition: all 0.2s ease;
+}
+
+.image-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.image-card.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.image-card.drag-over {
+  border: 2px dashed rgb(var(--v-theme-primary));
+  background-color: rgba(var(--v-theme-primary), 0.1);
+}
+
+.drag-handle {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  backdrop-filter: blur(4px);
 }
 </style>

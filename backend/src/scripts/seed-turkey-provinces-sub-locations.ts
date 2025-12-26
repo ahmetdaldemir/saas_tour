@@ -1,13 +1,12 @@
 import 'reflect-metadata';
 import { AppDataSource } from '../config/data-source';
-import { Tenant } from '../modules/tenants/entities/tenant.entity';
-import { LocationService } from '../modules/rentacar/services/location.service';
-import { LocationType } from '../modules/rentacar/entities/location.entity';
+import { MasterLocationType } from '../modules/shared/entities/master-location.entity';
+import { MasterLocationService } from '../modules/shared/services/master-location.service';
 
 /**
- * Türkiye'deki tüm illerin alt bölgelerini ekler
+ * Türkiye'deki tüm illerin alt bölgelerini ekler (sadece master locations tablosuna)
  * Her il için: "{İl Adı} Otel", "{İl Adı} Havalimanı", "{İl Adı} Merkez"
- * Tüm tenant'lar için eklenir
+ * Sadece locations (master) tablosuna eklenir, tenant mapping yapılmaz
  * Kullanım: npm run seed:province-sub-locations
  */
 
@@ -16,94 +15,61 @@ async function seedTurkeyProvinceSubLocations() {
     await AppDataSource.initialize();
     console.log('✅ Database connected');
 
-    const tenantRepo = AppDataSource.getRepository(Tenant);
-    const tenants = await tenantRepo.find();
+    // Get all top-level master locations (provinces)
+    const allMasterLocations = await MasterLocationService.list(null);
+    const provinces = allMasterLocations.filter((loc) => !loc.parentId);
 
-    if (tenants.length === 0) {
-      console.log('⚠️  No tenants found. Please create at least one tenant first.');
+    if (provinces.length === 0) {
+      console.log(`  ⚠️  No provinces found. Please run seed:provinces first.`);
       await AppDataSource.destroy();
       return;
     }
 
-    console.log(`📋 Found ${tenants.length} tenant(s). Adding sub-locations for all provinces...\n`);
+    console.log(`  📍 Found ${provinces.length} provinces\n`);
 
-    let totalSubLocationsCreated = 0;
-    let totalSubLocationsSkipped = 0;
+    let subLocationsCreated = 0;
+    let subLocationsSkipped = 0;
 
-    for (const tenant of tenants) {
-      console.log(`\n🏢 Processing tenant: ${tenant.name} (${tenant.slug})`);
+    for (const province of provinces) {
+      const subLocationTypes = [
+        { name: `${province.name} Otel`, type: MasterLocationType.OTEL },
+        { name: `${province.name} Havalimanı`, type: MasterLocationType.HAVALIMANI },
+        { name: `${province.name} Merkez`, type: MasterLocationType.MERKEZ },
+      ];
 
-      // Get all top-level locations (provinces) for this tenant
-      const allLocations = await LocationService.list(tenant.id);
-      const provinces = allLocations.filter((loc) => loc.parentId === null);
-
-      if (provinces.length === 0) {
-        console.log(`  ⚠️  No provinces found for this tenant. Please run seed:provinces first.`);
-        continue;
-      }
-
-      console.log(`  📍 Found ${provinces.length} provinces`);
-
-      let subLocationsCreated = 0;
-      let subLocationsSkipped = 0;
-
-      for (const province of provinces) {
-        const subLocationTypes = [
-          { name: `${province.name} Otel`, type: LocationType.OTEL, sort: 1 },
-          { name: `${province.name} Havalimanı`, type: LocationType.HAVALIMANI, sort: 2 },
-          { name: `${province.name} Merkez`, type: LocationType.MERKEZ, sort: 3 },
-        ];
-
-        for (const subLocation of subLocationTypes) {
-          try {
-            // Check if sub-location already exists
-            const existingLocations = await LocationService.list(tenant.id);
-            const exists = existingLocations.some(
-              (loc) =>
-                loc.name === subLocation.name &&
-                loc.parentId === province.id &&
-                loc.type === subLocation.type
-            );
-
-            if (exists) {
-              subLocationsSkipped++;
-              console.log(`    ⏭️  ${subLocation.name} already exists`);
-              continue;
-            }
-
-            // Create sub-location
-            await LocationService.create({
-              tenantId: tenant.id,
-              name: subLocation.name,
-              metaTitle: `${subLocation.name} Araç Kiralama`,
-              parentId: province.id, // Parent is the province
-              type: subLocation.type,
-              sort: subLocation.sort,
-              deliveryFee: 0,
-              dropFee: 0,
-              isActive: true,
-            });
-
-            subLocationsCreated++;
-            console.log(`    ✅ Created: ${subLocation.name} (${subLocation.type})`);
-          } catch (error: any) {
-            console.error(`    ❌ Error creating ${subLocation.name}:`, error.message);
-            // Continue with next sub-location even if one fails
+      for (const subLocation of subLocationTypes) {
+        try {
+          // Check if master sub-location already exists
+          const existingMasterLocations = await MasterLocationService.list(province.id);
+          const existingSubLocation = existingMasterLocations.find(ml => ml.name === subLocation.name);
+          
+          if (existingSubLocation) {
+            subLocationsSkipped++;
+            console.log(`    ⏭️  ${subLocation.name} already exists`);
+            continue;
           }
+
+          // Create master sub-location (sadece locations tablosuna)
+          await MasterLocationService.create({
+            name: subLocation.name,
+            parentId: province.id,
+            type: subLocation.type,
+          });
+
+          subLocationsCreated++;
+          console.log(`    ✅ Created master sub-location: ${subLocation.name} (${subLocation.type})`);
+        } catch (error: any) {
+          console.error(`    ❌ Error creating ${subLocation.name}:`, error.message);
+          // Continue with next sub-location even if one fails
         }
       }
-
-      console.log(`\n  📊 Tenant summary: ${subLocationsCreated} created, ${subLocationsSkipped} skipped`);
-      totalSubLocationsCreated += subLocationsCreated;
-      totalSubLocationsSkipped += subLocationsSkipped;
     }
 
     console.log('\n' + '='.repeat(60));
     console.log('📊 Overall Summary:');
-    console.log(`   Tenants processed: ${tenants.length}`);
-    console.log(`   Total sub-locations created: ${totalSubLocationsCreated}`);
-    console.log(`   Total sub-locations skipped: ${totalSubLocationsSkipped}`);
-    console.log(`   Expected: ~${tenants.length * 81 * 3} sub-locations (81 provinces × 3 types per tenant)`);
+    console.log(`   Total sub-locations created: ${subLocationsCreated}`);
+    console.log(`   Total sub-locations skipped: ${subLocationsSkipped}`);
+    console.log(`   Expected: ~${81 * 3} sub-locations (81 provinces × 3 types)`);
     console.log('='.repeat(60));
     console.log('\n✅ Turkey province sub-locations seeding completed!');
 

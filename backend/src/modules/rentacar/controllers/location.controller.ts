@@ -7,8 +7,7 @@ export class LocationController {
     try {
       // Get tenantId from query parameter (no authentication required)
       const tenantId = req.query.tenantId as string | undefined;
-      const parentId = req.query.parentId as string | undefined;
-      const languageId = req.query.languageId as string | undefined;
+      const parentLocationId = req.query.parentLocationId as string | undefined;
       const isActiveParam = req.query.isActive as string | undefined;
 
       if (!tenantId) {
@@ -21,7 +20,7 @@ export class LocationController {
         isActive = isActiveParam === 'true' || isActiveParam === '1';
       }
 
-      const locations = await LocationService.list(tenantId, parentId, languageId, isActive);
+      const locations = await LocationService.list(tenantId, parentLocationId, isActive);
       res.json(locations);
     } catch (error) {
       res.status(500).json({ message: (error as Error).message });

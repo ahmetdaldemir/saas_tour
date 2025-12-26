@@ -45,16 +45,18 @@ export class LocationDeliveryPricingService {
   static async listByLocation(locationId: string): Promise<LocationDeliveryPricingDto[]> {
     const pricings = await this.pricingRepo().find({
       where: { locationId },
-      relations: ['deliveryLocation'],
+      relations: ['deliveryLocation', 'deliveryLocation.location'],
       order: { createdAt: 'ASC' },
     });
 
     return pricings.map((p) => {
+      // Get master location name from deliveryLocation's location relation
+      const deliveryLocationName = p.deliveryLocation.location?.name || '';
       return {
         id: p.id,
         locationId: p.locationId,
         deliveryLocationId: p.deliveryLocationId,
-        deliveryLocationName: p.deliveryLocation.name || '',
+        deliveryLocationName,
         distance: Number(p.distance),
         fee: Number(p.fee),
         isActive: p.isActive,
