@@ -646,17 +646,54 @@ export class VehicleService {
 
     // Get locations with master location relations
     const locationRepo = AppDataSource.getRepository(Location);
+    
+    // Check if locations exist (with more detailed error messages)
     const pickupLocation = await locationRepo.findOne({
-      where: { id: pickupLocationId, tenantId },
+      where: { id: pickupLocationId, tenantId, isActive: true },
       relations: ['location', 'location.parent'],
     });
+    
+    if (!pickupLocation) {
+      // Check if location exists but is inactive or belongs to different tenant
+      const pickupLocationCheck = await locationRepo.findOne({
+        where: { id: pickupLocationId },
+        withDeleted: true, // Include soft-deleted to check
+      });
+      
+      if (!pickupLocationCheck) {
+        throw new Error(`Pickup location not found (id: ${pickupLocationId})`);
+      } else if (pickupLocationCheck.tenantId !== tenantId) {
+        throw new Error(`Pickup location belongs to different tenant (location tenantId: ${pickupLocationCheck.tenantId}, requested tenantId: ${tenantId})`);
+      } else if (!pickupLocationCheck.isActive) {
+        throw new Error(`Pickup location is inactive (id: ${pickupLocationId})`);
+      } else if (pickupLocationCheck.deletedAt) {
+        throw new Error(`Pickup location is deleted (id: ${pickupLocationId})`);
+      }
+      throw new Error(`Pickup location not found (id: ${pickupLocationId}, tenantId: ${tenantId})`);
+    }
+    
     const dropoffLocation = await locationRepo.findOne({
-      where: { id: dropoffLocationId, tenantId },
+      where: { id: dropoffLocationId, tenantId, isActive: true },
       relations: ['location', 'location.parent'],
     });
-
-    if (!pickupLocation || !dropoffLocation) {
-      throw new Error('Pickup or dropoff location not found');
+    
+    if (!dropoffLocation) {
+      // Check if location exists but is inactive or belongs to different tenant
+      const dropoffLocationCheck = await locationRepo.findOne({
+        where: { id: dropoffLocationId },
+        withDeleted: true, // Include soft-deleted to check
+      });
+      
+      if (!dropoffLocationCheck) {
+        throw new Error(`Dropoff location not found (id: ${dropoffLocationId})`);
+      } else if (dropoffLocationCheck.tenantId !== tenantId) {
+        throw new Error(`Dropoff location belongs to different tenant (location tenantId: ${dropoffLocationCheck.tenantId}, requested tenantId: ${tenantId})`);
+      } else if (!dropoffLocationCheck.isActive) {
+        throw new Error(`Dropoff location is inactive (id: ${dropoffLocationId})`);
+      } else if (dropoffLocationCheck.deletedAt) {
+        throw new Error(`Dropoff location is deleted (id: ${dropoffLocationId})`);
+      }
+      throw new Error(`Dropoff location not found (id: ${dropoffLocationId}, tenantId: ${tenantId})`);
     }
 
     // Calculate rental days
