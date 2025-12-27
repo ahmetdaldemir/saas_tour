@@ -40,7 +40,7 @@ export const createApp = (): Express => {
   // Serve uploads directory as static files (BEFORE tenantMiddleware - public access)
   app.use('/uploads', express.static(uploadsDir, {
     index: false, // Don't serve directory listings
-    fallthrough: false, // Don't fall through to next middleware if file not found
+    fallthrough: true, // Allow fall through to next middleware if file not found (will hit 404 handler)
     dotfiles: 'ignore', // Ignore dotfiles
   }));
   logger.info(`Serving static files from: ${uploadsDir}`);

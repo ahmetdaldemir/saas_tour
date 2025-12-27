@@ -479,13 +479,33 @@ const formatTime = (date: string | Date) => {
 const connectSocket = () => {
   if (!auth.token || !auth.tenant) return;
 
-  const socketUrl = import.meta.env.VITE_WS_URL || 'http://localhost:4001';
+  // Determine WebSocket URL based on environment
+  let socketUrl: string;
+  if (import.meta.env.VITE_WS_URL) {
+    socketUrl = import.meta.env.VITE_WS_URL;
+  } else if (import.meta.env.MODE === 'development') {
+    // Development: use localhost
+    socketUrl = 'http://localhost:4001';
+  } else {
+    // Production: use current host with same subdomain or api.saastour360.com
+    const host = window.location.host;
+    if (host.includes('saastour360.com')) {
+      // Use wss://api.saastour360.com for WebSocket in production
+      socketUrl = window.location.protocol === 'https:' 
+        ? 'wss://api.saastour360.com'
+        : 'ws://api.saastour360.com';
+    } else {
+      // Fallback to current host
+      socketUrl = window.location.origin;
+    }
+  }
   
   socket = io(socketUrl, {
     auth: {
       token: auth.token,
     },
     transports: ['websocket', 'polling'],
+    path: '/socket.io/',
   });
 
   socket.on('connect', () => {
