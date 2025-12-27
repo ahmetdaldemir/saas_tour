@@ -53,6 +53,45 @@ export class RentacarController {
     res.json(vehiclesWithBrandModel);
   });
 
+  static searchVehicles = asyncHandler(async (req: Request, res: Response) => {
+    const {
+      tenantId,
+      languageId,
+      pickupLocationId,
+      dropoffLocationId,
+      pickupDate,
+      dropoffDate,
+      pickupTime,
+      dropoffTime,
+      currencyId,
+    } = req.query;
+
+    // Validate required parameters
+    if (!tenantId || !pickupLocationId || !dropoffLocationId || !pickupDate || !dropoffDate) {
+      return res.status(400).json({
+        message: 'Missing required parameters: tenantId, pickupLocationId, dropoffLocationId, pickupDate, dropoffDate are required',
+      });
+    }
+
+    try {
+      const result = await VehicleService.searchVehicles({
+        tenantId: tenantId as string,
+        languageId: languageId as string | undefined,
+        pickupLocationId: pickupLocationId as string,
+        dropoffLocationId: dropoffLocationId as string,
+        pickupDate: pickupDate as string,
+        dropoffDate: dropoffDate as string,
+        pickupTime: pickupTime as string | undefined,
+        dropoffTime: dropoffTime as string | undefined,
+        currencyId: currencyId as string | undefined,
+      });
+
+      res.json(result);
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  });
+
   static async createVehicle(req: AuthenticatedRequest, res: Response) {
     try {
       // Get tenantId from authenticated user's token (security: prevent tenant spoofing)

@@ -209,7 +209,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { http } from '../modules/http';
 import { io, Socket } from 'socket.io-client';
@@ -247,14 +247,15 @@ const filteredRooms = computed(() => {
 });
 
 const embedCode = computed(() => {
-  if (!widgetToken.value) {
-    return '<script\n  src="https://chat.saastour360.com/widget.js"\n  data-tenant="TENANT_ID"\n  data-key="PUBLIC_KEY">\n<' + '/script>';
-  }
+  // Eğer token yoksa, auth.tenant'dan tenantId'yi al
+  const tenantId = widgetToken.value?.tenantId || auth.tenant?.id || 'TENANT_ID';
+  const publicKey = widgetToken.value?.publicKey || 'PUBLIC_KEY';
+  
   return `<script
   src="https://chat.saastour360.com/widget.js"
-  data-tenant="${widgetToken.value.tenantId}"
-  data-key="${widgetToken.value.publicKey}">
-<` + `/script>`;
+  data-tenant="${tenantId}"
+  data-key="${publicKey}">
+</script>`;
 });
 
 const loadRooms = async () => {
@@ -383,17 +384,25 @@ const regenerateToken = async () => {
 };
 
 const copyEmbedCode = () => {
-  const scriptTag = '<' + 'script';
-  const scriptClose = '<' + '/' + 'script>';
-  const code = scriptTag + `
+  const tenantId = widgetToken.value?.tenantId || auth.tenant?.id || 'TENANT_ID';
+  const publicKey = widgetToken.value?.publicKey || 'PUBLIC_KEY';
+  
+  const code = `<script
   src="https://chat.saastour360.com/widget.js"
-  data-tenant="${widgetToken.value?.tenantId}"
-  data-key="${widgetToken.value?.publicKey}">
-` + scriptClose;
+  data-tenant="${tenantId}"
+  data-key="${publicKey}">
+</script>`;
   
   navigator.clipboard.writeText(code);
   // Show snackbar or toast
 };
+
+// Dialog açıldığında token yoksa otomatik yükle
+watch(showTokenDialog, async (isOpen) => {
+  if (isOpen && !widgetToken.value) {
+    await loadWidgetToken();
+  }
+});
 
 const getStatusColor = (status: string) => {
   const colors: Record<string, string> = {

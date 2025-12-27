@@ -10,10 +10,13 @@ const router = Router();
 
 // Public endpoint - no authentication required, tenantId from query parameter
 router.get('/vehicles', RentacarController.listVehicles);
-router.get('/vehicles/:id', (req, res, next) => RentacarController.getVehicle(req as AuthenticatedRequest, res).catch(next));
+// IMPORTANT: /vehicles/search must be before /vehicles/:id to avoid route matching conflict
+router.get('/vehicles/search', RentacarController.searchVehicles);
 
 // Protected endpoints - authentication and authorization required
 router.use(authenticate);
+// Get single vehicle (requires authentication)
+router.get('/vehicles/:id', (req, res, next) => RentacarController.getVehicle(req as AuthenticatedRequest, res).catch(next));
 router.post('/vehicles', authorize(Permission.VEHICLE_CREATE), RentacarController.createVehicle);
 router.put('/vehicles/:id', authorize(Permission.VEHICLE_UPDATE), (req, res, next) => RentacarController.updateVehicle(req as AuthenticatedRequest, res).catch(next));
 router.patch('/vehicles/:id', authorize(Permission.VEHICLE_UPDATE), (req, res, next) => RentacarController.updateVehicle(req as AuthenticatedRequest, res).catch(next));

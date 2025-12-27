@@ -1,6 +1,7 @@
 import { Repository } from 'typeorm';
 import { AppDataSource } from '../../../config/data-source';
 import { ChatWidgetToken } from '../entities/chat-widget-token.entity';
+import { Tenant } from '../../tenants/entities/tenant.entity';
 import crypto from 'crypto';
 
 export class ChatWidgetTokenService {
@@ -22,14 +23,23 @@ export class ChatWidgetTokenService {
    */
   static async getOrCreateForTenant(tenantId: string): Promise<ChatWidgetToken> {
     const repo = this.tokenRepo();
+    const tenantRepo = AppDataSource.getRepository(Tenant);
     
     let token = await repo.findOne({
       where: { tenantId, isActive: true },
+      relations: ['tenant'],
     });
 
     if (!token) {
+      // Load tenant to set relation
+      const tenant = await tenantRepo.findOne({ where: { id: tenantId } });
+      if (!tenant) {
+        throw new Error(`Tenant with id ${tenantId} not found`);
+      }
+
       const { publicKey, secretKey } = this.generateKeys();
       token = repo.create({
+        tenant,
         tenantId,
         publicKey,
         secretKey,
@@ -84,6 +94,7 @@ export class ChatWidgetTokenService {
    */
   static async regenerateToken(tenantId: string): Promise<ChatWidgetToken> {
     const repo = this.tokenRepo();
+    const tenantRepo = AppDataSource.getRepository(Tenant);
     
     // Deactivate old token
     const oldToken = await repo.findOne({
@@ -95,9 +106,16 @@ export class ChatWidgetTokenService {
       await repo.save(oldToken);
     }
 
+    // Load tenant to set relation
+    const tenant = await tenantRepo.findOne({ where: { id: tenantId } });
+    if (!tenant) {
+      throw new Error(`Tenant with id ${tenantId} not found`);
+    }
+
     // Create new token
     const { publicKey, secretKey } = this.generateKeys();
     const newToken = repo.create({
+      tenant,
       tenantId,
       publicKey,
       secretKey,

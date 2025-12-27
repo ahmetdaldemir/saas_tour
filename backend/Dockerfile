@@ -21,5 +21,7 @@ COPY --from=builder /app/dist ./dist
 # Script'lerin container içinden npm run ile çalıştırılabilmesi için src'yi de kopyala
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
+# Public klasörünü kopyala (widget.js için)
+COPY public ./public
 EXPOSE 3000
 CMD ["node", "dist/server.js"]

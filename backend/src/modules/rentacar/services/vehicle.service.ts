@@ -11,6 +11,12 @@ import { Location } from '../entities/location.entity';
 import { Tenant, TenantCategory } from '../../tenants/entities/tenant.entity';
 import { Reservation, ReservationStatus, ReservationType } from '../../shared/entities/reservation.entity';
 import { Translation } from '../../shared/entities/translation.entity';
+import { LocationVehiclePricing, DayRange } from '../entities/location-vehicle-pricing.entity';
+import { LocationPricingService } from './location-pricing.service';
+import { CurrencyService } from '../../shared/services/currency.service';
+import { Currency } from '../../shared/entities/currency.entity';
+import { ExtraService } from './extra.service';
+import { Extra } from '../entities/extra.entity';
 
 export type CreateVehicleInput = {
   tenantId: string;
@@ -528,5 +534,359 @@ export class VehicleService {
     }
 
     return this.vehicleRepo().save(vehicle);
+  }
+
+  /**
+   * Helper function to get day range based on number of days
+   */
+  private static getDayRange(days: number): DayRange {
+    if (days >= 1 && days <= 3) return DayRange.RANGE_1_3;
+    if (days >= 4 && days <= 6) return DayRange.RANGE_4_6;
+    if (days >= 7 && days <= 10) return DayRange.RANGE_7_10;
+    if (days >= 11 && days <= 13) return DayRange.RANGE_11_13;
+    if (days >= 14 && days <= 20) return DayRange.RANGE_14_20;
+    if (days >= 21 && days <= 29) return DayRange.RANGE_21_29;
+    if (days >= 30) return DayRange.RANGE_30_PLUS;
+    return DayRange.RANGE_1_3; // Default
+  }
+
+  /**
+   * Helper function to convert currency
+   * Converts price from source currency to target currency via TRY
+   */
+  private static async convertCurrency(
+    price: number,
+    sourceCurrencyCode: string,
+    targetCurrencyId: string
+  ): Promise<number> {
+    if (sourceCurrencyCode === targetCurrencyId) return price;
+
+    const currencyRepo = AppDataSource.getRepository(Currency);
+    const sourceCurrency = await CurrencyService.getByCode(sourceCurrencyCode as any);
+    const targetCurrency = await currencyRepo.findOne({ where: { id: targetCurrencyId } });
+
+    if (!sourceCurrency || !targetCurrency) {
+      return price; // Return original price if currencies not found
+    }
+
+    // Convert: sourceCurrency -> TRY -> targetCurrency
+    const priceInTry = sourceCurrency.isBaseCurrency 
+      ? price 
+      : price * Number(sourceCurrency.rateToTry);
+    
+    const convertedPrice = targetCurrency.isBaseCurrency
+      ? priceInTry
+      : priceInTry / Number(targetCurrency.rateToTry);
+
+    return Number(convertedPrice.toFixed(2));
+  }
+
+  /**
+   * Search vehicles with pricing calculation
+   * Public endpoint for site users to search available vehicles
+   */
+  static async searchVehicles(params: {
+    tenantId: string;
+    languageId?: string;
+    pickupLocationId: string;
+    dropoffLocationId: string;
+    pickupDate: string; // YYYY-MM-DD
+    dropoffDate: string; // YYYY-MM-DD
+    pickupTime?: string; // HH:mm
+    dropoffTime?: string; // HH:mm
+    currencyId?: string;
+  }): Promise<{
+    vehicles: Array<{
+      id: string;
+      name: string;
+      category?: any;
+      brand?: any;
+      model?: any;
+      year?: number;
+      transmission: string;
+      fuelType: string;
+      seats: number;
+      luggage: number;
+      doors: number;
+      description?: string;
+      images?: Array<{ id: string; url: string; alt?: string; isPrimary: boolean; order: number }>;
+      dailyPrice: number;
+      totalPrice: number;
+      rentalDays: number;
+      deliveryFee: number;
+      dropFee: number;
+      currencyCode: string;
+    }>;
+    extras: Array<{
+      id: string;
+      name: string;
+      price: number;
+      currencyCode: string;
+      isMandatory: boolean;
+      salesType: string;
+      description?: string;
+      imageUrl?: string;
+    }>;
+  }> {
+    const {
+      tenantId,
+      pickupLocationId,
+      dropoffLocationId,
+      pickupDate,
+      dropoffDate,
+      currencyId,
+    } = params;
+
+    // Validate tenant
+    const tenantRepo = AppDataSource.getRepository(Tenant);
+    const tenant = await tenantRepo.findOne({ where: { id: tenantId } });
+    if (!tenant || tenant.category !== TenantCategory.RENTACAR) {
+      throw new Error('Invalid tenant or tenant is not a rentacar');
+    }
+
+    // Get locations with master location relations
+    const locationRepo = AppDataSource.getRepository(Location);
+    const pickupLocation = await locationRepo.findOne({
+      where: { id: pickupLocationId, tenantId },
+      relations: ['location', 'location.parent'],
+    });
+    const dropoffLocation = await locationRepo.findOne({
+      where: { id: dropoffLocationId, tenantId },
+      relations: ['location', 'location.parent'],
+    });
+
+    if (!pickupLocation || !dropoffLocation) {
+      throw new Error('Pickup or dropoff location not found');
+    }
+
+    // Calculate rental days
+    const pickup = new Date(pickupDate);
+    const dropoff = new Date(dropoffDate);
+    const diffTime = Math.abs(dropoff.getTime() - pickup.getTime());
+    const rentalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (rentalDays < 1) {
+      throw new Error('Dropoff date must be after pickup date');
+    }
+
+    // Get pickup month (1-12)
+    const pickupMonth = pickup.getMonth() + 1;
+    const dayRange = this.getDayRange(rentalDays);
+
+    // Get all active vehicles for tenant
+    const vehicles = await this.vehicleRepo().find({
+      where: { tenantId, isActive: true },
+      relations: ['category', 'brand', 'model', 'images'],
+      order: { order: 'ASC', name: 'ASC' },
+    });
+
+    // Load translations for categories if needed
+    const categoryIds = vehicles
+      .map(v => v.categoryId)
+      .filter((id): id is string => id !== null && id !== undefined);
+    
+    let categoryTranslationsMap = new Map<string, Translation[]>();
+    if (categoryIds.length > 0 && params.languageId) {
+      const translationRepo = AppDataSource.getRepository(Translation);
+      const translations = await translationRepo.find({
+        where: {
+          model: 'VehicleCategory',
+          modelId: In(categoryIds),
+          languageId: params.languageId,
+        },
+      });
+      
+      translations.forEach(t => {
+        if (!categoryTranslationsMap.has(t.modelId)) {
+          categoryTranslationsMap.set(t.modelId, []);
+        }
+        categoryTranslationsMap.get(t.modelId)!.push(t);
+      });
+    }
+
+    // Get default currency or specified currency
+    const currencyRepo = AppDataSource.getRepository(Currency);
+    let targetCurrency;
+    if (currencyId) {
+      targetCurrency = await currencyRepo.findOne({ where: { id: currencyId, isActive: true } });
+    }
+    if (!targetCurrency) {
+      // Get default currency (base currency or first active)
+      targetCurrency = await currencyRepo.findOne({
+        where: { isBaseCurrency: true, isActive: true },
+      }) || await currencyRepo.findOne({ where: { isActive: true }, order: { code: 'ASC' } });
+    }
+    if (!targetCurrency) {
+      throw new Error('No active currency found');
+    }
+
+    // Get location pricing for all vehicles
+    const pricingRepo = AppDataSource.getRepository(LocationVehiclePricing);
+    const pricings = await pricingRepo.find({
+      where: {
+        locationId: pickupLocationId,
+        month: pickupMonth,
+        dayRange,
+        isActive: true,
+      },
+    });
+
+    // Create pricing map
+    const pricingMap = new Map<string, LocationVehiclePricing>();
+    pricings.forEach(p => pricingMap.set(p.vehicleId, p));
+
+    // Get delivery and drop fees
+    // If master location has parent, find parent's rentacar_locations mapping and use its fees
+    let deliveryFee = Number(pickupLocation.deliveryFee || 0);
+    let dropFee = Number(dropoffLocation.dropFee || 0);
+    
+    // If pickup master location has parent, use parent's delivery fee
+    if (pickupLocation.location?.parentId) {
+      const parentPickupLocation = await locationRepo.findOne({
+        where: {
+          locationId: pickupLocation.location.parentId,
+          tenantId,
+        },
+      });
+      if (parentPickupLocation) {
+        deliveryFee = Number(parentPickupLocation.deliveryFee || 0);
+      }
+    }
+    
+    // If dropoff master location has parent, use parent's drop fee
+    if (dropoffLocation.location?.parentId) {
+      const parentDropoffLocation = await locationRepo.findOne({
+        where: {
+          locationId: dropoffLocation.location.parentId,
+          tenantId,
+        },
+      });
+      if (parentDropoffLocation) {
+        dropFee = Number(parentDropoffLocation.dropFee || 0);
+      }
+    }
+    
+    // If pickup and dropoff are same, drop fee is 0
+    if (pickupLocationId === dropoffLocationId) {
+      dropFee = 0;
+    }
+
+    // Process vehicles with pricing
+    const vehicleResults = [];
+    for (const vehicle of vehicles) {
+      // Get pricing for this vehicle
+      const pricing = pricingMap.get(vehicle.id);
+      let dailyPrice = Number(vehicle.baseRate || 0);
+      
+      if (pricing) {
+        dailyPrice = Number(pricing.price);
+        // Apply discount if any
+        if (pricing.discount > 0) {
+          dailyPrice = dailyPrice - Number(pricing.discount);
+        }
+      }
+
+      // Convert prices to target currency
+      const vehicleCurrencyCode = vehicle.currencyCode || 'TRY';
+      const convertedDailyPrice = await this.convertCurrency(
+        dailyPrice,
+        vehicleCurrencyCode,
+        targetCurrency.id
+      );
+      const convertedDeliveryFee = await this.convertCurrency(
+        deliveryFee,
+        'TRY', // Fees are stored in TRY
+        targetCurrency.id
+      );
+      const convertedDropFee = await this.convertCurrency(
+        dropFee,
+        'TRY', // Fees are stored in TRY
+        targetCurrency.id
+      );
+
+      const totalPrice = (convertedDailyPrice * rentalDays) + convertedDeliveryFee + convertedDropFee;
+
+      // Sort images by order
+      const sortedImages = vehicle.images
+        ? [...vehicle.images].sort((a, b) => a.order - b.order)
+        : [];
+
+      // Get category name from translation if available
+      let categoryName: string | undefined;
+      if (vehicle.category && vehicle.categoryId) {
+        const categoryTranslations = categoryTranslationsMap.get(vehicle.categoryId);
+        if (categoryTranslations && categoryTranslations.length > 0) {
+          categoryName = categoryTranslations[0].value;
+        }
+      }
+
+      vehicleResults.push({
+        id: vehicle.id,
+        name: vehicle.name,
+        category: vehicle.category ? {
+          id: vehicle.category.id,
+          name: categoryName || 'Category',
+        } : null,
+        brand: vehicle.brand ? {
+          id: vehicle.brand.id,
+          name: vehicle.brand.name,
+        } : null,
+        model: vehicle.model ? {
+          id: vehicle.model.id,
+          name: vehicle.model.name,
+        } : null,
+        year: vehicle.year,
+        transmission: vehicle.transmission,
+        fuelType: vehicle.fuelType,
+        seats: vehicle.seats,
+        luggage: vehicle.luggage,
+        doors: vehicle.doors,
+        description: vehicle.description,
+        images: sortedImages.map(img => ({
+          id: img.id,
+          url: img.url,
+          alt: img.alt,
+          isPrimary: img.isPrimary,
+          order: img.order,
+        })),
+        dailyPrice: convertedDailyPrice,
+        totalPrice: Number(totalPrice.toFixed(2)),
+        rentalDays,
+        deliveryFee: convertedDeliveryFee,
+        dropFee: convertedDropFee,
+        currencyCode: targetCurrency.code,
+      });
+    }
+
+    // Get extras for tenant
+    const extras = await ExtraService.list(tenantId);
+    const activeExtras = extras.filter(e => e.isActive);
+
+    // Convert extras prices to target currency
+    const extrasResults = [];
+    for (const extra of activeExtras) {
+      const extraCurrencyCode = extra.currencyCode || 'TRY';
+      const convertedPrice = await this.convertCurrency(
+        Number(extra.price),
+        extraCurrencyCode,
+        targetCurrency.id
+      );
+
+      extrasResults.push({
+        id: extra.id,
+        name: extra.name,
+        price: Number(convertedPrice.toFixed(2)),
+        currencyCode: targetCurrency.code,
+        isMandatory: extra.isMandatory,
+        salesType: extra.salesType,
+        description: extra.description,
+        imageUrl: extra.imageUrl,
+      });
+    }
+
+    return {
+      vehicles: vehicleResults,
+      extras: extrasResults,
+    };
   }
 }

@@ -25,8 +25,8 @@ export const createApp = (): Express => {
   // Public klasörünü static olarak serve et (uploads için)
   let publicDir: string;
   if (__dirname.includes('dist')) {
-    // Production: dist/app.js -> dist/public
-    publicDir = path.join(__dirname, 'public');
+    // Production: dist/app.js -> public (Dockerfile'da kopyalanır)
+    publicDir = path.join(__dirname, '../public');
   } else {
     // Development: src/app.ts -> public
     publicDir = path.join(__dirname, '../public');
