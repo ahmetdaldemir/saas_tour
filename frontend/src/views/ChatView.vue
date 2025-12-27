@@ -176,7 +176,8 @@
         <v-card-text class="pa-6">
           <div class="mb-4">
             <p class="text-body-2 mb-2">Aşağıdaki kodu web sitenizin HTML'ine ekleyin:</p>
-            <pre class="pa-4" style="display: block; background: #f5f5f5; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; font-family: 'Roboto', monospace;" v-text="embedCode"></pre>
+            <v-skeleton-loader v-if="loadingToken" type="text" class="mb-2" />
+            <pre v-else class="pa-4" style="display: block; background: #f5f5f5; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; font-family: 'Roboto', monospace;">{{ embedCodeHtml }}</pre>
           </div>
           <v-alert type="info" variant="tonal" class="mb-4">
             Widget'ı ekledikten sonra sitenizde canlı chat butonu görünecektir.
@@ -225,6 +226,7 @@ const searchQuery = ref('');
 const showTokenDialog = ref(false);
 const widgetToken = ref<any>(null);
 const regenerating = ref(false);
+const loadingToken = ref(false);
 const messagesContainer = ref<HTMLElement | null>(null);
 let socket: Socket | null = null;
 
@@ -251,11 +253,31 @@ const embedCode = computed(() => {
   const tenantId = widgetToken.value?.tenantId || auth.tenant?.id || 'TENANT_ID';
   const publicKey = widgetToken.value?.publicKey || 'PUBLIC_KEY';
   
-  return `<script
-  src="https://chat.saastour360.com/widget.js"
-  data-tenant="${tenantId}"
-  data-key="${publicKey}">
-</script>`;
+  // Script tag'lerini string olarak oluştur (Vue compiler için - script kelimesini parçalara böl)
+  const s1 = 'sc';
+  const s2 = 'ript';
+  const s3 = '/' + s1 + s2;
+  return '<' + s1 + s2 + '\n' +
+    '  src="https://chat.saastour360.com/widget.js"\n' +
+    `  data-tenant="${tenantId}"\n` +
+    `  data-key="${publicKey}">\n` +
+    '<' + s3 + '>';
+});
+
+const embedCodeHtml = computed(() => {
+  // HTML escape için - karakterleri string olarak kullan
+  const lessThan = String.fromCharCode(60);
+  const greaterThan = String.fromCharCode(62);
+  const ampersand = String.fromCharCode(38);
+  const quote = String.fromCharCode(34);
+  const apostrophe = String.fromCharCode(39);
+  
+  return embedCode.value
+    .split(ampersand).join('&amp;')
+    .split(lessThan).join('&lt;')
+    .split(greaterThan).join('&gt;')
+    .split(quote).join('&quot;')
+    .split(apostrophe).join('&#39;');
 });
 
 const loadRooms = async () => {
@@ -359,6 +381,7 @@ const scrollToBottom = () => {
 };
 
 const loadWidgetToken = async () => {
+  loadingToken.value = true;
   try {
     const { data } = await http.get('/chat/widget-token');
     if (data.success) {
@@ -366,6 +389,8 @@ const loadWidgetToken = async () => {
     }
   } catch (error) {
     console.error('Failed to load widget token:', error);
+  } finally {
+    loadingToken.value = false;
   }
 };
 
@@ -387,13 +412,8 @@ const copyEmbedCode = () => {
   const tenantId = widgetToken.value?.tenantId || auth.tenant?.id || 'TENANT_ID';
   const publicKey = widgetToken.value?.publicKey || 'PUBLIC_KEY';
   
-  const code = `<script
-  src="https://chat.saastour360.com/widget.js"
-  data-tenant="${tenantId}"
-  data-key="${publicKey}">
-</script>`;
-  
-  navigator.clipboard.writeText(code);
+  // embedCode computed property'sini kullan
+  navigator.clipboard.writeText(embedCode.value);
   // Show snackbar or toast
 };
 
