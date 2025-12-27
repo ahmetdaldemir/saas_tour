@@ -27,18 +27,18 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
-      # HTTP Router for chat.saastour360.com/widget.js (highest priority - before frontend)
-      - "traefik.http.routers.backend-chat-widget-http.rule=Host(`chat.saastour360.com`) && Path(`/widget.js`)"
-      - "traefik.http.routers.backend-chat-widget-http.entrypoints=web"
-      - "traefik.http.routers.backend-chat-widget-http.service=backend"
-      - "traefik.http.routers.backend-chat-widget-http.priority=20"
-      # HTTPS Router for chat.saastour360.com/widget.js (highest priority - before frontend)
-      - "traefik.http.routers.backend-chat-widget-https.rule=Host(`chat.saastour360.com`) && Path(`/widget.js`)"
-      - "traefik.http.routers.backend-chat-widget-https.entrypoints=websecure"
-      - "traefik.http.routers.backend-chat-widget-https.service=backend"
-      - "traefik.http.routers.backend-chat-widget-https.tls=true"
-      - "traefik.http.routers.backend-chat-widget-https.tls.certresolver=le"
-      - "traefik.http.routers.backend-chat-widget-https.priority=20"
+      # HTTP Router for /widget.js (highest priority - before frontend, all subdomains)
+      - "traefik.http.routers.backend-widget-http.rule=(HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) || HostRegexp(`[a-z0-9-]+\\.local\\.saastour360\\.test`)) && Path(`/widget.js`)"
+      - "traefik.http.routers.backend-widget-http.entrypoints=web"
+      - "traefik.http.routers.backend-widget-http.service=backend"
+      - "traefik.http.routers.backend-widget-http.priority=25"
+      # HTTPS Router for /widget.js (highest priority - before frontend, all subdomains)
+      - "traefik.http.routers.backend-widget-https.rule=HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) && Path(`/widget.js`)"
+      - "traefik.http.routers.backend-widget-https.entrypoints=websecure"
+      - "traefik.http.routers.backend-widget-https.service=backend"
+      - "traefik.http.routers.backend-widget-https.tls=true"
+      - "traefik.http.routers.backend-widget-https.tls.certresolver=le"
+      - "traefik.http.routers.backend-widget-https.priority=25"
       # HTTP Router for chat.saastour360.com/api/chat/widget/ (highest priority - before frontend)
       - "traefik.http.routers.backend-chat-api-http.rule=Host(`chat.saastour360.com`) && PathPrefix(`/api/chat/widget/`)"
       - "traefik.http.routers.backend-chat-api-http.entrypoints=web"
@@ -63,6 +63,18 @@ services:
       - "traefik.http.routers.backend-chat-ws-https.tls=true"
       - "traefik.http.routers.backend-chat-ws-https.tls.certresolver=le"
       - "traefik.http.routers.backend-chat-ws-https.priority=20"
+      # HTTP Router for uploads (static files) - HIGH PRIORITY before frontend
+      - "traefik.http.routers.backend-uploads-http.rule=(HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) || HostRegexp(`[a-z0-9-]+\\.local\\.saastour360\\.test`)) && PathPrefix(`/uploads`)"
+      - "traefik.http.routers.backend-uploads-http.entrypoints=web"
+      - "traefik.http.routers.backend-uploads-http.service=backend"
+      - "traefik.http.routers.backend-uploads-http.priority=15"
+      # HTTPS Router for uploads (static files) - HIGH PRIORITY before frontend
+      - "traefik.http.routers.backend-uploads-https.rule=HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) && PathPrefix(`/uploads`)"
+      - "traefik.http.routers.backend-uploads-https.entrypoints=websecure"
+      - "traefik.http.routers.backend-uploads-https.service=backend"
+      - "traefik.http.routers.backend-uploads-https.tls=true"
+      - "traefik.http.routers.backend-uploads-https.tls.certresolver=le"
+      - "traefik.http.routers.backend-uploads-https.priority=15"
       # HTTP Router (local + production) - Backend API
       - "traefik.http.routers.backend-http.rule=(HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) || HostRegexp(`[a-z0-9-]+\\.local\\.saastour360\\.test`)) && PathPrefix(`/api`)"
       - "traefik.http.routers.backend-http.entrypoints=web"
@@ -75,18 +87,6 @@ services:
       - "traefik.http.routers.backend-https.tls=true"
       - "traefik.http.routers.backend-https.tls.certresolver=le"
       - "traefik.http.routers.backend-https.priority=10"
-      # HTTP Router for uploads (static files)
-      - "traefik.http.routers.backend-uploads-http.rule=(HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) || HostRegexp(`[a-z0-9-]+\\.local\\.saastour360\\.test`)) && PathPrefix(`/uploads`)"
-      - "traefik.http.routers.backend-uploads-http.entrypoints=web"
-      - "traefik.http.routers.backend-uploads-http.service=backend"
-      - "traefik.http.routers.backend-uploads-http.priority=10"
-      # HTTPS Router for uploads (static files)
-      - "traefik.http.routers.backend-uploads-https.rule=HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) && PathPrefix(`/uploads`)"
-      - "traefik.http.routers.backend-uploads-https.entrypoints=websecure"
-      - "traefik.http.routers.backend-uploads-https.service=backend"
-      - "traefik.http.routers.backend-uploads-https.tls=true"
-      - "traefik.http.routers.backend-uploads-https.tls.certresolver=le"
-      - "traefik.http.routers.backend-uploads-https.priority=10"
       # Service
       - "traefik.http.services.backend.loadbalancer.server.port=3000"
 
@@ -129,12 +129,14 @@ services:
     labels:
       - "traefik.enable=true"
       # HTTP Router (local + production) - Frontend (root path)
-      - "traefik.http.routers.frontend-http.rule=HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) || HostRegexp(`[a-z0-9-]+\\.local\\.saastour360\\.test`)"
+      # EXCLUDE chat.saastour360.com and paths handled by backend (/uploads, /widget.js, /api)
+      - "traefik.http.routers.frontend-http.rule=(HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) || HostRegexp(`[a-z0-9-]+\\.local\\.saastour360\\.test`)) && !Host(`chat.saastour360.com`) && !PathPrefix(`/uploads`) && !Path(`/widget.js`) && !PathPrefix(`/api`)"
       - "traefik.http.routers.frontend-http.entrypoints=web"
       - "traefik.http.routers.frontend-http.service=frontend"
       - "traefik.http.routers.frontend-http.priority=1"
       # HTTPS Router (production only) - Frontend (root path)
-      - "traefik.http.routers.frontend-https.rule=HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`)"
+      # EXCLUDE chat.saastour360.com and paths handled by backend (/uploads, /widget.js, /api)
+      - "traefik.http.routers.frontend-https.rule=HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) && !Host(`chat.saastour360.com`) && !PathPrefix(`/uploads`) && !Path(`/widget.js`) && !PathPrefix(`/api`)"
       - "traefik.http.routers.frontend-https.entrypoints=websecure"
       - "traefik.http.routers.frontend-https.service=frontend"
       - "traefik.http.routers.frontend-https.tls=true"
