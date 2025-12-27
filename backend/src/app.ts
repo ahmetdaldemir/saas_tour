@@ -19,9 +19,6 @@ export const createApp = (): Express => {
   // Request logging middleware (should be early in the chain)
   app.use(requestLogger);
 
-  // Tenant resolution middleware (extracts tenant from Host header)
-  app.use(tenantMiddleware);
-
   // Public klasörünü static olarak serve et (uploads için)
   let publicDir: string;
   if (__dirname.includes('dist')) {
@@ -43,16 +40,21 @@ export const createApp = (): Express => {
   app.use('/uploads', express.static(uploadsDir));
   logger.info(`Serving static files from: ${uploadsDir}`);
 
-  // Serve widget.js from public directory
+  // Serve widget.js from public directory (BEFORE tenantMiddleware - no tenant required)
   app.get('/widget.js', (req, res) => {
     const widgetPath = path.join(publicDir, 'widget.js');
     if (fs.existsSync(widgetPath)) {
       res.type('application/javascript');
       res.sendFile(widgetPath);
     } else {
+      logger.error(`Widget file not found at: ${widgetPath}`);
       res.status(404).json({ error: 'Widget file not found' });
     }
   });
+
+  // Tenant resolution middleware (extracts tenant from Host header)
+  // Must be AFTER public routes like /widget.js
+  app.use(tenantMiddleware);
 
   // Register all routes
   registerRoutes(app);
