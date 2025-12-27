@@ -177,6 +177,9 @@
           <div class="mb-4">
             <p class="text-body-2 mb-2">Aşağıdaki kodu web sitenizin HTML'ine ekleyin:</p>
             <v-skeleton-loader v-if="loadingToken" type="text" class="mb-2" />
+            <v-alert v-else-if="!widgetToken?.publicKey" type="warning" variant="tonal" class="mb-2">
+              Widget token yükleniyor...
+            </v-alert>
             <pre v-else class="pa-4" style="display: block; background: #f5f5f5; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; font-family: 'Roboto', monospace;">{{ embedCodeHtml }}</pre>
           </div>
           <v-alert type="info" variant="tonal" class="mb-4">
@@ -249,9 +252,14 @@ const filteredRooms = computed(() => {
 });
 
 const embedCode = computed(() => {
-  // Eğer token yoksa, auth.tenant'dan tenantId'yi al
+  // Token varsa ve publicKey varsa kullan, yoksa placeholder göster
   const tenantId = widgetToken.value?.tenantId || auth.tenant?.id || 'TENANT_ID';
-  const publicKey = widgetToken.value?.publicKey || 'PUBLIC_KEY';
+  const publicKey = widgetToken.value?.publicKey;
+  
+  // Eğer publicKey yoksa, loading mesajı göster
+  if (!publicKey) {
+    return 'Loading widget token...';
+  }
   
   // Script tag'lerini string olarak oluştur (Vue compiler için - script kelimesini parçalara böl)
   const s1 = 'sc';
@@ -409,18 +417,24 @@ const regenerateToken = async () => {
 };
 
 const copyEmbedCode = () => {
-  const tenantId = widgetToken.value?.tenantId || auth.tenant?.id || 'TENANT_ID';
-  const publicKey = widgetToken.value?.publicKey || 'PUBLIC_KEY';
+  // Eğer publicKey yoksa, kopyalama yapma
+  if (!widgetToken.value?.publicKey) {
+    alert('Widget token henüz yüklenmedi. Lütfen bekleyin.');
+    return;
+  }
   
   // embedCode computed property'sini kullan
   navigator.clipboard.writeText(embedCode.value);
   // Show snackbar or toast
 };
 
-// Dialog açıldığında token yoksa otomatik yükle
+// Dialog açıldığında her zaman token'ı yükle
 watch(showTokenDialog, async (isOpen) => {
-  if (isOpen && !widgetToken.value) {
-    await loadWidgetToken();
+  if (isOpen) {
+    // Token yoksa veya publicKey yoksa yükle
+    if (!widgetToken.value || !widgetToken.value.publicKey) {
+      await loadWidgetToken();
+    }
   }
 });
 
