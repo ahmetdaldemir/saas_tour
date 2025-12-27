@@ -647,53 +647,69 @@ export class VehicleService {
     // Get locations with master location relations
     const locationRepo = AppDataSource.getRepository(Location);
     
-    // Check if locations exist (with more detailed error messages)
-    const pickupLocation = await locationRepo.findOne({
-      where: { id: pickupLocationId, tenantId, isActive: true },
+    // First, try to find locations without isActive check (to see if they exist)
+    let pickupLocation = await locationRepo.findOne({
+      where: { id: pickupLocationId, tenantId },
       relations: ['location', 'location.parent'],
     });
     
+    // If not found, check with soft-deleted included
     if (!pickupLocation) {
-      // Check if location exists but is inactive or belongs to different tenant
-      const pickupLocationCheck = await locationRepo.findOne({
-        where: { id: pickupLocationId },
-        withDeleted: true, // Include soft-deleted to check
+      pickupLocation = await locationRepo.findOne({
+        where: { id: pickupLocationId, tenantId },
+        relations: ['location', 'location.parent'],
+        withDeleted: true,
       });
-      
-      if (!pickupLocationCheck) {
-        throw new Error(`Pickup location not found (id: ${pickupLocationId})`);
-      } else if (pickupLocationCheck.tenantId !== tenantId) {
-        throw new Error(`Pickup location belongs to different tenant (location tenantId: ${pickupLocationCheck.tenantId}, requested tenantId: ${tenantId})`);
-      } else if (!pickupLocationCheck.isActive) {
-        throw new Error(`Pickup location is inactive (id: ${pickupLocationId})`);
-      } else if (pickupLocationCheck.deletedAt) {
-        throw new Error(`Pickup location is deleted (id: ${pickupLocationId})`);
-      }
+    }
+    
+    if (!pickupLocation) {
       throw new Error(`Pickup location not found (id: ${pickupLocationId}, tenantId: ${tenantId})`);
     }
     
-    const dropoffLocation = await locationRepo.findOne({
-      where: { id: dropoffLocationId, tenantId, isActive: true },
+    // Check if location is active (warn but don't fail for search - allow inactive locations)
+    if (!pickupLocation.isActive) {
+      console.warn(`Pickup location is inactive (id: ${pickupLocationId})`);
+    }
+    
+    if (pickupLocation.deletedAt) {
+      throw new Error(`Pickup location is deleted (id: ${pickupLocationId})`);
+    }
+    
+    // Check if master location exists
+    if (!pickupLocation.location) {
+      throw new Error(`Pickup location master location not found (locationId: ${pickupLocation.locationId})`);
+    }
+    
+    let dropoffLocation = await locationRepo.findOne({
+      where: { id: dropoffLocationId, tenantId },
       relations: ['location', 'location.parent'],
     });
     
+    // If not found, check with soft-deleted included
     if (!dropoffLocation) {
-      // Check if location exists but is inactive or belongs to different tenant
-      const dropoffLocationCheck = await locationRepo.findOne({
-        where: { id: dropoffLocationId },
-        withDeleted: true, // Include soft-deleted to check
+      dropoffLocation = await locationRepo.findOne({
+        where: { id: dropoffLocationId, tenantId },
+        relations: ['location', 'location.parent'],
+        withDeleted: true,
       });
-      
-      if (!dropoffLocationCheck) {
-        throw new Error(`Dropoff location not found (id: ${dropoffLocationId})`);
-      } else if (dropoffLocationCheck.tenantId !== tenantId) {
-        throw new Error(`Dropoff location belongs to different tenant (location tenantId: ${dropoffLocationCheck.tenantId}, requested tenantId: ${tenantId})`);
-      } else if (!dropoffLocationCheck.isActive) {
-        throw new Error(`Dropoff location is inactive (id: ${dropoffLocationId})`);
-      } else if (dropoffLocationCheck.deletedAt) {
-        throw new Error(`Dropoff location is deleted (id: ${dropoffLocationId})`);
-      }
+    }
+    
+    if (!dropoffLocation) {
       throw new Error(`Dropoff location not found (id: ${dropoffLocationId}, tenantId: ${tenantId})`);
+    }
+    
+    // Check if location is active (warn but don't fail for search - allow inactive locations)
+    if (!dropoffLocation.isActive) {
+      console.warn(`Dropoff location is inactive (id: ${dropoffLocationId})`);
+    }
+    
+    if (dropoffLocation.deletedAt) {
+      throw new Error(`Dropoff location is deleted (id: ${dropoffLocationId})`);
+    }
+    
+    // Check if master location exists
+    if (!dropoffLocation.location) {
+      throw new Error(`Dropoff location master location not found (locationId: ${dropoffLocation.locationId})`);
     }
 
     // Calculate rental days
