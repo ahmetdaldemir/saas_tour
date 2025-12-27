@@ -180,7 +180,7 @@
             <v-alert v-else-if="!widgetToken?.publicKey" type="warning" variant="tonal" class="mb-2">
               Widget token yükleniyor...
             </v-alert>
-            <pre v-else class="pa-4" style="display: block; background: #f5f5f5; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; font-family: 'Roboto', monospace;">{{ embedCodeHtml }}</pre>
+            <pre v-else class="pa-4" style="display: block; background: #f5f5f5; border-radius: 4px; overflow-x: auto; white-space: pre-wrap; font-family: 'Roboto', monospace;" v-text="embedCode"></pre>
           </div>
           <v-alert type="info" variant="tonal" class="mb-4">
             Widget'ı ekledikten sonra sitenizde canlı chat butonu görünecektir.
