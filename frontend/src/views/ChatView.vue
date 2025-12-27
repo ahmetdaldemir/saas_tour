@@ -234,6 +234,13 @@ const messagesContainer = ref<HTMLElement | null>(null);
 let socket: Socket | null = null;
 
 const stats = computed(() => {
+  if (!Array.isArray(rooms.value)) {
+    return {
+      active: 0,
+      unread: 0,
+      total: 0,
+    };
+  }
   return {
     active: rooms.value.filter(r => r.status === 'active').length,
     unread: rooms.value.reduce((sum, r) => sum + (r.unreadCount || 0), 0),
@@ -242,6 +249,9 @@ const stats = computed(() => {
 });
 
 const filteredRooms = computed(() => {
+  if (!Array.isArray(rooms.value)) {
+    return [];
+  }
   if (!searchQuery.value) return rooms.value;
   const query = searchQuery.value.toLowerCase();
   return rooms.value.filter(room => 

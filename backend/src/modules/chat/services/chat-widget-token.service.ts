@@ -25,30 +25,36 @@ export class ChatWidgetTokenService {
     const repo = this.tokenRepo();
     const tenantRepo = AppDataSource.getRepository(Tenant);
     
-    let token = await repo.findOne({
-      where: { tenantId, isActive: true },
-      relations: ['tenant'],
-    });
+    try {
+      let token = await repo.findOne({
+        where: { tenantId, isActive: true },
+        relations: ['tenant'],
+      });
 
-    if (!token) {
-      // Load tenant to set relation
-      const tenant = await tenantRepo.findOne({ where: { id: tenantId } });
-      if (!tenant) {
-        throw new Error(`Tenant with id ${tenantId} not found`);
+      if (!token) {
+        // Load tenant to set relation
+        const tenant = await tenantRepo.findOne({ where: { id: tenantId } });
+        if (!tenant) {
+          throw new Error(`Tenant with id ${tenantId} not found`);
+        }
+
+        const { publicKey, secretKey } = this.generateKeys();
+        token = repo.create({
+          tenant,
+          tenantId,
+          publicKey,
+          secretKey,
+          isActive: true,
+        });
+        token = await repo.save(token);
       }
 
-      const { publicKey, secretKey } = this.generateKeys();
-      token = repo.create({
-        tenant,
-        tenantId,
-        publicKey,
-        secretKey,
-        isActive: true,
-      });
-      token = await repo.save(token);
+      return token;
+    } catch (error) {
+      // Log error for debugging
+      console.error('Error in getOrCreateForTenant:', error);
+      throw error;
     }
-
-    return token;
   }
 
   /**
