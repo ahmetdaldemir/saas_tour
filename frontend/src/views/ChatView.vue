@@ -506,6 +506,16 @@ const connectSocket = () => {
     },
     transports: ['websocket', 'polling'],
     path: '/socket.io/',
+    // WebSocket connection options
+    upgrade: true,
+    rememberUpgrade: false,
+    reconnection: true,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    reconnectionAttempts: 5,
+    // Force polling first if WebSocket fails
+    forceNew: false,
+    timeout: 20000,
   });
 
   socket.on('connect', () => {
