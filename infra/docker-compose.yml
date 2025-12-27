@@ -54,21 +54,18 @@ services:
       # HTTP Router for Socket.io (WebSocket) - ALL subdomains including api.saastour360.com
       - "traefik.http.routers.backend-ws-http.rule=(HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) || HostRegexp(`[a-z0-9-]+\\.local\\.saastour360\\.test`) || Host(`api.saastour360.com`)) && PathPrefix(`/socket.io/`)"
       - "traefik.http.routers.backend-ws-http.entrypoints=web"
-      - "traefik.http.routers.backend-ws-http.service=backend"
+      - "traefik.http.routers.backend-ws-http.service=backend-ws"
       - "traefik.http.routers.backend-ws-http.priority=20"
-      # WebSocket upgrade için middleware
-      - "traefik.http.middlewares.backend-ws-headers.headers.customrequestheaders.X-Forwarded-Proto=http"
-      - "traefik.http.routers.backend-ws-http.middlewares=backend-ws-headers"
       # HTTPS Router for Socket.io (WebSocket) - ALL subdomains including api.saastour360.com
       - "traefik.http.routers.backend-ws-https.rule=(HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) || Host(`api.saastour360.com`)) && PathPrefix(`/socket.io/`)"
       - "traefik.http.routers.backend-ws-https.entrypoints=websecure"
-      - "traefik.http.routers.backend-ws-https.service=backend"
+      - "traefik.http.routers.backend-ws-https.service=backend-ws"
       - "traefik.http.routers.backend-ws-https.tls=true"
       - "traefik.http.routers.backend-ws-https.tls.certresolver=le"
       - "traefik.http.routers.backend-ws-https.priority=20"
-      # WebSocket upgrade için middleware
-      - "traefik.http.middlewares.backend-ws-headers-https.headers.customrequestheaders.X-Forwarded-Proto=https"
-      - "traefik.http.routers.backend-ws-https.middlewares=backend-ws-headers-https"
+      # WebSocket service configuration - Traefik automatically handles WebSocket upgrades
+      - "traefik.http.services.backend-ws.loadbalancer.server.port=3000"
+      - "traefik.http.services.backend-ws.loadbalancer.sticky.cookie=true"
       # HTTP Router for uploads (static files) - HIGH PRIORITY before frontend
       - "traefik.http.routers.backend-uploads-http.rule=(HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) || HostRegexp(`[a-z0-9-]+\\.local\\.saastour360\\.test`)) && PathPrefix(`/uploads`)"
       - "traefik.http.routers.backend-uploads-http.entrypoints=web"

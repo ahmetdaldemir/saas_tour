@@ -38,10 +38,24 @@ export const createApp = (): Express => {
   }
   
   // Serve uploads directory as static files (BEFORE tenantMiddleware - public access)
+  // IMPORTANT: This must be BEFORE tenantMiddleware to avoid authentication checks
+  app.use('/uploads', (req, res, next) => {
+    // Log upload requests for debugging
+    logger.debug(`Serving upload file: ${req.path} from ${uploadsDir}`);
+    next();
+  });
+  
   app.use('/uploads', express.static(uploadsDir, {
     index: false, // Don't serve directory listings
-    fallthrough: true, // Allow fall through to next middleware if file not found (will hit 404 handler)
+    fallthrough: false, // Don't fall through - return 404 if file not found
     dotfiles: 'ignore', // Ignore dotfiles
+    setHeaders: (res, filePath) => {
+      // Set proper headers for images
+      const ext = path.extname(filePath).toLowerCase();
+      if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.ico'].includes(ext)) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000');
+      }
+    },
   }));
   logger.info(`Serving static files from: ${uploadsDir}`);
 
