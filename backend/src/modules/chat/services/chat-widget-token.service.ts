@@ -26,8 +26,9 @@ export class ChatWidgetTokenService {
     const tenantRepo = AppDataSource.getRepository(Tenant);
     
     try {
+      // First, try to find existing token (including inactive ones)
       let token = await repo.findOne({
-        where: { tenantId, isActive: true },
+        where: { tenantId },
         relations: ['tenant'],
       });
 
@@ -46,7 +47,31 @@ export class ChatWidgetTokenService {
           secretKey,
           isActive: true,
         });
-        token = await repo.save(token);
+        
+        try {
+          token = await repo.save(token);
+        } catch (saveError: any) {
+          // If duplicate key error, another request created it - fetch it
+          if (saveError.code === '23505' || saveError.code === 'ER_DUP_ENTRY') {
+            // Race condition: another request created the token, fetch it
+            token = await repo.findOne({
+              where: { tenantId },
+              relations: ['tenant'],
+            });
+            
+            if (!token) {
+              throw new Error(`Failed to create or retrieve widget token for tenant ${tenantId}`);
+            }
+          } else {
+            throw saveError;
+          }
+        }
+      } else {
+        // If token exists but is inactive, reactivate it
+        if (!token.isActive) {
+          token.isActive = true;
+          token = await repo.save(token);
+        }
       }
 
       return token;
