@@ -27,6 +27,42 @@ services:
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
+      # HTTP Router for chat.saastour360.com/widget.js (highest priority - before frontend)
+      - "traefik.http.routers.backend-chat-widget-http.rule=Host(`chat.saastour360.com`) && Path(`/widget.js`)"
+      - "traefik.http.routers.backend-chat-widget-http.entrypoints=web"
+      - "traefik.http.routers.backend-chat-widget-http.service=backend"
+      - "traefik.http.routers.backend-chat-widget-http.priority=20"
+      # HTTPS Router for chat.saastour360.com/widget.js (highest priority - before frontend)
+      - "traefik.http.routers.backend-chat-widget-https.rule=Host(`chat.saastour360.com`) && Path(`/widget.js`)"
+      - "traefik.http.routers.backend-chat-widget-https.entrypoints=websecure"
+      - "traefik.http.routers.backend-chat-widget-https.service=backend"
+      - "traefik.http.routers.backend-chat-widget-https.tls=true"
+      - "traefik.http.routers.backend-chat-widget-https.tls.certresolver=le"
+      - "traefik.http.routers.backend-chat-widget-https.priority=20"
+      # HTTP Router for chat.saastour360.com/api/chat/widget/ (highest priority - before frontend)
+      - "traefik.http.routers.backend-chat-api-http.rule=Host(`chat.saastour360.com`) && PathPrefix(`/api/chat/widget/`)"
+      - "traefik.http.routers.backend-chat-api-http.entrypoints=web"
+      - "traefik.http.routers.backend-chat-api-http.service=backend"
+      - "traefik.http.routers.backend-chat-api-http.priority=20"
+      # HTTPS Router for chat.saastour360.com/api/chat/widget/ (highest priority - before frontend)
+      - "traefik.http.routers.backend-chat-api-https.rule=Host(`chat.saastour360.com`) && PathPrefix(`/api/chat/widget/`)"
+      - "traefik.http.routers.backend-chat-api-https.entrypoints=websecure"
+      - "traefik.http.routers.backend-chat-api-https.service=backend"
+      - "traefik.http.routers.backend-chat-api-https.tls=true"
+      - "traefik.http.routers.backend-chat-api-https.tls.certresolver=le"
+      - "traefik.http.routers.backend-chat-api-https.priority=20"
+      # HTTP Router for chat.saastour360.com/socket.io/ (highest priority - before frontend)
+      - "traefik.http.routers.backend-chat-ws-http.rule=Host(`chat.saastour360.com`) && PathPrefix(`/socket.io/`)"
+      - "traefik.http.routers.backend-chat-ws-http.entrypoints=web"
+      - "traefik.http.routers.backend-chat-ws-http.service=backend"
+      - "traefik.http.routers.backend-chat-ws-http.priority=20"
+      # HTTPS Router for chat.saastour360.com/socket.io/ (highest priority - before frontend)
+      - "traefik.http.routers.backend-chat-ws-https.rule=Host(`chat.saastour360.com`) && PathPrefix(`/socket.io/`)"
+      - "traefik.http.routers.backend-chat-ws-https.entrypoints=websecure"
+      - "traefik.http.routers.backend-chat-ws-https.service=backend"
+      - "traefik.http.routers.backend-chat-ws-https.tls=true"
+      - "traefik.http.routers.backend-chat-ws-https.tls.certresolver=le"
+      - "traefik.http.routers.backend-chat-ws-https.priority=20"
       # HTTP Router (local + production) - Backend API
       - "traefik.http.routers.backend-http.rule=(HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) || HostRegexp(`[a-z0-9-]+\\.local\\.saastour360\\.test`)) && PathPrefix(`/api`)"
       - "traefik.http.routers.backend-http.entrypoints=web"
