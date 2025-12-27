@@ -75,18 +75,18 @@ services:
       - "traefik.http.routers.backend-https.tls=true"
       - "traefik.http.routers.backend-https.tls.certresolver=le"
       - "traefik.http.routers.backend-https.priority=10"
-      # HTTP Router for uploads (static files)
+      # HTTP Router for uploads (static files) - Higher priority than frontend
       - "traefik.http.routers.backend-uploads-http.rule=(HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) || HostRegexp(`[a-z0-9-]+\\.local\\.saastour360\\.test`)) && PathPrefix(`/uploads`)"
       - "traefik.http.routers.backend-uploads-http.entrypoints=web"
       - "traefik.http.routers.backend-uploads-http.service=backend"
-      - "traefik.http.routers.backend-uploads-http.priority=10"
-      # HTTPS Router for uploads (static files)
+      - "traefik.http.routers.backend-uploads-http.priority=15"
+      # HTTPS Router for uploads (static files) - Higher priority than frontend
       - "traefik.http.routers.backend-uploads-https.rule=HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) && PathPrefix(`/uploads`)"
       - "traefik.http.routers.backend-uploads-https.entrypoints=websecure"
       - "traefik.http.routers.backend-uploads-https.service=backend"
       - "traefik.http.routers.backend-uploads-https.tls=true"
       - "traefik.http.routers.backend-uploads-https.tls.certresolver=le"
-      - "traefik.http.routers.backend-uploads-https.priority=10"
+      - "traefik.http.routers.backend-uploads-https.priority=15"
       # Service
       - "traefik.http.services.backend.loadbalancer.server.port=3000"
 
