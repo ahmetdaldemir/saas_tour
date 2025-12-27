@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, ManyToOne, Index, Unique } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, Index, Unique, DeleteDateColumn } from 'typeorm';
 import { BaseEntity } from '../../shared/entities/base.entity';
 import { Tenant } from '../../tenants/entities/tenant.entity';
 import { MasterLocation } from '../../shared/entities/master-location.entity';
@@ -38,5 +38,8 @@ export class Location extends BaseEntity {
 
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;
+
+  @DeleteDateColumn({ name: 'deleted_at', nullable: true })
+  deletedAt?: Date | null;
 }
 

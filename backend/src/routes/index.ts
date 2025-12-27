@@ -57,18 +57,20 @@ export const registerRoutes = (app: Express) => {
   app.use('/api/tenant-users', tenantUserRouter);
   app.use('/api/tours', tourRouter);
   app.use('/api/tour-features', tourFeatureRouter);
-  app.use('/api/rentacar', rentacarRouter);
+  // Register more specific routes FIRST to avoid route matching conflicts
+  app.use('/api/rentacar/locations', locationRouter);
+  app.use('/api/rentacar/location-pricing', locationPricingRouter);
+  app.use('/api/rentacar/location-delivery-pricing', locationDeliveryPricingRouter);
   app.use('/api/rentacar/vehicle-categories', vehicleCategoryRouter);
   app.use('/api/rentacar/vehicle-brands', vehicleBrandRouter);
   app.use('/api/rentacar/vehicle-models', vehicleModelRouter);
+  app.use('/api/rentacar/extras', extraRouter);
+  // Register general rentacar routes AFTER specific routes
+  app.use('/api/rentacar', rentacarRouter);
   // Also register at root level for convenience
   app.use('/api/vehicle-categories', vehicleCategoryRouter);
   app.use('/api/vehicle-brands', vehicleBrandRouter);
   app.use('/api/vehicle-models', vehicleModelRouter);
-  app.use('/api/rentacar/locations', locationRouter);
-  app.use('/api/rentacar/location-pricing', locationPricingRouter);
-  app.use('/api/rentacar/location-delivery-pricing', locationDeliveryPricingRouter);
-  app.use('/api/rentacar/extras', extraRouter);
   app.use('/api/translation', translationRouter);
   app.use('/api/currencies', currencyRouter);
   app.use('/api/master-locations', masterLocationRouter);
