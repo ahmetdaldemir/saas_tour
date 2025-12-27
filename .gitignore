@@ -5,4 +5,3 @@ dist/
 coverage/
 frontend/node_modules/
 backend/node_modules/
-docker-datatabse-stack/
