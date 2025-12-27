@@ -1,0 +1,3 @@
+[submodule "docker-datatabse-stack"]
+	path = docker-datatabse-stack
+	url = https://github.com/ahmetdaldemir/docker-datatabse-stack.git
