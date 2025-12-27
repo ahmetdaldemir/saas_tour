@@ -43,7 +43,7 @@ export class ChatSocketServer {
         methods: ['GET', 'POST'],
         credentials: true,
       },
-      path: '/socket.io/chat',
+      path: '/socket.io/', // Changed from /socket.io/chat to /socket.io/ for compatibility
     });
 
     this.setupMiddleware();
