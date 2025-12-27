@@ -37,7 +37,12 @@ export const createApp = (): Express => {
     logger.info(`Created uploads directory: ${uploadsDir}`);
   }
   
-  app.use('/uploads', express.static(uploadsDir));
+  // Serve uploads directory as static files (BEFORE tenantMiddleware - public access)
+  app.use('/uploads', express.static(uploadsDir, {
+    index: false, // Don't serve directory listings
+    fallthrough: false, // Don't fall through to next middleware if file not found
+    dotfiles: 'ignore', // Ignore dotfiles
+  }));
   logger.info(`Serving static files from: ${uploadsDir}`);
 
   // Serve widget.js from public directory (BEFORE tenantMiddleware - no tenant required)
