@@ -644,20 +644,18 @@ export class VehicleService {
       throw new Error('Invalid tenant or tenant is not a rentacar');
     }
 
-    // Get locations with master location relations
+    // Get locations from rentacar_locations table (no master location relations needed)
     const locationRepo = AppDataSource.getRepository(Location);
     
     // First, try to find locations without isActive check (to see if they exist)
     let pickupLocation = await locationRepo.findOne({
       where: { id: pickupLocationId, tenantId },
-      relations: ['location', 'location.parent'],
     });
     
     // If not found, check with soft-deleted included
     if (!pickupLocation) {
       pickupLocation = await locationRepo.findOne({
         where: { id: pickupLocationId, tenantId },
-        relations: ['location', 'location.parent'],
         withDeleted: true,
       });
     }
@@ -675,21 +673,14 @@ export class VehicleService {
       throw new Error(`Pickup location is deleted (id: ${pickupLocationId})`);
     }
     
-    // Check if master location exists
-    if (!pickupLocation.location) {
-      throw new Error(`Pickup location master location not found (locationId: ${pickupLocation.locationId})`);
-    }
-    
     let dropoffLocation = await locationRepo.findOne({
       where: { id: dropoffLocationId, tenantId },
-      relations: ['location', 'location.parent'],
     });
     
     // If not found, check with soft-deleted included
     if (!dropoffLocation) {
       dropoffLocation = await locationRepo.findOne({
         where: { id: dropoffLocationId, tenantId },
-        relations: ['location', 'location.parent'],
         withDeleted: true,
       });
     }
@@ -705,11 +696,6 @@ export class VehicleService {
     
     if (dropoffLocation.deletedAt) {
       throw new Error(`Dropoff location is deleted (id: ${dropoffLocationId})`);
-    }
-    
-    // Check if master location exists
-    if (!dropoffLocation.location) {
-      throw new Error(`Dropoff location master location not found (locationId: ${dropoffLocation.locationId})`);
     }
 
     // Calculate rental days
@@ -788,36 +774,14 @@ export class VehicleService {
     const pricingMap = new Map<string, LocationVehiclePricing>();
     pricings.forEach(p => pricingMap.set(p.vehicleId, p));
 
-    // Get delivery and drop fees
-    // If master location has parent, find parent's rentacar_locations mapping and use its fees
+    // Get delivery and drop fees from rentacar_locations table
     let deliveryFee = Number(pickupLocation.deliveryFee || 0);
     let dropFee = Number(dropoffLocation.dropFee || 0);
     
-    // If pickup master location has parent, use parent's delivery fee
-    if (pickupLocation.location?.parentId) {
-      const parentPickupLocation = await locationRepo.findOne({
-        where: {
-          locationId: pickupLocation.location.parentId,
-          tenantId,
-        },
-      });
-      if (parentPickupLocation) {
-        deliveryFee = Number(parentPickupLocation.deliveryFee || 0);
-      }
-    }
-    
-    // If dropoff master location has parent, use parent's drop fee
-    if (dropoffLocation.location?.parentId) {
-      const parentDropoffLocation = await locationRepo.findOne({
-        where: {
-          locationId: dropoffLocation.location.parentId,
-          tenantId,
-        },
-      });
-      if (parentDropoffLocation) {
-        dropFee = Number(parentDropoffLocation.dropFee || 0);
-      }
-    }
+    // Note: Parent location fees are handled at the rentacar_locations level
+    // If parent location fees are needed, query them directly from rentacar_locations
+    // by finding the parent location's locationId and querying rentacar_locations
+    // For now, we use the direct fees from the selected locations
     
     // If pickup and dropoff are same, drop fee is 0
     if (pickupLocationId === dropoffLocationId) {
