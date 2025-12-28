@@ -26,6 +26,7 @@ import reservationRouter from '../modules/shared/routes/reservation.router';
 import monitoringRouter from '../modules/admin/routes/monitoring.router';
 import tenantMonitoringRouter from '../modules/admin/routes/tenant-monitoring.router';
 import emailTemplateRouter from '../modules/shared/routes/email-template.router';
+import mailRouter from '../modules/shared/routes/mail.router';
 import tenantUserRouter from '../modules/tenants/routes/tenant-user.router';
 import { transferVehicleRouter } from '../modules/transfer/routes/transfer-vehicle.router';
 import { transferRouteRouter } from '../modules/transfer/routes/transfer-route.router';
@@ -79,6 +80,7 @@ export const registerRoutes = (app: Express) => {
   app.use('/api/surveys', surveyRouter);
   app.use('/api/reservations', reservationRouter);
   app.use('/api/email-templates', emailTemplateRouter);
+  app.use('/api/mail', mailRouter);
   app.use('/api/transfer/vehicles', transferVehicleRouter);
   app.use('/api/transfer/routes', transferRouteRouter);
   app.use('/api/transfer/pricings', transferPricingRouter);
