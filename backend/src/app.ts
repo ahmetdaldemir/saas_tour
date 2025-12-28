@@ -17,34 +17,52 @@ export const createApp = (): Express => {
   // CORS configuration - allow all saastour360.com subdomains
   app.use(cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
+      // Allow requests with no origin (like mobile apps, curl, or server-to-server requests)
+      if (!origin) {
+        logger.info('[CORS] No origin header, allowing request');
+        return callback(null, true);
+      }
+      
+      logger.info(`[CORS] Checking origin: ${origin}`);
       
       // Allow all saastour360.com subdomains and local development
       const allowedOrigins = [
-        /^https?:\/\/[a-z0-9-]+\.saastour360\.com$/,
-        /^https?:\/\/[a-z0-9-]+\.local\.saastour360\.test$/,
+        /^https?:\/\/[a-z0-9-]+\.saastour360\.com$/i,
+        /^https?:\/\/[a-z0-9-]+\.local\.saastour360\.test$/i,
         'https://api.saastour360.com',
+        'http://api.saastour360.com',
         'http://localhost:5001',
         'http://localhost:4001',
+        'http://localhost:3000',
       ];
       
       const isAllowed = allowedOrigins.some(allowed => {
         if (typeof allowed === 'string') {
-          return origin === allowed;
+          const matches = origin.toLowerCase() === allowed.toLowerCase();
+          if (matches) logger.info(`[CORS] ✅ Matched string origin: ${allowed}`);
+          return matches;
         }
-        return allowed.test(origin);
+        const matches = allowed.test(origin);
+        if (matches) logger.info(`[CORS] ✅ Matched regex pattern for origin: ${origin}`);
+        return matches;
       });
       
       if (isAllowed) {
+        logger.info(`[CORS] ✅ Origin ALLOWED: ${origin}`);
         callback(null, true);
       } else {
-        callback(new Error('Not allowed by CORS'));
+        logger.warn(`[CORS] ❌ Origin NOT ALLOWED: ${origin}`);
+        // Log all allowed patterns for debugging
+        logger.warn(`[CORS] Allowed patterns: ${allowedOrigins.map(o => typeof o === 'string' ? o : o.toString()).join(', ')}`);
+        callback(new Error(`Not allowed by CORS: ${origin}`));
       }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+    exposedHeaders: ['Content-Length', 'Content-Type'],
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
   }));
   
   app.use(json());
