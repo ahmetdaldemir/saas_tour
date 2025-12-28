@@ -13,7 +13,40 @@ import { logger } from './utils/logger';
 export const createApp = (): Express => {
   // Note: For WebSocket support, use createHttpServer() in server.ts
   const app = express();
-  app.use(cors());
+  
+  // CORS configuration - allow all saastour360.com subdomains
+  app.use(cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      // Allow all saastour360.com subdomains and local development
+      const allowedOrigins = [
+        /^https?:\/\/[a-z0-9-]+\.saastour360\.com$/,
+        /^https?:\/\/[a-z0-9-]+\.local\.saastour360\.test$/,
+        'https://api.saastour360.com',
+        'http://localhost:5001',
+        'http://localhost:4001',
+      ];
+      
+      const isAllowed = allowedOrigins.some(allowed => {
+        if (typeof allowed === 'string') {
+          return origin === allowed;
+        }
+        return allowed.test(origin);
+      });
+      
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  }));
+  
   app.use(json());
 
   // Request logging middleware (should be early in the chain)

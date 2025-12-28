@@ -37,13 +37,43 @@ export class ChatSocketServer {
 
   constructor(httpServer: HttpServer) {
     this.config = loadEnv();
+    
+    // Allow all saastour360.com subdomains
+    const allowedOrigins = [
+      /^https?:\/\/[a-z0-9-]+\.saastour360\.com$/,
+      /^https?:\/\/[a-z0-9-]+\.local\.saastour360\.test$/,
+      'https://api.saastour360.com',
+      'http://localhost:5001',
+      'http://localhost:4001',
+    ];
+    
     this.io = new SocketServer(httpServer, {
       cors: {
-        origin: '*', // In production, restrict to specific origins
+        origin: (origin, callback) => {
+          // Allow requests with no origin (like mobile apps or curl requests)
+          if (!origin) return callback(null, true);
+          
+          // Check if origin matches allowed patterns
+          const isAllowed = allowedOrigins.some(allowed => {
+            if (typeof allowed === 'string') {
+              return origin === allowed;
+            }
+            return allowed.test(origin);
+          });
+          
+          if (isAllowed) {
+            callback(null, true);
+          } else {
+            callback(new Error('Not allowed by CORS'));
+          }
+        },
         methods: ['GET', 'POST'],
         credentials: true,
+        allowedHeaders: ['Content-Type', 'Authorization'],
       },
-      path: '/socket.io/', // Changed from /socket.io/chat to /socket.io/ for compatibility
+      path: '/socket.io/',
+      transports: ['websocket', 'polling'],
+      allowEIO3: true,
     });
 
     this.setupMiddleware();
