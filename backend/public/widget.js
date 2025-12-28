@@ -294,6 +294,13 @@
         visitorId: visitorId,
       },
       transports: ['websocket', 'polling'],
+      path: '/socket.io/',
+      upgrade: true,
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
+      timeout: 20000,
     });
 
     socket.on('connect', function() {
