@@ -77,6 +77,8 @@ export const createApp = (): Express => {
       const knownTenantDomains = [
         'www.bergrentacar.com',
         'bergrentacar.com',
+        'www.sunsetcarrent.com',
+        'sunsetcarrent.com',
       ];
       
       const isKnownTenantDomain = knownTenantDomains.some(domain => {
@@ -93,28 +95,6 @@ export const createApp = (): Express => {
       logger.warn(`[CORS] ❌ Origin NOT ALLOWED: ${origin} (hostname: ${hostname})`);
       logger.warn(`[CORS] Allowed patterns: ${allowedPatterns.map(p => typeof p === 'string' ? p : p.toString()).join(', ')}`);
       callback(new Error(`Not allowed by CORS: ${origin}`));
-    },
-      
-      const isAllowed = allowedOrigins.some(allowed => {
-        if (typeof allowed === 'string') {
-          const matches = origin.toLowerCase() === allowed.toLowerCase();
-          if (matches) logger.info(`[CORS] ✅ Matched string origin: ${allowed}`);
-          return matches;
-        }
-        const matches = allowed.test(origin);
-        if (matches) logger.info(`[CORS] ✅ Matched regex pattern for origin: ${origin}`);
-        return matches;
-      });
-      
-      if (isAllowed) {
-        logger.info(`[CORS] ✅ Origin ALLOWED: ${origin}`);
-        callback(null, true);
-      } else {
-        logger.warn(`[CORS] ❌ Origin NOT ALLOWED: ${origin}`);
-        // Log all allowed patterns for debugging
-        logger.warn(`[CORS] Allowed patterns: ${allowedOrigins.map(o => typeof o === 'string' ? o : o.toString()).join(', ')}`);
-        callback(new Error(`Not allowed by CORS: ${origin}`));
-      }
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
