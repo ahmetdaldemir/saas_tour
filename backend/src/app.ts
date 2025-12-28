@@ -20,16 +20,21 @@ export const createApp = (): Express => {
   app.use(requestLogger);
 
   // Public klasörünü static olarak serve et (uploads için)
+  // Production'da: /app/dist/app.js -> /app/public
+  // Development'ta: src/app.ts -> public
   let publicDir: string;
   if (__dirname.includes('dist')) {
-    // Production: dist/app.js -> public (Dockerfile'da kopyalanır)
+    // Production: dist/app.js -> ../public (Dockerfile'da public klasörü /app/public'e kopyalanır)
     publicDir = path.join(__dirname, '../public');
+    logger.info(`[APP] Production mode - __dirname: ${__dirname}, publicDir: ${publicDir}`);
   } else {
-    // Development: src/app.ts -> public
+    // Development: src/app.ts -> ../public
     publicDir = path.join(__dirname, '../public');
+    logger.info(`[APP] Development mode - __dirname: ${__dirname}, publicDir: ${publicDir}`);
   }
   
   const uploadsDir = path.join(publicDir, 'uploads');
+  logger.info(`[APP] Uploads directory: ${uploadsDir}`);
   
   // Uploads klasörünü oluştur
   if (!fs.existsSync(uploadsDir)) {
@@ -41,13 +46,15 @@ export const createApp = (): Express => {
   // IMPORTANT: This must be BEFORE tenantMiddleware to avoid authentication checks
   app.use('/uploads', (req, res, next) => {
     // Log upload requests for debugging
-    logger.debug(`Serving upload file: ${req.path} from ${uploadsDir}`);
+    const requestedFile = path.join(uploadsDir, req.path.replace(/^\/uploads\//, ''));
+    logger.info(`[UPLOADS] Request for: ${req.path} -> File path: ${requestedFile}`);
+    logger.info(`[UPLOADS] Directory exists: ${fs.existsSync(uploadsDir)}, File exists: ${fs.existsSync(requestedFile)}`);
     next();
   });
   
   app.use('/uploads', express.static(uploadsDir, {
     index: false, // Don't serve directory listings
-    fallthrough: false, // Don't fall through - return 404 if file not found
+    fallthrough: true, // Allow fall through if file not found
     dotfiles: 'ignore', // Ignore dotfiles
     setHeaders: (res, filePath) => {
       // Set proper headers for images
@@ -57,6 +64,32 @@ export const createApp = (): Express => {
       }
     },
   }));
+  
+  // Custom handler for /uploads if static file not found
+  app.use('/uploads', (req, res, next) => {
+    const requestedFile = path.join(uploadsDir, req.path.replace(/^\/uploads\//, ''));
+    if (!fs.existsSync(requestedFile)) {
+      logger.warn(`[UPLOADS] File not found: ${requestedFile}`);
+      logger.warn(`[UPLOADS] Uploads directory: ${uploadsDir}`);
+      logger.warn(`[UPLOADS] Directory contents: ${fs.existsSync(uploadsDir) ? fs.readdirSync(uploadsDir).join(', ') : 'DOES NOT EXIST'}`);
+      return res.status(404).json({ 
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: `File not found: ${req.path}`,
+          details: {
+            requestedPath: req.path,
+            filePath: requestedFile,
+            uploadsDir: uploadsDir,
+            directoryExists: fs.existsSync(uploadsDir),
+            fileExists: fs.existsSync(requestedFile),
+          }
+        }
+      });
+    }
+    next();
+  });
+  
   logger.info(`Serving static files from: ${uploadsDir}`);
 
   // Serve widget.js from public directory (BEFORE tenantMiddleware - no tenant required)
