@@ -504,7 +504,8 @@ const connectSocket = () => {
     auth: {
       token: auth.token,
     },
-    transports: ['websocket', 'polling'],
+    // Use polling first due to Cloudflare WebSocket issues, then try websocket
+    transports: ['polling', 'websocket'],
     path: '/socket.io/',
     // WebSocket connection options
     upgrade: true,
@@ -513,9 +514,11 @@ const connectSocket = () => {
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
     reconnectionAttempts: 5,
-    // Force polling first if WebSocket fails
+    // Allow upgrade to websocket after polling connection established
     forceNew: false,
     timeout: 20000,
+    // Cloudflare compatibility: allow polling to work
+    withCredentials: true,
   });
 
   socket.on('connect', () => {
