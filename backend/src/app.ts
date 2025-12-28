@@ -14,7 +14,7 @@ export const createApp = (): Express => {
   // Note: For WebSocket support, use createHttpServer() in server.ts
   const app = express();
   
-  // CORS configuration - allow all saastour360.com subdomains
+  // CORS configuration - allow all saastour360.com subdomains and tenant custom domains
   app.use(cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps, curl, or server-to-server requests)
@@ -25,16 +25,74 @@ export const createApp = (): Express => {
       
       logger.info(`[CORS] Checking origin: ${origin}`);
       
+      // Extract hostname from origin
+      let hostname: string;
+      try {
+        const url = new URL(origin);
+        hostname = url.hostname;
+      } catch (e) {
+        logger.warn(`[CORS] Invalid origin format: ${origin}`);
+        return callback(new Error(`Invalid origin format: ${origin}`));
+      }
+      
       // Allow all saastour360.com subdomains and local development
-      const allowedOrigins = [
+      const allowedPatterns = [
         /^https?:\/\/[a-z0-9-]+\.saastour360\.com$/i,
         /^https?:\/\/[a-z0-9-]+\.local\.saastour360\.test$/i,
+        /^https?:\/\/(www\.)?bergrentacar\.com$/i, // Tenant custom domain
         'https://api.saastour360.com',
         'http://api.saastour360.com',
         'http://localhost:5001',
         'http://localhost:4001',
         'http://localhost:3000',
       ];
+      
+      // Check against patterns
+      const matchesPattern = allowedPatterns.some(pattern => {
+        if (typeof pattern === 'string') {
+          try {
+            const patternUrl = new URL(pattern);
+            const matches = hostname === patternUrl.hostname || origin.toLowerCase() === pattern.toLowerCase();
+            if (matches) logger.info(`[CORS] ✅ Matched string origin: ${pattern}`);
+            return matches;
+          } catch {
+            const matches = origin.toLowerCase() === pattern.toLowerCase();
+            if (matches) logger.info(`[CORS] ✅ Matched string origin: ${pattern}`);
+            return matches;
+          }
+        }
+        const matches = pattern.test(origin);
+        if (matches) logger.info(`[CORS] ✅ Matched regex pattern for origin: ${origin}`);
+        return matches;
+      });
+      
+      if (matchesPattern) {
+        logger.info(`[CORS] ✅ Origin ALLOWED: ${origin}`);
+        return callback(null, true);
+      }
+      
+      // If pattern doesn't match, check if it's a known tenant custom domain
+      // For now, we'll allow known tenant domains (can be expanded to check database)
+      const knownTenantDomains = [
+        'www.bergrentacar.com',
+        'bergrentacar.com',
+      ];
+      
+      const isKnownTenantDomain = knownTenantDomains.some(domain => {
+        const matches = hostname === domain || hostname === `www.${domain}` || hostname.replace(/^www\./, '') === domain;
+        if (matches) logger.info(`[CORS] ✅ Matched known tenant domain: ${domain}`);
+        return matches;
+      });
+      
+      if (isKnownTenantDomain) {
+        logger.info(`[CORS] ✅ Origin ALLOWED (tenant domain): ${origin}`);
+        return callback(null, true);
+      }
+      
+      logger.warn(`[CORS] ❌ Origin NOT ALLOWED: ${origin} (hostname: ${hostname})`);
+      logger.warn(`[CORS] Allowed patterns: ${allowedPatterns.map(p => typeof p === 'string' ? p : p.toString()).join(', ')}`);
+      callback(new Error(`Not allowed by CORS: ${origin}`));
+    },
       
       const isAllowed = allowedOrigins.some(allowed => {
         if (typeof allowed === 'string') {
