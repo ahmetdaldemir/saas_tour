@@ -33,8 +33,11 @@ export class MailController {
       
       if (req.body.tenantId) {
         tenantId = req.body.tenantId;
-      } else if ((req as AuthenticatedRequest).auth?.tenantId) {
-        tenantId = (req as AuthenticatedRequest).auth.tenantId;
+      } else {
+        const authReq = req as AuthenticatedRequest;
+        if (authReq.auth?.tenantId) {
+          tenantId = authReq.auth.tenantId;
+        }
       }
 
       if (!tenantId) {
@@ -133,8 +136,11 @@ export class MailController {
       
       if (req.body.tenantId) {
         tenantId = req.body.tenantId;
-      } else if ((req as AuthenticatedRequest).auth?.tenantId) {
-        tenantId = (req as AuthenticatedRequest).auth.tenantId;
+      } else {
+        const authReq = req as AuthenticatedRequest;
+        if (authReq.auth?.tenantId) {
+          tenantId = authReq.auth.tenantId;
+        }
       }
 
       if (!tenantId) {
