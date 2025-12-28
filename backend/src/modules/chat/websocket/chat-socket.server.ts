@@ -38,38 +38,91 @@ export class ChatSocketServer {
   constructor(httpServer: HttpServer) {
     this.config = loadEnv();
     
-    // Allow all saastour360.com subdomains
-    const allowedOrigins = [
-      /^https?:\/\/[a-z0-9-]+\.saastour360\.com$/,
-      /^https?:\/\/[a-z0-9-]+\.local\.saastour360\.test$/,
+    // Allow all saastour360.com subdomains and tenant custom domains
+    const allowedPatterns = [
+      /^https?:\/\/[a-z0-9-]+\.saastour360\.com$/i,
+      /^https?:\/\/[a-z0-9-]+\.local\.saastour360\.test$/i,
+      /^https?:\/\/(www\.)?bergrentacar\.com$/i, // Tenant custom domain
+      /^https?:\/\/(www\.)?sunsetcarrent\.com$/i, // Tenant custom domain
       'https://api.saastour360.com',
+      'http://api.saastour360.com',
       'http://localhost:5001',
       'http://localhost:4001',
+      'http://localhost:3000',
+    ];
+    
+    // Known tenant custom domains
+    const knownTenantDomains = [
+      'www.bergrentacar.com',
+      'bergrentacar.com',
+      'www.sunsetcarrent.com',
+      'sunsetcarrent.com',
     ];
     
     this.io = new SocketServer(httpServer, {
       cors: {
         origin: (origin, callback) => {
           // Allow requests with no origin (like mobile apps or curl requests)
-          if (!origin) return callback(null, true);
+          if (!origin) {
+            logger.info('[Socket.io CORS] No origin header, allowing request');
+            return callback(null, true);
+          }
           
-          // Check if origin matches allowed patterns
-          const isAllowed = allowedOrigins.some(allowed => {
-            if (typeof allowed === 'string') {
-              return origin === allowed;
+          logger.info(`[Socket.io CORS] Checking origin: ${origin}`);
+          
+          // Extract hostname from origin
+          let hostname: string;
+          try {
+            const url = new URL(origin);
+            hostname = url.hostname;
+          } catch (e) {
+            logger.warn(`[Socket.io CORS] Invalid origin format: ${origin}`);
+            return callback(new Error(`Invalid origin format: ${origin}`));
+          }
+          
+          // Check against patterns
+          const matchesPattern = allowedPatterns.some(pattern => {
+            if (typeof pattern === 'string') {
+              try {
+                const patternUrl = new URL(pattern);
+                const matches = hostname === patternUrl.hostname || origin.toLowerCase() === pattern.toLowerCase();
+                if (matches) logger.info(`[Socket.io CORS] ✅ Matched string origin: ${pattern}`);
+                return matches;
+              } catch {
+                const matches = origin.toLowerCase() === pattern.toLowerCase();
+                if (matches) logger.info(`[Socket.io CORS] ✅ Matched string origin: ${pattern}`);
+                return matches;
+              }
             }
-            return allowed.test(origin);
+            const matches = pattern.test(origin);
+            if (matches) logger.info(`[Socket.io CORS] ✅ Matched regex pattern for origin: ${origin}`);
+            return matches;
           });
           
-          if (isAllowed) {
-            callback(null, true);
-          } else {
-            callback(new Error('Not allowed by CORS'));
+          if (matchesPattern) {
+            logger.info(`[Socket.io CORS] ✅ Origin ALLOWED: ${origin}`);
+            return callback(null, true);
           }
+          
+          // If pattern doesn't match, check if it's a known tenant custom domain
+          const isKnownTenantDomain = knownTenantDomains.some(domain => {
+            const matches = hostname === domain || hostname === `www.${domain}` || hostname.replace(/^www\./, '') === domain;
+            if (matches) logger.info(`[Socket.io CORS] ✅ Matched known tenant domain: ${domain}`);
+            return matches;
+          });
+          
+          if (isKnownTenantDomain) {
+            logger.info(`[Socket.io CORS] ✅ Origin ALLOWED (tenant domain): ${origin}`);
+            return callback(null, true);
+          }
+          
+          logger.warn(`[Socket.io CORS] ❌ Origin NOT ALLOWED: ${origin} (hostname: ${hostname})`);
+          logger.warn(`[Socket.io CORS] Allowed patterns: ${allowedPatterns.map(p => typeof p === 'string' ? p : p.toString()).join(', ')}`);
+          callback(new Error(`Not allowed by CORS: ${origin}`));
         },
         methods: ['GET', 'POST'],
         credentials: true,
-        allowedHeaders: ['Content-Type', 'Authorization'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
       },
       path: '/socket.io/',
       transports: ['websocket', 'polling'],
