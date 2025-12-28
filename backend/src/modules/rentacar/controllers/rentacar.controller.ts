@@ -293,11 +293,13 @@ export class RentacarController {
         return res.status(400).json({ message: 'No file uploaded' });
       }
 
-      // Get uploads directory
+      // Get uploads directory (must match app.ts static serving path)
       let uploadsDir: string;
       if (__dirname.includes('dist')) {
-        uploadsDir = path.join(__dirname, '../../../public/uploads');
+        // Production: /app/dist/modules/rentacar/controllers -> ../../../../public/uploads
+        uploadsDir = path.join(__dirname, '../../../../public/uploads');
       } else {
+        // Development: src/modules/rentacar/controllers -> ../../../public/uploads
         uploadsDir = path.join(__dirname, '../../../public/uploads');
       }
 

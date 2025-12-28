@@ -7,13 +7,12 @@ import fs from 'fs';
 const getUploadsDir = () => {
   // Production'da __dirname: /app/dist/modules/shared/controllers
   // Development'ta __dirname: src/modules/shared/controllers
-  // Her iki durumda da dist/src klasöründen bir üst klasöre çıkıp public/uploads'a gitmek gerekir
+  // Her iki durumda da /app/public/uploads'a gitmek gerekir (Dockerfile'da COPY public ./public)
   let baseDir: string;
   if (__dirname.includes('dist')) {
-    // Production: dist/modules/shared/controllers -> ../../../ ile dist klasörüne çık
-    // Sonra public/uploads'a git
-    // /app/dist/modules/shared/controllers -> ../../../ -> /app/dist/ -> public/uploads
-    baseDir = path.join(__dirname, '../../../public/uploads');
+    // Production: /app/dist/modules/shared/controllers -> ../../../../public/uploads
+    // /app/dist/modules/shared/controllers -> ../../../../ -> /app/ -> public/uploads
+    baseDir = path.join(__dirname, '../../../../public/uploads');
   } else {
     // Development: src/modules/shared/controllers -> ../../../public/uploads
     baseDir = path.join(__dirname, '../../../public/uploads');

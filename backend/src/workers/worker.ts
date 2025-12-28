@@ -13,8 +13,18 @@ async function startWorker() {
     await AppDataSource.initialize();
     console.log('✅ Database connected');
 
-    // Email worker'ı başlat
-    await EmailWorker.start();
+    // Email worker'ı başlat (sadece USE_EMAIL_QUEUE=true ise)
+    const useEmailQueue = process.env.USE_EMAIL_QUEUE === 'true';
+    if (useEmailQueue) {
+      try {
+        await EmailWorker.start();
+      } catch (error) {
+        console.error('❌ Failed to start email worker (RabbitMQ may not be available):', error);
+        console.log('⚠️  Continuing without email queue - emails will be sent directly');
+      }
+    } else {
+      console.log('ℹ️  Email queue disabled (USE_EMAIL_QUEUE=false)');
+    }
 
     // Graceful shutdown
     process.on('SIGTERM', async () => {
