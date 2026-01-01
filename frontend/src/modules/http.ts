@@ -3,13 +3,16 @@ import axios from 'axios';
 /**
  * HTTP Client for API requests
  * 
- * Base URL: https://api.saastour360.com/api
+ * Frontend uses subdomain-based routing (berg.saastour360.com/api/...)
+ * Mobile uses api.saastour360.com/api/...
  * 
  * For centralized API management, use apiService from '@/services/api.service'
  * This file is kept for backward compatibility with existing code.
  */
 export const http = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? 'https://api.saastour360.com/api',
+  // Frontend uses relative paths (subdomain-based)
+  // Mobile uses api.saastour360.com (set via VITE_API_BASE_URL env var)
+  baseURL: import.meta.env.VITE_API_BASE_URL ?? '', // Empty = relative to current origin
 });
 
 // Request interceptor - add auth token

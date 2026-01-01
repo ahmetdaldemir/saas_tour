@@ -480,6 +480,8 @@ const connectSocket = () => {
   if (!auth.token || !auth.tenant) return;
 
   // Determine WebSocket URL based on environment
+  // Frontend uses subdomain-based routing (berg.saastour360.com)
+  // Mobile uses api.saastour360.com
   let socketUrl: string;
   if (import.meta.env.VITE_WS_URL) {
     socketUrl = import.meta.env.VITE_WS_URL;
@@ -487,17 +489,9 @@ const connectSocket = () => {
     // Development: use localhost
     socketUrl = 'http://localhost:4001';
   } else {
-    // Production: use current host with same subdomain or api.saastour360.com
-    const host = window.location.host;
-    if (host.includes('saastour360.com')) {
-      // Use wss://api.saastour360.com for WebSocket in production
-      socketUrl = window.location.protocol === 'https:' 
-        ? 'wss://api.saastour360.com'
-        : 'ws://api.saastour360.com';
-    } else {
-      // Fallback to current host
-      socketUrl = window.location.origin;
-    }
+    // Production: use current host with same subdomain (berg.saastour360.com)
+    // Frontend always uses subdomain, so use current origin
+    socketUrl = window.location.origin;
   }
   
   socket = io(socketUrl, {
