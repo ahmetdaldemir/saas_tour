@@ -495,7 +495,10 @@ const connectSocket = () => {
   }
   
   socket = io(socketUrl, {
-    // Send JWT token in Authorization header (backend expects this)
+    // Send JWT token in both auth object (for polling) and extraHeaders (for websocket)
+    auth: {
+      token: auth.token,
+    },
     extraHeaders: {
       Authorization: `Bearer ${auth.token}`,
     },

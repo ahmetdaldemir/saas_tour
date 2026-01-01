@@ -166,6 +166,14 @@ export class ChatSocketServer {
         const auth = socket.handshake.auth as any;
         const authHeader = socket.handshake.headers.authorization;
 
+        logger.info('[Socket.io Auth] Handshake received', {
+          hasAuthObject: !!auth,
+          hasAuthToken: !!auth?.token,
+          hasAuthHeader: !!authHeader,
+          authKeys: auth ? Object.keys(auth) : [],
+          headers: Object.keys(socket.handshake.headers),
+        });
+
         let socketAuth: SocketAuth | null = null;
 
         // Admin authentication (JWT token)
@@ -173,6 +181,13 @@ export class ChatSocketServer {
         const token = authHeader?.startsWith('Bearer ') 
           ? authHeader.substring(7) 
           : auth?.token;
+
+        logger.info('[Socket.io Auth] Token extraction', {
+          hasToken: !!token,
+          tokenLength: token?.length,
+          fromHeader: !!authHeader?.startsWith('Bearer '),
+          fromAuth: !!auth?.token,
+        });
 
         if (token) {
           try {
@@ -182,12 +197,15 @@ export class ChatSocketServer {
               userId: decoded.userId || decoded.sub,
               type: 'admin',
             };
-            logger.info('Admin authenticated via JWT', { 
+            logger.info('[Socket.io Auth] Admin authenticated via JWT', { 
               tenantId: socketAuth.tenantId, 
               userId: socketAuth.userId 
             });
           } catch (error) {
-            logger.warn('Invalid JWT token in WebSocket connection', { error });
+            logger.warn('[Socket.io Auth] Invalid JWT token', { 
+              error: error instanceof Error ? error.message : String(error),
+              tokenPreview: token?.substring(0, 20) + '...',
+            });
             // Don't return error yet, try widget authentication
           }
         }
