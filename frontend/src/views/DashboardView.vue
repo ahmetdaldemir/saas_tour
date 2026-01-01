@@ -1,168 +1,99 @@
 <template>
-  <div class="dashboard-container">
-    <!-- Currency Rates - Üst Kısım -->
-    <v-row class="mb-6">
+  <v-container fluid class="dashboard-container">
+    <!-- Currency Rates - Üst Kısım (Kompakt) -->
+    <v-row class="mb-4">
       <v-col cols="12">
-        <v-card elevation="1" rounded="lg" class="currency-section-card">
-          <v-card-title class="px-6 py-4 border-b">
-            <div class="d-flex align-center justify-space-between w-100">
-              <div class="d-flex align-center">
-                <v-icon icon="mdi-currency-usd" size="24" class="mr-3 text-primary" />
-                <div>
-                  <div class="text-h6 font-weight-medium">Döviz Kurları</div>
-                  <div class="text-caption text-medium-emphasis">Güncel döviz kuru bilgileri</div>
-                </div>
-              </div>
-              <v-btn
-                icon="mdi-refresh"
-                size="small"
-                variant="outlined"
-                color="primary"
-                :loading="updatingRates"
-                @click="updateCurrencyRates"
-              >
-                <v-icon>mdi-refresh</v-icon>
-              </v-btn>
-            </div>
+        <v-card elevation="2" rounded="lg">
+          <v-card-title class="d-flex align-center justify-space-between pa-3">
+            <span class="text-subtitle-1 font-weight-bold">Currency Rates</span>
+            <v-btn
+              icon="mdi-refresh"
+              size="small"
+              variant="text"
+              :loading="updatingRates"
+              @click="updateCurrencyRates"
+            />
           </v-card-title>
-          
-          <v-card-text class="pa-6">
-            <div v-if="currencies.length > 0">
-              <v-row>
-                <v-col
-                  v-for="currency in currencies"
-                  :key="currency.id"
-                  cols="12"
-                  sm="6"
-                  md="3"
-                >
-                  <v-card
-                    elevation="0"
-                    rounded="lg"
-                    :class="['currency-item-card', { 'currency-base-item': currency.isBaseCurrency }]"
-                    variant="outlined"
-                  >
-                    <v-card-text class="pa-4">
-                      <div class="d-flex align-center justify-space-between mb-3">
-                        <div class="d-flex align-center">
-                          <div
-                            :class="[
-                              'currency-code-box',
-                              currency.isBaseCurrency ? 'code-box-primary' : 'code-box-default'
-                            ]"
-                          >
-                            {{ currency.code }}
-                          </div>
-                          <div class="ml-3">
-                            <div class="text-body-2 font-weight-medium">{{ currency.name }}</div>
-                            <div v-if="currency.symbol" class="text-caption text-medium-emphasis">
-                              {{ currency.symbol }}
-                            </div>
-                          </div>
-                        </div>
-                        <v-chip
-                          v-if="currency.autoUpdate"
-                          color="success"
-                          size="x-small"
-                          variant="tonal"
-                        >
-                          <v-icon start icon="mdi-sync" size="12" />
-                          Otomatik
-                        </v-chip>
-                      </div>
-                      
-                      <div class="currency-rate-display mb-3">
-                        <div class="text-h5 font-weight-bold text-primary mb-1">
-                          {{ formatCurrencyRate(currency.rateToTry) }}
-                        </div>
-                        <div class="text-caption text-medium-emphasis">₺ Türk Lirası</div>
-                      </div>
-                      
-                      <v-divider class="my-3" />
-                      
-                      <div class="d-flex align-center justify-space-between">
-                        <div class="d-flex align-center">
-                          <v-icon icon="mdi-clock-outline" size="14" class="mr-1 text-medium-emphasis" />
-                          <span class="text-caption text-medium-emphasis">
-                            {{ formatDateTime(currency.lastUpdatedAt) }}
-                          </span>
-                        </div>
-                        <v-chip
-                          v-if="currency.isBaseCurrency"
-                          color="primary"
-                          size="x-small"
-                          variant="flat"
-                        >
-                          Varsayılan
-                        </v-chip>
-                      </div>
-                    </v-card-text>
-                  </v-card>
-                </v-col>
-              </v-row>
+          <v-divider />
+          <v-card-text class="pa-3">
+            <div v-if="loadingCurrencies" class="text-center py-4">
+              <v-progress-circular indeterminate color="primary" size="24" />
             </div>
-            <div v-else class="text-center py-8">
-              <v-icon icon="mdi-currency-usd" size="48" color="grey-lighten-1" class="mb-3" />
-              <p class="text-body-1 text-medium-emphasis mb-1">Kur Bilgisi Bulunamadı</p>
-              <p class="text-caption text-medium-emphasis">Henüz döviz kuru eklenmemiş</p>
+            <div v-else-if="currencies.length > 0" class="d-flex flex-wrap gap-2">
+              <v-chip
+                v-for="currency in currencies"
+                :key="currency.id"
+                :color="currency.isBaseCurrency ? 'primary' : 'default'"
+                variant="flat"
+                size="small"
+                class="px-3"
+              >
+                <span class="font-weight-bold mr-2 text-caption">{{ currency.code }}</span>
+                <span class="text-caption">{{ formatCurrencyRateCompact(currency.rateToTry) }}</span>
+              </v-chip>
+            </div>
+            <div v-else class="text-center py-3">
+              <v-icon icon="mdi-currency-usd" size="32" color="grey-lighten-1" class="mb-2" />
+              <p class="text-caption text-medium-emphasis">No currency data available</p>
             </div>
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
 
-    <!-- Dashboard Metrics Cards -->
-    <v-row class="mb-6">
-      <!-- Row 1 -->
+    <!-- Dashboard Metrics Cards (Kompakt) -->
+    <v-row class="mb-4">
       <v-col cols="12" sm="6" md="3" v-for="metric in metrics" :key="metric.key">
-        <v-card
-          class="metric-card"
-          :class="metric.colorClass"
-          elevation="0"
-          rounded="lg"
-        >
-          <div class="metric-content">
-            <div class="metric-info">
-              <div class="metric-label">{{ metric.label }}</div>
-              <div class="metric-value">
-                {{ formatNumber(stats[metric.key as keyof typeof stats]) }}
-                <span v-if="metric.unit" class="metric-unit">{{ metric.unit }}</span>
+        <v-card elevation="2" rounded="lg" class="metric-card-compact">
+          <v-card-text class="pa-3">
+            <div class="d-flex align-center justify-space-between">
+              <div class="flex-grow-1">
+                <div class="text-caption text-medium-emphasis mb-1">{{ metric.label }}</div>
+                <div class="d-flex align-baseline gap-1">
+                  <span class="text-h6 font-weight-bold">
+                    {{ formatNumber(stats[metric.key as keyof typeof stats]) }}
+                  </span>
+                  <span v-if="metric.unit" class="text-caption text-medium-emphasis">{{ metric.unit }}</span>
+                </div>
+                <div v-if="metric.trend" class="d-flex align-center gap-1 mt-1">
+                  <v-icon
+                    :icon="metric.trend > 0 ? 'mdi-trending-up' : 'mdi-trending-down'"
+                    size="14"
+                    :color="metric.trend > 0 ? 'success' : 'error'"
+                  />
+                  <span class="text-caption" :class="metric.trend > 0 ? 'text-success' : 'text-error'">
+                    {{ Math.abs(metric.trend) }}%
+                  </span>
+                </div>
               </div>
+              <v-avatar
+                size="40"
+                :color="metric.iconColor"
+                variant="tonal"
+                class="ml-2"
+              >
+                <v-icon :icon="metric.icon" :color="metric.iconColor" size="20" />
+              </v-avatar>
             </div>
-            <div class="metric-icon" :style="{ background: metric.iconBg }">
-              <v-icon :icon="metric.icon" :color="metric.iconColor" size="32" />
-            </div>
-          </div>
-          <div class="metric-footer" v-if="metric.trend">
-            <v-icon
-              :icon="metric.trend > 0 ? 'mdi-trending-up' : 'mdi-trending-down'"
-              size="16"
-              :color="metric.trend > 0 ? 'success' : 'error'"
-            />
-            <span class="metric-trend" :class="metric.trend > 0 ? 'text-success' : 'text-error'">
-              {{ Math.abs(metric.trend) }}%
-            </span>
-            <span class="metric-period">vs last month</span>
-          </div>
+          </v-card-text>
         </v-card>
       </v-col>
     </v-row>
 
-    <!-- Reservation Chart -->
-    <v-row class="mb-6">
+    <!-- Reservation Chart (Kompakt) -->
+    <v-row class="mb-4">
       <v-col cols="12">
-        <v-card elevation="0" rounded="lg" class="section-card">
-          <v-card-title class="section-title">
-            <v-icon icon="mdi-chart-line" class="mr-2" color="primary" />
-            Aylık Rezervasyon İstatistikleri
+        <v-card elevation="2" rounded="lg">
+          <v-card-title class="pa-3">
+            <span class="text-subtitle-1 font-weight-bold">Monthly Reservation Statistics</span>
           </v-card-title>
-          <v-divider class="mb-4" />
-          <v-card-text>
-            <div v-if="loadingChart" class="text-center py-8">
-              <v-progress-circular indeterminate color="primary" />
-              <p class="mt-4 text-medium-emphasis">Grafik yükleniyor...</p>
+          <v-divider />
+          <v-card-text class="pa-3">
+            <div v-if="loadingChart" class="text-center py-6">
+              <v-progress-circular indeterminate color="primary" size="24" />
+              <p class="mt-2 text-caption text-medium-emphasis">Loading chart...</p>
             </div>
-            <div v-else style="position: relative; height: 300px;">
+            <div v-else style="position: relative; height: 250px;">
               <Line :data="chartData" :options="chartOptions" />
             </div>
           </v-card-text>
@@ -170,303 +101,308 @@
       </v-col>
     </v-row>
 
-    <!-- Reminders and Messages -->
-    <v-row class="mb-6">
+    <!-- Reminders and Messages (Kompakt) -->
+    <v-row class="mb-4">
       <v-col cols="12" md="6">
-        <v-card elevation="0" rounded="lg" class="section-card">
-          <v-card-title class="section-title">
-            <v-icon icon="mdi-message-text-outline" class="mr-2" color="primary" />
-            Hatırlatma ve Mesajlar
+        <v-card elevation="2" rounded="lg">
+          <v-card-title class="pa-3">
+            <span class="text-subtitle-1 font-weight-bold">Reminders & Messages</span>
           </v-card-title>
-          <v-divider class="mb-4" />
+          <v-divider />
           
           <!-- Message Form -->
-          <v-form @submit.prevent="addMessage" class="mb-4">
-            <v-row dense>
-              <v-col cols="12" md="5">
-                <v-text-field
-                  v-model="messageForm.date"
-                  type="date"
-                  density="comfortable"
-                  variant="outlined"
-                  label="Tarih"
-                  hide-details
-                  prepend-inner-icon="mdi-calendar"
-                  bg-color="grey-lighten-5"
-                />
-              </v-col>
-              <v-col cols="12" md="4">
-                <v-text-field
-                  v-model="messageForm.time"
-                  type="time"
-                  density="comfortable"
-                  variant="outlined"
-                  label="Saat"
-                  hide-details
-                  prepend-inner-icon="mdi-clock-outline"
-                  bg-color="grey-lighten-5"
-                />
-              </v-col>
-              <v-col cols="12" md="3">
-                <v-btn color="primary" block height="40" @click="addMessage">
-                  <v-icon icon="mdi-plus" class="mr-1" />
-                  Ekle
-                </v-btn>
-              </v-col>
-            </v-row>
-            <v-row dense class="mt-2">
-              <v-col cols="12">
-                <v-text-field
-                  v-model="messageForm.subject"
-                  density="comfortable"
-                  variant="outlined"
-                  label="Konu"
-                  hide-details
-                  prepend-inner-icon="mdi-format-title"
-                  bg-color="grey-lighten-5"
-                />
-              </v-col>
-              <v-col cols="12">
-                <v-textarea
-                  v-model="messageForm.detail"
-                  density="comfortable"
-                  variant="outlined"
-                  label="Detay"
-                  rows="2"
-                  hide-details
-                  prepend-inner-icon="mdi-text"
-                  bg-color="grey-lighten-5"
-                />
-              </v-col>
-            </v-row>
-          </v-form>
-          
-          <!-- Messages List -->
-          <div v-if="messages.length > 0">
-            <v-data-table
-              :headers="messageHeaders"
-              :items="messages"
-              :items-per-page="5"
-              density="comfortable"
-              class="modern-table"
-              hide-default-footer
+          <v-card-text class="pa-3">
+            <v-form @submit.prevent="addMessage" class="mb-3">
+              <v-row dense>
+                <v-col cols="12" md="5">
+                  <v-text-field
+                    v-model="messageForm.date"
+                    type="date"
+                    density="compact"
+                    variant="outlined"
+                    label="Date"
+                    hide-details
+                    prepend-inner-icon="mdi-calendar"
+                  />
+                </v-col>
+                <v-col cols="12" md="4">
+                  <v-text-field
+                    v-model="messageForm.time"
+                    type="time"
+                    density="compact"
+                    variant="outlined"
+                    label="Time"
+                    hide-details
+                    prepend-inner-icon="mdi-clock-outline"
+                  />
+                </v-col>
+                <v-col cols="12" md="3">
+                  <v-btn color="primary" block size="small" @click="addMessage">
+                    <v-icon icon="mdi-plus" size="16" class="mr-1" />
+                    Add
+                  </v-btn>
+                </v-col>
+              </v-row>
+              <v-row dense class="mt-1">
+                <v-col cols="12">
+                  <v-text-field
+                    v-model="messageForm.subject"
+                    density="compact"
+                    variant="outlined"
+                    label="Subject"
+                    hide-details
+                    prepend-inner-icon="mdi-format-title"
+                  />
+                </v-col>
+                <v-col cols="12">
+                  <v-textarea
+                    v-model="messageForm.detail"
+                    density="compact"
+                    variant="outlined"
+                    label="Detail"
+                    rows="2"
+                    hide-details
+                    prepend-inner-icon="mdi-text"
+                  />
+                </v-col>
+              </v-row>
+            </v-form>
+            
+            <!-- Messages List -->
+            <div v-if="messages.length > 0">
+              <v-data-table
+                :headers="messageHeaders"
+                :items="messages"
+                :items-per-page="5"
+                density="compact"
+                class="compact-table"
+                hide-default-footer
+              >
+                <template #item.date="{ item }">
+                  <span class="text-caption font-weight-medium">{{ item.date }}</span>
+                </template>
+                <template #item.time="{ item }">
+                  <v-chip size="x-small" variant="tonal" color="primary">{{ item.time }}</v-chip>
+                </template>
+                <template #item.actions="{ item }">
+                  <v-btn
+                    icon="mdi-delete-outline"
+                    size="x-small"
+                    variant="text"
+                    color="error"
+                    @click="deleteMessage(item.id)"
+                  />
+                </template>
+              </v-data-table>
+            </div>
+            <div v-else class="empty-state-compact">
+              <v-icon icon="mdi-message-outline" size="32" color="grey-lighten-1" />
+              <p class="text-caption text-medium-emphasis mt-1">No messages yet</p>
+            </div>
+            <v-btn
+              variant="text"
+              color="primary"
+              size="small"
+              prepend-icon="mdi-arrow-right"
+              class="mt-2"
+              @click="viewAllMessages"
             >
-              <template #item.date="{ item }">
-                <span class="text-caption font-weight-medium">{{ item.date }}</span>
-              </template>
-              <template #item.time="{ item }">
-                <v-chip size="small" variant="tonal" color="primary">{{ item.time }}</v-chip>
-              </template>
-              <template #item.actions="{ item }">
-                <v-btn
-                  icon="mdi-delete-outline"
-                  size="small"
-                  variant="text"
-                  color="error"
-                  @click="deleteMessage(item.id)"
-                />
-              </template>
-            </v-data-table>
-          </div>
-          <div v-else class="empty-state">
-            <v-icon icon="mdi-message-outline" size="48" color="grey-lighten-1" />
-            <p class="text-body-2 text-medium-emphasis mt-2">Henüz mesaj eklenmemiş</p>
-          </div>
-          <v-btn
-            variant="text"
-            color="primary"
-            prepend-icon="mdi-arrow-right"
-            class="mt-4"
-            @click="viewAllMessages"
-          >
-            Tüm Mesajları Görüntüle
-          </v-btn>
+              View All Messages
+            </v-btn>
+          </v-card-text>
         </v-card>
       </v-col>
       
       <!-- Payment Reminders -->
       <v-col cols="12" md="6">
-        <v-card elevation="0" rounded="lg" class="section-card">
-          <v-card-title class="section-title">
-            <v-icon icon="mdi-credit-card-outline" class="mr-2" color="success" />
-            Günlük Ödeme Hatırlatmaları
+        <v-card elevation="2" rounded="lg">
+          <v-card-title class="pa-3">
+            <span class="text-subtitle-1 font-weight-bold">Daily Payment Reminders</span>
           </v-card-title>
-          <v-divider class="mb-4" />
-          <div v-if="paymentReminders.length > 0">
-            <v-data-table
-              :headers="paymentHeaders"
-              :items="paymentReminders"
-              :items-per-page="5"
-              density="comfortable"
-              class="modern-table"
-              hide-default-footer
+          <v-divider />
+          <v-card-text class="pa-3">
+            <div v-if="paymentReminders.length > 0">
+              <v-data-table
+                :headers="paymentHeaders"
+                :items="paymentReminders"
+                :items-per-page="5"
+                density="compact"
+                class="compact-table"
+                hide-default-footer
+              >
+                <template #item.amount="{ item }">
+                  <span class="text-caption font-weight-bold text-primary">{{ formatCurrency(item.amount) }}</span>
+                </template>
+                <template #item.status="{ item }">
+                  <div class="d-flex align-center gap-1">
+                    <v-chip
+                      :color="item.paid ? 'success' : 'error'"
+                      size="x-small"
+                      variant="flat"
+                    >
+                      {{ item.paid ? 'Paid' : 'Unpaid' }}
+                    </v-chip>
+                    <v-btn
+                      v-if="!item.paid"
+                      size="x-small"
+                      color="success"
+                      variant="flat"
+                      icon="mdi-check"
+                      @click="markPaymentPaid(item.id)"
+                    />
+                  </div>
+                </template>
+              </v-data-table>
+            </div>
+            <div v-else class="empty-state-compact">
+              <v-icon icon="mdi-credit-card-off-outline" size="32" color="grey-lighten-1" />
+              <p class="text-caption text-medium-emphasis mt-1">No payment reminders</p>
+            </div>
+            <v-btn
+              variant="text"
+              color="primary"
+              size="small"
+              prepend-icon="mdi-arrow-right"
+              class="mt-2"
+              @click="viewPaymentSchedule"
             >
-              <template #item.amount="{ item }">
-                <span class="font-weight-bold text-primary">{{ formatCurrency(item.amount) }}</span>
-              </template>
-              <template #item.status="{ item }">
-                <div class="d-flex align-center gap-2">
-                  <v-chip
-                    :color="item.paid ? 'success' : 'error'"
-                    size="small"
-                    variant="flat"
-                  >
-                    {{ item.paid ? 'Ödendi' : 'Ödenmedi' }}
-                  </v-chip>
-                  <v-btn
-                    v-if="!item.paid"
-                    size="small"
-                    color="success"
-                    variant="flat"
-                    prepend-icon="mdi-check"
-                    @click="markPaymentPaid(item.id)"
-                  >
-                    Öde
-                  </v-btn>
-                </div>
-              </template>
-            </v-data-table>
-          </div>
-          <div v-else class="empty-state">
-            <v-icon icon="mdi-credit-card-off-outline" size="48" color="grey-lighten-1" />
-            <p class="text-body-2 text-medium-emphasis mt-2">Ödeme hatırlatması yok</p>
-          </div>
-          <v-btn
-            variant="text"
-            color="primary"
-            prepend-icon="mdi-arrow-right"
-            class="mt-4"
-            @click="viewPaymentSchedule"
-          >
-            Ödeme Çizelgesini Görüntüle
-          </v-btn>
+              View Payment Schedule
+            </v-btn>
+          </v-card-text>
         </v-card>
       </v-col>
     </v-row>
 
-    <!-- Warnings Section -->
+    <!-- Warnings Section (Kompakt) -->
     <v-row>
       <v-col cols="12" md="4">
-        <v-card elevation="0" rounded="lg" class="section-card warning-card">
-          <v-card-title class="section-title">
-            <v-icon icon="mdi-shield-check-outline" class="mr-2" color="warning" />
-            Sigorta Muayene Uyarıları
+        <v-card elevation="2" rounded="lg">
+          <v-card-title class="pa-3">
+            <span class="text-subtitle-1 font-weight-bold">Insurance/Inspection Warnings</span>
           </v-card-title>
-          <v-divider class="mb-4" />
-          <div v-if="insuranceWarnings.length > 0">
-            <v-data-table
-              :headers="insuranceHeaders"
-              :items="insuranceWarnings"
-              :items-per-page="5"
-              density="comfortable"
-              class="modern-table"
-              hide-default-footer
-            />
-          </div>
-          <div v-else class="empty-state">
-            <v-icon icon="mdi-shield-off-outline" size="48" color="grey-lighten-1" />
-            <p class="text-body-2 text-medium-emphasis mt-2">Uyarı yok</p>
-          </div>
-          <v-btn
-            variant="text"
-            color="primary"
-            prepend-icon="mdi-arrow-right"
-            class="mt-4"
-            @click="viewAllInsurance"
-          >
-            Tüm Sigorta/Muayeneleri Görüntüle
-          </v-btn>
+          <v-divider />
+          <v-card-text class="pa-3">
+            <div v-if="insuranceWarnings.length > 0">
+              <v-data-table
+                :headers="insuranceHeaders"
+                :items="insuranceWarnings"
+                :items-per-page="5"
+                density="compact"
+                class="compact-table"
+                hide-default-footer
+              />
+            </div>
+            <div v-else class="empty-state-compact">
+              <v-icon icon="mdi-shield-off-outline" size="32" color="grey-lighten-1" />
+              <p class="text-caption text-medium-emphasis mt-1">No warnings</p>
+            </div>
+            <v-btn
+              variant="text"
+              color="primary"
+              size="small"
+              prepend-icon="mdi-arrow-right"
+              class="mt-2"
+              @click="viewAllInsurance"
+            >
+              View All Insurance/Inspections
+            </v-btn>
+          </v-card-text>
         </v-card>
       </v-col>
       
       <!-- Maintenance Warnings -->
       <v-col cols="12" md="4">
-        <v-card elevation="0" rounded="lg" class="section-card warning-card">
-          <v-card-title class="section-title">
-            <v-icon icon="mdi-wrench-outline" class="mr-2" color="info" />
-            Araç Bakım Uyarıları
+        <v-card elevation="2" rounded="lg">
+          <v-card-title class="pa-3">
+            <span class="text-subtitle-1 font-weight-bold">Vehicle Maintenance Warnings</span>
           </v-card-title>
-          <v-divider class="mb-4" />
-          <div v-if="maintenanceWarnings.length > 0">
-            <v-data-table
-              :headers="maintenanceHeaders"
-              :items="maintenanceWarnings"
-              :items-per-page="5"
-              density="comfortable"
-              class="modern-table"
-              hide-default-footer
-            />
-          </div>
-          <div v-else class="empty-state">
-            <v-icon icon="mdi-wrench-clock-outline" size="48" color="grey-lighten-1" />
-            <p class="text-body-2 text-medium-emphasis mt-2">Bakım uyarısı yok</p>
-          </div>
-          <v-btn
-            variant="text"
-            color="primary"
-            prepend-icon="mdi-arrow-right"
-            class="mt-4"
-            @click="viewAllMaintenance"
-          >
-            Tüm Bakımları Görüntüle
-          </v-btn>
+          <v-divider />
+          <v-card-text class="pa-3">
+            <div v-if="maintenanceWarnings.length > 0">
+              <v-data-table
+                :headers="maintenanceHeaders"
+                :items="maintenanceWarnings"
+                :items-per-page="5"
+                density="compact"
+                class="compact-table"
+                hide-default-footer
+              />
+            </div>
+            <div v-else class="empty-state-compact">
+              <v-icon icon="mdi-wrench-clock-outline" size="32" color="grey-lighten-1" />
+              <p class="text-caption text-medium-emphasis mt-1">No maintenance warnings</p>
+            </div>
+            <v-btn
+              variant="text"
+              color="primary"
+              size="small"
+              prepend-icon="mdi-arrow-right"
+              class="mt-2"
+              @click="viewAllMaintenance"
+            >
+              View All Maintenance
+            </v-btn>
+          </v-card-text>
         </v-card>
       </v-col>
       
       <!-- Penalty Warnings -->
       <v-col cols="12" md="4">
-        <v-card elevation="0" rounded="lg" class="section-card warning-card">
-          <v-card-title class="section-title">
-            <v-icon icon="mdi-alert-circle-outline" class="mr-2" color="error" />
-            Ceza Uyarıları
+        <v-card elevation="2" rounded="lg">
+          <v-card-title class="pa-3">
+            <span class="text-subtitle-1 font-weight-bold">Penalty Warnings</span>
           </v-card-title>
-          <v-divider class="mb-4" />
-          <div v-if="penaltyWarnings.length > 0">
-            <v-data-table
-              :headers="penaltyHeaders"
-              :items="penaltyWarnings"
-              :items-per-page="5"
-              density="comfortable"
-              class="modern-table"
-              hide-default-footer
-            >
-              <template #item.remaining="{ item }">
-                <v-chip
-                  :color="item.remaining < 0 ? 'error' : 'warning'"
-                  size="small"
-                  variant="flat"
-                >
-                  {{ item.remaining }} Gün
-                </v-chip>
-              </template>
-            </v-data-table>
-          </div>
-          <div v-else class="empty-state">
-            <v-icon icon="mdi-check-circle-outline" size="48" color="grey-lighten-1" />
-            <p class="text-body-2 text-medium-emphasis mt-2">Ceza uyarısı yok</p>
-          </div>
-          <div class="d-flex gap-2 mt-4">
-            <v-btn
-              variant="outlined"
-              color="primary"
-              prepend-icon="mdi-file-upload-outline"
-              @click="uploadPenaltyFile"
-            >
-              Dosya Yükle
-            </v-btn>
-            <v-btn
-              variant="text"
-              color="primary"
-              prepend-icon="mdi-arrow-right"
-              @click="viewAllPenalties"
-            >
-              Tüm Cezalar
-            </v-btn>
-          </div>
+          <v-divider />
+          <v-card-text class="pa-3">
+            <div v-if="penaltyWarnings.length > 0">
+              <v-data-table
+                :headers="penaltyHeaders"
+                :items="penaltyWarnings"
+                :items-per-page="5"
+                density="compact"
+                class="compact-table"
+                hide-default-footer
+              >
+                <template #item.remaining="{ item }">
+                  <v-chip
+                    :color="item.remaining < 0 ? 'error' : 'warning'"
+                    size="x-small"
+                    variant="flat"
+                  >
+                    {{ item.remaining }} Days
+                  </v-chip>
+                </template>
+              </v-data-table>
+            </div>
+            <div v-else class="empty-state-compact">
+              <v-icon icon="mdi-check-circle-outline" size="32" color="grey-lighten-1" />
+              <p class="text-caption text-medium-emphasis mt-1">No penalty warnings</p>
+            </div>
+            <div class="d-flex gap-2 mt-2">
+              <v-btn
+                variant="outlined"
+                color="primary"
+                size="small"
+                prepend-icon="mdi-file-upload-outline"
+                @click="uploadPenaltyFile"
+              >
+                Upload File
+              </v-btn>
+              <v-btn
+                variant="text"
+                color="primary"
+                size="small"
+                prepend-icon="mdi-arrow-right"
+                @click="viewAllPenalties"
+              >
+                View All
+              </v-btn>
+            </div>
+          </v-card-text>
         </v-card>
       </v-col>
     </v-row>
-  </div>
+  </v-container>
 </template>
 
 <script setup lang="ts">
@@ -505,104 +441,80 @@ const router = useRouter();
 const metrics = computed(() => [
   {
     key: 'vehiclesDeparting24h',
-    label: '24 Saat içinde Çıkacak Araçlar',
+    label: 'Departing in 24h',
     icon: 'mdi-timer-outline',
     iconColor: 'primary',
-    iconBg: 'rgba(25, 118, 210, 0.1)',
-    colorClass: 'metric-primary',
     trend: 5,
   },
   {
     key: 'notDeparted',
-    label: 'Çıkışı Yapılmamışlar',
+    label: 'Not Departed',
     icon: 'mdi-car-outline',
     iconColor: 'info',
-    iconBg: 'rgba(33, 150, 243, 0.1)',
-    colorClass: 'metric-info',
   },
   {
     key: 'totalBusinessDays',
-    label: 'Toplam İş Günü',
+    label: 'Total Business Days',
     icon: 'mdi-calendar-month',
     iconColor: 'primary',
-    iconBg: 'rgba(25, 118, 210, 0.1)',
-    colorClass: 'metric-primary',
   },
   {
     key: 'deliveredVehicles',
-    label: 'Teslim Edilen Araçlar',
+    label: 'Delivered Vehicles',
     icon: 'mdi-car-check',
     iconColor: 'success',
-    iconBg: 'rgba(46, 125, 50, 0.1)',
-    colorClass: 'metric-success',
     trend: 12,
   },
   {
     key: 'vehiclesReturning24h',
-    label: '24 Saat içinde Dönecek Araçlar',
+    label: 'Returning in 24h',
     icon: 'mdi-timer-outline',
     iconColor: 'warning',
-    iconBg: 'rgba(237, 108, 2, 0.1)',
-    colorClass: 'metric-warning',
   },
   {
     key: 'notReturned',
-    label: 'Dönüşü Yapılmamışlar',
+    label: 'Not Returned',
     icon: 'mdi-car-off',
     iconColor: 'error',
-    iconBg: 'rgba(211, 47, 47, 0.1)',
-    colorClass: 'metric-error',
   },
   {
     key: 'monthlyReservations',
-    label: 'Aylık Rezervasyon',
+    label: 'Monthly Reservations',
     icon: 'mdi-calendar-month-outline',
     iconColor: 'info',
-    iconBg: 'rgba(33, 150, 243, 0.1)',
-    colorClass: 'metric-info',
     trend: 8,
   },
   {
     key: 'toBeDelivered',
-    label: 'Teslim Edilecek Araçlar',
+    label: 'To Be Delivered',
     icon: 'mdi-car-clock',
     iconColor: 'success',
-    iconBg: 'rgba(46, 125, 50, 0.1)',
-    colorClass: 'metric-success',
   },
   {
     key: 'totalReservations',
-    label: 'Toplam Rezervasyon',
+    label: 'Total Reservations',
     icon: 'mdi-currency-eur',
     iconColor: 'success',
-    iconBg: 'rgba(46, 125, 50, 0.1)',
-    colorClass: 'metric-success',
     trend: 15,
   },
   {
     key: 'dailyReservations',
-    label: 'Günlük Rezervasyon',
+    label: 'Daily Reservations',
     icon: 'mdi-calendar-today',
     iconColor: 'info',
-    iconBg: 'rgba(33, 150, 243, 0.1)',
-    colorClass: 'metric-info',
   },
   {
     key: 'canceledReservations',
-    label: 'İptal Edilen Rezervasyon',
+    label: 'Canceled Reservations',
     icon: 'mdi-account-cancel',
     iconColor: 'error',
-    iconBg: 'rgba(211, 47, 47, 0.1)',
-    colorClass: 'metric-error',
     trend: -3,
   },
   {
     key: 'customerSatisfaction',
-    label: 'Müşteri Memnuniyet Oranı',
+    label: 'Customer Satisfaction',
     icon: 'mdi-chart-line',
     iconColor: 'primary',
-    iconBg: 'rgba(25, 118, 210, 0.1)',
-    colorClass: 'metric-primary',
     unit: '%',
     trend: 2,
   },
@@ -634,58 +546,58 @@ const messageForm = ref({
 
 const messages = ref<any[]>([]);
 const messageHeaders = [
-  { title: '#', key: 'id', width: '60px' },
-  { title: 'Tarih', key: 'date', width: '120px' },
-  { title: 'Saat', key: 'time', width: '100px' },
-  { title: 'Konu', key: 'subject' },
-  { title: 'İşlemler', key: 'actions', sortable: false, width: '80px', align: 'center' as const },
+  { title: '#', key: 'id', width: '50px' },
+  { title: 'Date', key: 'date', width: '100px' },
+  { title: 'Time', key: 'time', width: '80px' },
+  { title: 'Subject', key: 'subject' },
+  { title: 'Actions', key: 'actions', sortable: false, width: '60px', align: 'center' as const },
 ];
 
 // Payment Reminders
 const paymentReminders = ref<any[]>([]);
 const paymentHeaders = [
-  { title: '#', key: 'id', width: '60px' },
-  { title: 'Banka', key: 'bank', width: '140px' },
-  { title: 'Tip', key: 'type', width: '100px' },
-  { title: 'Tutar', key: 'amount', width: '130px' },
-  { title: 'Durum', key: 'status', sortable: false, width: '180px' },
-  { title: 'Tarih', key: 'date', width: '150px' },
-  { title: 'Açıklama', key: 'description' },
+  { title: '#', key: 'id', width: '50px' },
+  { title: 'Bank', key: 'bank', width: '120px' },
+  { title: 'Type', key: 'type', width: '80px' },
+  { title: 'Amount', key: 'amount', width: '100px' },
+  { title: 'Status', key: 'status', sortable: false, width: '120px' },
+  { title: 'Date', key: 'date', width: '100px' },
+  { title: 'Description', key: 'description' },
 ];
 
 // Insurance Warnings
 const insuranceWarnings = ref<any[]>([]);
 const insuranceHeaders = [
-  { title: '#', key: 'id', width: '60px' },
-  { title: 'Plaka', key: 'plate', width: '110px' },
-  { title: 'İşlem', key: 'action', width: '130px' },
-  { title: 'Başlangıç', key: 'startDate', width: '110px' },
-  { title: 'Bitiş', key: 'endDate', width: '110px' },
-  { title: 'Kalan', key: 'remaining', width: '90px' },
+  { title: '#', key: 'id', width: '50px' },
+  { title: 'Plate', key: 'plate', width: '90px' },
+  { title: 'Action', key: 'action', width: '100px' },
+  { title: 'Start', key: 'startDate', width: '90px' },
+  { title: 'End', key: 'endDate', width: '90px' },
+  { title: 'Remaining', key: 'remaining', width: '80px' },
 ];
 
 // Maintenance Warnings
 const maintenanceWarnings = ref<any[]>([]);
 const maintenanceHeaders = [
-  { title: '#', key: 'id', width: '60px' },
-  { title: 'Plaka', key: 'plate', width: '110px' },
-  { title: 'İşlem', key: 'action', width: '130px' },
-  { title: 'Bakım Tarihi', key: 'maintenanceDate', width: '130px' },
-  { title: 'Bakım Km', key: 'maintenanceKm', width: '110px' },
-  { title: 'Aracın Km', key: 'vehicleKm', width: '110px' },
-  { title: 'Kalan', key: 'remaining', width: '90px' },
+  { title: '#', key: 'id', width: '50px' },
+  { title: 'Plate', key: 'plate', width: '90px' },
+  { title: 'Action', key: 'action', width: '100px' },
+  { title: 'Maint. Date', key: 'maintenanceDate', width: '100px' },
+  { title: 'Maint. Km', key: 'maintenanceKm', width: '90px' },
+  { title: 'Vehicle Km', key: 'vehicleKm', width: '90px' },
+  { title: 'Remaining', key: 'remaining', width: '80px' },
 ];
 
 // Penalty Warnings
 const penaltyWarnings = ref<any[]>([]);
 const penaltyHeaders = [
-  { title: '#', key: 'id', width: '60px' },
-  { title: 'Plaka', key: 'plate', width: '110px' },
-  { title: 'Tip', key: 'type', width: '130px' },
-  { title: 'Tarih', key: 'date', width: '110px' },
-  { title: 'Tutar', key: 'amount', width: '110px' },
-  { title: 'Kalan', key: 'remaining', width: '120px' },
-  { title: 'Açıklama', key: 'description' },
+  { title: '#', key: 'id', width: '50px' },
+  { title: 'Plate', key: 'plate', width: '90px' },
+  { title: 'Type', key: 'type', width: '100px' },
+  { title: 'Date', key: 'date', width: '90px' },
+  { title: 'Amount', key: 'amount', width: '90px' },
+  { title: 'Remaining', key: 'remaining', width: '100px' },
+  { title: 'Description', key: 'description' },
 ];
 
 // Currency
@@ -706,6 +618,7 @@ const updatingRates = ref(false);
 
 // Chart data
 const loadingChart = ref(false);
+const loadingCurrencies = ref(false);
 const reservations = ref<any[]>([]);
 
 // Prepare chart data
@@ -761,18 +674,22 @@ const chartOptions = {
     legend: {
       display: true,
       position: 'top' as const,
+      labels: {
+        font: { size: 11 },
+        padding: 8,
+      },
     },
     tooltip: {
       mode: 'index' as const,
       intersect: false,
       backgroundColor: 'rgba(0, 0, 0, 0.8)',
-      padding: 12,
+      padding: 8,
       titleFont: {
-        size: 14,
+        size: 12,
         weight: 'bold' as const,
       },
       bodyFont: {
-        size: 13,
+        size: 11,
       },
     },
   },
@@ -782,12 +699,16 @@ const chartOptions = {
       ticks: {
         stepSize: 1,
         precision: 0,
+        font: { size: 10 },
       },
       grid: {
         color: 'rgba(0, 0, 0, 0.05)',
       },
     },
     x: {
+      ticks: {
+        font: { size: 10 },
+      },
       grid: {
         display: false,
       },
@@ -829,6 +750,13 @@ const formatCurrencyRate = (rate: number): string => {
     minimumFractionDigits: 4,
     maximumFractionDigits: 4,
   }).format(rate) + ' ₺';
+};
+
+const formatCurrencyRateCompact = (rate: number): string => {
+  return new Intl.NumberFormat('tr-TR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 4,
+  }).format(rate) + ' TRY';
 };
 
 const formatDateTime = (dateStr?: string): string => {
@@ -874,6 +802,7 @@ const loadDashboardData = async () => {
 
 // Load Currencies
 const loadCurrencies = async () => {
+  loadingCurrencies.value = true;
   try {
     const { data } = await http.get<CurrencyDto[]>('/currencies');
     currencies.value = data.filter(c => c.isActive).sort((a, b) => {
@@ -884,6 +813,8 @@ const loadCurrencies = async () => {
     });
   } catch (error) {
     console.error('Failed to load currencies:', error);
+  } finally {
+    loadingCurrencies.value = false;
   }
 };
 
@@ -962,311 +893,57 @@ onMounted(() => {
 
 <style scoped>
 .dashboard-container {
-  padding: 0;
-  background: linear-gradient(to bottom, #f8fafc 0%, #f1f5f9 100%);
+  padding: 16px !important;
+  background: #f5f5f5;
   min-height: 100vh;
 }
 
-/* Metric Cards */
-.metric-card {
+/* Metric Cards - Kompakt */
+.metric-card-compact {
   background: white;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
-  position: relative;
+  transition: all 0.2s ease;
 }
 
-.metric-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--metric-color) 0%, var(--metric-color-light) 100%);
-  opacity: 0;
-  transition: opacity 0.3s;
+.metric-card-compact:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.metric-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
-  border-color: rgba(0, 0, 0, 0.1);
-}
-
-.metric-card:hover::before {
-  opacity: 1;
-}
-
-.metric-primary {
-  --metric-color: #1976d2;
-  --metric-color-light: #42a5f5;
-}
-
-.metric-info {
-  --metric-color: #2196f3;
-  --metric-color-light: #64b5f6;
-}
-
-.metric-success {
-  --metric-color: #2e7d32;
-  --metric-color-light: #66bb6a;
-}
-
-.metric-warning {
-  --metric-color: #ed6c02;
-  --metric-color-light: #ffa726;
-}
-
-.metric-error {
-  --metric-color: #d32f2f;
-  --metric-color-light: #ef5350;
-}
-
-.metric-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 24px;
-  min-height: 100px;
-}
-
-.metric-info {
-  flex: 1;
-}
-
-.metric-label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #64748b;
-  margin-bottom: 8px;
-  line-height: 1.4;
-}
-
-.metric-value {
-  font-size: 2rem;
-  font-weight: 700;
-  color: #0f172a;
-  line-height: 1.2;
-}
-
-.metric-unit {
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: #64748b;
-  margin-left: 4px;
-}
-
-.metric-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 16px;
-  transition: transform 0.3s;
-}
-
-.metric-card:hover .metric-icon {
-  transform: scale(1.1) rotate(5deg);
-}
-
-.metric-footer {
-  padding: 12px 24px;
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: rgba(0, 0, 0, 0.02);
-}
-
-.metric-trend {
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.metric-period {
-  font-size: 0.75rem;
-  color: #94a3b8;
-  margin-left: auto;
-}
-
-/* Section Cards */
-.section-card {
-  background: white;
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-}
-
-.section-card:hover {
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
-}
-
-.section-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #0f172a;
-  padding: 20px 24px;
-  display: flex;
-  align-items: center;
-}
-
-.warning-card {
-  border-left: 4px solid transparent;
-}
-
-.warning-card:hover {
-  border-left-color: currentColor;
-}
-
-/* Modern Table */
-:deep(.modern-table) {
+/* Compact Table */
+:deep(.compact-table) {
   background: transparent;
 }
 
-:deep(.modern-table .v-data-table__thead) {
+:deep(.compact-table .v-data-table__thead) {
   background: rgba(0, 0, 0, 0.02);
 }
 
-:deep(.modern-table .v-data-table__thead th) {
+:deep(.compact-table .v-data-table__thead th) {
   font-weight: 600;
   color: #475569;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  padding: 8px 12px;
 }
 
-:deep(.modern-table .v-data-table__tbody tr) {
+:deep(.compact-table .v-data-table__tbody tr) {
   transition: background 0.2s;
 }
 
-:deep(.modern-table .v-data-table__tbody tr:hover) {
+:deep(.compact-table .v-data-table__tbody tr:hover) {
   background: rgba(25, 118, 210, 0.04);
 }
 
-:deep(.modern-table .v-data-table__tbody td) {
-  padding: 16px;
-  font-size: 0.875rem;
+:deep(.compact-table .v-data-table__tbody td) {
+  padding: 8px 12px;
+  font-size: 0.75rem;
 }
 
-/* Empty State */
-.empty-state {
+/* Empty State - Kompakt */
+.empty-state-compact {
   text-align: center;
-  padding: 48px 24px;
+  padding: 24px 16px;
   color: #94a3b8;
 }
 
-/* Responsive */
-@media (max-width: 960px) {
-  .metric-value {
-    font-size: 1.5rem;
-  }
-  
-  .metric-icon {
-    width: 48px;
-    height: 48px;
-  }
-  
-  .metric-content {
-    padding: 20px;
-  }
-}
-
-/* Animations */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.metric-card {
-  animation: fadeIn 0.5s ease-out;
-}
-
-.metric-card:nth-child(1) { animation-delay: 0.05s; }
-.metric-card:nth-child(2) { animation-delay: 0.1s; }
-.metric-card:nth-child(3) { animation-delay: 0.15s; }
-.metric-card:nth-child(4) { animation-delay: 0.2s; }
-.metric-card:nth-child(5) { animation-delay: 0.25s; }
-.metric-card:nth-child(6) { animation-delay: 0.3s; }
-.metric-card:nth-child(7) { animation-delay: 0.35s; }
-.metric-card:nth-child(8) { animation-delay: 0.4s; }
-.metric-card:nth-child(9) { animation-delay: 0.45s; }
-.metric-card:nth-child(10) { animation-delay: 0.5s; }
-.metric-card:nth-child(11) { animation-delay: 0.55s; }
-.metric-card:nth-child(12) { animation-delay: 0.6s; }
-
-/* Currency Card - Modern Design */
-/* Currency Section - Kurumsal Tasarım */
-.currency-section-card {
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.currency-section-card .border-b {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
-}
-
-.currency-item-card {
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  transition: all 0.2s ease;
-  height: 100%;
-}
-
-.currency-item-card:hover {
-  border-color: rgba(25, 118, 210, 0.3);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.currency-base-item {
-  border-color: rgba(25, 118, 210, 0.2);
-  background: rgba(25, 118, 210, 0.02);
-}
-
-.currency-code-box {
-  min-width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 0.875rem;
-  letter-spacing: 0.5px;
-}
-
-.code-box-primary {
-  background: #1976d2;
-  color: #ffffff;
-}
-
-.code-box-default {
-  background: #f5f5f5;
-  color: #424242;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-.currency-rate-display {
-  padding: 12px 0;
-}
-
-.currency-rate-display .text-h5 {
-  font-size: 1.75rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
-/* Responsive Design */
-@media (max-width: 960px) {
-  .currency-rate-display .text-h5 {
-    font-size: 1.5rem;
-  }
-}
 </style>
