@@ -10,9 +10,9 @@ import axios from 'axios';
  * This file is kept for backward compatibility with existing code.
  */
 export const http = axios.create({
-  // Frontend uses relative paths (subdomain-based)
+  // Frontend uses /api as baseURL (relative to current origin/subdomain)
   // Mobile uses api.saastour360.com (set via VITE_API_BASE_URL env var)
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? '', // Empty = relative to current origin
+  baseURL: import.meta.env.VITE_API_BASE_URL ?? '/api', // /api = relative to current origin
 });
 
 // Request interceptor - add auth token

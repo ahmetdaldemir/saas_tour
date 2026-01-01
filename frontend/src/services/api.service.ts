@@ -47,10 +47,10 @@ class ApiService {
     // Frontend uses subdomain-based routing (berg.saastour360.com/api/...)
     // Mobile uses api.saastour360.com/api/...
     // If VITE_API_BASE_URL is set, use it (for mobile or custom setup)
-    // Otherwise, use relative paths (subdomain-based)
+    // Otherwise, use /api as baseURL (relative to current origin/subdomain)
     const baseURL = import.meta.env.VITE_API_BASE_URL 
       ? import.meta.env.VITE_API_BASE_URL 
-      : ''; // Empty baseURL = relative to current origin (subdomain)
+      : '/api'; // /api = relative to current origin (subdomain-based)
     
     this.client = axios.create({
       baseURL,
