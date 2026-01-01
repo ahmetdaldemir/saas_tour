@@ -159,8 +159,27 @@ export class ChatSocketServer {
         req: err.req ? {
           method: err.req.method,
           url: err.req.url,
-          headers: err.req.headers,
+          headers: {
+            origin: err.req.headers.origin,
+            authorization: err.req.headers.authorization ? 'Bearer ***' : undefined,
+            'sec-websocket-key': err.req.headers['sec-websocket-key'],
+            'sec-websocket-version': err.req.headers['sec-websocket-version'],
+          },
         } : null,
+      });
+    });
+
+    // Log handshake attempts (before middleware)
+    this.io.engine.on('initial_headers', (headers, req) => {
+      logger.info('[Socket.io] Initial handshake headers', {
+        method: req.method,
+        url: req.url,
+        headers: {
+          origin: req.headers.origin,
+          authorization: req.headers.authorization ? 'Bearer ***' : undefined,
+          'sec-websocket-key': req.headers['sec-websocket-key'],
+          'sec-websocket-version': req.headers['sec-websocket-version'],
+        },
       });
     });
 
@@ -178,18 +197,30 @@ export class ChatSocketServer {
     });
 
     // Log raw HTTP requests to /socket.io/ path (before Socket.io processes them)
+    // Note: This might not fire if Socket.io handles the request first
+    const originalListeners = httpServer.listeners('request');
+    httpServer.removeAllListeners('request');
+    
     httpServer.on('request', (req, res) => {
       if (req.url?.startsWith('/socket.io/')) {
-        logger.info('[Socket.io] Raw HTTP request received', {
+        logger.info('[Socket.io] Raw HTTP request received (before Socket.io)', {
           method: req.method,
           url: req.url,
           headers: {
             origin: req.headers.origin,
             authorization: req.headers.authorization ? 'Bearer ***' : undefined,
             'user-agent': req.headers['user-agent'],
+            'sec-websocket-key': req.headers['sec-websocket-key'],
+            'sec-websocket-version': req.headers['sec-websocket-version'],
           },
         });
       }
+      // Call original Express listeners
+      originalListeners.forEach(listener => {
+        if (typeof listener === 'function') {
+          listener(req, res);
+        }
+      });
     });
 
     this.setupMiddleware();
