@@ -40,10 +40,10 @@ export class ChatSocketServer {
     
     // Allow all saastour360.com subdomains and tenant custom domains
     const allowedPatterns = [
-      /^https?:\/\/[a-z0-9-]+\.saastour360\.com$/i,
-      /^https?:\/\/[a-z0-9-]+\.local\.saastour360\.test$/i,
-      /^https?:\/\/(www\.)?bergrentacar\.com$/i, // Tenant custom domain
-      /^https?:\/\/(www\.)?sunsetcarrent\.com$/i, // Tenant custom domain
+      /^https?:\/\/[a-z0-9-]+\.saastour360\.com(:\d+)?$/i,
+      /^https?:\/\/[a-z0-9-]+\.local\.saastour360\.test(:\d+)?$/i,
+      /^https?:\/\/(www\.)?bergrentacar\.com(:\d+)?$/i, // Tenant custom domain
+      /^https?:\/\/(www\.)?sunsetcarrent\.com(:\d+)?$/i, // Tenant custom domain
       'https://api.saastour360.com',
       'http://api.saastour360.com',
       'http://localhost:5001',
