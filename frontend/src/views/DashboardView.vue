@@ -3,46 +3,85 @@
     <v-row>
       <!-- Sol: Rezervasyonlar Listesi (col-2) -->
       <v-col cols="12" md="2" class="pa-2">
-        <v-card elevation="2" rounded="lg" class="h-100">
-          <v-card-title class="d-flex align-center justify-space-between pa-3">
-            <span class="text-subtitle-1 font-weight-bold">Rezervasyonlar</span>
+        <v-card elevation="0" class="h-100 reservation-card" style="border: 1px solid #e5e7eb;">
+          <v-card-title class="d-flex align-center justify-space-between pa-2" style="min-height: 40px;">
+            <span class="text-body-2 font-weight-bold" style="font-size: 0.75rem;">Rezervasyonlar</span>
             <v-btn
               icon="mdi-refresh"
               variant="text"
-              size="small"
+              size="x-small"
               @click="loadReservations"
               :loading="loadingReservations"
+              style="min-width: 24px; width: 24px; height: 24px;"
             />
           </v-card-title>
           <v-divider />
           <v-card-text class="pa-0 reservations-list" style="max-height: calc(100vh - 200px); overflow-y: auto;">
-            <v-list density="compact">
-              <v-list-item
-                v-for="reservation in reservations"
-                :key="reservation.id"
-                class="reservation-item"
-              >
-                <v-list-item-title class="text-caption font-weight-medium">
+            <div v-if="reservations.length === 0" class="text-center py-8">
+              <v-icon icon="mdi-information-outline" size="24" color="grey-lighten-1" />
+              <p class="text-caption text-medium-emphasis mt-2" style="font-size: 0.7rem;">Rezervasyon bulunamadı</p>
+            </div>
+            <div
+              v-for="(reservation, index) in reservations"
+              :key="reservation.id"
+              class="reservation-item-card"
+              :class="{ 'selected': selectedReservation?.id === reservation.id }"
+              @click="selectReservation(reservation)"
+            >
+              <div class="d-flex align-center justify-space-between pa-2">
+                <span class="reservation-id" style="font-size: 0.7rem; font-weight: 600; color: #6b7280;">
                   #{{ reservation.reference }}
-                </v-list-item-title>
-                <v-list-item-subtitle class="text-caption">
-                  <div class="mt-1">{{ reservation.customerName }}</div>
+                </span>
+                <v-menu>
+                  <template #activator="{ props }">
+                    <v-btn
+                      icon="mdi-dots-vertical"
+                      variant="text"
+                      size="x-small"
+                      v-bind="props"
+                      @click.stop
+                      style="min-width: 20px; width: 20px; height: 20px;"
+                    />
+                  </template>
+                  <v-list density="compact">
+                    <v-list-item @click="viewReservationDetails(reservation)">
+                      <v-list-item-title style="font-size: 0.75rem;">Detayları Gör</v-list-item-title>
+                    </v-list-item>
+                  </v-list>
+                </v-menu>
+              </div>
+              <div class="d-flex align-center pa-2 pt-0">
+                <v-avatar size="32" class="mr-2">
+                  <span style="font-size: 0.75rem; font-weight: 600;">
+                    {{ getInitials(reservation.customerName) }}
+                  </span>
+                </v-avatar>
+                <div class="flex-grow-1">
+                  <div class="customer-name" style="font-size: 0.75rem; font-weight: 500; line-height: 1.2;">
+                    {{ reservation.customerName }}
+                  </div>
+                  <div class="reservation-date" style="font-size: 0.65rem; color: #9ca3af; margin-top: 2px;">
+                    {{ formatReservationDate(reservation.createdAt) }}
+                  </div>
                   <v-chip
                     size="x-small"
                     :color="getStatusColor(reservation.status)"
                     variant="flat"
                     class="mt-1"
+                    style="height: 18px; font-size: 0.65rem; font-weight: 500;"
                   >
                     {{ getStatusText(reservation.status) }}
                   </v-chip>
-                </v-list-item-subtitle>
-              </v-list-item>
-              <v-list-item v-if="reservations.length === 0" class="text-center">
-                <v-list-item-title class="text-caption text-medium-emphasis">
-                  Rezervasyon bulunamadı
-                </v-list-item-title>
-              </v-list-item>
-            </v-list>
+                </div>
+              </div>
+              <v-divider class="mx-2" />
+              <div class="d-flex align-center justify-space-between pa-2">
+                <span style="font-size: 0.65rem; color: #6b7280; font-weight: 500;">Kazanç</span>
+                <span class="earned-amount" style="font-size: 0.875rem; font-weight: 600; color: #059669;">
+                  {{ formatCurrency(reservation.earned || 0) }}
+                </span>
+              </div>
+            </div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -144,44 +183,33 @@
 
       <!-- Sağ: İstatistikler (col-2) -->
       <v-col cols="12" md="2" class="pa-2">
-        <v-card elevation="2" rounded="lg" class="h-100">
-          <v-card-title class="pa-3">
-            <span class="text-subtitle-1 font-weight-bold">İstatistikler</span>
+        <v-card elevation="0" class="h-100 stats-card" style="border: 1px solid #e5e7eb;">
+          <v-card-title class="pa-2" style="min-height: 40px;">
+            <span class="text-body-2 font-weight-bold" style="font-size: 0.75rem;">İstatistikler</span>
           </v-card-title>
           <v-divider />
-          <v-card-text class="pa-3">
+          <v-card-text class="pa-0">
             <div v-if="loadingStats" class="text-center py-4">
-              <v-progress-circular indeterminate color="primary" size="24" />
+              <v-progress-circular indeterminate color="primary" size="20" />
             </div>
-            <div v-else class="d-flex flex-column gap-3">
-              <div>
-                <div class="text-caption text-medium-emphasis">Toplam Kiralama Gün Sayısı</div>
-                <div class="text-h6 font-weight-bold mt-1">{{ formatNumber(stats.totalBusinessDays) }}</div>
-              </div>
-              <v-divider />
-              <div>
-                <div class="text-caption text-medium-emphasis">Teslim Edilen Araçlar</div>
-                <div class="text-h6 font-weight-bold mt-1">{{ formatNumber(stats.deliveredVehicles) }}</div>
-              </div>
-              <v-divider />
-              <div>
-                <div class="text-caption text-medium-emphasis">24 Saat İçinde Çıkacak</div>
-                <div class="text-h6 font-weight-bold mt-1">{{ formatNumber(stats.vehiclesDeparting24h) }}</div>
-              </div>
-              <v-divider />
-              <div>
-                <div class="text-caption text-medium-emphasis">Çıkışı Yapılmamışlar</div>
-                <div class="text-h6 font-weight-bold mt-1">{{ formatNumber(stats.notDeparted) }}</div>
-              </div>
-              <v-divider />
-              <div>
-                <div class="text-caption text-medium-emphasis">24 Saat İçinde Dönecek</div>
-                <div class="text-h6 font-weight-bold mt-1">{{ formatNumber(stats.vehiclesReturning24h) }}</div>
-              </div>
-              <v-divider />
-              <div>
-                <div class="text-caption text-medium-emphasis">Dönüşü Yapılmamışlar</div>
-                <div class="text-h6 font-weight-bold mt-1">{{ formatNumber(stats.notReturned) }}</div>
+            <div v-else>
+              <div
+                v-for="(stat, index) in statsList"
+                :key="stat.key"
+                class="stat-item-card"
+              >
+                <div class="d-flex align-center justify-space-between pa-2">
+                  <div class="flex-grow-1">
+                    <div class="stat-label" style="font-size: 0.7rem; color: #6b7280; font-weight: 500; line-height: 1.2;">
+                      {{ stat.label }}
+                    </div>
+                    <div class="stat-value" style="font-size: 0.875rem; font-weight: 600; color: #111827; margin-top: 4px;">
+                      {{ formatNumber(stat.value) }}
+                    </div>
+                  </div>
+                  <v-icon :icon="stat.icon" size="20" :color="stat.iconColor" class="ml-2" />
+                </div>
+                <v-divider v-if="index < statsList.length - 1" class="mx-2" />
               </div>
             </div>
           </v-card-text>
@@ -552,10 +580,12 @@ interface ReservationDto {
   checkIn?: string | null;
   checkOut?: string | null;
   createdAt: string;
+  earned?: number;
 }
 
 const reservations = ref<ReservationDto[]>([]);
 const loadingReservations = ref(false);
+const selectedReservation = ref<ReservationDto | null>(null);
 
 // Plakalar ve Araç Takip
 interface VehiclePlateDto {
@@ -598,6 +628,52 @@ const stats = ref({
   notReturned: 0,
 });
 const loadingStats = ref(false);
+
+// İstatistikler listesi (görseldeki gibi)
+const statsList = computed(() => [
+  {
+    key: 'totalBusinessDays',
+    label: 'Toplam Kiralama Gün Sayısı',
+    value: stats.value.totalBusinessDays,
+    icon: 'mdi-calendar-month',
+    iconColor: '#3b82f6',
+  },
+  {
+    key: 'deliveredVehicles',
+    label: 'Teslim Edilen Araçlar',
+    value: stats.value.deliveredVehicles,
+    icon: 'mdi-car-check',
+    iconColor: '#10b981',
+  },
+  {
+    key: 'vehiclesDeparting24h',
+    label: '24 Saat İçinde Çıkacak',
+    value: stats.value.vehiclesDeparting24h,
+    icon: 'mdi-timer-outline',
+    iconColor: '#f59e0b',
+  },
+  {
+    key: 'notDeparted',
+    label: 'Çıkışı Yapılmamışlar',
+    value: stats.value.notDeparted,
+    icon: 'mdi-car-outline',
+    iconColor: '#6366f1',
+  },
+  {
+    key: 'vehiclesReturning24h',
+    label: '24 Saat İçinde Dönecek',
+    value: stats.value.vehiclesReturning24h,
+    icon: 'mdi-timer-outline',
+    iconColor: '#f59e0b',
+  },
+  {
+    key: 'notReturned',
+    label: 'Dönüşü Yapılmamışlar',
+    value: stats.value.notReturned,
+    icon: 'mdi-car-off',
+    iconColor: '#ef4444',
+  },
+]);
 
 // Currency
 interface CurrencyDto {
@@ -818,7 +894,7 @@ const getStatusText = (status: string): string => {
     case 'pending':
       return 'Beklemede';
     case 'confirmed':
-      return 'Onaylandı';
+      return 'Aktif';
     case 'completed':
       return 'Tamamlandı';
     case 'cancelled':
@@ -830,6 +906,38 @@ const getStatusText = (status: string): string => {
   }
 };
 
+// Get initials for avatar
+const getInitials = (name: string): string => {
+  if (!name) return '?';
+  const parts = name.trim().split(' ');
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }
+  return name.substring(0, 2).toUpperCase();
+};
+
+// Format reservation date
+const formatReservationDate = (dateStr: string): string => {
+  try {
+    const date = new Date(dateStr);
+    const days = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
+    const months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+    return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+  } catch {
+    return dateStr;
+  }
+};
+
+// Select reservation
+const selectReservation = (reservation: ReservationDto) => {
+  selectedReservation.value = reservation;
+};
+
+// View reservation details
+const viewReservationDetails = (reservation: ReservationDto) => {
+  router.push(`/app/reservations/${reservation.id}`);
+};
+
 // Load Reservations (sondan başlayarak)
 const loadReservations = async () => {
   if (!auth.tenant) return;
@@ -839,7 +947,11 @@ const loadReservations = async () => {
       params: { tenantId: auth.tenant.id },
     });
     // Sondan başlayarak sırala (en yeni en üstte)
-    reservations.value = data.sort((a, b) => 
+    // earned değerini metadata'dan al
+    reservations.value = data.map(res => ({
+      ...res,
+      earned: (res as any).earned || 0,
+    })).sort((a, b) => 
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
   } catch (error) {
@@ -1058,13 +1170,28 @@ onMounted(async () => {
   max-height: calc(100vh - 200px);
 }
 
-.reservation-item {
-  border-bottom: 1px solid #eee;
+.reservation-item-card {
+  border-bottom: 1px solid #e5e7eb;
   cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
 }
 
-.reservation-item:hover {
-  background-color: #f0f0f0;
+.reservation-item-card:hover {
+  background-color: #f9fafb;
+}
+
+.reservation-item-card.selected {
+  background-color: #eff6ff;
+  border-left: 3px solid #3b82f6;
+}
+
+.stat-item-card {
+  transition: background 0.2s ease;
+}
+
+.stat-item-card:hover {
+  background-color: #f9fafb;
 }
 
 .currency-item {
