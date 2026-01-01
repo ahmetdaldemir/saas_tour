@@ -173,3 +173,27 @@ body {
 .v-dialog .v-card {
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
 }
+
+// PrimeVue Global Styles
+:root {
+  --p-primary-color: #2563EB;
+  --p-primary-contrast-color: #ffffff;
+  --p-surface-0: #ffffff;
+  --p-surface-50: #f9fafb;
+  --p-surface-100: #f3f4f6;
+  --p-surface-200: #e5e7eb;
+  --p-surface-300: #d1d5db;
+  --p-surface-400: #9ca3af;
+  --p-surface-500: #6b7280;
+  --p-surface-600: #4b5563;
+  --p-surface-700: #374151;
+  --p-surface-800: #1f2937;
+  --p-surface-900: #111827;
+  --p-content-border-radius: 6px;
+  --p-focus-ring: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+.p-component {
+  font-family: 'Roboto', sans-serif;
+  font-size: 0.875rem;
+}

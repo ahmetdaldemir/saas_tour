@@ -1,16 +1,10 @@
 import PrimeVue from 'primevue/config';
-import Aura from '@primevue/themes/aura';
 import 'primeicons/primeicons.css';
 
 export const primevue = PrimeVue;
 
 export const primevueConfig = {
-  theme: {
-    preset: Aura,
-    options: {
-      darkModeSelector: false,
-      cssLayer: false,
-    },
-  },
+  // PrimeVue 4 uses CSS variables for theming
+  // Theme will be applied via CSS
 };
 
