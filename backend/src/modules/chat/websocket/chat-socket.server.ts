@@ -63,9 +63,9 @@ export class ChatSocketServer {
       cors: {
         origin: (origin, callback) => {
           try {
-            // Allow requests with no origin (like mobile apps or curl requests)
+            // Allow requests with no origin (like mobile apps, curl, or proxy requests)
             if (!origin) {
-              logger.info('[Socket.io CORS] No origin header, allowing request');
+              logger.info('[Socket.io CORS] No origin header, allowing request (proxy/Docker network)');
               return callback(null, true);
             }
             
@@ -131,7 +131,7 @@ export class ChatSocketServer {
         },
         methods: ['GET', 'POST', 'OPTIONS'],
         credentials: true,
-        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Sec-WebSocket-Key', 'Sec-WebSocket-Version', 'Sec-WebSocket-Extensions'],
       },
       path: '/socket.io/',
       transports: ['polling', 'websocket'], // Prioritize polling
@@ -139,6 +139,14 @@ export class ChatSocketServer {
       connectTimeout: 45000,
       pingTimeout: 20000,
       pingInterval: 25000,
+      // Allow upgrade from polling to websocket
+      allowUpgrades: true,
+      // Cookie settings for polling
+      cookie: {
+        name: 'io',
+        httpOnly: false,
+        sameSite: 'lax',
+      },
     });
 
     // Add error handler for connection errors
@@ -148,7 +156,40 @@ export class ChatSocketServer {
         description: err.description,
         context: err.context,
         type: err.type,
+        req: err.req ? {
+          method: err.req.method,
+          url: err.req.url,
+          headers: err.req.headers,
+        } : null,
       });
+    });
+
+    // Log all connection attempts (before middleware)
+    this.io.engine.on('connection', (socket: any) => {
+      logger.info('[Socket.io] Raw connection attempt', {
+        id: socket.id,
+        transport: socket.transport?.name,
+        handshake: {
+          headers: socket.handshake?.headers,
+          auth: socket.handshake?.auth,
+          query: socket.handshake?.query,
+        },
+      });
+    });
+
+    // Log raw HTTP requests to /socket.io/ path (before Socket.io processes them)
+    httpServer.on('request', (req, res) => {
+      if (req.url?.startsWith('/socket.io/')) {
+        logger.info('[Socket.io] Raw HTTP request received', {
+          method: req.method,
+          url: req.url,
+          headers: {
+            origin: req.headers.origin,
+            authorization: req.headers.authorization ? 'Bearer ***' : undefined,
+            'user-agent': req.headers['user-agent'],
+          },
+        });
+      }
     });
 
     this.setupMiddleware();
