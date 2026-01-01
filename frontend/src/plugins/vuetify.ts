@@ -51,11 +51,11 @@ export const vuetify = createVuetify({
     },
     VDialog: {
       scrim: true,
-      scrimOpacity: 0.6,
+      scrimOpacity: 0.5,
     },
     VOverlay: {
       scrim: true,
-      scrimOpacity: 0.6,
+      scrimOpacity: 0.5,
     },
   },
   theme: {
