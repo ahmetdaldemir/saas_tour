@@ -40,11 +40,30 @@ const start = async () => {
   const app = createApp();
   const port = config.app.port;
 
-  // Create HTTP server for WebSocket support
-  const httpServer = createServer(app);
+  // Create HTTP server
+  // IMPORTANT: We need to handle Socket.io paths BEFORE Express app
+  // Socket.io will attach its own request handler, but we need to ensure it runs first
+  const httpServer = createServer((req, res) => {
+    // If it's a Socket.io request, let Socket.io handle it (it attaches its own handler)
+    // Otherwise, pass to Express app
+    if (req.url?.startsWith('/socket.io/')) {
+      logger.info('[SERVER] Socket.io request detected, should be handled by Socket.io', {
+        method: req.method,
+        url: req.url,
+      });
+      // Socket.io's handler should have already processed this, but if not, we'll let it through
+      // The Express app will not process Socket.io requests
+      return;
+    }
+    // Pass to Express app for all other requests
+    app(req, res);
+  });
 
-  // Initialize WebSocket server for chat
+  // Initialize WebSocket server for chat (must be after httpServer creation)
+  // Socket.io attaches its request handler to the HTTP server BEFORE Express
   new ChatSocketServer(httpServer);
+  
+  logger.info('HTTP server and Socket.io initialized');
 
   // Currency scheduler'ı başlat (production'da)
   if (config.nodeEnv === 'production') {

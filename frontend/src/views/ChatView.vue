@@ -477,7 +477,10 @@ const formatTime = (date: string | Date) => {
 };
 
 const connectSocket = () => {
-  if (!auth.token || !auth.tenant) return;
+  if (!auth.token || !auth.tenant) {
+    console.warn('⚠️ Cannot connect socket: missing token or tenant');
+    return;
+  }
 
   // Determine WebSocket URL based on environment
   // Frontend uses subdomain-based routing (berg.saastour360.com)
@@ -493,6 +496,12 @@ const connectSocket = () => {
     // Frontend always uses subdomain, so use current origin
     socketUrl = window.location.origin;
   }
+  
+  console.log('🔌 Connecting to Socket.io server:', {
+    url: socketUrl,
+    token: auth.token ? 'Bearer ***' : 'missing',
+    tenantId: auth.tenant?.id,
+  });
   
   socket = io(socketUrl, {
     // Send JWT token in both auth object (for polling) and extraHeaders (for websocket)
@@ -520,7 +529,22 @@ const connectSocket = () => {
   });
 
   socket.on('connect', () => {
-    console.log('Chat socket connected');
+    console.log('✅ Chat socket connected', { socketId: socket.id, transport: socket.io.engine.transport.name });
+  });
+
+  socket.on('connect_error', (error: any) => {
+    console.error('❌ Chat socket connection error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      description: error.description,
+      context: error.context,
+      type: error.type,
+      transport: socket.io.engine?.transport?.name,
+    });
+  });
+
+  socket.on('disconnect', (reason: string) => {
+    console.warn('⚠️ Chat socket disconnected:', reason);
   });
 
   socket.on('joined_room', (data: any) => {

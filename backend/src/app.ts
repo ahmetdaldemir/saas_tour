@@ -200,12 +200,16 @@ export const createApp = (): Express => {
     }
   });
 
-  // Skip tenantMiddleware for Socket.io path (Socket.io handles its own authentication)
-  // IMPORTANT: This must be BEFORE tenantMiddleware to allow Socket.io handshake
+  // Skip ALL middleware for Socket.io path (Socket.io handles its own authentication)
+  // IMPORTANT: This must be BEFORE all other middleware to allow Socket.io handshake
+  // Socket.io attaches its own request handler to the HTTP server, so Express should not process these requests
   app.use((req, res, next) => {
     if (req.path.startsWith('/socket.io/')) {
-      logger.info('[APP] Skipping middleware for Socket.io path', { path: req.path });
-      return next(); // Let Socket.io handle this request
+      logger.info('[APP] Skipping ALL middleware for Socket.io path', { path: req.path, method: req.method });
+      // Don't call next() - let Socket.io handle this request via its own HTTP server handler
+      // Socket.io's handler runs before Express, so this should not be reached
+      // But if it is, we'll just return without processing
+      return;
     }
     next();
   });

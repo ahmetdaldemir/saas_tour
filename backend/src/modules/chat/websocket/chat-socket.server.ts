@@ -196,32 +196,11 @@ export class ChatSocketServer {
       });
     });
 
-    // Log raw HTTP requests to /socket.io/ path (before Socket.io processes them)
-    // Note: This might not fire if Socket.io handles the request first
-    const originalListeners = httpServer.listeners('request');
-    httpServer.removeAllListeners('request');
-    
-    httpServer.on('request', (req, res) => {
-      if (req.url?.startsWith('/socket.io/')) {
-        logger.info('[Socket.io] Raw HTTP request received (before Socket.io)', {
-          method: req.method,
-          url: req.url,
-          headers: {
-            origin: req.headers.origin,
-            authorization: req.headers.authorization ? 'Bearer ***' : undefined,
-            'user-agent': req.headers['user-agent'],
-            'sec-websocket-key': req.headers['sec-websocket-key'],
-            'sec-websocket-version': req.headers['sec-websocket-version'],
-          },
-        });
-      }
-      // Call original Express listeners
-      originalListeners.forEach(listener => {
-        if (typeof listener === 'function') {
-          listener(req, res);
-        }
-      });
-    });
+    // Socket.io attaches its own request handler to the HTTP server
+    // Express app also attaches a request handler
+    // Socket.io's handler should run first for /socket.io/ paths
+    // We don't need to intercept here - Socket.io handles it automatically
+    // The Express middleware skip in app.ts should be sufficient
 
     this.setupMiddleware();
     this.setupEventHandlers();
