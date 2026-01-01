@@ -169,22 +169,31 @@ export class ChatSocketServer {
         let socketAuth: SocketAuth | null = null;
 
         // Admin authentication (JWT token)
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-          const token = authHeader.substring(7);
+        // Check both Authorization header and auth.token (for compatibility)
+        const token = authHeader?.startsWith('Bearer ') 
+          ? authHeader.substring(7) 
+          : auth?.token;
+
+        if (token) {
           try {
             const decoded = jwt.verify(token, this.config.auth.jwtSecret) as any;
             socketAuth = {
               tenantId: decoded.tenantId,
-              userId: decoded.userId,
+              userId: decoded.userId || decoded.sub,
               type: 'admin',
             };
+            logger.info('Admin authenticated via JWT', { 
+              tenantId: socketAuth.tenantId, 
+              userId: socketAuth.userId 
+            });
           } catch (error) {
             logger.warn('Invalid JWT token in WebSocket connection', { error });
-            return next(new Error('Authentication failed'));
+            // Don't return error yet, try widget authentication
           }
         }
-        // Widget authentication (public key)
-        else if (auth.tenantId && auth.publicKey) {
+
+        // Widget authentication (public key) - only if admin auth failed
+        if (!socketAuth && auth?.tenantId && auth?.publicKey) {
           const token = await ChatWidgetTokenService.validateToken(auth.tenantId, auth.publicKey);
           if (!token) {
             logger.warn('Invalid widget token in WebSocket connection', {
@@ -199,7 +208,18 @@ export class ChatSocketServer {
             type: 'visitor',
             publicKey: auth.publicKey,
           };
-        } else {
+          logger.info('Widget visitor authenticated', { 
+            tenantId: socketAuth.tenantId, 
+            visitorId: socketAuth.visitorId 
+          });
+        }
+
+        if (!socketAuth) {
+          logger.warn('WebSocket connection rejected: No valid authentication', {
+            hasAuthHeader: !!authHeader,
+            hasAuthToken: !!auth?.token,
+            hasWidgetAuth: !!(auth?.tenantId && auth?.publicKey),
+          });
           return next(new Error('Authentication required'));
         }
 

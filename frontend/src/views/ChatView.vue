@@ -495,8 +495,9 @@ const connectSocket = () => {
   }
   
   socket = io(socketUrl, {
-    auth: {
-      token: auth.token,
+    // Send JWT token in Authorization header (backend expects this)
+    extraHeaders: {
+      Authorization: `Bearer ${auth.token}`,
     },
     // Use polling first due to Cloudflare WebSocket issues, then try websocket
     transports: ['polling', 'websocket'],

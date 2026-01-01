@@ -39,16 +39,23 @@
       </v-footer>
     </template>
     <v-layout v-else>
-      <!-- PrimeVue Sidebar (Permanent) -->
-      <div class="primevue-sidebar-container" :class="{ 'sidebar-hidden': !drawer }">
-        <div class="primevue-sidebar">
-          <div class="drawer-header">
-            <h2 style="font-size: 0.875rem; font-weight: 600; margin: 0 0 4px 0;">{{ tenantName }}</h2>
-            <p style="font-size: 0.65rem; color: #6b7280; margin: 0;">Yönetim Modülleri</p>
-          </div>
-          <Menu :model="menuItems" class="w-full border-none" />
+      <v-navigation-drawer v-model="drawer" app color="surface" class="pa-4">
+        <div class="drawer-header mb-6">
+          <h2 class="text-h6 font-weight-bold mb-1">{{ tenantName }}</h2>
+          <p class="text-caption text-medium-emphasis">Yönetim Modülleri</p>
         </div>
-      </div>
+        <v-list nav density="comfortable">
+          <v-list-item
+            v-for="item in navigationItems"
+            :key="item.to"
+            :to="item.to"
+            :prepend-icon="item.icon"
+            :title="item.title"
+            :active="route.path === item.to"
+            rounded="lg"
+          />
+        </v-list>
+      </v-navigation-drawer>
 
       <v-app-bar flat color="surface" app>
         <v-app-bar-nav-icon @click="drawer = !drawer" />
@@ -56,10 +63,10 @@
         <v-spacer />
         <div class="d-flex align-center gap-4 pr-4" v-if="auth.user">
           <div class="text-right mr-4">
-            <div class="font-weight-medium" style="font-size: 0.75rem;">{{ auth.user.name }}</div>
-            <small class="text-medium-emphasis" style="font-size: 0.65rem;">{{ auth.user.email }}</small>
+            <div class="font-weight-medium">{{ auth.user.name }}</div>
+            <small class="text-medium-emphasis">{{ auth.user.email }}</small>
           </div>
-          <v-btn icon="mdi-logout" variant="text" size="small" @click="handleLogout" />
+          <v-btn icon="mdi-logout" variant="text" @click="handleLogout" />
         </div>
       </v-app-bar>
 
@@ -76,8 +83,6 @@
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth';
-import Menu from 'primevue/menu';
-import type { MenuItem } from 'primevue/menuitem';
 
 const auth = useAuthStore();
 const router = useRouter();
@@ -125,144 +130,43 @@ const layout = computed(() => {
 });
 const tenantName = computed(() => auth.tenant?.name ?? 'SaaS Yönetim Paneli');
 
-// PrimeVue Menu Items
-const menuItems = computed<MenuItem[]>(() => {
-  const items: MenuItem[] = [
-    { 
-      label: 'Genel Bakış', 
-      icon: 'pi pi-th-large',
-      command: () => router.push('/app/dashboard'),
-      class: route.path === '/app/dashboard' ? 'p-menuitem-active' : ''
-    },
-    { 
-      label: 'Diller', 
-      icon: 'pi pi-language',
-      command: () => router.push('/app/languages'),
-      class: route.path === '/app/languages' ? 'p-menuitem-active' : ''
-    },
-    { 
-      label: 'Ülkeler', 
-      icon: 'pi pi-globe',
-      command: () => router.push('/app/countries'),
-      class: route.path === '/app/countries' ? 'p-menuitem-active' : ''
-    },
-    { 
-      label: 'Destinasyonlar', 
-      icon: 'pi pi-map-marker',
-      command: () => router.push('/app/destinations'),
-      class: route.path === '/app/destinations' ? 'p-menuitem-active' : ''
-    },
-    { 
-      label: 'Oteller', 
-      icon: 'pi pi-building',
-      command: () => router.push('/app/hotels'),
-      class: route.path === '/app/hotels' ? 'p-menuitem-active' : ''
-    },
-    { 
-      label: 'Blog', 
-      icon: 'pi pi-file',
-      command: () => router.push('/app/blogs'),
-      class: route.path === '/app/blogs' ? 'p-menuitem-active' : ''
-    },
+const navigationItems = computed(() => {
+  const items = [
+    { title: 'Genel Bakış', to: '/app/dashboard', icon: 'mdi-view-dashboard-outline' },
+    { title: 'Diller', to: '/app/languages', icon: 'mdi-translate' },
+    { title: 'Ülkeler', to: '/app/countries', icon: 'mdi-earth' },
+    { title: 'Destinasyonlar', to: '/app/destinations', icon: 'mdi-map-marker-radius' },
+    { title: 'Oteller', to: '/app/hotels', icon: 'mdi-bed' },
+    { title: 'Blog', to: '/app/blogs', icon: 'mdi-file-document-outline' },
   ];
 
   if (auth.tenant?.category === 'tour') {
-    items.push({ 
-      label: 'Turlar', 
-      icon: 'pi pi-send',
-      command: () => router.push('/app/tours'),
-      class: route.path === '/app/tours' ? 'p-menuitem-active' : ''
-    });
+    items.push({ title: 'Turlar', to: '/app/tours', icon: 'mdi-airballoon' });
   }
 
   if (auth.tenant?.category === 'rentacar') {
-    items.push(
-      { 
-        label: 'Rent A Car', 
-        icon: 'pi pi-car',
-        command: () => router.push('/app/rentacar'),
-        class: route.path === '/app/rentacar' ? 'p-menuitem-active' : ''
-      },
-      { 
-        label: 'Müşteriler', 
-        icon: 'pi pi-users',
-        command: () => router.push('/app/customers'),
-        class: route.path === '/app/customers' ? 'p-menuitem-active' : ''
-      },
-      { 
-        label: 'CRM', 
-        icon: 'pi pi-briefcase',
-        command: () => router.push('/app/crm'),
-        class: route.path === '/app/crm' ? 'p-menuitem-active' : ''
-      },
-      { 
-        label: 'Rezervasyonlar', 
-        icon: 'pi pi-calendar-check',
-        command: () => router.push('/app/reservations'),
-        class: route.path === '/app/reservations' ? 'p-menuitem-active' : ''
-      },
-      { 
-        label: 'Ön Muhasebe', 
-        icon: 'pi pi-money-bill',
-        command: () => router.push('/app/finance'),
-        class: route.path === '/app/finance' ? 'p-menuitem-active' : ''
-      },
-      { 
-        label: 'VIP Transfer', 
-        icon: 'pi pi-car',
-        command: () => router.push('/app/transfer'),
-        class: route.path === '/app/transfer' ? 'p-menuitem-active' : ''
-      }
-    );
+    items.push({ title: 'Rent A Car', to: '/app/rentacar', icon: 'mdi-car-sports' });
+    items.push({ title: 'Müşteriler', to: '/app/customers', icon: 'mdi-account-multiple' });
+    items.push({ title: 'CRM', to: '/app/crm', icon: 'mdi-account-group' });
+    items.push({ title: 'Rezervasyonlar', to: '/app/reservations', icon: 'mdi-calendar-check' });
+    items.push({ title: 'Ön Muhasebe', to: '/app/finance', icon: 'mdi-cash-multiple' });
+  }
+
+  // VIP Transfer modülü (rentacar kullanıcıları için)
+  if (auth.tenant?.category === 'rentacar') {
+    items.push({ title: 'VIP Transfer', to: '/app/transfer', icon: 'mdi-car-limousine' });
   }
 
   // Chat / Agency menüsü (tüm tenant'lar için)
-  items.push({ 
-    label: 'Chat / Agency', 
-    icon: 'pi pi-comments',
-    command: () => router.push('/app/chat'),
-    class: route.path === '/app/chat' ? 'p-menuitem-active' : ''
-  });
+  items.push({ title: 'Chat / Agency', to: '/app/chat', icon: 'mdi-chat-outline' });
 
   // Ortak menü öğeleri
-  items.push(
-    { 
-      label: 'Master Lokasyonlar', 
-      icon: 'pi pi-map',
-      command: () => router.push('/app/master-locations'),
-      class: route.path === '/app/master-locations' ? 'p-menuitem-active' : ''
-    },
-    { 
-      label: 'Kullanıcılar', 
-      icon: 'pi pi-user',
-      command: () => router.push('/app/users'),
-      class: route.path === '/app/users' ? 'p-menuitem-active' : ''
-    },
-    { 
-      label: 'Anketler', 
-      icon: 'pi pi-clipboard',
-      command: () => router.push('/app/surveys'),
-      class: route.path === '/app/surveys' ? 'p-menuitem-active' : ''
-    },
-    { 
-      label: 'Mail Şablonları', 
-      icon: 'pi pi-envelope',
-      command: () => router.push('/app/email-templates'),
-      class: route.path === '/app/email-templates' ? 'p-menuitem-active' : ''
-    },
-    { 
-      label: 'Ayarlar', 
-      icon: 'pi pi-cog',
-      command: () => router.push('/app/settings'),
-      class: route.path === '/app/settings' ? 'p-menuitem-active' : ''
-    },
-    { 
-      label: 'Admin Dashboard', 
-      icon: 'pi pi-desktop',
-      command: () => router.push('/app/admin'),
-      class: route.path === '/app/admin' ? 'p-menuitem-active' : ''
-    }
-  );
+  items.push({ title: 'Master Lokasyonlar', to: '/app/master-locations', icon: 'mdi-map-marker-multiple' });
+  items.push({ title: 'Kullanıcılar', to: '/app/users', icon: 'mdi-account-group-outline' });
+  items.push({ title: 'Anketler', to: '/app/surveys', icon: 'mdi-clipboard-text-outline' });
+  items.push({ title: 'Mail Şablonları', to: '/app/email-templates', icon: 'mdi-email-multiple-outline' });
+  items.push({ title: 'Ayarlar', to: '/app/settings', icon: 'mdi-cog-outline' });
+  items.push({ title: 'Admin Dashboard', to: '/app/admin', icon: 'mdi-monitor-dashboard' });
 
   return items;
 });
@@ -287,70 +191,6 @@ watch(
 .drawer-header {
   display: flex;
   flex-direction: column;
-  padding: 12px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-/* PrimeVue Sidebar Container */
-.primevue-sidebar-container {
-  width: 280px;
-  min-width: 280px;
-  transition: margin-left 0.3s ease;
-  position: relative;
-  z-index: 1;
-}
-
-.primevue-sidebar-container.sidebar-hidden {
-  margin-left: -280px;
-  width: 0;
-  min-width: 0;
-}
-
-/* PrimeVue Sidebar Styling */
-.primevue-sidebar {
-  width: 280px;
-  height: 100vh;
-  background: white;
-  border-right: 1px solid #e5e7eb;
-  position: fixed;
-  left: 0;
-  top: 0;
-  overflow-y: auto;
-  z-index: 100;
-}
-
-:deep(.primevue-sidebar .p-menu) {
-  border: none;
-  background: transparent;
-  width: 100%;
-}
-
-:deep(.primevue-sidebar .p-menuitem-link) {
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  transition: all 0.2s;
-  margin: 2px 8px;
-}
-
-:deep(.primevue-sidebar .p-menuitem-link:hover) {
-  background: #f3f4f6;
-}
-
-:deep(.primevue-sidebar .p-menuitem-active .p-menuitem-link) {
-  background: #eff6ff;
-  color: #2563eb;
-  font-weight: 500;
-}
-
-:deep(.primevue-sidebar .p-menuitem-icon) {
-  font-size: 0.875rem;
-  margin-right: 8px;
-}
-
-/* Adjust main content when sidebar is visible */
-.v-layout:has(.primevue-sidebar-container:not(.sidebar-hidden)) .v-main {
-  margin-left: 280px;
 }
 
 </style>
