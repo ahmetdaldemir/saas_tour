@@ -212,13 +212,22 @@ export class ChatSocketServer {
 
     // Log when Socket.io is ready
     this.io.on('connection', (socket: Socket) => {
-      logger.info('[Socket.io] New connection established (after middleware)', {
+      logger.info('[Socket.io] ✅ New connection established (after middleware)', {
         socketId: socket.id,
         transport: socket.conn.transport.name,
+        handshake: {
+          headers: socket.handshake.headers,
+          auth: socket.handshake.auth,
+        },
       });
     });
 
-    logger.info('Chat WebSocket server initialized and ready');
+    // Verify Socket.io is properly attached
+    logger.info('✅ Chat WebSocket server initialized and ready', {
+      path: '/socket.io/',
+      transports: ['polling', 'websocket'],
+      httpServerListeners: httpServer.listenerCount('request'),
+    });
   }
 
   /**

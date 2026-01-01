@@ -200,21 +200,20 @@ export const createApp = (): Express => {
     }
   });
 
-  // IMPORTANT: Socket.io attaches its request handler to the HTTP server BEFORE Express
-  // So Socket.io requests (/socket.io/) are handled by Socket.io, not Express
-  // This middleware should never be reached for Socket.io requests
-  // But we'll add it as a safety net in case Socket.io handler fails
+  // IMPORTANT: Socket.io requests are handled at HTTP server level, before Express
+  // This middleware should NEVER be reached for Socket.io requests
+  // If we reach here, it's a critical error - Socket.io handler failed
   app.use((req, res, next) => {
     if (req.path.startsWith('/socket.io/')) {
-      logger.warn('[APP] Socket.io request reached Express (should not happen)', { 
+      logger.error('[APP] CRITICAL: Socket.io request reached Express (Socket.io handler failed!)', { 
         path: req.path, 
         method: req.method,
         url: req.url,
       });
-      // Don't process Socket.io requests in Express - they should be handled by Socket.io
-      // If we reach here, it means Socket.io handler didn't work
-      return res.status(400).json({ 
-        error: 'Socket.io requests must be handled by Socket.io server, not Express' 
+      // Return 503 Service Unavailable - Socket.io service is not working
+      return res.status(503).json({ 
+        error: 'Socket.io service unavailable',
+        message: 'WebSocket server is not responding. Please contact support.',
       });
     }
     next();
