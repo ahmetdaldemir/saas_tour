@@ -3,6 +3,7 @@ import { createPinia } from 'pinia';
 import App from './App.vue';
 import { router, setupRouterGuards } from './router';
 import { vuetify } from './plugins/vuetify';
+import { primevue, primevueConfig } from './plugins/primevue';
 import { useAuthStore } from './stores/auth';
 
 import './styles/main.scss';
@@ -14,6 +15,7 @@ app.use(pinia);
 setupRouterGuards(pinia);
 app.use(router);
 app.use(vuetify);
+app.use(primevue, primevueConfig);
 
 const authStore = useAuthStore(pinia);
 await authStore.initialize();
