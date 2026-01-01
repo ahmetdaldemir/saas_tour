@@ -40,3 +40,127 @@ body {
 .v-list-item--nav.v-list-item--active {
   background-color: rgba(25, 118, 210, 0.08);
 }
+
+// Kompakt tema için global stiller
+:root {
+  --v-font-size-xs: 0.65rem;
+  --v-font-size-sm: 0.75rem;
+  --v-font-size-md: 0.875rem;
+  --v-font-size-lg: 1rem;
+  --v-font-size-xl: 1.125rem;
+}
+
+// Vuetify bileşenleri için kompakt stiller
+.v-card-title {
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  padding: 8px 12px !important;
+  min-height: 40px !important;
+}
+
+.v-card-text {
+  padding: 8px 12px !important;
+}
+
+.v-btn {
+  font-size: 0.75rem !important;
+  padding: 4px 12px !important;
+  min-height: 28px !important;
+  
+  &.v-btn--size-small {
+    font-size: 0.7rem !important;
+    padding: 2px 8px !important;
+    min-height: 24px !important;
+  }
+  
+  &.v-btn--size-x-small {
+    font-size: 0.65rem !important;
+    padding: 2px 6px !important;
+    min-height: 20px !important;
+  }
+}
+
+.v-chip {
+  font-size: 0.65rem !important;
+  height: 18px !important;
+  padding: 0 6px !important;
+  
+  &.v-chip--size-small {
+    font-size: 0.65rem !important;
+    height: 18px !important;
+  }
+  
+  &.v-chip--size-x-small {
+    font-size: 0.6rem !important;
+    height: 16px !important;
+    padding: 0 4px !important;
+  }
+}
+
+.v-text-field,
+.v-select,
+.v-textarea {
+  .v-field {
+    font-size: 0.75rem !important;
+  }
+  
+  .v-label {
+    font-size: 0.75rem !important;
+  }
+  
+  .v-field__input {
+    padding: 8px 12px !important;
+    min-height: 36px !important;
+  }
+}
+
+.v-list-item {
+  min-height: 40px !important;
+  padding: 4px 12px !important;
+  
+  .v-list-item-title {
+    font-size: 0.75rem !important;
+    line-height: 1.2 !important;
+  }
+  
+  .v-list-item-subtitle {
+    font-size: 0.65rem !important;
+    line-height: 1.2 !important;
+  }
+}
+
+.v-data-table {
+  .v-data-table__thead th {
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    padding: 8px 12px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+  }
+  
+  .v-data-table__tbody td {
+    font-size: 0.75rem !important;
+    padding: 8px 12px !important;
+  }
+}
+
+// Text utility classes
+.text-xs {
+  font-size: 0.65rem !important;
+}
+
+.text-sm {
+  font-size: 0.75rem !important;
+}
+
+.text-base {
+  font-size: 0.875rem !important;
+}
+
+.text-lg {
+  font-size: 1rem !important;
+}
+
+.text-xl {
+  font-size: 1.125rem !important;
+}

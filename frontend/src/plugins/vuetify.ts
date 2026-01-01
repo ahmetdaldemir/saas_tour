@@ -8,6 +8,46 @@ export const vuetify = createVuetify({
     VBtn: {
       rounded: 'lg',
       color: 'primary',
+      size: 'small',
+      density: 'compact',
+    },
+    VCard: {
+      elevation: 0,
+      variant: 'outlined',
+    },
+    VCardTitle: {
+      style: 'font-size: 0.75rem; font-weight: 600; padding: 8px 12px;',
+    },
+    VCardText: {
+      style: 'padding: 8px 12px;',
+    },
+    VTextField: {
+      density: 'compact',
+      variant: 'outlined',
+      hideDetails: 'auto',
+    },
+    VSelect: {
+      density: 'compact',
+      variant: 'outlined',
+      hideDetails: 'auto',
+    },
+    VTextarea: {
+      density: 'compact',
+      variant: 'outlined',
+      hideDetails: 'auto',
+    },
+    VChip: {
+      size: 'small',
+      density: 'comfortable',
+    },
+    VDataTable: {
+      density: 'compact',
+    },
+    VList: {
+      density: 'compact',
+    },
+    VListItem: {
+      density: 'compact',
     },
   },
   theme: {
@@ -40,6 +80,16 @@ export const vuetify = createVuetify({
     aliases,
     sets: {
       mdi,
+    },
+  },
+  display: {
+    mobileBreakpoint: 'sm',
+    thresholds: {
+      xs: 0,
+      sm: 600,
+      md: 960,
+      lg: 1280,
+      xl: 1920,
     },
   },
 });
