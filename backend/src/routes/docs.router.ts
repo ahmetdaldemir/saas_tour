@@ -10,7 +10,7 @@ import { getApiDocs } from '../docs/api-docs';
 const router = Router();
 
 /**
- * GET /api/docs
+ * GET /docs
  * Returns OpenAPI/Swagger JSON specification
  */
 router.get('/docs', (req: Request, res: Response) => {
@@ -18,7 +18,7 @@ router.get('/docs', (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/docs/ui
+ * GET /docs/ui
  * Serves Swagger UI for interactive API documentation
  */
 const swaggerUiSetup = swaggerUi.setup(getApiDocs(), {
@@ -37,7 +37,7 @@ const swaggerUiSetup = swaggerUi.setup(getApiDocs(), {
 router.use('/docs/ui', swaggerUi.serve, swaggerUiSetup);
 
 /**
- * GET /api/docs/readme
+ * GET /docs/readme
  * Returns API documentation in markdown format
  */
 router.get('/docs/readme', (req: Request, res: Response) => {
@@ -89,37 +89,37 @@ Successful responses:
 ## Main Endpoints
 
 ### Authentication
-- \`POST /api/auth/login\` - User login
-- \`POST /api/auth/register\` - User registration
+- \`POST /auth/login\` - User login
+- \`POST /auth/register\` - User registration
 
 ### Tenants
-- \`GET /api/tenants\` - List tenants
-- \`POST /api/tenants\` - Create tenant
+- \`GET /tenants\` - List tenants
+- \`POST /tenants\` - Create tenant
 
 ### Rent a Car
-- \`GET /api/rentacar/vehicles\` - List vehicles
-- \`POST /api/rentacar/vehicles\` - Create vehicle
-- \`GET /api/rentacar/vehicles/:id\` - Get vehicle
-- \`PUT /api/rentacar/vehicles/:id\` - Update vehicle
-- \`DELETE /api/rentacar/vehicles/:id\` - Delete vehicle
+- \`GET /rentacar/vehicles\` - List vehicles
+- \`POST /rentacar/vehicles\` - Create vehicle
+- \`GET /rentacar/vehicles/:id\` - Get vehicle
+- \`PUT /rentacar/vehicles/:id\` - Update vehicle
+- \`DELETE /rentacar/vehicles/:id\` - Delete vehicle
 
 ### Transfer
-- \`GET /api/transfer/vehicles\` - List transfer vehicles
-- \`POST /api/transfer/vehicles\` - Create transfer vehicle
-- \`GET /api/transfer/routes\` - List transfer routes
-- \`POST /api/transfer/routes\` - Create transfer route
-- \`GET /api/transfer/reservations\` - List transfer reservations
-- \`POST /api/transfer/reservations\` - Create transfer reservation
+- \`GET /transfer/vehicles\` - List transfer vehicles
+- \`POST /transfer/vehicles\` - Create transfer vehicle
+- \`GET /transfer/routes\` - List transfer routes
+- \`POST /transfer/routes\` - Create transfer route
+- \`GET /transfer/reservations\` - List transfer reservations
+- \`POST /transfer/reservations\` - Create transfer reservation
 
 ### Reservations
-- \`GET /api/reservations\` - List reservations
-- \`POST /api/reservations\` - Create reservation
-- \`GET /api/reservations/:id\` - Get reservation
-- \`PUT /api/reservations/:id\` - Update reservation
+- \`GET /reservations\` - List reservations
+- \`POST /reservations\` - Create reservation
+- \`GET /reservations/:id\` - Get reservation
+- \`PUT /reservations/:id\` - Update reservation
 
 ### Settings
-- \`GET /api/settings\` - Get tenant settings
-- \`PUT /api/settings\` - Update tenant settings
+- \`GET /settings\` - Get tenant settings
+- \`PUT /settings\` - Update tenant settings
 
 ## Rate Limiting
 API requests are rate-limited. Check response headers for rate limit information.

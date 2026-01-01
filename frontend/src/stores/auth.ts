@@ -66,7 +66,7 @@ export const useAuthStore = defineStore('auth', () => {
 
       setSession(stored);
       try {
-        const { data } = await http.get<{ user: TenantUserDto; tenant: TenantDto }>('/api/auth/me');
+        const { data } = await http.get<{ user: TenantUserDto; tenant: TenantDto }>('/auth/me');
         setSession(stored, data.user, data.tenant);
       } catch (error) {
         setSession(null);
@@ -86,7 +86,7 @@ export const useAuthStore = defineStore('auth', () => {
         token: string;
         user: TenantUserDto;
         tenant: TenantDto;
-      }>('/api/auth/login', { email, password });
+      }>('/auth/login', { email, password });
       setSession(data.token, data.user, data.tenant);
       initialized.value = true;
       return data;
@@ -121,7 +121,7 @@ export const useAuthStore = defineStore('auth', () => {
         token: string;
         user: TenantUserDto;
         tenant: TenantDto;
-      }>('/api/auth/signup', payload);
+      }>('/auth/signup', payload);
       setSession(data.token, data.user, data.tenant);
       initialized.value = true;
       return data;

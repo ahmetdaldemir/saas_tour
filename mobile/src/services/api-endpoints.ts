@@ -12,78 +12,78 @@
 export const API_ENDPOINTS = {
   // Auth
   auth: {
-    login: '/api/auth/login',
-    register: '/api/auth/register',
-    me: '/api/auth/me',
-    logout: '/api/auth/logout',
-    refresh: '/api/auth/refresh',
+    login: '/auth/login',
+    register: '/auth/register',
+    me: '/auth/me',
+    logout: '/auth/logout',
+    refresh: '/auth/refresh',
   },
 
   // Operations (Ops) - Primary endpoints for mobile app
   ops: {
     tasks: {
-      list: '/api/ops/tasks',
-      getById: (id: string) => `/api/ops/tasks/${id}`,
-      create: '/api/ops/tasks',
-      update: (id: string) => `/api/ops/tasks/${id}`,
-      updateMedia: (id: string) => `/api/ops/tasks/${id}/media`,
-      verifyDocs: (id: string) => `/api/ops/tasks/${id}/verify-docs`,
-      finalize: (id: string) => `/api/ops/tasks/${id}/finalize`,
-      finalizeReturn: (id: string) => `/api/ops/tasks/${id}/return/finalize`,
-      print: (id: string) => `/api/ops/tasks/${id}/print`,
+      list: '/ops/tasks',
+      getById: (id: string) => `/ops/tasks/${id}`,
+      create: '/ops/tasks',
+      update: (id: string) => `/ops/tasks/${id}`,
+      updateMedia: (id: string) => `/ops/tasks/${id}/media`,
+      verifyDocs: (id: string) => `/ops/tasks/${id}/verify-docs`,
+      finalize: (id: string) => `/ops/tasks/${id}/finalize`,
+      finalizeReturn: (id: string) => `/ops/tasks/${id}/return/finalize`,
+      print: (id: string) => `/ops/tasks/${id}/print`,
     },
   },
 
   // Settings
   settings: {
-    get: '/api/settings',
-    update: '/api/settings',
-    upload: '/api/settings/upload',
+    get: '/settings',
+    update: '/settings',
+    upload: '/settings/upload',
   },
 
   // Tenants
   tenants: {
-    list: '/api/tenants',
-    getById: (id: string) => `/api/tenants/${id}`,
+    list: '/tenants',
+    getById: (id: string) => `/tenants/${id}`,
   },
 
   // Tenant Users
   tenantUsers: {
-    list: '/api/tenant-users',
-    getById: (id: string) => `/api/tenant-users/${id}`,
+    list: '/tenant-users',
+    getById: (id: string) => `/tenant-users/${id}`,
   },
 
   // Customers (CRM) - Limited access for mobile
   customers: {
-    list: '/api/crm/customers',
-    getById: (id: string) => `/api/crm/customers/${id}`,
+    list: '/crm/customers',
+    getById: (id: string) => `/crm/customers/${id}`,
   },
 
   // Reservations
   reservations: {
-    list: '/api/reservations',
-    getById: (id: string) => `/api/reservations/${id}`,
-    create: '/api/reservations',
-    update: (id: string) => `/api/reservations/${id}`,
+    list: '/reservations',
+    getById: (id: string) => `/reservations/${id}`,
+    create: '/reservations',
+    update: (id: string) => `/reservations/${id}`,
   },
 
   // Rentacar (if needed for mobile)
   rentacar: {
     vehicles: {
-      search: '/api/rentacar/vehicles/search',
+      search: '/rentacar/vehicles/search',
     },
     locations: {
-      list: '/api/rentacar/locations',
+      list: '/rentacar/locations',
     },
     reservations: {
-      create: '/api/rentacar/reservations',
+      create: '/rentacar/reservations',
     },
   },
 
   // Finance (if needed for mobile)
   finance: {
     reports: {
-      summary: '/api/finance/reports/summary',
+      summary: '/finance/reports/summary',
     },
   },
 } as const;

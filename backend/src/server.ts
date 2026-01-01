@@ -7,6 +7,8 @@ import { startFinanceReminderScheduler } from './services/finance-reminder-sched
 import { ChatSocketServer } from './modules/chat/websocket/chat-socket.server';
 import { logger } from './utils/logger';
 import { getRedisClient } from './config/redis.config';
+// Initialize vehicle tracking providers
+import './modules/rentacar/services/vehicle-tracking.service';
 
 const start = async () => {
   const config = loadEnv();

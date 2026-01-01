@@ -26,6 +26,7 @@ import AdminDashboard from '../views/AdminDashboard.vue';
 import MasterLocationsView from '../views/MasterLocationsView.vue';
 import CountriesView from '../views/CountriesView.vue';
 import FinanceView from '../views/FinanceView.vue';
+import TripsView from '../views/TripsView.vue';
 import { useAuthStore } from '../stores/auth';
 
 /**
@@ -186,6 +187,12 @@ const routes: RouteRecordRaw[] = [
     path: '/app/finance',
     name: 'finance',
     component: FinanceView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/trips',
+    name: 'trips',
+    component: TripsView,
     meta: { requiresAuth: true, layout: 'admin' },
   },
   {
