@@ -49,6 +49,14 @@ export const vuetify = createVuetify({
     VListItem: {
       density: 'compact',
     },
+    VDialog: {
+      scrim: true,
+      scrimOpacity: 0.6,
+    },
+    VOverlay: {
+      scrim: true,
+      scrimOpacity: 0.6,
+    },
   },
   theme: {
     defaultTheme: 'light',

@@ -164,3 +164,19 @@ body {
 .text-xl {
   font-size: 1.125rem !important;
 }
+
+// Dialog/Modal overlay stilleri - Daha opak ve profesyonel
+.v-overlay__scrim {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  backdrop-filter: blur(2px);
+}
+
+.v-dialog > .v-overlay__content {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+// Dialog içeriği için daha iyi görünüm
+.v-dialog .v-card {
+  border-radius: 12px !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
