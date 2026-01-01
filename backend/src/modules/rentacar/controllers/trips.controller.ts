@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { AuthenticatedRequest } from '../../../auth/middleware/auth.middleware';
+import { AuthenticatedRequest } from '../../auth/middleware/auth.middleware';
 import { TenantRequest } from '../../../middleware/tenant.middleware';
 import { TripsService } from '../services/trips.service';
 import { ReservationStatus } from '../../shared/entities/reservation.entity';

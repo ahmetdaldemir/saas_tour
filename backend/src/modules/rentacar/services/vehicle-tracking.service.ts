@@ -1,6 +1,6 @@
 import { VehicleTrackingProvider, VehicleLocation, VehicleTrackingInfo, TrackingProviderConfig } from '../interfaces/vehicle-tracking-provider.interface';
 import { MobilizeTrackingProvider } from '../providers/mobilize-tracking.provider';
-import { TenantSettings } from '../../shared/entities/tenant-settings.entity';
+import { TenantSettings, SettingsCategory } from '../../shared/entities/tenant-settings.entity';
 import { AppDataSource } from '../../../config/data-source';
 import { Repository } from 'typeorm';
 import { logger } from '../../../utils/logger';
@@ -45,7 +45,7 @@ export class VehicleTrackingService {
   } | null> {
     const settingsRepo = AppDataSource.getRepository(TenantSettings);
     const settings = await settingsRepo.findOne({
-      where: { tenantId, category: 'general' },
+      where: { tenantId, category: SettingsCategory.GENERAL },
     });
 
     if (!settings || !settings.metadata) {

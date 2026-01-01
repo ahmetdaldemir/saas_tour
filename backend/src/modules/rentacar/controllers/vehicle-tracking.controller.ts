@@ -1,5 +1,5 @@
 import { Response } from 'express';
-import { AuthenticatedRequest } from '../../../auth/middleware/auth.middleware';
+import { AuthenticatedRequest } from '../../auth/middleware/auth.middleware';
 import { TenantRequest } from '../../../middleware/tenant.middleware';
 import { VehicleTrackingService } from '../services/vehicle-tracking.service';
 import { asyncHandler } from '../../../utils/errors';

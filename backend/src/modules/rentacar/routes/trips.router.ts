@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { TripsController } from '../controllers/trips.controller';
-import { authenticate } from '../../../auth/middleware/auth.middleware';
-import { authorize } from '../../../auth/middleware/authorize.middleware';
-import { Permission } from '../../../auth/permissions';
+import { authenticate } from '../../auth/middleware/auth.middleware';
+import { authorize } from '../../auth/middleware/authorize.middleware';
+import { Permission } from '../../auth/permissions';
 
 const router = Router();
 

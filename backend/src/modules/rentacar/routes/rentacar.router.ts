@@ -46,8 +46,8 @@ router.use('/trips', tripsRouter);
 
 // Vehicle tracking routes
 router.get('/tracking/providers', authenticate, VehicleTrackingController.listProviders);
-router.get('/tracking/:plate', authenticate, authorize(Permission.VEHICLE_VIEW), (req, res, next) => VehicleTrackingController.getVehicleLocation(req as AuthenticatedRequest, res).catch(next));
-router.get('/tracking/:plate/info', authenticate, authorize(Permission.VEHICLE_VIEW), (req, res, next) => VehicleTrackingController.getVehicleTrackingInfo(req as AuthenticatedRequest, res).catch(next));
-router.post('/tracking/batch', authenticate, authorize(Permission.VEHICLE_VIEW), (req, res, next) => VehicleTrackingController.getMultipleVehicleLocations(req as AuthenticatedRequest, res).catch(next));
+router.get('/tracking/:plate', authenticate, authorize(Permission.VEHICLE_VIEW), VehicleTrackingController.getVehicleLocation);
+router.get('/tracking/:plate/info', authenticate, authorize(Permission.VEHICLE_VIEW), VehicleTrackingController.getVehicleTrackingInfo);
+router.post('/tracking/batch', authenticate, authorize(Permission.VEHICLE_VIEW), VehicleTrackingController.getMultipleVehicleLocations);
 
 export default router;
