@@ -59,6 +59,11 @@ export class ChatSocketServer {
       'sunsetcarrent.com',
     ];
     
+    logger.info('[Socket.io] Creating Socket.io server instance', {
+      path: '/socket.io/',
+      transports: ['polling', 'websocket'],
+    });
+    
     this.io = new SocketServer(httpServer, {
       cors: {
         origin: (origin, callback) => {
@@ -205,7 +210,15 @@ export class ChatSocketServer {
     this.setupMiddleware();
     this.setupEventHandlers();
 
-    logger.info('Chat WebSocket server initialized');
+    // Log when Socket.io is ready
+    this.io.on('connection', (socket: Socket) => {
+      logger.info('[Socket.io] New connection established (after middleware)', {
+        socketId: socket.id,
+        transport: socket.conn.transport.name,
+      });
+    });
+
+    logger.info('Chat WebSocket server initialized and ready');
   }
 
   /**

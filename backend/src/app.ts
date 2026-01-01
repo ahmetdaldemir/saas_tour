@@ -200,16 +200,22 @@ export const createApp = (): Express => {
     }
   });
 
-  // Skip ALL middleware for Socket.io path (Socket.io handles its own authentication)
-  // IMPORTANT: This must be BEFORE all other middleware to allow Socket.io handshake
-  // Socket.io attaches its own request handler to the HTTP server, so Express should not process these requests
+  // IMPORTANT: Socket.io attaches its request handler to the HTTP server BEFORE Express
+  // So Socket.io requests (/socket.io/) are handled by Socket.io, not Express
+  // This middleware should never be reached for Socket.io requests
+  // But we'll add it as a safety net in case Socket.io handler fails
   app.use((req, res, next) => {
     if (req.path.startsWith('/socket.io/')) {
-      logger.info('[APP] Skipping ALL middleware for Socket.io path', { path: req.path, method: req.method });
-      // Don't call next() - let Socket.io handle this request via its own HTTP server handler
-      // Socket.io's handler runs before Express, so this should not be reached
-      // But if it is, we'll just return without processing
-      return;
+      logger.warn('[APP] Socket.io request reached Express (should not happen)', { 
+        path: req.path, 
+        method: req.method,
+        url: req.url,
+      });
+      // Don't process Socket.io requests in Express - they should be handled by Socket.io
+      // If we reach here, it means Socket.io handler didn't work
+      return res.status(400).json({ 
+        error: 'Socket.io requests must be handled by Socket.io server, not Express' 
+      });
     }
     next();
   });
