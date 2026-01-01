@@ -483,17 +483,15 @@ const connectSocket = () => {
   }
 
   // Determine WebSocket URL based on environment
-  // Frontend uses subdomain-based routing (berg.saastour360.com)
+  // IMPORTANT: Always use domain (subdomain-based routing), not localhost:port
+  // Frontend uses subdomain-based routing (berg.saastour360.com or berg.local.saastour360.test:5001)
   // Mobile uses api.saastour360.com
   let socketUrl: string;
   if (import.meta.env.VITE_WS_URL) {
     socketUrl = import.meta.env.VITE_WS_URL;
-  } else if (import.meta.env.MODE === 'development') {
-    // Development: use localhost
-    socketUrl = 'http://localhost:4001';
   } else {
-    // Production: use current host with same subdomain (berg.saastour360.com)
-    // Frontend always uses subdomain, so use current origin
+    // Always use current origin (domain-based) - Traefik will route to backend
+    // This works for both development (berg.local.saastour360.test:5001) and production (berg.saastour360.com)
     socketUrl = window.location.origin;
   }
   
