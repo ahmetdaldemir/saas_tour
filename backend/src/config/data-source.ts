@@ -6,6 +6,7 @@ import { Translation } from '../modules/shared/entities/translation.entity';
 import { Hotel } from '../modules/shared/entities/hotel.entity';
 import { Blog } from '../modules/shared/entities/blog.entity';
 import { PhoneCountry } from '../modules/shared/entities/phone-country.entity';
+import { Country } from '../modules/shared/entities/country.entity';
 import { PaymentMethod } from '../modules/shared/entities/payment-method.entity';
 import { Reservation } from '../modules/shared/entities/reservation.entity';
 import { Operation } from '../modules/shared/entities/operation.entity';
@@ -50,6 +51,13 @@ import { ChatWidgetToken } from '../modules/chat/entities/chat-widget-token.enti
 import { Customer } from '../modules/shared/entities/customer.entity';
 import { CustomerEmail } from '../modules/shared/entities/customer-email.entity';
 import { Page } from '../modules/shared/entities/page.entity';
+import { FinanceCategory } from '../modules/finance/entities/finance-category.entity';
+import { FinanceCari } from '../modules/finance/entities/finance-cari.entity';
+import { FinanceTransaction } from '../modules/finance/entities/finance-transaction.entity';
+import { FinanceCheck } from '../modules/finance/entities/finance-check.entity';
+import { FinanceLoan } from '../modules/finance/entities/finance-loan.entity';
+import { FinanceLoanInstallment } from '../modules/finance/entities/finance-loan-installment.entity';
+import { OpsTask } from '../modules/ops/entities/ops-task.entity';
 
 const env = loadEnv();
 
@@ -73,6 +81,7 @@ export const AppDataSource = new DataSource({
     Hotel,
     Blog,
     PhoneCountry,
+    Country,
     PaymentMethod,
     Reservation,
     Operation,
@@ -117,6 +126,13 @@ export const AppDataSource = new DataSource({
           ChatParticipant,
           ChatWidgetToken,
           Page,
+          FinanceCategory,
+          FinanceCari,
+          FinanceTransaction,
+          FinanceCheck,
+          FinanceLoan,
+          FinanceLoanInstallment,
+          OpsTask,
   ],
   // Migrations disabled - using TypeORM synchronize instead
   // migrations: ['dist/migrations/*.js'],

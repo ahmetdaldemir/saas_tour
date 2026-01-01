@@ -134,6 +134,7 @@ const navigationItems = computed(() => {
   const items = [
     { title: 'Genel Bakış', to: '/app/dashboard', icon: 'mdi-view-dashboard-outline' },
     { title: 'Diller', to: '/app/languages', icon: 'mdi-translate' },
+    { title: 'Ülkeler', to: '/app/countries', icon: 'mdi-earth' },
     { title: 'Destinasyonlar', to: '/app/destinations', icon: 'mdi-map-marker-radius' },
     { title: 'Oteller', to: '/app/hotels', icon: 'mdi-bed' },
     { title: 'Blog', to: '/app/blogs', icon: 'mdi-file-document-outline' },
@@ -148,6 +149,7 @@ const navigationItems = computed(() => {
     items.push({ title: 'Müşteriler', to: '/app/customers', icon: 'mdi-account-multiple' });
     items.push({ title: 'CRM', to: '/app/crm', icon: 'mdi-account-group' });
     items.push({ title: 'Rezervasyonlar', to: '/app/reservations', icon: 'mdi-calendar-check' });
+    items.push({ title: 'Ön Muhasebe', to: '/app/finance', icon: 'mdi-cash-multiple' });
   }
 
   // VIP Transfer modülü (rentacar kullanıcıları için)

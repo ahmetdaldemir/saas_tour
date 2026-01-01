@@ -14,11 +14,11 @@ GitHub repository'nizde aşağıdaki secrets'ları eklemeniz gerekmektedir:
 
 Aşağıdaki secrets'ları ekleyin:
 
-| Secret Adı | Değer | Açıklama | Zorunlu |
-|------------|-------|----------|---------|
-| `SFTP_HOST` | `185.209.228.189` | Sunucu IP adresi | ✅ Evet |
-| `SFTP_USERNAME` | `root` | SSH/SFTP kullanıcı adı | ✅ Evet |
-| `SFTP_PASSWORD` | `@198711Ad@` | SSH/SFTP şifresi | ✅ Evet |
+| Secret Adı | Örnek Değer | Açıklama | Zorunlu |
+|------------|-------------|----------|---------|
+| `SFTP_HOST` | `your-server-ip` | Sunucu IP adresi veya domain | ✅ Evet |
+| `SFTP_USERNAME` | `deploy` | SSH/SFTP kullanıcı adı | ✅ Evet |
+| `SFTP_PASSWORD` | `your-secure-password` | SSH/SFTP şifresi | ✅ Evet |
 | `SFTP_PORT` | `22` | SSH port | ❌ Hayır (varsayılan: 22) |
 | `SFTP_REMOTE_PATH` | `/var/www/html/saastour360` | Sunucudaki deployment dizini | ✅ Evet |
 
@@ -29,9 +29,9 @@ Aşağıdaki secrets'ları ekleyin:
 Eğer GitHub CLI kullanıyorsanız:
 
 ```bash
-gh secret set SFTP_HOST --body "185.209.228.189"
-gh secret set SFTP_USERNAME --body "root"
-gh secret set SFTP_PASSWORD --body "@198711Ad@"
+gh secret set SFTP_HOST --body "your-server-ip"
+gh secret set SFTP_USERNAME --body "your-username"
+gh secret set SFTP_PASSWORD --body "your-secure-password"
 gh secret set SFTP_PORT --body "22"
 gh secret set SFTP_REMOTE_PATH --body "/var/www/html/saastour360"
 ```
@@ -90,7 +90,7 @@ Sunucuda aşağıdakilerin hazır olması gerekmektedir:
 2. Sunucuda `deploy.sh infra` komutunu manuel çalıştırın
 3. SSH bağlantısını test edin:
    ```bash
-   ssh root@185.209.228.189
+   ssh your-username@your-server-ip
    ```
 
 **SFTP bağlantı sorunları:**

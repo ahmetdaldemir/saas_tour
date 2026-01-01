@@ -29,7 +29,8 @@
     "clear:cache:stats": "ts-node --project tsconfig.json src/scripts/clear-blog-cache.ts -- --stats",
     "check:locations": "ts-node --project tsconfig.json src/scripts/check-locations-table.ts",
     "fix:rentacar-locations": "ts-node --project tsconfig.json src/scripts/fix-rentacar-locations-table.ts",
-    "fix:remove-old-location-columns": "ts-node --project tsconfig.json src/scripts/remove-old-location-columns.ts"
+    "fix:remove-old-location-columns": "ts-node --project tsconfig.json src/scripts/remove-old-location-columns.ts",
+    "seed:finance-categories": "ts-node --project tsconfig.json src/scripts/seed-finance-default-categories.ts"
   },
   "keywords": [],
   "author": "",

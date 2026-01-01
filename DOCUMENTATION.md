@@ -471,12 +471,12 @@ Otomatik deployment sistemi. `main` branch'ine merge edildiğinde otomatik deplo
 
 Repository Settings > Secrets and variables > Actions:
 
-| Secret Adı | Değer | Açıklama |
-|------------|-------|----------|
-| `SFTP_HOST` | `185.209.228.189` | Sunucu IP adresi |
-| `SFTP_USERNAME` | `root` | SSH/SFTP kullanıcı adı |
-| `SFTP_PASSWORD` | `@198711Ad@` | SSH/SFTP şifresi |
-| `SFTP_PORT` | `22` | SSH port |
+| Secret Adı | Örnek Değer | Açıklama |
+|------------|-------------|----------|
+| `SFTP_HOST` | `your-server-ip` | Sunucu IP adresi veya domain |
+| `SFTP_USERNAME` | `deploy` | SSH/SFTP kullanıcı adı |
+| `SFTP_PASSWORD` | `your-secure-password` | SSH/SFTP şifresi |
+| `SFTP_PORT` | `22` | SSH port (varsayılan: 22) |
 | `SFTP_REMOTE_PATH` | `/var/www/html/saastour360` | Sunucudaki deployment dizini |
 
 2. **Workflow Tetikleme**
@@ -528,7 +528,7 @@ Chat widget için `chat.saastour360.com` subdomain kurulumu.
    ```
    Type: A
    Name: chat
-   IPv4 address: 185.209.228.189
+   IPv4 address: YOUR_SERVER_IP
    Proxy status: ⚪ DNS only (Gri bulut) - WebSocket için önemli!
    TTL: Auto
    ```
@@ -867,7 +867,7 @@ docker-compose up -d --build
 ```
 Type: A
 Name: *
-Value: 185.209.228.189
+Value: YOUR_SERVER_IP
 TTL: 3600
 ```
 
@@ -875,7 +875,7 @@ TTL: 3600
 ```
 Type: A
 Name: berg
-Value: 185.209.228.189
+Value: YOUR_SERVER_IP
 TTL: 3600
 ```
 

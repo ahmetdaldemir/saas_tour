@@ -51,13 +51,24 @@ const storage = multer.diskStorage({
   },
 });
 
-// File filter - sadece resim dosyalarına izin ver
+// File filter - resim ve video dosyalarına izin ver
 const fileFilter = (_req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/x-icon', 'image/vnd.microsoft.icon'];
+  const allowedMimes = [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'image/svg+xml',
+    'image/x-icon',
+    'image/vnd.microsoft.icon',
+    'video/mp4',
+    'video/quicktime',
+    'video/x-msvideo',
+  ];
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Sadece resim dosyaları yüklenebilir (JPEG, PNG, GIF, WebP, SVG, ICO)'));
+    cb(new Error('Sadece resim ve video dosyaları yüklenebilir (JPEG, PNG, GIF, WebP, SVG, ICO, MP4, MOV, AVI)'));
   }
 };
 
@@ -66,7 +77,7 @@ export const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 50 * 1024 * 1024, // 50MB limit (for videos)
   },
 });
 

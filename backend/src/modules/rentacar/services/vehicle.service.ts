@@ -551,6 +551,169 @@ export class VehicleService {
   }
 
   /**
+   * Calculate rental days considering time difference
+   * If pickup time and dropoff time difference is more than 2 hours, add +1 day
+   */
+  private static calculateRentalDays(
+    pickupDate: string,
+    dropoffDate: string,
+    pickupTime?: string,
+    dropoffTime?: string
+  ): number {
+    const pickup = new Date(pickupDate);
+    const dropoff = new Date(dropoffDate);
+    
+    // Parse times if provided (HH:mm format)
+    if (pickupTime) {
+      const [hours, minutes] = pickupTime.split(':').map(Number);
+      pickup.setHours(hours || 0, minutes || 0, 0, 0);
+    } else {
+      pickup.setHours(0, 0, 0, 0);
+    }
+    
+    if (dropoffTime) {
+      const [hours, minutes] = dropoffTime.split(':').map(Number);
+      dropoff.setHours(hours || 0, minutes || 0, 0, 0);
+    } else {
+      dropoff.setHours(0, 0, 0, 0);
+    }
+    
+    // Calculate base days (date difference)
+    const dateOnlyPickup = new Date(pickup.getFullYear(), pickup.getMonth(), pickup.getDate());
+    const dateOnlyDropoff = new Date(dropoff.getFullYear(), dropoff.getMonth(), dropoff.getDate());
+    const diffDays = Math.floor((dateOnlyDropoff.getTime() - dateOnlyPickup.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // If pickup and dropoff are on the same day
+    if (diffDays === 0) {
+      // Check time difference - if more than 2 hours, it's 1 day rental
+      if (pickupTime && dropoffTime) {
+        const timeDiffHours = (dropoff.getTime() - pickup.getTime()) / (1000 * 60 * 60);
+        if (timeDiffHours > 2) {
+          return 1;
+        }
+      }
+      // Same day with <= 2 hours difference is still 1 day minimum
+      return 1;
+    }
+    
+    // For multi-day rentals, check if time difference on dropoff day is more than 2 hours
+    if (pickupTime && dropoffTime) {
+      // Calculate time difference on the dropoff day
+      const dropoffDayStart = new Date(dateOnlyDropoff);
+      dropoffDayStart.setHours(pickup.getHours(), pickup.getMinutes(), 0, 0);
+      
+      // If dropoff time is more than 2 hours after pickup time on dropoff day, add 1 day
+      const timeDiffOnDropoffDay = (dropoff.getTime() - dropoffDayStart.getTime()) / (1000 * 60 * 60);
+      if (timeDiffOnDropoffDay > 2) {
+        return diffDays + 1;
+      }
+    }
+    
+    return Math.max(1, diffDays);
+  }
+
+  /**
+   * Calculate days per month for multi-month rentals
+   * Returns array of { month: number, year: number, days: number } for each month
+   */
+  private static calculateMonthlyDays(
+    pickupDate: string,
+    dropoffDate: string,
+    pickupTime?: string,
+    dropoffTime?: string
+  ): Array<{ month: number; year: number; days: number }> {
+    const pickup = new Date(pickupDate);
+    const dropoff = new Date(dropoffDate);
+    
+    // Parse times if provided
+    if (pickupTime) {
+      const [hours, minutes] = pickupTime.split(':').map(Number);
+      pickup.setHours(hours || 0, minutes || 0, 0, 0);
+    } else {
+      pickup.setHours(0, 0, 0, 0);
+    }
+    
+    if (dropoffTime) {
+      const [hours, minutes] = dropoffTime.split(':').map(Number);
+      dropoff.setHours(hours || 0, minutes || 0, 0, 0);
+    } else {
+      dropoff.setHours(0, 0, 0, 0);
+    }
+    
+    const result: Array<{ month: number; year: number; days: number }> = [];
+    let currentDate = new Date(pickup);
+    const endDate = new Date(dropoff);
+    
+    // Ensure we always have at least one day
+    if (pickup.getTime() >= dropoff.getTime()) {
+      // Same day or pickup after dropoff (shouldn't happen but handle it)
+      const month = pickup.getMonth() + 1;
+      const year = pickup.getFullYear();
+      result.push({ month, year, days: 1 });
+      return result;
+    }
+    
+    while (currentDate < endDate) {
+      const month = currentDate.getMonth() + 1;
+      const year = currentDate.getFullYear();
+      
+      // Calculate end date for this month (either dropoff date or end of month)
+      const monthStart = new Date(year, currentDate.getMonth(), 1);
+      const monthEnd = new Date(year, currentDate.getMonth() + 1, 0, 23, 59, 59, 999);
+      
+      // Start date is either current date or month start
+      const startDate = currentDate > monthStart ? new Date(currentDate) : new Date(monthStart);
+      
+      // End date is either dropoff date or month end
+      const endDateForMonth = endDate < monthEnd ? new Date(endDate) : new Date(monthEnd);
+      
+      // Calculate days in this month (inclusive)
+      const daysInMonth = Math.ceil((endDateForMonth.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      
+      // Ensure at least 1 day
+      if (daysInMonth > 0) {
+        result.push({ month, year, days: daysInMonth });
+      }
+      
+      // Move to first day of next month
+      currentDate = new Date(year, currentDate.getMonth() + 1, 1);
+      currentDate.setHours(0, 0, 0, 0);
+    }
+    
+    // If no result, add at least 1 day
+    if (result.length === 0) {
+      const month = pickup.getMonth() + 1;
+      const year = pickup.getFullYear();
+      result.push({ month, year, days: 1 });
+    }
+    
+    return result;
+  }
+
+  /**
+   * Get pricing for a vehicle for specific month and day range
+   */
+  private static async getPricingForVehicle(
+    pricingRepo: Repository<LocationVehiclePricing>,
+    locationId: string,
+    vehicleId: string,
+    month: number,
+    dayRange: DayRange
+  ): Promise<LocationVehiclePricing | null> {
+    const pricing = await pricingRepo.findOne({
+      where: {
+        locationId,
+        vehicleId,
+        month,
+        dayRange,
+        isActive: true,
+      },
+    });
+    
+    return pricing;
+  }
+
+  /**
    * Helper function to convert currency
    * Converts price from source currency to target currency via TRY
    */
@@ -644,15 +807,24 @@ export class VehicleService {
       throw new Error('Invalid tenant or tenant is not a rentacar');
     }
 
-    // Get locations from rentacar_locations table (no master location relations needed)
+    // Get locations from rentacar_locations table
+    // Note: pickupLocationId and dropoffLocationId should be rentacar_locations.id
+    // But also check if they are master location IDs (locations.id = rentacar_locations.location_id)
     const locationRepo = AppDataSource.getRepository(Location);
     
-    // First, try to find locations without isActive check (to see if they exist)
+    // Try to find pickup location by rentacar_locations.id first
     let pickupLocation = await locationRepo.findOne({
       where: { id: pickupLocationId, tenantId },
     });
     
-    // If not found, check with soft-deleted included
+    // If not found, try to find by master location ID (locationId)
+    if (!pickupLocation) {
+      pickupLocation = await locationRepo.findOne({
+        where: { locationId: pickupLocationId, tenantId },
+      });
+    }
+    
+    // If still not found, check with soft-deleted included (by id)
     if (!pickupLocation) {
       pickupLocation = await locationRepo.findOne({
         where: { id: pickupLocationId, tenantId },
@@ -660,24 +832,40 @@ export class VehicleService {
       });
     }
     
+    // If still not found, check with soft-deleted included (by locationId)
     if (!pickupLocation) {
-      throw new Error(`Pickup location not found (id: ${pickupLocationId}, tenantId: ${tenantId})`);
+      pickupLocation = await locationRepo.findOne({
+        where: { locationId: pickupLocationId, tenantId },
+        withDeleted: true,
+      });
+    }
+    
+    if (!pickupLocation) {
+      throw new Error(`Pickup location not found for tenant ${tenantId}. Searched by id: ${pickupLocationId} and locationId: ${pickupLocationId}. Make sure the location exists in rentacar_locations table for this tenant.`);
     }
     
     // Check if location is active (warn but don't fail for search - allow inactive locations)
     if (!pickupLocation.isActive) {
-      console.warn(`Pickup location is inactive (id: ${pickupLocationId})`);
+      console.warn(`Pickup location is inactive (id: ${pickupLocation.id}, locationId: ${pickupLocation.locationId})`);
     }
     
     if (pickupLocation.deletedAt) {
-      throw new Error(`Pickup location is deleted (id: ${pickupLocationId})`);
+      throw new Error(`Pickup location is deleted (id: ${pickupLocation.id})`);
     }
     
+    // Try to find dropoff location by rentacar_locations.id first
     let dropoffLocation = await locationRepo.findOne({
       where: { id: dropoffLocationId, tenantId },
     });
     
-    // If not found, check with soft-deleted included
+    // If not found, try to find by master location ID (locationId)
+    if (!dropoffLocation) {
+      dropoffLocation = await locationRepo.findOne({
+        where: { locationId: dropoffLocationId, tenantId },
+      });
+    }
+    
+    // If still not found, check with soft-deleted included (by id)
     if (!dropoffLocation) {
       dropoffLocation = await locationRepo.findOne({
         where: { id: dropoffLocationId, tenantId },
@@ -685,32 +873,36 @@ export class VehicleService {
       });
     }
     
+    // If still not found, check with soft-deleted included (by locationId)
     if (!dropoffLocation) {
-      throw new Error(`Dropoff location not found (id: ${dropoffLocationId}, tenantId: ${tenantId})`);
+      dropoffLocation = await locationRepo.findOne({
+        where: { locationId: dropoffLocationId, tenantId },
+        withDeleted: true,
+      });
+    }
+    
+    if (!dropoffLocation) {
+      throw new Error(`Dropoff location not found for tenant ${tenantId}. Searched by id: ${dropoffLocationId} and locationId: ${dropoffLocationId}. Make sure the location exists in rentacar_locations table for this tenant.`);
     }
     
     // Check if location is active (warn but don't fail for search - allow inactive locations)
     if (!dropoffLocation.isActive) {
-      console.warn(`Dropoff location is inactive (id: ${dropoffLocationId})`);
+      console.warn(`Dropoff location is inactive (id: ${dropoffLocation.id}, locationId: ${dropoffLocation.locationId})`);
     }
     
     if (dropoffLocation.deletedAt) {
-      throw new Error(`Dropoff location is deleted (id: ${dropoffLocationId})`);
+      throw new Error(`Dropoff location is deleted (id: ${dropoffLocation.id})`);
     }
 
-    // Calculate rental days
-    const pickup = new Date(pickupDate);
-    const dropoff = new Date(dropoffDate);
-    const diffTime = Math.abs(dropoff.getTime() - pickup.getTime());
-    const rentalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    // Calculate rental days with time consideration
+    const rentalDays = this.calculateRentalDays(pickupDate, dropoffDate, params.pickupTime, params.dropoffTime);
     
     if (rentalDays < 1) {
       throw new Error('Dropoff date must be after pickup date');
     }
 
-    // Get pickup month (1-12)
-    const pickupMonth = pickup.getMonth() + 1;
-    const dayRange = this.getDayRange(rentalDays);
+    // Calculate days per month (for multi-month rentals)
+    const monthlyDays = this.calculateMonthlyDays(pickupDate, dropoffDate, params.pickupTime, params.dropoffTime);
 
     // Get all active vehicles for tenant
     const vehicles = await this.vehicleRepo().find({
@@ -718,6 +910,12 @@ export class VehicleService {
       relations: ['category', 'brand', 'model', 'images'],
       order: { order: 'ASC', name: 'ASC' },
     });
+    
+    if (vehicles.length === 0) {
+      console.log(`No active vehicles found for tenant ${tenantId}`);
+    } else {
+      console.log(`Found ${vehicles.length} active vehicles for tenant ${tenantId}`);
+    }
 
     // Load translations for categories if needed
     const categoryIds = vehicles
@@ -759,54 +957,108 @@ export class VehicleService {
       throw new Error('No active currency found');
     }
 
-    // Get location pricing for all vehicles
+    // Get location pricing repository
     const pricingRepo = AppDataSource.getRepository(LocationVehiclePricing);
-    const pricings = await pricingRepo.find({
-      where: {
-        locationId: pickupLocationId,
-        month: pickupMonth,
-        dayRange,
-        isActive: true,
-      },
-    });
-
-    // Create pricing map
-    const pricingMap = new Map<string, LocationVehiclePricing>();
-    pricings.forEach(p => pricingMap.set(p.vehicleId, p));
 
     // Get delivery and drop fees from rentacar_locations table
     let deliveryFee = Number(pickupLocation.deliveryFee || 0);
     let dropFee = Number(dropoffLocation.dropFee || 0);
     
-    // Note: Parent location fees are handled at the rentacar_locations level
-    // If parent location fees are needed, query them directly from rentacar_locations
-    // by finding the parent location's locationId and querying rentacar_locations
-    // For now, we use the direct fees from the selected locations
-    
     // If pickup and dropoff are same, drop fee is 0
-    if (pickupLocationId === dropoffLocationId) {
+    if (pickupLocation.id === dropoffLocation.id) {
       dropFee = 0;
     }
 
     // Process vehicles with pricing
     const vehicleResults = [];
     for (const vehicle of vehicles) {
-      // Get pricing for this vehicle
-      const pricing = pricingMap.get(vehicle.id);
-      let dailyPrice = Number(vehicle.baseRate || 0);
+      let totalPriceForVehicle = 0;
+      let maxMinDays = 0;
+      let hasValidPricing = false;
       
-      if (pricing) {
-        dailyPrice = Number(pricing.price);
-        // Apply discount if any
-        if (pricing.discount > 0) {
-          dailyPrice = dailyPrice - Number(pricing.discount);
+      // Calculate pricing for each month in the rental period
+      for (const monthData of monthlyDays) {
+        // Get day range for total rental days (used for pricing lookup)
+        const dayRange = this.getDayRange(rentalDays);
+        
+        // Get pricing for this vehicle, month, and day range
+        const pricing = await this.getPricingForVehicle(
+          pricingRepo,
+          pickupLocation.id,
+          vehicle.id,
+          monthData.month,
+          dayRange
+        );
+        
+        let dailyPrice = Number(vehicle.baseRate || 0);
+        let discount = 0;
+        let minDays = 0;
+        
+        if (pricing) {
+          hasValidPricing = true;
+          dailyPrice = Number(pricing.price);
+          discount = Number(pricing.discount || 0);
+          minDays = Number(pricing.minDays || 0);
+          
+          // Track maximum minDays requirement
+          if (minDays > maxMinDays) {
+            maxMinDays = minDays;
+          }
+          
+          // Apply discount if any
+          if (discount > 0) {
+            dailyPrice = dailyPrice - discount;
+          }
+          
+          console.log(`Pricing found for vehicle ${vehicle.id}, month ${monthData.month}: price=${pricing.price}, discount=${discount}, dailyPrice=${dailyPrice}, minDays=${minDays}`);
+        } else {
+          // If no pricing found for this month, use base rate
+          if (vehicle.baseRate && Number(vehicle.baseRate) > 0) {
+            dailyPrice = Number(vehicle.baseRate);
+            console.log(`No pricing found for vehicle ${vehicle.id}, month ${monthData.month}, using baseRate=${dailyPrice}`);
+          } else {
+            console.log(`No pricing found for vehicle ${vehicle.id}, month ${monthData.month}, and no baseRate available`);
+          }
         }
+        
+        // Calculate price for days in this month
+        const priceForMonth = dailyPrice * monthData.days;
+        totalPriceForVehicle += priceForMonth;
+      }
+      
+      console.log(`Vehicle ${vehicle.id} (${vehicle.name}): totalPriceForVehicle=${totalPriceForVehicle}, hasValidPricing=${hasValidPricing}, baseRate=${vehicle.baseRate || 0}`);
+      
+      // Check minimum days requirement (only if pricing was found with minDays requirement)
+      if (hasValidPricing && maxMinDays > 0 && rentalDays < maxMinDays) {
+        // Skip vehicle if rental days is less than minimum required
+        console.log(`Vehicle ${vehicle.id} skipped: rentalDays (${rentalDays}) < minDays (${maxMinDays})`);
+        continue;
+      }
+      
+      // Allow vehicle even if no pricing found, as long as baseRate exists
+      // Only skip if absolutely no pricing method available
+      if (!hasValidPricing && (!vehicle.baseRate || Number(vehicle.baseRate) === 0)) {
+        console.log(`Vehicle ${vehicle.id} skipped: no pricing found and no baseRate`);
+        continue;
+      }
+      
+      // Only skip if totalPriceForVehicle is negative
+      // If 0, it might be free rental, so allow it
+      if (totalPriceForVehicle < 0) {
+        console.log(`Vehicle ${vehicle.id} skipped: totalPriceForVehicle is negative (${totalPriceForVehicle})`);
+        continue;
+      }
+      
+      // If totalPriceForVehicle is 0 and no baseRate, skip (truly has no price)
+      if (totalPriceForVehicle === 0 && (!vehicle.baseRate || Number(vehicle.baseRate) === 0) && !hasValidPricing) {
+        console.log(`Vehicle ${vehicle.id} skipped: totalPriceForVehicle is 0 and no pricing/baseRate`);
+        continue;
       }
 
       // Convert prices to target currency
       const vehicleCurrencyCode = vehicle.currencyCode || 'TRY';
-      const convertedDailyPrice = await this.convertCurrency(
-        dailyPrice,
+      const convertedTotalPrice = await this.convertCurrency(
+        totalPriceForVehicle,
         vehicleCurrencyCode,
         targetCurrency.id
       );
@@ -821,7 +1073,11 @@ export class VehicleService {
         targetCurrency.id
       );
 
-      const totalPrice = (convertedDailyPrice * rentalDays) + convertedDeliveryFee + convertedDropFee;
+      // Total price includes: vehicle rental price + delivery fee (pickup location) + drop fee (dropoff location)
+      const finalTotalPrice = convertedTotalPrice + convertedDeliveryFee + convertedDropFee;
+      
+      // Calculate average daily price (excluding fees) for response
+      const averageDailyPrice = rentalDays > 0 ? convertedTotalPrice / rentalDays : 0;
 
       // Sort images by order
       const sortedImages = vehicle.images
@@ -866,11 +1122,11 @@ export class VehicleService {
           isPrimary: img.isPrimary,
           order: img.order,
         })),
-        dailyPrice: convertedDailyPrice,
-        totalPrice: Number(totalPrice.toFixed(2)),
+        dailyPrice: Number(averageDailyPrice.toFixed(2)), // Average daily price (excluding fees)
+        totalPrice: Number(finalTotalPrice.toFixed(2)), // Total price including deliveryFee and dropFee
         rentalDays,
-        deliveryFee: convertedDeliveryFee,
-        dropFee: convertedDropFee,
+        deliveryFee: Number(convertedDeliveryFee.toFixed(2)), // Pickup location teslim ücreti
+        dropFee: Number(convertedDropFee.toFixed(2)), // Dropoff location dönüş ücreti
         currencyCode: targetCurrency.code,
       });
     }
@@ -883,16 +1139,37 @@ export class VehicleService {
     const extrasResults = [];
     for (const extra of activeExtras) {
       const extraCurrencyCode = extra.currencyCode || 'TRY';
-      const convertedPrice = await this.convertCurrency(
-        Number(extra.price),
-        extraCurrencyCode,
-        targetCurrency.id
-      );
+      let finalPrice = Number(extra.price);
+      
+      // Get extra's currency info
+      const extraCurrency = await CurrencyService.getByCode(extraCurrencyCode as any);
+      
+      // If target currency is the default currency (base currency)
+      if (targetCurrency.isBaseCurrency) {
+        // If extra's currency is also base currency, use price as-is from database
+        if (extraCurrency && extraCurrency.isBaseCurrency) {
+          finalPrice = Number(extra.price); // No conversion needed
+        } else {
+          // Extra's currency is different from base, convert to base currency
+          finalPrice = await this.convertCurrency(
+            Number(extra.price),
+            extraCurrencyCode,
+            targetCurrency.id
+          );
+        }
+      } else {
+        // Target currency is NOT the default currency, always convert
+        finalPrice = await this.convertCurrency(
+          Number(extra.price),
+          extraCurrencyCode,
+          targetCurrency.id
+        );
+      }
 
       extrasResults.push({
         id: extra.id,
         name: extra.name,
-        price: Number(convertedPrice.toFixed(2)),
+        price: Number(finalPrice.toFixed(2)),
         currencyCode: targetCurrency.code,
         isMandatory: extra.isMandatory,
         salesType: extra.salesType,

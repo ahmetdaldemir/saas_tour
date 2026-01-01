@@ -24,6 +24,8 @@ import TransferView from '../views/TransferView.vue';
 import ChatView from '../views/ChatView.vue';
 import AdminDashboard from '../views/AdminDashboard.vue';
 import MasterLocationsView from '../views/MasterLocationsView.vue';
+import CountriesView from '../views/CountriesView.vue';
+import FinanceView from '../views/FinanceView.vue';
 import { useAuthStore } from '../stores/auth';
 
 /**
@@ -172,6 +174,18 @@ const routes: RouteRecordRaw[] = [
     path: '/app/master-locations',
     name: 'master-locations',
     component: MasterLocationsView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/countries',
+    name: 'countries',
+    component: CountriesView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/finance',
+    name: 'finance',
+    component: FinanceView,
     meta: { requiresAuth: true, layout: 'admin' },
   },
   {

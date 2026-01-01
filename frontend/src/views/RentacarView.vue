@@ -1318,18 +1318,46 @@
                       type="number"
                       density="compact"
                       hide-details
-                      variant="outlined"
-                      style="max-width: 100px;"
-                      @update:model-value="updatePricing(item, '1-3', $event)"
+                      variant="underlined"
+                      style="max-width: 100px; font-size: 13px;"
+                      class="pricing-input"
+                      @update:model-value="updatePricing(item, '1-3', Number($event))"
                     />
-                    <v-btn
-                      icon="mdi-content-copy"
-                      size="x-small"
-                      variant="text"
-                      color="primary"
-                      @click="copyPriceToAll(item, '1-3')"
-                      title="Tamamına Kopyala"
-                    />
+                    <v-menu>
+                      <template #activator="{ props }">
+                        <v-btn
+                          icon="mdi-content-copy"
+                          size="x-small"
+                          variant="text"
+                          color="primary"
+                          v-bind="props"
+                          title="Kopyala Seçenekleri"
+                        />
+                      </template>
+                      <v-list density="compact">
+                        <v-list-item @click="copyPriceToAll(item, '1-3', { allMonths: true })">
+                          <v-list-item-title>Tüm Aylara Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '1-3', { allVehicles: true })">
+                          <v-list-item-title>Tüm Araçlara Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '1-3', { allDayRanges: true })">
+                          <v-list-item-title>Tüm Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '1-3', { allMonths: true, allVehicles: true })">
+                          <v-list-item-title>Tüm Araçlar & Aylara Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '1-3', { allMonths: true, allDayRanges: true })">
+                          <v-list-item-title>Tüm Aylar & Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '1-3', { allVehicles: true, allDayRanges: true })">
+                          <v-list-item-title>Tüm Araçlar & Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '1-3', { allMonths: true, allVehicles: true, allDayRanges: true })">
+                          <v-list-item-title>Tüm Araçlar, Aylar & Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                      </v-list>
+                    </v-menu>
                   </div>
                 </template>
 
@@ -1340,18 +1368,46 @@
                       type="number"
                       density="compact"
                       hide-details
-                      variant="outlined"
-                      style="max-width: 100px;"
-                      @update:model-value="updatePricing(item, '4-6', $event)"
+                      variant="underlined"
+                      style="max-width: 100px; font-size: 13px;"
+                      class="pricing-input"
+                      @update:model-value="updatePricing(item, '4-6', Number($event))"
                     />
-                    <v-btn
-                      icon="mdi-content-copy"
-                      size="x-small"
-                      variant="text"
-                      color="primary"
-                      @click="copyPriceToAll(item, '4-6')"
-                      title="Tamamına Kopyala"
-                    />
+                    <v-menu>
+                      <template #activator="{ props }">
+                        <v-btn
+                          icon="mdi-content-copy"
+                          size="x-small"
+                          variant="text"
+                          color="primary"
+                          v-bind="props"
+                          title="Kopyala Seçenekleri"
+                        />
+                      </template>
+                      <v-list density="compact">
+                        <v-list-item @click="copyPriceToAll(item, '4-6', { allMonths: true })">
+                          <v-list-item-title>Tüm Aylara Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '4-6', { allVehicles: true })">
+                          <v-list-item-title>Tüm Araçlara Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '4-6', { allDayRanges: true })">
+                          <v-list-item-title>Tüm Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '4-6', { allMonths: true, allVehicles: true })">
+                          <v-list-item-title>Tüm Araçlar & Aylara Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '4-6', { allMonths: true, allDayRanges: true })">
+                          <v-list-item-title>Tüm Aylar & Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '4-6', { allVehicles: true, allDayRanges: true })">
+                          <v-list-item-title>Tüm Araçlar & Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '4-6', { allMonths: true, allVehicles: true, allDayRanges: true })">
+                          <v-list-item-title>Tüm Araçlar, Aylar & Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                      </v-list>
+                    </v-menu>
                   </div>
                 </template>
 
@@ -1362,18 +1418,46 @@
                       type="number"
                       density="compact"
                       hide-details
-                      variant="outlined"
-                      style="max-width: 100px;"
-                      @update:model-value="updatePricing(item, '7-10', $event)"
+                      variant="underlined"
+                      style="max-width: 100px; font-size: 13px;"
+                      class="pricing-input"
+                      @update:model-value="updatePricing(item, '7-10', Number($event))"
                     />
-                    <v-btn
-                      icon="mdi-content-copy"
-                      size="x-small"
-                      variant="text"
-                      color="primary"
-                      @click="copyPriceToAll(item, '7-10')"
-                      title="Tamamına Kopyala"
-                    />
+                    <v-menu>
+                      <template #activator="{ props }">
+                        <v-btn
+                          icon="mdi-content-copy"
+                          size="x-small"
+                          variant="text"
+                          color="primary"
+                          v-bind="props"
+                          title="Kopyala Seçenekleri"
+                        />
+                      </template>
+                      <v-list density="compact">
+                        <v-list-item @click="copyPriceToAll(item, '7-10', { allMonths: true })">
+                          <v-list-item-title>Tüm Aylara Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '7-10', { allVehicles: true })">
+                          <v-list-item-title>Tüm Araçlara Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '7-10', { allDayRanges: true })">
+                          <v-list-item-title>Tüm Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '7-10', { allMonths: true, allVehicles: true })">
+                          <v-list-item-title>Tüm Araçlar & Aylara Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '7-10', { allMonths: true, allDayRanges: true })">
+                          <v-list-item-title>Tüm Aylar & Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '7-10', { allVehicles: true, allDayRanges: true })">
+                          <v-list-item-title>Tüm Araçlar & Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '7-10', { allMonths: true, allVehicles: true, allDayRanges: true })">
+                          <v-list-item-title>Tüm Araçlar, Aylar & Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                      </v-list>
+                    </v-menu>
                   </div>
                 </template>
 
@@ -1384,18 +1468,46 @@
                       type="number"
                       density="compact"
                       hide-details
-                      variant="outlined"
-                      style="max-width: 100px;"
-                      @update:model-value="updatePricing(item, '11-13', $event)"
+                      variant="underlined"
+                      style="max-width: 100px; font-size: 13px;"
+                      class="pricing-input"
+                      @update:model-value="updatePricing(item, '11-13', Number($event))"
                     />
-                    <v-btn
-                      icon="mdi-content-copy"
-                      size="x-small"
-                      variant="text"
-                      color="primary"
-                      @click="copyPriceToAll(item, '11-13')"
-                      title="Tamamına Kopyala"
-                    />
+                    <v-menu>
+                      <template #activator="{ props }">
+                        <v-btn
+                          icon="mdi-content-copy"
+                          size="x-small"
+                          variant="text"
+                          color="primary"
+                          v-bind="props"
+                          title="Kopyala Seçenekleri"
+                        />
+                      </template>
+                      <v-list density="compact">
+                        <v-list-item @click="copyPriceToAll(item, '11-13', { allMonths: true })">
+                          <v-list-item-title>Tüm Aylara Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '11-13', { allVehicles: true })">
+                          <v-list-item-title>Tüm Araçlara Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '11-13', { allDayRanges: true })">
+                          <v-list-item-title>Tüm Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '11-13', { allMonths: true, allVehicles: true })">
+                          <v-list-item-title>Tüm Araçlar & Aylara Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '11-13', { allMonths: true, allDayRanges: true })">
+                          <v-list-item-title>Tüm Aylar & Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '11-13', { allVehicles: true, allDayRanges: true })">
+                          <v-list-item-title>Tüm Araçlar & Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '11-13', { allMonths: true, allVehicles: true, allDayRanges: true })">
+                          <v-list-item-title>Tüm Araçlar, Aylar & Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                      </v-list>
+                    </v-menu>
                   </div>
                 </template>
 
@@ -1406,18 +1518,46 @@
                       type="number"
                       density="compact"
                       hide-details
-                      variant="outlined"
-                      style="max-width: 100px;"
-                      @update:model-value="updatePricing(item, '14-20', $event)"
+                      variant="underlined"
+                      style="max-width: 100px; font-size: 13px;"
+                      class="pricing-input"
+                      @update:model-value="updatePricing(item, '14-20', Number($event))"
                     />
-                    <v-btn
-                      icon="mdi-content-copy"
-                      size="x-small"
-                      variant="text"
-                      color="primary"
-                      @click="copyPriceToAll(item, '14-20')"
-                      title="Tamamına Kopyala"
-                    />
+                    <v-menu>
+                      <template #activator="{ props }">
+                        <v-btn
+                          icon="mdi-content-copy"
+                          size="x-small"
+                          variant="text"
+                          color="primary"
+                          v-bind="props"
+                          title="Kopyala Seçenekleri"
+                        />
+                      </template>
+                      <v-list density="compact">
+                        <v-list-item @click="copyPriceToAll(item, '14-20', { allMonths: true })">
+                          <v-list-item-title>Tüm Aylara Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '14-20', { allVehicles: true })">
+                          <v-list-item-title>Tüm Araçlara Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '14-20', { allDayRanges: true })">
+                          <v-list-item-title>Tüm Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '14-20', { allMonths: true, allVehicles: true })">
+                          <v-list-item-title>Tüm Araçlar & Aylara Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '14-20', { allMonths: true, allDayRanges: true })">
+                          <v-list-item-title>Tüm Aylar & Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '14-20', { allVehicles: true, allDayRanges: true })">
+                          <v-list-item-title>Tüm Araçlar & Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '14-20', { allMonths: true, allVehicles: true, allDayRanges: true })">
+                          <v-list-item-title>Tüm Araçlar, Aylar & Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                      </v-list>
+                    </v-menu>
                   </div>
                 </template>
 
@@ -1428,18 +1568,46 @@
                       type="number"
                       density="compact"
                       hide-details
-                      variant="outlined"
-                      style="max-width: 100px;"
-                      @update:model-value="updatePricing(item, '21-29', $event)"
+                      variant="underlined"
+                      style="max-width: 100px; font-size: 13px;"
+                      class="pricing-input"
+                      @update:model-value="updatePricing(item, '21-29', Number($event))"
                     />
-                    <v-btn
-                      icon="mdi-content-copy"
-                      size="x-small"
-                      variant="text"
-                      color="primary"
-                      @click="copyPriceToAll(item, '21-29')"
-                      title="Tamamına Kopyala"
-                    />
+                    <v-menu>
+                      <template #activator="{ props }">
+                        <v-btn
+                          icon="mdi-content-copy"
+                          size="x-small"
+                          variant="text"
+                          color="primary"
+                          v-bind="props"
+                          title="Kopyala Seçenekleri"
+                        />
+                      </template>
+                      <v-list density="compact">
+                        <v-list-item @click="copyPriceToAll(item, '21-29', { allMonths: true })">
+                          <v-list-item-title>Tüm Aylara Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '21-29', { allVehicles: true })">
+                          <v-list-item-title>Tüm Araçlara Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '21-29', { allDayRanges: true })">
+                          <v-list-item-title>Tüm Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '21-29', { allMonths: true, allVehicles: true })">
+                          <v-list-item-title>Tüm Araçlar & Aylara Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '21-29', { allMonths: true, allDayRanges: true })">
+                          <v-list-item-title>Tüm Aylar & Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '21-29', { allVehicles: true, allDayRanges: true })">
+                          <v-list-item-title>Tüm Araçlar & Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '21-29', { allMonths: true, allVehicles: true, allDayRanges: true })">
+                          <v-list-item-title>Tüm Araçlar, Aylar & Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                      </v-list>
+                    </v-menu>
                   </div>
                 </template>
 
@@ -1450,18 +1618,46 @@
                       type="number"
                       density="compact"
                       hide-details
-                      variant="outlined"
-                      style="max-width: 100px;"
-                      @update:model-value="updatePricing(item, '30++', $event)"
+                      variant="underlined"
+                      style="max-width: 100px; font-size: 13px;"
+                      class="pricing-input"
+                      @update:model-value="updatePricing(item, '30++', Number($event))"
                     />
-                    <v-btn
-                      icon="mdi-content-copy"
-                      size="x-small"
-                      variant="text"
-                      color="primary"
-                      @click="copyPriceToAll(item, '30++')"
-                      title="Tamamına Kopyala"
-                    />
+                    <v-menu>
+                      <template #activator="{ props }">
+                        <v-btn
+                          icon="mdi-content-copy"
+                          size="x-small"
+                          variant="text"
+                          color="primary"
+                          v-bind="props"
+                          title="Kopyala Seçenekleri"
+                        />
+                      </template>
+                      <v-list density="compact">
+                        <v-list-item @click="copyPriceToAll(item, '30++', { allMonths: true })">
+                          <v-list-item-title>Tüm Aylara Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '30++', { allVehicles: true })">
+                          <v-list-item-title>Tüm Araçlara Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '30++', { allDayRanges: true })">
+                          <v-list-item-title>Tüm Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '30++', { allMonths: true, allVehicles: true })">
+                          <v-list-item-title>Tüm Araçlar & Aylara Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '30++', { allMonths: true, allDayRanges: true })">
+                          <v-list-item-title>Tüm Aylar & Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '30++', { allVehicles: true, allDayRanges: true })">
+                          <v-list-item-title>Tüm Araçlar & Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="copyPriceToAll(item, '30++', { allMonths: true, allVehicles: true, allDayRanges: true })">
+                          <v-list-item-title>Tüm Araçlar, Aylar & Gün Aralıklarına Kopyala</v-list-item-title>
+                        </v-list-item>
+                      </v-list>
+                    </v-menu>
                   </div>
                 </template>
 
@@ -1471,9 +1667,10 @@
                     type="number"
                     density="compact"
                     hide-details
-                    variant="outlined"
-                    style="max-width: 80px;"
-                    @update:model-value="updatePricingDiscount(item, $event)"
+                    variant="underlined"
+                    style="max-width: 80px; font-size: 13px;"
+                    class="pricing-input"
+                    @update:model-value="updatePricingDiscount(item, Number($event))"
                   />
                 </template>
 
@@ -1483,9 +1680,10 @@
                     type="number"
                     density="compact"
                     hide-details
-                    variant="outlined"
-                    style="max-width: 80px;"
-                    @update:model-value="updatePricingMinDays(item, $event)"
+                    variant="underlined"
+                    style="max-width: 80px; font-size: 13px;"
+                    class="pricing-input"
+                    @update:model-value="updatePricingMinDays(item, Number($event))"
                   />
                 </template>
 
@@ -3980,7 +4178,11 @@ const updatePricingStatus = (item: PricingTableItem, value: boolean) => {
   item.isActive = value;
 };
 
-const copyPriceToAll = async (item: PricingTableItem, dayRange: string) => {
+const copyPriceToAll = async (
+  item: PricingTableItem, 
+  dayRange: string, 
+  options: { allMonths?: boolean; allVehicles?: boolean; allDayRanges?: boolean } = {}
+) => {
   if (!selectedLocationForPricing.value) return;
   
   const price = item.prices[dayRange];
@@ -3990,7 +4192,19 @@ const copyPriceToAll = async (item: PricingTableItem, dayRange: string) => {
     return;
   }
 
-  const confirmMessage = `Bu fiyatı (${price} TL) tüm araçlar ve tüm aylar için "${dayRange}" gün aralığına kopyalamak istediğinizden emin misiniz?`;
+  const { allMonths = false, allVehicles = false, allDayRanges = false } = options;
+  
+  // Build confirmation message
+  const parts: string[] = [];
+  if (allMonths) parts.push('tüm aylara');
+  if (allVehicles) parts.push('tüm araçlara');
+  if (allDayRanges) parts.push('tüm gün aralıklarına');
+  
+  const targetDescription = parts.length > 0 
+    ? parts.join(' & ')
+    : 'bu konuma';
+  
+  const confirmMessage = `Bu fiyatı (${price} TL) "${dayRange}" gün aralığı için ${targetDescription} kopyalamak istediğinizden emin misiniz?`;
   
   if (!confirm(confirmMessage)) {
     return;
@@ -4005,12 +4219,15 @@ const copyPriceToAll = async (item: PricingTableItem, dayRange: string) => {
       sourceMonth: selectedMonth.value,
       dayRange: dayRange,
       price: price,
+      copyToAllVehicles: allVehicles,
+      copyToAllMonths: allMonths,
+      copyToAllDayRanges: allDayRanges,
     });
 
-    // Tüm aylar için veriyi yeniden yükle
+    // Reload pricing data
     await loadPricingData();
     
-    alert(`Fiyat başarıyla tüm araçlar ve tüm aylar için kopyalandı!`);
+    alert(`Fiyat başarıyla kopyalandı!`);
   } catch (error: any) {
     alert(error.response?.data?.message || 'Fiyat kopyalanırken bir hata oluştu');
   } finally {
@@ -4329,5 +4546,29 @@ const loadDefaultCurrency = async () => {
   align-items: center;
   gap: 4px;
   backdrop-filter: blur(4px);
+}
+
+/* Pricing Input Styles - Daha düz ve okunabilir input'lar */
+.pricing-input :deep(.v-field__input) {
+  padding: 2px 4px !important;
+  min-height: 28px !important;
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+}
+
+.pricing-input :deep(.v-field) {
+  padding: 0 !important;
+  min-height: 28px !important;
+}
+
+.pricing-input :deep(.v-field__outline) {
+  padding: 0 !important;
+}
+
+.pricing-input :deep(input) {
+  padding: 2px 4px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: rgb(var(--v-theme-on-surface)) !important;
 }
 </style>

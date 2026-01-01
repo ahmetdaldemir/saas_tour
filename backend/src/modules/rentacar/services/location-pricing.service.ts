@@ -229,8 +229,20 @@ export class LocationPricingService {
     sourceMonth: number;
     dayRange: string;
     price: number;
+    copyToAllVehicles?: boolean;
+    copyToAllMonths?: boolean;
+    copyToAllDayRanges?: boolean;
   }): Promise<LocationVehiclePricing[]> {
-    const { locationId, sourceVehicleId, sourceMonth, dayRange, price } = input;
+    const { 
+      locationId, 
+      sourceVehicleId, 
+      sourceMonth, 
+      dayRange, 
+      price,
+      copyToAllVehicles = false,
+      copyToAllMonths = false,
+      copyToAllDayRanges = false,
+    } = input;
 
     // Validate inputs
     if (sourceMonth < 1 || sourceMonth > 12) {
@@ -242,45 +254,75 @@ export class LocationPricingService {
       throw new Error('Location not found');
     }
 
-    // Get all vehicles for this location's tenant
-    const vehicles = await this.vehicleRepo().find({
-      where: { tenantId: location.tenantId },
-    });
-
-    if (vehicles.length === 0) {
-      throw new Error('No vehicles found for this location');
+    // Determine target vehicles
+    let targetVehicles: any[] = [];
+    if (copyToAllVehicles) {
+      targetVehicles = await this.vehicleRepo().find({
+        where: { tenantId: location.tenantId },
+      });
+    } else {
+      const sourceVehicle = await this.vehicleRepo().findOne({ where: { id: sourceVehicleId } });
+      if (!sourceVehicle) {
+        throw new Error('Source vehicle not found');
+      }
+      targetVehicles = [sourceVehicle];
     }
+
+    if (targetVehicles.length === 0) {
+      throw new Error('No vehicles found');
+    }
+
+    // Determine target months
+    const targetMonths = copyToAllMonths 
+      ? [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+      : [sourceMonth];
+
+    // Determine target day ranges
+    const allDayRanges: DayRange[] = [
+      DayRange.RANGE_1_3,
+      DayRange.RANGE_4_6,
+      DayRange.RANGE_7_10,
+      DayRange.RANGE_11_13,
+      DayRange.RANGE_14_20,
+      DayRange.RANGE_21_29,
+      DayRange.RANGE_30_PLUS,
+    ];
+    const targetDayRanges = copyToAllDayRanges
+      ? allDayRanges
+      : [dayRange as DayRange];
 
     const pricingsToSave: LocationVehiclePricing[] = [];
 
-    // Copy price to all vehicles and all months (1-12)
-    for (const vehicle of vehicles) {
-      for (let month = 1; month <= 12; month++) {
-        let pricing = await this.pricingRepo().findOne({
-          where: {
-            locationId,
-            vehicleId: vehicle.id,
-            month,
-            dayRange: dayRange as any,
-          },
-        });
-
-        if (!pricing) {
-          pricing = this.pricingRepo().create({
-            location,
-            vehicle,
-            month,
-            dayRange: dayRange as any,
-            price,
-            discount: 0,
-            minDays: 0,
-            isActive: true,
+    // Copy price based on options
+    for (const vehicle of targetVehicles) {
+      for (const month of targetMonths) {
+        for (const targetDayRange of targetDayRanges) {
+          let pricing = await this.pricingRepo().findOne({
+            where: {
+              locationId,
+              vehicleId: vehicle.id,
+              month,
+              dayRange: targetDayRange,
+            },
           });
-        } else {
-          pricing.price = price;
-        }
 
-        pricingsToSave.push(pricing);
+          if (!pricing) {
+            pricing = this.pricingRepo().create({
+              location,
+              vehicle,
+              month,
+              dayRange: targetDayRange,
+              price,
+              discount: 0,
+              minDays: 0,
+              isActive: true,
+            });
+          } else {
+            pricing.price = price;
+          }
+
+          pricingsToSave.push(pricing);
+        }
       }
     }
 

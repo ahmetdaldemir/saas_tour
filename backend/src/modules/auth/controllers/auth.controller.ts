@@ -36,6 +36,8 @@ export class AuthController {
       const { token, user, tenant, settings } = await AuthService.login({ email, password });
 
       // Verify that the user belongs to the tenant from subdomain
+      // NOTE: For mobile apps, req.tenant will be null (no subdomain), so this check is bypassed
+      // This allows mobile apps to login without subdomain requirement
       if (req.tenant && req.tenant.id !== user.tenantId) {
         return res.status(403).json({ 
           message: 'Tenant mismatch: This user does not belong to this tenant' 

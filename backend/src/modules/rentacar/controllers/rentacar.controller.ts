@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { VehicleService } from '../services/vehicle.service';
 import { VehicleImageService } from '../services/vehicle-image.service';
+import { RentacarReservationService } from '../services/rentacar-reservation.service';
 import { SeasonName } from '../entities/vehicle-pricing-period.entity';
 import { AppDataSource } from '../../../config/data-source';
 import { Vehicle } from '../entities/vehicle.entity';
@@ -433,4 +434,23 @@ export class RentacarController {
       res.status(400).json({ message: (error as Error).message });
     }
   }
+
+  /**
+   * Create rentacar reservation (public endpoint)
+   */
+  static createReservation = asyncHandler(async (req: Request, res: Response) => {
+    try {
+      const reservation = await RentacarReservationService.create(req.body);
+      res.status(201).json({
+        success: true,
+        message: 'Reservation created successfully',
+        data: reservation,
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        message: (error as Error).message,
+      });
+    }
+  });
 }

@@ -12,6 +12,10 @@ const router = Router();
 router.get('/vehicles', RentacarController.listVehicles);
 // IMPORTANT: /vehicles/search must be before /vehicles/:id to avoid route matching conflict
 router.get('/vehicles/search', RentacarController.searchVehicles);
+// Public endpoint - rentacar reservation creation
+router.post('/reservations', RentacarController.createReservation);
+// Public endpoint - rentacar reservation creation
+router.post('/reservations', RentacarController.createReservation);
 
 // Protected endpoints - authentication and authorization required
 router.use(authenticate);

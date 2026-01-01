@@ -53,20 +53,29 @@ jobs:
           sudo apt-get update && sudo apt-get install -y sshpass rsync
       
       - name: Deploy files via RSync
+        env:
+          SFTP_HOST: ${{ secrets.SFTP_HOST }}
+          SFTP_USERNAME: ${{ secrets.SFTP_USERNAME }}
+          SFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
+          SFTP_PORT: ${{ secrets.SFTP_PORT || '22' }}
+          SFTP_REMOTE_PATH: ${{ secrets.SFTP_REMOTE_PATH || '/var/www/html/saastour360' }}
         run: |
-          # ⚠️ WARNING: Hardcoded credentials - SECURITY RISK!
-          # In production, use GitHub Secrets instead
-          SFTP_HOST="185.209.228.189"
-          SFTP_USERNAME="root"
-          SFTP_PASSWORD="@198711Ad@"
-          SFTP_PORT="22"
-          SFTP_REMOTE_PATH="/var/www/html/saastour360"
+          if [ -z "$SFTP_HOST" ] || [ -z "$SFTP_USERNAME" ] || [ -z "$SFTP_PASSWORD" ]; then
+            echo "❌ Error: SFTP credentials not set in GitHub Secrets"
+            echo "Please add the following secrets to your repository:"
+            echo "  - SFTP_HOST"
+            echo "  - SFTP_USERNAME"
+            echo "  - SFTP_PASSWORD"
+            echo "  - SFTP_PORT (optional, default: 22)"
+            echo "  - SFTP_REMOTE_PATH (optional, default: /var/www/html/saastour360)"
+            exit 1
+          fi
           
-          echo "🚀 Starting deployment to root@185.209.228.189:/var/www/html/saastour360/"
+          echo "🚀 Starting deployment to ${SFTP_USERNAME}@${SFTP_HOST}:${SFTP_REMOTE_PATH}/"
           
           export SSHPASS="${SFTP_PASSWORD}"
           sshpass -e rsync -avz --delete \
-            -e "ssh -p 22 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
+            -e "ssh -p ${SFTP_PORT} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
             --exclude='.git' \
             --exclude='node_modules' \
             --exclude='.vscode' \
@@ -80,22 +89,23 @@ jobs:
             --exclude='frontend/dist' \
             --exclude='backend/dist' \
             --exclude='docker-datatabse-stack' \
-            ./ root@185.209.228.189:/var/www/html/saastour360/
+            --exclude='mobile' \
+            --exclude='uploads' \
+            ./ ${SFTP_USERNAME}@${SFTP_HOST}:${SFTP_REMOTE_PATH}/
       
       - name: Run Deployment Script on Server
         uses: appleboy/ssh-action@v1.0.3
         with:
-          # ⚠️ WARNING: Hardcoded credentials - SECURITY RISK!
-          # In production, use GitHub Secrets instead
-          host: "185.209.228.189"
-          username: "root"
-          password: "@198711Ad@"
-          port: "22"
+          host: ${{ secrets.SFTP_HOST }}
+          username: ${{ secrets.SFTP_USERNAME }}
+          password: ${{ secrets.SFTP_PASSWORD }}
+          port: ${{ secrets.SFTP_PORT || '22' }}
           script_stop: true
           script: |
             set -e
             echo "📦 Running deployment script on server..."
-            cd /var/www/html/saastour360 || { echo "❌ Error: Cannot change to directory"; exit 1; }
+            REMOTE_PATH="${{ secrets.SFTP_REMOTE_PATH || '/var/www/html/saastour360' }}"
+            cd ${REMOTE_PATH} || { echo "❌ Error: Cannot change to directory ${REMOTE_PATH}"; exit 1; }
             chmod +x deploy.sh || true
             ./deploy.sh infra
             echo "✅ Deployment completed successfully!"

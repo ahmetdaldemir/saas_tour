@@ -107,6 +107,12 @@ export enum Permission {
 
   // Admin Dashboard
   ADMIN_VIEW = 'admin:view',
+
+  // Finance
+  FINANCE_VIEW = 'finance:view',
+  FINANCE_CREATE = 'finance:create',
+  FINANCE_UPDATE = 'finance:update',
+  FINANCE_DELETE = 'finance:delete',
 }
 
 /**
@@ -139,6 +145,7 @@ export const ROLE_PERMISSIONS: Record<TenantUserRole, Permission[]> = {
     Permission.EMAIL_TEMPLATE_VIEW,
     Permission.SURVEY_VIEW,
     Permission.ADMIN_VIEW,
+    Permission.FINANCE_VIEW,
 
     // Create permissions
     Permission.DESTINATION_CREATE,
@@ -155,6 +162,7 @@ export const ROLE_PERMISSIONS: Record<TenantUserRole, Permission[]> = {
     Permission.TRANSFER_CREATE,
     Permission.EMAIL_TEMPLATE_CREATE,
     Permission.SURVEY_CREATE,
+    Permission.FINANCE_CREATE,
 
     // Update permissions
     Permission.DESTINATION_UPDATE,
@@ -171,6 +179,7 @@ export const ROLE_PERMISSIONS: Record<TenantUserRole, Permission[]> = {
     Permission.TRANSFER_UPDATE,
     Permission.EMAIL_TEMPLATE_UPDATE,
     Permission.SURVEY_UPDATE,
+    Permission.FINANCE_UPDATE,
   ],
   [TenantUserRole.VIEWER]: [
     // Viewer can only view
@@ -193,6 +202,7 @@ export const ROLE_PERMISSIONS: Record<TenantUserRole, Permission[]> = {
     Permission.EMAIL_TEMPLATE_VIEW,
     Permission.SURVEY_VIEW,
     Permission.ADMIN_VIEW,
+    Permission.FINANCE_VIEW,
   ],
 };
 

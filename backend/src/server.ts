@@ -3,6 +3,7 @@ import { createApp } from './app';
 import { AppDataSource } from './config/data-source';
 import { loadEnv } from './config/env';
 import { startCurrencyScheduler } from './services/currency-scheduler.service';
+import { startFinanceReminderScheduler } from './services/finance-reminder-scheduler.service';
 import { ChatSocketServer } from './modules/chat/websocket/chat-socket.server';
 import { logger } from './utils/logger';
 import { getRedisClient } from './config/redis.config';
@@ -46,6 +47,7 @@ const start = async () => {
   // Currency scheduler'ı başlat (production'da)
   if (config.nodeEnv === 'production') {
     startCurrencyScheduler();
+    startFinanceReminderScheduler();
   }
 
   httpServer.listen(port, () => {

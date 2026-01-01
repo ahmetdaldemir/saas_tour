@@ -30,10 +30,16 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-# Sunucu deployment ayarları (environment variable veya default)
-SFTP_HOST="${SFTP_HOST:-185.209.228.189}"
-SFTP_USERNAME="${SFTP_USERNAME:-root}"
-SFTP_PASSWORD="${SFTP_PASSWORD:-@198711Ad@}"
+# Sunucu deployment ayarları (environment variable'dan okunur, default yok)
+# ⚠️  ÖNEMLİ: Production deployment için bu değişkenleri ayarlayın:
+#   export SFTP_HOST="your-server-ip"
+#   export SFTP_USERNAME="your-username"
+#   export SFTP_PASSWORD="your-password"
+#   export SFTP_PORT="22"
+#   export SFTP_REMOTE_PATH="/var/www/html/saastour360"
+SFTP_HOST="${SFTP_HOST:-}"
+SFTP_USERNAME="${SFTP_USERNAME:-}"
+SFTP_PASSWORD="${SFTP_PASSWORD:-}"
 SFTP_PORT="${SFTP_PORT:-22}"
 SFTP_REMOTE_PATH="${SFTP_REMOTE_PATH:-/var/www/html/saastour360}"
 
@@ -389,8 +395,23 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
 
     if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ]; then
         # Sadece build modunda - container'ları durdurma, sadece rebuild
-        echo -e "${YELLOW}🔨 Container'lar rebuild ediliyor...${NC}"
-        docker-compose up -d --build
+        # Zero-downtime deployment: Yeni container'ları build et, sonra graceful restart
+        echo -e "${YELLOW}🔨 Container'lar rebuild ediliyor (zero-downtime)...${NC}"
+        
+        # Önce yeni image'ları build et (container'lar çalışmaya devam eder)
+        echo -e "${YELLOW}📦 Yeni image'lar build ediliyor...${NC}"
+        docker-compose build --no-cache
+        
+        # Graceful restart: Önce yeni container'ları başlat, sonra eskileri durdur
+        echo -e "${YELLOW}🔄 Container'lar graceful restart ile güncelleniyor...${NC}"
+        docker-compose up -d --no-deps --build
+        
+        # Eski container'ları temizle (sadece durmuş olanlar)
+        echo -e "${YELLOW}🧹 Eski container'lar temizleniyor...${NC}"
+        docker-compose down --remove-orphans 2>/dev/null || true
+        
+        # Container'ları tekrar başlat (yeni image'larla)
+        docker-compose up -d
     else
         # Full modunda - container'ları durdur ve yeniden başlat
         echo -e "${YELLOW}🔄 Application stack yeniden başlatılıyor...${NC}"
@@ -496,6 +517,8 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
         sleep 3
         
         # Force recreate ile container'ları yeniden oluştur
+        # Production'da dikkatli: Bu mod tüm container'ları yeniden başlatır
+        echo -e "${YELLOW}⚠️  Full deployment modu: Tüm container'lar yeniden oluşturulacak${NC}"
         docker-compose up -d --build --force-recreate --remove-orphans
     fi
 
@@ -597,6 +620,19 @@ if [ "$DEPLOY_TO_SERVER" = "true" ] && [ "$MODE" != "seed" ] && [ "$MODE" != "se
     echo -e "${CYAN}🌐 OTOMATIK SUNUCUYA DEPLOY${NC}"
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     
+    # Sunucu bilgileri kontrolü
+    if [ -z "$SFTP_HOST" ] || [ -z "$SFTP_USERNAME" ] || [ -z "$SFTP_PASSWORD" ]; then
+        echo -e "${YELLOW}⚠️  Sunucu deployment bilgileri eksik!${NC}"
+        echo -e "${YELLOW}   Environment variable'ları ayarlayın:${NC}"
+        echo -e "${YELLOW}   export SFTP_HOST=\"your-server-ip\"${NC}"
+        echo -e "${YELLOW}   export SFTP_USERNAME=\"your-username\"${NC}"
+        echo -e "${YELLOW}   export SFTP_PASSWORD=\"your-password\"${NC}"
+        echo -e "${YELLOW}   export SFTP_PORT=\"22\" (opsiyonel)${NC}"
+        echo -e "${YELLOW}   export SFTP_REMOTE_PATH=\"/var/www/html/saastour360\" (opsiyonel)${NC}"
+        echo -e "${BLUE}⏭️  Sunucuya deploy atlandı (development modu için: ./deploy.sh development)${NC}"
+        exit 0
+    fi
+    
     # Sunucu bilgileri (yukarıda tanımlı)
     REMOTE_HOST="$SFTP_HOST"
     REMOTE_USER="$SFTP_USERNAME"
@@ -636,6 +672,7 @@ if [ "$DEPLOY_TO_SERVER" = "true" ] && [ "$MODE" != "seed" ] && [ "$MODE" != "se
             --exclude='frontend/dist' \
             --exclude='backend/dist' \
             --exclude='docker-datatabse-stack' \
+            --exclude='mobile' \
             --exclude='backend/public/uploads/*' \
             --exclude='backend/dist/public/uploads/*' \
             ./ ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/ || {

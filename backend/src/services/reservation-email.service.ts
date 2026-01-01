@@ -88,14 +88,25 @@ export const sendReservationEmailDirect = async (
   }
 
   // Müşteri diline göre şablonu al
-  const template = await EmailTemplateService.getByType(
+  let template = await EmailTemplateService.getByType(
     reservation.tenantId,
     templateType,
     reservation.customerLanguageId || undefined
   );
 
+  // If no template found, use default template
   if (!template) {
-    console.warn(`No email template found for type ${templateType} and tenant ${reservation.tenantId}`);
+    console.warn(`No email template found for type ${templateType} and tenant ${reservation.tenantId}, using default template`);
+    template = {
+      id: 'default',
+      subject: getDefaultEmailSubject(reservation, templateType),
+      body: getDefaultEmailBody(reservation, templateType),
+    } as any;
+  }
+
+  // Ensure template is not null (TypeScript check)
+  if (!template) {
+    console.error(`Could not create default template for reservation ${reservation.id}`);
     return;
   }
 
@@ -121,7 +132,8 @@ export const sendReservationEmailDirect = async (
   });
 
   // Rezervasyon değişkenlerini hazırla
-  const variables = {
+  const metadata = reservation.metadata || {};
+  const variables: Record<string, string | number> = {
     customerName: reservation.customerName || '',
     customerEmail: reservation.customerEmail || '',
     customerPhone: reservation.customerPhone || '',
@@ -131,6 +143,19 @@ export const sendReservationEmailDirect = async (
     reservationType: getReservationTypeLabel(reservation.type),
     reservationStatus: getReservationStatusLabel(reservation.status),
   };
+
+  // Rentacar-specific variables
+  if (reservation.type === 'rentacar' && metadata) {
+    variables.vehicleName = (metadata.vehicleName as string) || '';
+    variables.pickupLocationName = (metadata.pickupLocationName as string) || '';
+    variables.dropoffLocationName = (metadata.dropoffLocationName as string) || '';
+    variables.rentalDays = (metadata.rentalDays as number) || 0;
+    variables.vehiclePrice = (metadata.vehiclePrice as number) || 0;
+    variables.extrasPrice = (metadata.extrasPrice as number) || 0;
+    variables.totalPrice = (metadata.totalPrice as number) || 0;
+    variables.currencyCode = (metadata.currencyCode as string) || '';
+    variables.paymentMethod = (metadata.paymentMethod as string) || '';
+  }
 
   // Şablon değişkenlerini değiştir
   const subject = EmailTemplateService.replaceVariables(template.subject, variables);
@@ -191,10 +216,13 @@ export const sendReservationCompletedEmail = async (reservation: Reservation): P
 // Helper functions
 function formatDate(date: Date | string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
-  return d.toLocaleDateString('tr-TR', {
+  // Format as: "January 1, 2026 at 10:00 AM"
+  return d.toLocaleDateString('en-US', {
     year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
@@ -209,12 +237,91 @@ function getReservationTypeLabel(type: string): string {
 
 function getReservationStatusLabel(status: ReservationStatus): string {
   const labels: Record<string, string> = {
-    [ReservationStatus.PENDING]: 'Beklemede',
-    [ReservationStatus.CONFIRMED]: 'Onaylandı',
-    [ReservationStatus.REJECTED]: 'Reddedildi',
-    [ReservationStatus.CANCELLED]: 'İptal Edildi',
-    [ReservationStatus.COMPLETED]: 'Tamamlandı',
+    [ReservationStatus.PENDING]: 'Pending',
+    [ReservationStatus.CONFIRMED]: 'Confirmed',
+    [ReservationStatus.REJECTED]: 'Rejected',
+    [ReservationStatus.CANCELLED]: 'Cancelled',
+    [ReservationStatus.COMPLETED]: 'Completed',
   };
   return labels[status] || status;
+}
+
+/**
+ * Get default email subject if template not found
+ */
+function getDefaultEmailSubject(reservation: Reservation, templateType: EmailTemplateType): string {
+  if (templateType === EmailTemplateType.RESERVATION_CONFIRMATION) {
+    return `Your Reservation Has Been Received - ${reservation.reference || reservation.id.substring(0, 8).toUpperCase()}`;
+  }
+  return `Reservation Update - ${reservation.reference || reservation.id.substring(0, 8).toUpperCase()}`;
+}
+
+/**
+ * Get default email body if template not found
+ */
+function getDefaultEmailBody(reservation: Reservation, templateType: EmailTemplateType): string {
+  const metadata = reservation.metadata || {};
+  const isRentacar = reservation.type === 'rentacar';
+  
+  if (templateType === EmailTemplateType.RESERVATION_CONFIRMATION) {
+    let body = `
+      <h2 style="color: #2c3e50; margin-bottom: 20px;">Dear {{customerName}},</h2>
+      <p style="font-size: 16px; line-height: 1.6; margin-bottom: 15px;">
+        Thank you for your reservation! We have successfully received your reservation request.
+      </p>
+      <div style="background-color: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+        <h3 style="color: #2c3e50; margin-top: 0;">Reservation Details</h3>
+        <p><strong>Reservation Reference:</strong> {{reservationReference}}</p>
+        <p><strong>Reservation Type:</strong> {{reservationType}}</p>
+        <p><strong>Status:</strong> {{reservationStatus}}</p>
+    `;
+
+    if (isRentacar && metadata) {
+      body += `
+        <p><strong>Vehicle:</strong> {{vehicleName}}</p>
+        <p><strong>Pickup Location:</strong> {{pickupLocationName}}</p>
+        <p><strong>Pickup Date & Time:</strong> {{checkIn}}</p>
+        <p><strong>Dropoff Location:</strong> {{dropoffLocationName}}</p>
+        <p><strong>Dropoff Date & Time:</strong> {{checkOut}}</p>
+        <p><strong>Rental Days:</strong> {{rentalDays}} days</p>
+        <p><strong>Vehicle Price:</strong> {{vehiclePrice}} {{currencyCode}}</p>
+        <p><strong>Extras Price:</strong> {{extrasPrice}} {{currencyCode}}</p>
+        <p><strong>Total Price:</strong> <strong style="color: #e74c3c; font-size: 18px;">{{totalPrice}} {{currencyCode}}</strong></p>
+        <p><strong>Payment Method:</strong> {{paymentMethod}}</p>
+      `;
+    } else {
+      body += `
+        <p><strong>Check-in:</strong> {{checkIn}}</p>
+        <p><strong>Check-out:</strong> {{checkOut}}</p>
+      `;
+    }
+
+    body += `
+      </div>
+      <p style="font-size: 16px; line-height: 1.6; margin-top: 20px;">
+        Our team will review your reservation and confirm it shortly. You will receive a confirmation email once your reservation is approved.
+      </p>
+      <p style="font-size: 16px; line-height: 1.6;">
+        If you have any questions or need to make changes, please contact us using the information provided in this email.
+      </p>
+      <p style="font-size: 16px; line-height: 1.6; margin-top: 30px;">
+        Best regards,<br>
+        <strong>Reservation Team</strong>
+      </p>
+    `;
+
+    return body;
+  }
+
+  // Default body for other template types
+  return `
+    <h2 style="color: #2c3e50; margin-bottom: 20px;">Dear {{customerName}},</h2>
+    <p style="font-size: 16px; line-height: 1.6;">
+      This is an update regarding your reservation {{reservationReference}}.
+    </p>
+    <p style="font-size: 16px; line-height: 1.6;">
+      Status: {{reservationStatus}}
+    </p>
+  `;
 }
 

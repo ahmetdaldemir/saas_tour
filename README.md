@@ -4,6 +4,8 @@ Monorepo tasarımında Node.js (TypeORM) backend ve Vue.js frontend içeren çok
 
 > 📚 **Kapsamlı Dokümantasyon:** Detaylı kurulum, modül dokümantasyonu, API referansı ve deployment kılavuzu için [DOCUMENTATION.md](./DOCUMENTATION.md) dosyasına bakın.
 
+> 🚀 **Yeni Bilgisayarda Kurulum:** Projeyi başka bir bilgisayarda kurmak için [SETUP.md](./SETUP.md) dosyasına bakın.
+
 ## 📁 Proje Yapısı
 
 ```

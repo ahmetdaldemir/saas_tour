@@ -73,7 +73,16 @@ export class LocationPricingController {
 
   static async bulkCopyPrice(req: Request, res: Response) {
     try {
-      const { locationId, sourceVehicleId, sourceMonth, dayRange, price } = req.body;
+      const { 
+        locationId, 
+        sourceVehicleId, 
+        sourceMonth, 
+        dayRange, 
+        price,
+        copyToAllVehicles = false,
+        copyToAllMonths = false,
+        copyToAllDayRanges = false,
+      } = req.body;
       
       if (!locationId || !sourceVehicleId || !sourceMonth || !dayRange || price === undefined) {
         return res.status(400).json({ 
@@ -87,6 +96,9 @@ export class LocationPricingController {
         sourceMonth: parseInt(sourceMonth, 10),
         dayRange,
         price: parseFloat(price),
+        copyToAllVehicles: Boolean(copyToAllVehicles),
+        copyToAllMonths: Boolean(copyToAllMonths),
+        copyToAllDayRanges: Boolean(copyToAllDayRanges),
       });
 
       res.json({ 

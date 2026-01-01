@@ -7,9 +7,17 @@ set -e
 
 echo "🚀 Hızlı Deployment Başlatılıyor..."
 
-REMOTE_HOST="185.209.228.189"
-REMOTE_USER="root"
-REMOTE_PATH="/var/www/html/saastour360"
+# Sunucu bilgileri environment variable'lardan okunur
+# Kullanım: export REMOTE_HOST="your-server" export REMOTE_USER="user" export REMOTE_PATH="/path"
+REMOTE_HOST="${REMOTE_HOST:-}"
+REMOTE_USER="${REMOTE_USER:-root}"
+REMOTE_PATH="${REMOTE_PATH:-/var/www/html/saastour360}"
+
+if [ -z "$REMOTE_HOST" ]; then
+    echo "❌ Hata: REMOTE_HOST environment variable'ı ayarlanmamış!"
+    echo "Kullanım: export REMOTE_HOST=\"your-server-ip\" ./quick-deploy.sh"
+    exit 1
+fi
 
 # 1. Local'de build (opsiyonel - Docker sunucuda build edebilir)
 read -p "Local'de build etmek istiyor musunuz? (y/n): " build_local
