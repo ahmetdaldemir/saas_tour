@@ -107,7 +107,13 @@ export const createApp = (): Express => {
   app.use(json());
 
   // Request logging middleware (should be early in the chain)
-  app.use(requestLogger);
+  // Skip Socket.io requests (they're logged by Socket.io itself)
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/socket.io/')) {
+      return next(); // Skip request logger for Socket.io
+    }
+    requestLogger(req, res, next);
+  });
 
   // Public klasörünü static olarak serve et (uploads için)
   // Production'da: /app/dist/app.js -> /app/public
@@ -194,8 +200,18 @@ export const createApp = (): Express => {
     }
   });
 
+  // Skip tenantMiddleware for Socket.io path (Socket.io handles its own authentication)
+  // IMPORTANT: This must be BEFORE tenantMiddleware to allow Socket.io handshake
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/socket.io/')) {
+      logger.info('[APP] Skipping middleware for Socket.io path', { path: req.path });
+      return next(); // Let Socket.io handle this request
+    }
+    next();
+  });
+
   // Tenant resolution middleware (extracts tenant from Host header)
-  // Must be AFTER public routes like /widget.js
+  // Must be AFTER public routes like /widget.js and Socket.io skip
   app.use(tenantMiddleware);
 
   // Register all routes
