@@ -39,16 +39,16 @@
       </v-footer>
     </template>
     <v-layout v-else>
-      <!-- PrimeVue Sidebar -->
-      <Sidebar v-model:visible="drawer" class="primevue-sidebar">
-        <template #header>
+      <!-- PrimeVue Sidebar (Permanent) -->
+      <div class="primevue-sidebar-container" :class="{ 'sidebar-hidden': !drawer }">
+        <div class="primevue-sidebar">
           <div class="drawer-header">
             <h2 style="font-size: 0.875rem; font-weight: 600; margin: 0 0 4px 0;">{{ tenantName }}</h2>
             <p style="font-size: 0.65rem; color: #6b7280; margin: 0;">Yönetim Modülleri</p>
           </div>
-        </template>
-        <Menu :model="menuItems" class="w-full border-none" />
-      </Sidebar>
+          <Menu :model="menuItems" class="w-full border-none" />
+        </div>
+      </div>
 
       <v-app-bar flat color="surface" app>
         <v-app-bar-nav-icon @click="drawer = !drawer" />
@@ -76,7 +76,6 @@
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth';
-import Sidebar from 'primevue/sidebar';
 import Menu from 'primevue/menu';
 import type { MenuItem } from 'primevue/menuitem';
 
@@ -289,27 +288,41 @@ watch(
   display: flex;
   flex-direction: column;
   padding: 12px;
-}
-
-/* PrimeVue Sidebar Styling */
-:deep(.primevue-sidebar) {
-  width: 280px !important;
-  background: white;
-  border-right: 1px solid #e5e7eb;
-}
-
-:deep(.primevue-sidebar .p-sidebar-header) {
-  padding: 12px;
   border-bottom: 1px solid #e5e7eb;
 }
 
-:deep(.primevue-sidebar .p-sidebar-content) {
-  padding: 8px;
+/* PrimeVue Sidebar Container */
+.primevue-sidebar-container {
+  width: 280px;
+  min-width: 280px;
+  transition: margin-left 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.primevue-sidebar-container.sidebar-hidden {
+  margin-left: -280px;
+  width: 0;
+  min-width: 0;
+}
+
+/* PrimeVue Sidebar Styling */
+.primevue-sidebar {
+  width: 280px;
+  height: 100vh;
+  background: white;
+  border-right: 1px solid #e5e7eb;
+  position: fixed;
+  left: 0;
+  top: 0;
+  overflow-y: auto;
+  z-index: 100;
 }
 
 :deep(.primevue-sidebar .p-menu) {
   border: none;
   background: transparent;
+  width: 100%;
 }
 
 :deep(.primevue-sidebar .p-menuitem-link) {
@@ -317,6 +330,7 @@ watch(
   border-radius: 6px;
   font-size: 0.75rem;
   transition: all 0.2s;
+  margin: 2px 8px;
 }
 
 :deep(.primevue-sidebar .p-menuitem-link:hover) {
@@ -332,6 +346,11 @@ watch(
 :deep(.primevue-sidebar .p-menuitem-icon) {
   font-size: 0.875rem;
   margin-right: 8px;
+}
+
+/* Adjust main content when sidebar is visible */
+.v-layout:has(.primevue-sidebar-container:not(.sidebar-hidden)) .v-main {
+  margin-left: 280px;
 }
 
 </style>
