@@ -21,6 +21,8 @@ router.post('/reservations', RentacarController.createReservation);
 
 // Protected endpoints - authentication and authorization required
 router.use(authenticate);
+// List vehicle plates (requires authentication)
+router.get('/plates', RentacarController.listPlates);
 // Get single vehicle (requires authentication)
 router.get('/vehicles/:id', (req, res, next) => RentacarController.getVehicle(req as AuthenticatedRequest, res).catch(next));
 router.post('/vehicles', authorize(Permission.VEHICLE_CREATE), RentacarController.createVehicle);

@@ -511,6 +511,29 @@ export class VehicleService {
     return vehicles;
   }
 
+  /**
+   * Get all vehicle plates for a tenant
+   */
+  static async listPlates(tenantId: string): Promise<VehiclePlate[]> {
+    const vehicles = await this.vehicleRepo().find({
+      where: { tenantId },
+      relations: ['plates'],
+    });
+
+    // Flatten all plates from all vehicles
+    const allPlates: VehiclePlate[] = [];
+    vehicles.forEach(vehicle => {
+      if (vehicle.plates && vehicle.plates.length > 0) {
+        allPlates.push(...vehicle.plates);
+      }
+    });
+
+    // Sort by plate number
+    allPlates.sort((a, b) => a.plateNumber.localeCompare(b.plateNumber));
+
+    return allPlates;
+  }
+
   static async updateLastReturnLocation(vehicleId: string, locationId: string | null): Promise<Vehicle> {
     const vehicle = await this.vehicleRepo().findOne({ where: { id: vehicleId } });
     if (!vehicle) {

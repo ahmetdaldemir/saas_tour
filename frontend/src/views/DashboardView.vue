@@ -1,97 +1,206 @@
 <template>
   <v-container fluid class="dashboard-container">
-    <!-- Currency Rates - Üst Kısım (Kompakt) -->
-    <v-row class="mb-4">
-      <v-col cols="12">
-        <v-card elevation="2" rounded="lg">
+    <v-row>
+      <!-- Sol: Rezervasyonlar Listesi (col-2) -->
+      <v-col cols="12" md="2" class="pa-2">
+        <v-card elevation="2" rounded="lg" class="h-100">
           <v-card-title class="d-flex align-center justify-space-between pa-3">
-            <span class="text-subtitle-1 font-weight-bold">Currency Rates</span>
+            <span class="text-subtitle-1 font-weight-bold">Rezervasyonlar</span>
             <v-btn
               icon="mdi-refresh"
-              size="small"
               variant="text"
-              :loading="updatingRates"
-              @click="updateCurrencyRates"
+              size="small"
+              @click="loadReservations"
+              :loading="loadingReservations"
             />
           </v-card-title>
           <v-divider />
+          <v-card-text class="pa-0 reservations-list" style="max-height: calc(100vh - 200px); overflow-y: auto;">
+            <v-list density="compact">
+              <v-list-item
+                v-for="reservation in reservations"
+                :key="reservation.id"
+                class="reservation-item"
+              >
+                <v-list-item-title class="text-caption font-weight-medium">
+                  #{{ reservation.reference }}
+                </v-list-item-title>
+                <v-list-item-subtitle class="text-caption">
+                  <div class="mt-1">{{ reservation.customerName }}</div>
+                  <v-chip
+                    size="x-small"
+                    :color="getStatusColor(reservation.status)"
+                    variant="flat"
+                    class="mt-1"
+                  >
+                    {{ getStatusText(reservation.status) }}
+                  </v-chip>
+                </v-list-item-subtitle>
+              </v-list-item>
+              <v-list-item v-if="reservations.length === 0" class="text-center">
+                <v-list-item-title class="text-caption text-medium-emphasis">
+                  Rezervasyon bulunamadı
+                </v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
+      <!-- Orta: Kurlar ve Araç Takip (col-8) -->
+      <v-col cols="12" md="8" class="pa-2">
+        <v-row>
+          <!-- Üst: Kur Bilgisi (Küçük, İkon - Price) -->
+          <v-col cols="12">
+            <v-card elevation="2" rounded="lg">
+              <v-card-text class="pa-3">
+                <div v-if="loadingCurrencies" class="text-center py-2">
+                  <v-progress-circular indeterminate color="primary" size="20" />
+                </div>
+                <div v-else class="d-flex flex-wrap gap-2">
+                  <div
+                    v-for="currency in currencies"
+                    :key="currency.id"
+                    class="d-flex align-center gap-1 currency-item"
+                  >
+                    <v-icon
+                      :icon="currency.isBaseCurrency ? 'mdi-currency-try' : 'mdi-currency-usd'"
+                      size="16"
+                      :color="currency.isBaseCurrency ? 'primary' : 'default'"
+                    />
+                    <span class="text-caption font-weight-bold">{{ currency.code }}</span>
+                    <span class="text-caption">{{ formatCurrencyRateCompact(currency.rateToTry) }}</span>
+                  </div>
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+
+          <!-- Alt: Araç Takip -->
+          <v-col cols="12">
+            <v-card elevation="2" rounded="lg">
+              <v-card-title class="pa-3">
+                <span class="text-subtitle-1 font-weight-bold">Araç Takip</span>
+              </v-card-title>
+              <v-divider />
+              <v-card-text class="pa-3">
+                <v-select
+                  v-model="selectedPlate"
+                  :items="plates"
+                  item-title="plateNumber"
+                  item-value="plateNumber"
+                  label="Plaka Seçin"
+                  variant="outlined"
+                  density="compact"
+                  :loading="loadingPlates"
+                  @update:model-value="trackVehicle"
+                  prepend-inner-icon="mdi-car"
+                />
+                
+                <div v-if="trackingInfo && selectedPlate" class="mt-3">
+                  <v-row dense>
+                    <v-col cols="6" md="3">
+                      <div class="text-caption text-medium-emphasis">Hız</div>
+                      <div class="text-body-2 font-weight-bold">
+                        {{ trackingInfo.lastLocation?.speed || 0 }} km/h
+                      </div>
+                    </v-col>
+                    <v-col cols="6" md="3">
+                      <div class="text-caption text-medium-emphasis">Yakıt</div>
+                      <div class="text-body-2 font-weight-bold">
+                        {{ trackingInfo.fuelLevel || 0 }}%
+                      </div>
+                    </v-col>
+                    <v-col cols="6" md="3">
+                      <div class="text-caption text-medium-emphasis">Kontak</div>
+                      <div class="text-body-2 font-weight-bold">
+                        {{ trackingInfo.ignitionStatus ? 'Açık' : 'Kapalı' }}
+                      </div>
+                    </v-col>
+                    <v-col cols="6" md="3">
+                      <div class="text-caption text-medium-emphasis">Kilometre</div>
+                      <div class="text-body-2 font-weight-bold">
+                        {{ trackingInfo.mileage || 0 }} km
+                      </div>
+                    </v-col>
+                  </v-row>
+                  
+                  <div v-if="trackingInfo.lastLocation" class="mt-3">
+                    <div id="map" style="height: 300px; width: 100%; border-radius: 8px;"></div>
+                  </div>
+                </div>
+                <div v-else-if="selectedPlate && loadingTracking" class="text-center py-4">
+                  <v-progress-circular indeterminate color="primary" />
+                </div>
+                <div v-else-if="selectedPlate && !trackingInfo" class="text-center py-4">
+                  <v-icon icon="mdi-alert-circle-outline" size="32" color="warning" />
+                  <p class="text-caption text-medium-emphasis mt-2">Araç bilgisi bulunamadı</p>
+                </div>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
+      </v-col>
+
+      <!-- Sağ: İstatistikler (col-2) -->
+      <v-col cols="12" md="2" class="pa-2">
+        <v-card elevation="2" rounded="lg" class="h-100">
+          <v-card-title class="pa-3">
+            <span class="text-subtitle-1 font-weight-bold">İstatistikler</span>
+          </v-card-title>
+          <v-divider />
           <v-card-text class="pa-3">
-            <div v-if="loadingCurrencies" class="text-center py-4">
+            <div v-if="loadingStats" class="text-center py-4">
               <v-progress-circular indeterminate color="primary" size="24" />
             </div>
-            <div v-else-if="currencies.length > 0" class="d-flex flex-wrap gap-2">
-              <v-chip
-                v-for="currency in currencies"
-                :key="currency.id"
-                :color="currency.isBaseCurrency ? 'primary' : 'default'"
-                variant="flat"
-                size="small"
-                class="px-3"
-              >
-                <span class="font-weight-bold mr-2 text-caption">{{ currency.code }}</span>
-                <span class="text-caption">{{ formatCurrencyRateCompact(currency.rateToTry) }}</span>
-              </v-chip>
-            </div>
-            <div v-else class="text-center py-3">
-              <v-icon icon="mdi-currency-usd" size="32" color="grey-lighten-1" class="mb-2" />
-              <p class="text-caption text-medium-emphasis">No currency data available</p>
-            </div>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-
-    <!-- Dashboard Metrics Cards (Kompakt) -->
-    <v-row class="mb-4">
-      <v-col cols="12" sm="6" md="3" v-for="metric in metrics" :key="metric.key">
-        <v-card elevation="2" rounded="lg" class="metric-card-compact">
-          <v-card-text class="pa-3">
-            <div class="d-flex align-center justify-space-between">
-              <div class="flex-grow-1">
-                <div class="text-caption text-medium-emphasis mb-1">{{ metric.label }}</div>
-                <div class="d-flex align-baseline gap-1">
-                  <span class="text-h6 font-weight-bold">
-                    {{ formatNumber(stats[metric.key as keyof typeof stats]) }}
-                  </span>
-                  <span v-if="metric.unit" class="text-caption text-medium-emphasis">{{ metric.unit }}</span>
-                </div>
-                <div v-if="metric.trend" class="d-flex align-center gap-1 mt-1">
-                  <v-icon
-                    :icon="metric.trend > 0 ? 'mdi-trending-up' : 'mdi-trending-down'"
-                    size="14"
-                    :color="metric.trend > 0 ? 'success' : 'error'"
-                  />
-                  <span class="text-caption" :class="metric.trend > 0 ? 'text-success' : 'text-error'">
-                    {{ Math.abs(metric.trend) }}%
-                  </span>
-                </div>
+            <div v-else class="d-flex flex-column gap-3">
+              <div>
+                <div class="text-caption text-medium-emphasis">Toplam Kiralama Gün Sayısı</div>
+                <div class="text-h6 font-weight-bold mt-1">{{ formatNumber(stats.totalBusinessDays) }}</div>
               </div>
-              <v-avatar
-                size="40"
-                :color="metric.iconColor"
-                variant="tonal"
-                class="ml-2"
-              >
-                <v-icon :icon="metric.icon" :color="metric.iconColor" size="20" />
-              </v-avatar>
+              <v-divider />
+              <div>
+                <div class="text-caption text-medium-emphasis">Teslim Edilen Araçlar</div>
+                <div class="text-h6 font-weight-bold mt-1">{{ formatNumber(stats.deliveredVehicles) }}</div>
+              </div>
+              <v-divider />
+              <div>
+                <div class="text-caption text-medium-emphasis">24 Saat İçinde Çıkacak</div>
+                <div class="text-h6 font-weight-bold mt-1">{{ formatNumber(stats.vehiclesDeparting24h) }}</div>
+              </div>
+              <v-divider />
+              <div>
+                <div class="text-caption text-medium-emphasis">Çıkışı Yapılmamışlar</div>
+                <div class="text-h6 font-weight-bold mt-1">{{ formatNumber(stats.notDeparted) }}</div>
+              </div>
+              <v-divider />
+              <div>
+                <div class="text-caption text-medium-emphasis">24 Saat İçinde Dönecek</div>
+                <div class="text-h6 font-weight-bold mt-1">{{ formatNumber(stats.vehiclesReturning24h) }}</div>
+              </div>
+              <v-divider />
+              <div>
+                <div class="text-caption text-medium-emphasis">Dönüşü Yapılmamışlar</div>
+                <div class="text-h6 font-weight-bold mt-1">{{ formatNumber(stats.notReturned) }}</div>
+              </div>
             </div>
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
 
-    <!-- Reservation Chart (Kompakt) -->
-    <v-row class="mb-4">
+    <!-- Rezervasyon İstatistik Grafiği (col-12) -->
+    <v-row class="mt-2">
       <v-col cols="12">
         <v-card elevation="2" rounded="lg">
           <v-card-title class="pa-3">
-            <span class="text-subtitle-1 font-weight-bold">Monthly Reservation Statistics</span>
+            <span class="text-subtitle-1 font-weight-bold">Rezervasyon İstatistik Grafiği</span>
           </v-card-title>
           <v-divider />
           <v-card-text class="pa-3">
             <div v-if="loadingChart" class="text-center py-6">
               <v-progress-circular indeterminate color="primary" size="24" />
-              <p class="mt-2 text-caption text-medium-emphasis">Loading chart...</p>
+              <p class="mt-2 text-caption text-medium-emphasis">Grafik yükleniyor...</p>
             </div>
             <div v-else style="position: relative; height: 250px;">
               <Line :data="chartData" :options="chartOptions" />
@@ -101,16 +210,14 @@
       </v-col>
     </v-row>
 
-    <!-- Reminders and Messages (Kompakt) -->
-    <v-row class="mb-4">
+    <!-- Alt Taraf: Mevcut Bölümler (Türkçe) -->
+    <v-row class="mt-2">
       <v-col cols="12" md="6">
         <v-card elevation="2" rounded="lg">
           <v-card-title class="pa-3">
-            <span class="text-subtitle-1 font-weight-bold">Reminders & Messages</span>
+            <span class="text-subtitle-1 font-weight-bold">Hatırlatma ve Mesajlar</span>
           </v-card-title>
           <v-divider />
-          
-          <!-- Message Form -->
           <v-card-text class="pa-3">
             <v-form @submit.prevent="addMessage" class="mb-3">
               <v-row dense>
@@ -120,7 +227,7 @@
                     type="date"
                     density="compact"
                     variant="outlined"
-                    label="Date"
+                    label="Tarih"
                     hide-details
                     prepend-inner-icon="mdi-calendar"
                   />
@@ -131,7 +238,7 @@
                     type="time"
                     density="compact"
                     variant="outlined"
-                    label="Time"
+                    label="Saat"
                     hide-details
                     prepend-inner-icon="mdi-clock-outline"
                   />
@@ -139,7 +246,7 @@
                 <v-col cols="12" md="3">
                   <v-btn color="primary" block size="small" @click="addMessage">
                     <v-icon icon="mdi-plus" size="16" class="mr-1" />
-                    Add
+                    Ekle
                   </v-btn>
                 </v-col>
               </v-row>
@@ -149,7 +256,7 @@
                     v-model="messageForm.subject"
                     density="compact"
                     variant="outlined"
-                    label="Subject"
+                    label="Konu"
                     hide-details
                     prepend-inner-icon="mdi-format-title"
                   />
@@ -159,7 +266,7 @@
                     v-model="messageForm.detail"
                     density="compact"
                     variant="outlined"
-                    label="Detail"
+                    label="Detay"
                     rows="2"
                     hide-details
                     prepend-inner-icon="mdi-text"
@@ -168,7 +275,6 @@
               </v-row>
             </v-form>
             
-            <!-- Messages List -->
             <div v-if="messages.length > 0">
               <v-data-table
                 :headers="messageHeaders"
@@ -197,7 +303,7 @@
             </div>
             <div v-else class="empty-state-compact">
               <v-icon icon="mdi-message-outline" size="32" color="grey-lighten-1" />
-              <p class="text-caption text-medium-emphasis mt-1">No messages yet</p>
+              <p class="text-caption text-medium-emphasis mt-1">Henüz mesaj eklenmemiş</p>
             </div>
             <v-btn
               variant="text"
@@ -207,17 +313,16 @@
               class="mt-2"
               @click="viewAllMessages"
             >
-              View All Messages
+              Tüm Mesajları Görüntüle
             </v-btn>
           </v-card-text>
         </v-card>
       </v-col>
       
-      <!-- Payment Reminders -->
       <v-col cols="12" md="6">
         <v-card elevation="2" rounded="lg">
           <v-card-title class="pa-3">
-            <span class="text-subtitle-1 font-weight-bold">Daily Payment Reminders</span>
+            <span class="text-subtitle-1 font-weight-bold">Günlük Ödeme Hatırlatmaları</span>
           </v-card-title>
           <v-divider />
           <v-card-text class="pa-3">
@@ -240,7 +345,7 @@
                       size="x-small"
                       variant="flat"
                     >
-                      {{ item.paid ? 'Paid' : 'Unpaid' }}
+                      {{ item.paid ? 'Ödendi' : 'Ödenmedi' }}
                     </v-chip>
                     <v-btn
                       v-if="!item.paid"
@@ -256,7 +361,7 @@
             </div>
             <div v-else class="empty-state-compact">
               <v-icon icon="mdi-credit-card-off-outline" size="32" color="grey-lighten-1" />
-              <p class="text-caption text-medium-emphasis mt-1">No payment reminders</p>
+              <p class="text-caption text-medium-emphasis mt-1">Ödeme hatırlatması yok</p>
             </div>
             <v-btn
               variant="text"
@@ -266,19 +371,19 @@
               class="mt-2"
               @click="viewPaymentSchedule"
             >
-              View Payment Schedule
+              Ödeme Çizelgesini Görüntüle
             </v-btn>
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
 
-    <!-- Warnings Section (Kompakt) -->
-    <v-row>
+    <!-- Uyarılar Bölümü -->
+    <v-row class="mt-2">
       <v-col cols="12" md="4">
         <v-card elevation="2" rounded="lg">
           <v-card-title class="pa-3">
-            <span class="text-subtitle-1 font-weight-bold">Insurance/Inspection Warnings</span>
+            <span class="text-subtitle-1 font-weight-bold">Sigorta Muayene Uyarıları</span>
           </v-card-title>
           <v-divider />
           <v-card-text class="pa-3">
@@ -294,7 +399,7 @@
             </div>
             <div v-else class="empty-state-compact">
               <v-icon icon="mdi-shield-off-outline" size="32" color="grey-lighten-1" />
-              <p class="text-caption text-medium-emphasis mt-1">No warnings</p>
+              <p class="text-caption text-medium-emphasis mt-1">Uyarı yok</p>
             </div>
             <v-btn
               variant="text"
@@ -304,17 +409,16 @@
               class="mt-2"
               @click="viewAllInsurance"
             >
-              View All Insurance/Inspections
+              Tüm Sigorta/Muayeneleri Görüntüle
             </v-btn>
           </v-card-text>
         </v-card>
       </v-col>
       
-      <!-- Maintenance Warnings -->
       <v-col cols="12" md="4">
         <v-card elevation="2" rounded="lg">
           <v-card-title class="pa-3">
-            <span class="text-subtitle-1 font-weight-bold">Vehicle Maintenance Warnings</span>
+            <span class="text-subtitle-1 font-weight-bold">Araç Bakım Uyarıları</span>
           </v-card-title>
           <v-divider />
           <v-card-text class="pa-3">
@@ -330,7 +434,7 @@
             </div>
             <div v-else class="empty-state-compact">
               <v-icon icon="mdi-wrench-clock-outline" size="32" color="grey-lighten-1" />
-              <p class="text-caption text-medium-emphasis mt-1">No maintenance warnings</p>
+              <p class="text-caption text-medium-emphasis mt-1">Bakım uyarısı yok</p>
             </div>
             <v-btn
               variant="text"
@@ -340,17 +444,16 @@
               class="mt-2"
               @click="viewAllMaintenance"
             >
-              View All Maintenance
+              Tüm Bakımları Görüntüle
             </v-btn>
           </v-card-text>
         </v-card>
       </v-col>
       
-      <!-- Penalty Warnings -->
       <v-col cols="12" md="4">
         <v-card elevation="2" rounded="lg">
           <v-card-title class="pa-3">
-            <span class="text-subtitle-1 font-weight-bold">Penalty Warnings</span>
+            <span class="text-subtitle-1 font-weight-bold">Ceza Uyarıları</span>
           </v-card-title>
           <v-divider />
           <v-card-text class="pa-3">
@@ -369,14 +472,14 @@
                     size="x-small"
                     variant="flat"
                   >
-                    {{ item.remaining }} Days
+                    {{ item.remaining }} Gün
                   </v-chip>
                 </template>
               </v-data-table>
             </div>
             <div v-else class="empty-state-compact">
               <v-icon icon="mdi-check-circle-outline" size="32" color="grey-lighten-1" />
-              <p class="text-caption text-medium-emphasis mt-1">No penalty warnings</p>
+              <p class="text-caption text-medium-emphasis mt-1">Ceza uyarısı yok</p>
             </div>
             <div class="d-flex gap-2 mt-2">
               <v-btn
@@ -386,7 +489,7 @@
                 prepend-icon="mdi-file-upload-outline"
                 @click="uploadPenaltyFile"
               >
-                Upload File
+                Dosya Yükle
               </v-btn>
               <v-btn
                 variant="text"
@@ -395,7 +498,7 @@
                 prepend-icon="mdi-arrow-right"
                 @click="viewAllPenalties"
               >
-                View All
+                Tüm Cezalar
               </v-btn>
             </div>
           </v-card-text>
@@ -406,7 +509,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useAuthStore } from '../stores/auth';
 import { useRouter } from 'vue-router';
 import { http } from '../modules/http';
@@ -422,6 +525,8 @@ import {
   Filler,
 } from 'chart.js';
 import { Line } from 'vue-chartjs';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 
 ChartJS.register(
   CategoryScale,
@@ -437,168 +542,62 @@ ChartJS.register(
 const auth = useAuthStore();
 const router = useRouter();
 
-// Metrics configuration
-const metrics = computed(() => [
-  {
-    key: 'vehiclesDeparting24h',
-    label: 'Departing in 24h',
-    icon: 'mdi-timer-outline',
-    iconColor: 'primary',
-    trend: 5,
-  },
-  {
-    key: 'notDeparted',
-    label: 'Not Departed',
-    icon: 'mdi-car-outline',
-    iconColor: 'info',
-  },
-  {
-    key: 'totalBusinessDays',
-    label: 'Total Business Days',
-    icon: 'mdi-calendar-month',
-    iconColor: 'primary',
-  },
-  {
-    key: 'deliveredVehicles',
-    label: 'Delivered Vehicles',
-    icon: 'mdi-car-check',
-    iconColor: 'success',
-    trend: 12,
-  },
-  {
-    key: 'vehiclesReturning24h',
-    label: 'Returning in 24h',
-    icon: 'mdi-timer-outline',
-    iconColor: 'warning',
-  },
-  {
-    key: 'notReturned',
-    label: 'Not Returned',
-    icon: 'mdi-car-off',
-    iconColor: 'error',
-  },
-  {
-    key: 'monthlyReservations',
-    label: 'Monthly Reservations',
-    icon: 'mdi-calendar-month-outline',
-    iconColor: 'info',
-    trend: 8,
-  },
-  {
-    key: 'toBeDelivered',
-    label: 'To Be Delivered',
-    icon: 'mdi-car-clock',
-    iconColor: 'success',
-  },
-  {
-    key: 'totalReservations',
-    label: 'Total Reservations',
-    icon: 'mdi-currency-eur',
-    iconColor: 'success',
-    trend: 15,
-  },
-  {
-    key: 'dailyReservations',
-    label: 'Daily Reservations',
-    icon: 'mdi-calendar-today',
-    iconColor: 'info',
-  },
-  {
-    key: 'canceledReservations',
-    label: 'Canceled Reservations',
-    icon: 'mdi-account-cancel',
-    iconColor: 'error',
-    trend: -3,
-  },
-  {
-    key: 'customerSatisfaction',
-    label: 'Customer Satisfaction',
-    icon: 'mdi-chart-line',
-    iconColor: 'primary',
-    unit: '%',
-    trend: 2,
-  },
-]);
+// Rezervasyonlar
+interface ReservationDto {
+  id: string;
+  reference: string;
+  customerName: string;
+  customerEmail: string;
+  status: string;
+  checkIn?: string | null;
+  checkOut?: string | null;
+  createdAt: string;
+}
 
-// Dashboard Stats
+const reservations = ref<ReservationDto[]>([]);
+const loadingReservations = ref(false);
+
+// Plakalar ve Araç Takip
+interface VehiclePlateDto {
+  id: string;
+  plateNumber: string;
+  vehicleId: string;
+}
+
+interface VehicleTrackingInfo {
+  plateNumber: string;
+  lastLocation?: {
+    latitude: number;
+    longitude: number;
+    timestamp: string;
+    speed?: number;
+    heading?: number;
+  };
+  ignitionStatus?: boolean;
+  engineStatus?: boolean;
+  fuelLevel?: number;
+  mileage?: number;
+  lastUpdate?: string;
+}
+
+const plates = ref<VehiclePlateDto[]>([]);
+const selectedPlate = ref<string | null>(null);
+const trackingInfo = ref<VehicleTrackingInfo | null>(null);
+const loadingPlates = ref(false);
+const loadingTracking = ref(false);
+const map = ref<L.Map | null>(null);
+const marker = ref<L.Marker | null>(null);
+
+// İstatistikler
 const stats = ref({
   vehiclesDeparting24h: 0,
-  notDeparted: 1,
-  totalBusinessDays: 6451,
-  deliveredVehicles: 941,
-  vehiclesReturning24h: 1,
-  notReturned: 1,
-  monthlyReservations: 15,
-  toBeDelivered: 7,
-  totalReservations: 1051,
-  dailyReservations: 1,
-  canceledReservations: 103,
-  customerSatisfaction: 96,
+  notDeparted: 0,
+  totalBusinessDays: 0,
+  deliveredVehicles: 0,
+  vehiclesReturning24h: 0,
+  notReturned: 0,
 });
-
-// Messages
-const messageForm = ref({
-  date: new Date().toISOString().split('T')[0],
-  time: '00:00',
-  subject: '',
-  detail: '',
-});
-
-const messages = ref<any[]>([]);
-const messageHeaders = [
-  { title: '#', key: 'id', width: '50px' },
-  { title: 'Date', key: 'date', width: '100px' },
-  { title: 'Time', key: 'time', width: '80px' },
-  { title: 'Subject', key: 'subject' },
-  { title: 'Actions', key: 'actions', sortable: false, width: '60px', align: 'center' as const },
-];
-
-// Payment Reminders
-const paymentReminders = ref<any[]>([]);
-const paymentHeaders = [
-  { title: '#', key: 'id', width: '50px' },
-  { title: 'Bank', key: 'bank', width: '120px' },
-  { title: 'Type', key: 'type', width: '80px' },
-  { title: 'Amount', key: 'amount', width: '100px' },
-  { title: 'Status', key: 'status', sortable: false, width: '120px' },
-  { title: 'Date', key: 'date', width: '100px' },
-  { title: 'Description', key: 'description' },
-];
-
-// Insurance Warnings
-const insuranceWarnings = ref<any[]>([]);
-const insuranceHeaders = [
-  { title: '#', key: 'id', width: '50px' },
-  { title: 'Plate', key: 'plate', width: '90px' },
-  { title: 'Action', key: 'action', width: '100px' },
-  { title: 'Start', key: 'startDate', width: '90px' },
-  { title: 'End', key: 'endDate', width: '90px' },
-  { title: 'Remaining', key: 'remaining', width: '80px' },
-];
-
-// Maintenance Warnings
-const maintenanceWarnings = ref<any[]>([]);
-const maintenanceHeaders = [
-  { title: '#', key: 'id', width: '50px' },
-  { title: 'Plate', key: 'plate', width: '90px' },
-  { title: 'Action', key: 'action', width: '100px' },
-  { title: 'Maint. Date', key: 'maintenanceDate', width: '100px' },
-  { title: 'Maint. Km', key: 'maintenanceKm', width: '90px' },
-  { title: 'Vehicle Km', key: 'vehicleKm', width: '90px' },
-  { title: 'Remaining', key: 'remaining', width: '80px' },
-];
-
-// Penalty Warnings
-const penaltyWarnings = ref<any[]>([]);
-const penaltyHeaders = [
-  { title: '#', key: 'id', width: '50px' },
-  { title: 'Plate', key: 'plate', width: '90px' },
-  { title: 'Type', key: 'type', width: '100px' },
-  { title: 'Date', key: 'date', width: '90px' },
-  { title: 'Amount', key: 'amount', width: '90px' },
-  { title: 'Remaining', key: 'remaining', width: '100px' },
-  { title: 'Description', key: 'description' },
-];
+const loadingStats = ref(false);
 
 // Currency
 interface CurrencyDto {
@@ -615,28 +614,89 @@ interface CurrencyDto {
 
 const currencies = ref<CurrencyDto[]>([]);
 const updatingRates = ref(false);
+const loadingCurrencies = ref(false);
 
 // Chart data
 const loadingChart = ref(false);
-const loadingCurrencies = ref(false);
-const reservations = ref<any[]>([]);
+const reservationsForChart = ref<any[]>([]);
+
+// Messages
+const messageForm = ref({
+  date: new Date().toISOString().split('T')[0],
+  time: '00:00',
+  subject: '',
+  detail: '',
+});
+
+const messages = ref<any[]>([]);
+const messageHeaders = [
+  { title: '#', key: 'id', width: '50px' },
+  { title: 'Tarih', key: 'date', width: '100px' },
+  { title: 'Saat', key: 'time', width: '80px' },
+  { title: 'Konu', key: 'subject' },
+  { title: 'İşlemler', key: 'actions', sortable: false, width: '60px', align: 'center' as const },
+];
+
+// Payment Reminders
+const paymentReminders = ref<any[]>([]);
+const paymentHeaders = [
+  { title: '#', key: 'id', width: '50px' },
+  { title: 'Banka', key: 'bank', width: '120px' },
+  { title: 'Tip', key: 'type', width: '80px' },
+  { title: 'Tutar', key: 'amount', width: '100px' },
+  { title: 'Durum', key: 'status', sortable: false, width: '120px' },
+  { title: 'Tarih', key: 'date', width: '100px' },
+  { title: 'Açıklama', key: 'description' },
+];
+
+// Insurance Warnings
+const insuranceWarnings = ref<any[]>([]);
+const insuranceHeaders = [
+  { title: '#', key: 'id', width: '50px' },
+  { title: 'Plaka', key: 'plate', width: '90px' },
+  { title: 'İşlem', key: 'action', width: '100px' },
+  { title: 'Başlangıç', key: 'startDate', width: '90px' },
+  { title: 'Bitiş', key: 'endDate', width: '90px' },
+  { title: 'Kalan', key: 'remaining', width: '80px' },
+];
+
+// Maintenance Warnings
+const maintenanceWarnings = ref<any[]>([]);
+const maintenanceHeaders = [
+  { title: '#', key: 'id', width: '50px' },
+  { title: 'Plaka', key: 'plate', width: '90px' },
+  { title: 'İşlem', key: 'action', width: '100px' },
+  { title: 'Bakım Tarihi', key: 'maintenanceDate', width: '100px' },
+  { title: 'Bakım Km', key: 'maintenanceKm', width: '90px' },
+  { title: 'Araç Km', key: 'vehicleKm', width: '90px' },
+  { title: 'Kalan', key: 'remaining', width: '80px' },
+];
+
+// Penalty Warnings
+const penaltyWarnings = ref<any[]>([]);
+const penaltyHeaders = [
+  { title: '#', key: 'id', width: '50px' },
+  { title: 'Plaka', key: 'plate', width: '90px' },
+  { title: 'Tip', key: 'type', width: '100px' },
+  { title: 'Tarih', key: 'date', width: '90px' },
+  { title: 'Tutar', key: 'amount', width: '90px' },
+  { title: 'Kalan', key: 'remaining', width: '100px' },
+  { title: 'Açıklama', key: 'description' },
+];
 
 // Prepare chart data
 const chartData = computed(() => {
-  // Son 12 ayı hazırla
   const months = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
   const currentDate = new Date();
   const last12Months: string[] = [];
   const monthData: number[] = new Array(12).fill(0);
 
-  // Son 12 ayın isimlerini hazırla (ters sırada)
   for (let i = 11; i >= 0; i--) {
     const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
     last12Months.push(months[date.getMonth()] + ' ' + date.getFullYear());
   }
 
-  // Rezervasyonları aylara göre say
-  reservations.value.forEach((reservation) => {
+  reservationsForChart.value.forEach((reservation) => {
     const createdDate = new Date(reservation.createdAt);
     const monthDiff = (currentDate.getFullYear() - createdDate.getFullYear()) * 12 + 
                      (currentDate.getMonth() - createdDate.getMonth());
@@ -716,22 +776,6 @@ const chartOptions = {
   },
 };
 
-// Load reservations for chart
-const loadReservations = async () => {
-  if (!auth.tenant) return;
-  loadingChart.value = true;
-  try {
-    const { data } = await http.get('/reservations', {
-      params: { tenantId: auth.tenant.id },
-    });
-    reservations.value = data;
-  } catch (error) {
-    console.error('Failed to load reservations:', error);
-  } finally {
-    loadingChart.value = false;
-  }
-};
-
 // Helper functions
 const formatNumber = (num: number): string => {
   return new Intl.NumberFormat('tr-TR').format(num);
@@ -745,13 +789,6 @@ const formatCurrency = (amount: number): string => {
   }).format(amount);
 };
 
-const formatCurrencyRate = (rate: number): string => {
-  return new Intl.NumberFormat('tr-TR', {
-    minimumFractionDigits: 4,
-    maximumFractionDigits: 4,
-  }).format(rate) + ' ₺';
-};
-
 const formatCurrencyRateCompact = (rate: number): string => {
   return new Intl.NumberFormat('tr-TR', {
     minimumFractionDigits: 2,
@@ -759,44 +796,139 @@ const formatCurrencyRateCompact = (rate: number): string => {
   }).format(rate) + ' TRY';
 };
 
-const formatDateTime = (dateStr?: string): string => {
-  if (!dateStr) return '-';
-  try {
-    const date = new Date(dateStr);
-    return date.toLocaleString('tr-TR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return dateStr;
+const getStatusColor = (status: string): string => {
+  switch (status.toLowerCase()) {
+    case 'pending':
+      return 'orange';
+    case 'confirmed':
+      return 'blue';
+    case 'completed':
+      return 'green';
+    case 'cancelled':
+      return 'red';
+    case 'rejected':
+      return 'red';
+    default:
+      return 'grey';
   }
 };
 
-// Load Dashboard Data
-const loadDashboardData = async () => {
+const getStatusText = (status: string): string => {
+  switch (status.toLowerCase()) {
+    case 'pending':
+      return 'Beklemede';
+    case 'confirmed':
+      return 'Onaylandı';
+    case 'completed':
+      return 'Tamamlandı';
+    case 'cancelled':
+      return 'İptal';
+    case 'rejected':
+      return 'Reddedildi';
+    default:
+      return status;
+  }
+};
+
+// Load Reservations (sondan başlayarak)
+const loadReservations = async () => {
   if (!auth.tenant) return;
-  
+  loadingReservations.value = true;
   try {
-    // TODO: Backend API endpoint'leri eklendiğinde burada çağrılacak
+    const { data } = await http.get<ReservationDto[]>('/rentacar/trips', {
+      params: { tenantId: auth.tenant.id },
+    });
+    // Sondan başlayarak sırala (en yeni en üstte)
+    reservations.value = data.sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  } catch (error) {
+    console.error('Failed to load reservations:', error);
+  } finally {
+    loadingReservations.value = false;
+  }
+};
+
+// Load Plates
+const loadPlates = async () => {
+  if (!auth.tenant) return;
+  loadingPlates.value = true;
+  try {
+    const { data } = await http.get<VehiclePlateDto[]>('/rentacar/plates');
+    plates.value = data;
+  } catch (error) {
+    console.error('Failed to load plates:', error);
+  } finally {
+    loadingPlates.value = false;
+  }
+};
+
+// Track Vehicle
+const trackVehicle = async () => {
+  if (!selectedPlate.value || !auth.tenant) return;
+  
+  loadingTracking.value = true;
+  try {
+    const { data } = await http.get<VehicleTrackingInfo>(`/rentacar/tracking/${selectedPlate.value}/info`);
+    trackingInfo.value = data;
+    
+    if (data.lastLocation) {
+      await nextTick();
+      initializeMap();
+      const { latitude, longitude } = data.lastLocation;
+      const latLng: L.LatLngExpression = [latitude, longitude];
+      
+      if (marker.value) {
+        marker.value.setLatLng(latLng);
+      } else {
+        marker.value = L.marker(latLng).addTo(map.value!);
+      }
+      map.value!.setView(latLng, 15);
+    }
+  } catch (error) {
+    console.error('Failed to get vehicle tracking info:', error);
+    trackingInfo.value = null;
+  } finally {
+    loadingTracking.value = false;
+  }
+};
+
+// Initialize Map
+const initializeMap = () => {
+  if (map.value) {
+    map.value.remove();
+  }
+  const mapElement = document.getElementById('map');
+  if (!mapElement) return;
+  
+  map.value = L.map('map').setView([36.8969, 30.7133], 13); // Default to Antalya
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+  }).addTo(map.value);
+};
+
+// Load Stats
+const loadStats = async () => {
+  if (!auth.tenant) return;
+  loadingStats.value = true;
+  try {
+    const { data } = await http.get('/rentacar/trips/stats', {
+      params: { tenantId: auth.tenant.id },
+    });
+    // Map stats to our format
     stats.value = {
-      vehiclesDeparting24h: 0,
-      notDeparted: 1,
-      totalBusinessDays: 6451,
-      deliveredVehicles: 941,
-      vehiclesReturning24h: 1,
-      notReturned: 1,
-      monthlyReservations: 15,
-      toBeDelivered: 7,
-      totalReservations: 1051,
-      dailyReservations: 1,
-      canceledReservations: 103,
-      customerSatisfaction: 96,
+      vehiclesDeparting24h: 0, // TODO: Calculate from reservations
+      notDeparted: 0, // TODO: Calculate from reservations
+      totalBusinessDays: 0, // TODO: Calculate from reservations
+      deliveredVehicles: 0, // TODO: Calculate from reservations
+      vehiclesReturning24h: 0, // TODO: Calculate from reservations
+      notReturned: 0, // TODO: Calculate from reservations
     };
   } catch (error) {
-    console.error('Failed to load dashboard data:', error);
+    console.error('Failed to load stats:', error);
+  } finally {
+    loadingStats.value = false;
   }
 };
 
@@ -806,7 +938,6 @@ const loadCurrencies = async () => {
   try {
     const { data } = await http.get<CurrencyDto[]>('/currencies');
     currencies.value = data.filter(c => c.isActive).sort((a, b) => {
-      // Base currency first, then alphabetically
       if (a.isBaseCurrency) return -1;
       if (b.isBaseCurrency) return 1;
       return a.code.localeCompare(b.code);
@@ -823,11 +954,27 @@ const updateCurrencyRates = async () => {
   updatingRates.value = true;
   try {
     await http.post('/currencies/update-rates');
-    await loadCurrencies(); // Reload to get updated rates
+    await loadCurrencies();
   } catch (error) {
     console.error('Failed to update currency rates:', error);
   } finally {
     updatingRates.value = false;
+  }
+};
+
+// Load Chart Data
+const loadChartData = async () => {
+  if (!auth.tenant) return;
+  loadingChart.value = true;
+  try {
+    const { data } = await http.get('/rentacar/trips', {
+      params: { tenantId: auth.tenant.id },
+    });
+    reservationsForChart.value = data;
+  } catch (error) {
+    console.error('Failed to load chart data:', error);
+  } finally {
+    loadingChart.value = false;
   }
 };
 
@@ -884,10 +1031,15 @@ const viewAllPenalties = () => {
   console.log('View all penalties');
 };
 
-onMounted(() => {
-  loadDashboardData();
-  loadCurrencies();
-  loadReservations();
+onMounted(async () => {
+  await auth.ensureSession();
+  if (auth.isAuthenticated) {
+    loadReservations();
+    loadPlates();
+    loadStats();
+    loadCurrencies();
+    loadChartData();
+  }
 });
 </script>
 
@@ -898,18 +1050,30 @@ onMounted(() => {
   min-height: 100vh;
 }
 
-/* Metric Cards - Kompakt */
-.metric-card-compact {
-  background: white;
-  transition: all 0.2s ease;
+.h-100 {
+  height: 100%;
 }
 
-.metric-card-compact:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+.reservations-list {
+  max-height: calc(100vh - 200px);
 }
 
-/* Compact Table */
-:deep(.compact-table) {
+.reservation-item {
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+
+.reservation-item:hover {
+  background-color: #f0f0f0;
+}
+
+.currency-item {
+  padding: 4px 8px;
+  background: rgba(25, 118, 210, 0.05);
+  border-radius: 4px;
+}
+
+.compact-table {
   background: transparent;
 }
 
@@ -939,11 +1103,14 @@ onMounted(() => {
   font-size: 0.75rem;
 }
 
-/* Empty State - Kompakt */
 .empty-state-compact {
   text-align: center;
   padding: 24px 16px;
   color: #94a3b8;
 }
 
+#map {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
 </style>
