@@ -7,7 +7,6 @@ import { Language } from '../../shared/entities/language.entity';
 export type CrmPageCategoryTranslationInput = {
   languageId: string;
   name: string; // Category name/title
-  slug?: string; // Optional slug, will be auto-generated from name if not provided
 };
 
 export type CreateCrmPageCategoryDto = {
@@ -158,23 +157,7 @@ export class CrmPageCategoryService {
           },
         });
 
-        // Search for slug in translation value (JSON)
-        for (const translation of allTranslations) {
-          if (translation.value) {
-            try {
-              const valueData = JSON.parse(translation.value);
-              if (valueData.slug === slug) {
-                const foundCategory = allCategories.find(c => c.id === translation.modelId);
-                if (foundCategory) {
-                  category = foundCategory;
-                  break;
-                }
-              }
-            } catch {
-              // Not JSON, skip
-            }
-          }
-        }
+        // Search by main slug only (no language-specific slug search needed)
       }
     }
 
@@ -184,9 +167,9 @@ export class CrmPageCategoryService {
         throw new Error('Translations are required when creating a new category');
       }
 
-      // Use first translation's slug as main slug
+      // Use first translation's name to generate main slug
       const defaultTranslation = translations[0];
-      const mainSlug = defaultTranslation.slug || slugify(defaultTranslation.name);
+      const mainSlug = slugify(defaultTranslation.name);
 
       category = this.repo().create({
         tenantId,
@@ -197,22 +180,13 @@ export class CrmPageCategoryService {
 
       category = await this.repo().save(category);
 
-      // Create translations with slug in value field (JSON format)
+      // Create translations
       for (const translation of translations) {
-        const translationSlug = translation.slug || slugify(translation.name);
-        
-        // Store slug in value field as JSON
-        const valueData: { slug?: string } = {};
-        if (translationSlug) {
-          valueData.slug = translationSlug;
-        }
-        
         await this.translationRepo().save({
           model: MODEL_NAME,
           modelId: category.id,
           languageId: translation.languageId,
           name: translation.name,
-          value: Object.keys(valueData).length > 0 ? JSON.stringify(valueData) : undefined,
         });
       }
     }
@@ -228,9 +202,9 @@ export class CrmPageCategoryService {
       throw new Error('At least one translation is required');
     }
 
-    // Use first translation's slug as main slug (for backward compatibility)
+    // Use first translation's name to generate main slug
     const defaultTranslation = input.translations[0];
-    const mainSlug = defaultTranslation.slug || slugify(defaultTranslation.name);
+    const mainSlug = slugify(defaultTranslation.name);
 
     // Check if slug already exists for this tenant
     const existing = await this.repo().findOne({
@@ -250,24 +224,15 @@ export class CrmPageCategoryService {
 
     const savedCategory = await this.repo().save(category);
 
-    // Create translations with slug in value field (JSON format)
-    for (const translation of input.translations) {
-      const translationSlug = translation.slug || slugify(translation.name);
-      
-      // Store slug in value field as JSON
-      const valueData: { slug?: string } = {};
-      if (translationSlug) {
-        valueData.slug = translationSlug;
+      // Create translations
+      for (const translation of input.translations) {
+        await this.translationRepo().save({
+          model: MODEL_NAME,
+          modelId: savedCategory.id,
+          languageId: translation.languageId,
+          name: translation.name,
+        });
       }
-      
-      await this.translationRepo().save({
-        model: MODEL_NAME,
-        modelId: savedCategory.id,
-        languageId: translation.languageId,
-        name: translation.name,
-        value: Object.keys(valueData).length > 0 ? JSON.stringify(valueData) : undefined,
-      });
-    }
 
     return this.getById(savedCategory.id) as Promise<CrmPageCategoryWithTranslations>;
   }
@@ -293,7 +258,7 @@ export class CrmPageCategoryService {
     // Update main slug if translations provided (use first translation as default)
     if (input.translations && input.translations.length > 0) {
       const defaultTranslation = input.translations[0];
-      const newMainSlug = defaultTranslation.slug || slugify(defaultTranslation.name);
+      const newMainSlug = slugify(defaultTranslation.name);
       
       // Check if slug already exists for another category
       const existing = await this.repo().findOne({
@@ -317,22 +282,13 @@ export class CrmPageCategoryService {
         modelId: id,
       });
 
-      // Create new translations with slug in value field (JSON format)
+      // Create new translations
       for (const translation of input.translations) {
-        const translationSlug = translation.slug || slugify(translation.name);
-        
-        // Store slug in value field as JSON
-        const valueData: { slug?: string } = {};
-        if (translationSlug) {
-          valueData.slug = translationSlug;
-        }
-        
         await this.translationRepo().save({
           model: MODEL_NAME,
           modelId: id,
           languageId: translation.languageId,
           name: translation.name,
-          value: Object.keys(valueData).length > 0 ? JSON.stringify(valueData) : undefined,
         });
       }
     }
