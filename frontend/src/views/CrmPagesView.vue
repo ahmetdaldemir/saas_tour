@@ -137,13 +137,50 @@
                     Yeni Kategori Oluştur
                   </v-btn>
                 </v-col>
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="pageForm.image"
-                    label="Resim URL"
-                    prepend-inner-icon="mdi-image"
-                    class="mb-2"
-                  />
+                <v-col cols="12">
+                  <div>
+                    <v-file-input
+                      v-model="imageFile"
+                      label="Resim Yükle"
+                      prepend-inner-icon="mdi-image"
+                      accept="image/*"
+                      :rules="[(v: any) => {
+                        if (!v) return true;
+                        if (v && typeof v === 'object' && 'size' in v) {
+                          return v.size < 5000000 || 'Dosya boyutu 5MB\'dan küçük olmalıdır';
+                        }
+                        return true;
+                      }]"
+                      :loading="uploadingImage"
+                      show-size
+                      clearable
+                      class="mb-2"
+                    />
+                    <v-btn
+                      v-if="imageFile && !uploadingImage"
+                      color="primary"
+                      size="small"
+                      prepend-icon="mdi-upload"
+                      @click="handleImageUpload"
+                      class="mt-2"
+                    >
+                      Resim Yükle
+                    </v-btn>
+                    <v-progress-linear
+                      v-if="uploadingImage"
+                      indeterminate
+                      color="primary"
+                      class="mt-2"
+                    />
+                    <v-img
+                      v-if="pageForm.image"
+                      :src="getImageUrl(pageForm.image)"
+                      max-height="200"
+                      max-width="300"
+                      contain
+                      class="mt-2 rounded"
+                    />
+                  </div>
                 </v-col>
                 <v-col cols="12" md="6">
                   <v-switch
@@ -311,6 +348,8 @@ const titleLanguageTab = ref('');
 const descriptionLanguageTab = ref('');
 const showCategoryDialog = ref(false);
 const savingCategory = ref(false);
+const imageFile = ref<File | null>(null);
+const uploadingImage = ref(false);
 const categoryForm = reactive<{
   slug: string;
   translations: Record<string, string>;
@@ -491,6 +530,7 @@ const resetPageForm = () => {
   pageForm.titleTranslations = {};
   pageForm.slugTranslations = {};
   pageForm.descriptionTranslations = {};
+  imageFile.value = null;
   
   // Initialize translations for all languages
   availableLanguages.value.forEach(lang => {
@@ -563,6 +603,47 @@ const saveCategory = async () => {
   } catch (error: any) {
     alert(error.response?.data?.message || 'Kategori kaydedilirken bir hata oluştu');
   }
+};
+
+// Image upload handler
+const handleImageUpload = async () => {
+  if (!imageFile.value || !(imageFile.value instanceof File)) {
+    return;
+  }
+  
+  uploadingImage.value = true;
+  try {
+    const formData = new FormData();
+    formData.append('file', imageFile.value);
+
+    const { data } = await http.post('/settings/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    if (data.url) {
+      pageForm.image = data.url; // Save URL to form
+      imageFile.value = null;
+    } else {
+      throw new Error('Upload response missing URL');
+    }
+  } catch (error: any) {
+    console.error('Image upload error:', error);
+    alert(error.response?.data?.message || 'Resim yüklenirken bir hata oluştu');
+  } finally {
+    uploadingImage.value = false;
+  }
+};
+
+// Get image URL (handle both relative and absolute URLs)
+const getImageUrl = (url: string): string => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  // Relative URL - prepend base URL if needed
+  return url.startsWith('/') ? url : `/${url}`;
 };
 
 const savePage = async () => {
