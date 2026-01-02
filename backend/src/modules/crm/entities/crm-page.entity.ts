@@ -33,9 +33,6 @@ export class CrmPage extends BaseEntity {
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;
 
-  @Column({ name: 'is_published', default: false })
-  isPublished!: boolean; // Whether page is published and visible
-
   @Column({ name: 'sort_order', type: 'int', default: 0 })
   sortOrder!: number; // For ordering pages within category
 

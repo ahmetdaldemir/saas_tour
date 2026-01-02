@@ -9,6 +9,7 @@ export type CrmPageTranslationInput = {
   languageId: string;
   title: string;
   description?: string;
+  slug?: string; // Optional slug, will be auto-generated from title if not provided
 };
 
 export type CreateCrmPageDto = {
@@ -16,20 +17,16 @@ export type CreateCrmPageDto = {
   categoryId?: string; // If provided, use existing category
   categorySlug?: string; // If categoryId not provided, create/get category by slug
   categoryTranslations?: CrmPageCategoryTranslationInput[]; // Required if creating new category
-  slug?: string;
   image?: string;
   isActive?: boolean;
-  isPublished?: boolean;
   sortOrder?: number;
   translations: CrmPageTranslationInput[]; // At least one translation required
 };
 
 export type UpdateCrmPageDto = {
   categoryId?: string;
-  slug?: string;
   image?: string;
   isActive?: boolean;
-  isPublished?: boolean;
   sortOrder?: number;
   translations?: CrmPageTranslationInput[]; // If provided, replaces all translations
 };
@@ -212,38 +209,50 @@ export class CrmPageService {
       throw new Error('Category is required');
     }
 
-    const slug = input.slug || slugify(input.translations[0].title);
+    // Use default language slug as main slug (for backward compatibility)
+    const defaultLang = input.translations[0];
+    const mainSlug = defaultLang.slug || slugify(defaultLang.title);
 
     // Check if slug already exists for this tenant
     const existing = await this.repo().findOne({
-      where: { tenantId: input.tenantId, slug },
+      where: { tenantId: input.tenantId, slug: mainSlug },
     });
 
     if (existing) {
-      throw new Error(`Page with slug "${slug}" already exists`);
+      throw new Error(`Page with slug "${mainSlug}" already exists`);
     }
 
     const page = this.repo().create({
       tenantId: input.tenantId,
       categoryId: category.id,
-      slug,
+      slug: mainSlug, // Main slug (default language)
       image: input.image,
       isActive: input.isActive ?? true,
-      isPublished: input.isPublished ?? false,
       sortOrder: input.sortOrder ?? 0,
       viewCount: 0,
     });
 
     const savedPage = await this.repo().save(page);
 
-    // Create translations
+    // Create translations with slug in value field (JSON format)
     for (const translation of input.translations) {
+      const translationSlug = translation.slug || slugify(translation.title);
+      
+      // Store description and slug in value field as JSON
+      const valueData: { description?: string; slug?: string } = {};
+      if (translation.description) {
+        valueData.description = translation.description;
+      }
+      if (translationSlug) {
+        valueData.slug = translationSlug;
+      }
+      
       await this.translationRepo().save({
         model: MODEL_NAME,
         modelId: savedPage.id,
         languageId: translation.languageId,
         name: translation.title, // title -> Translation.name
-        value: translation.description, // description -> Translation.value
+        value: Object.keys(valueData).length > 0 ? JSON.stringify(valueData) : undefined,
       });
     }
 
@@ -275,21 +284,6 @@ export class CrmPageService {
       page.categoryId = input.categoryId;
     }
 
-    if (input.slug !== undefined) {
-      const slug = input.slug || slugify(input.translations?.[0]?.title || page.slug);
-
-      // Check if slug already exists for another page
-      const existing = await this.repo().findOne({
-        where: { tenantId: page.tenantId, slug },
-      });
-
-      if (existing && existing.id !== id) {
-        throw new Error(`Page with slug "${slug}" already exists`);
-      }
-
-      page.slug = slug;
-    }
-
     if (input.image !== undefined) {
       page.image = input.image;
     }
@@ -298,12 +292,25 @@ export class CrmPageService {
       page.isActive = input.isActive;
     }
 
-    if (input.isPublished !== undefined) {
-      page.isPublished = input.isPublished;
-    }
-
     if (input.sortOrder !== undefined) {
       page.sortOrder = input.sortOrder;
+    }
+
+    // Update main slug if translations provided (use first translation as default)
+    if (input.translations && input.translations.length > 0) {
+      const defaultTranslation = input.translations[0];
+      const newMainSlug = defaultTranslation.slug || slugify(defaultTranslation.title);
+      
+      // Check if slug already exists for another page
+      const existing = await this.repo().findOne({
+        where: { tenantId: page.tenantId, slug: newMainSlug },
+      });
+
+      if (existing && existing.id !== id) {
+        throw new Error(`Page with slug "${newMainSlug}" already exists`);
+      }
+
+      page.slug = newMainSlug;
     }
 
     await this.repo().save(page);
@@ -316,14 +323,25 @@ export class CrmPageService {
         modelId: id,
       });
 
-      // Create new translations
+      // Create new translations with slug in value field (JSON format)
       for (const translation of input.translations) {
+        const translationSlug = translation.slug || slugify(translation.title);
+        
+        // Store description and slug in value field as JSON
+        const valueData: { description?: string; slug?: string } = {};
+        if (translation.description) {
+          valueData.description = translation.description;
+        }
+        if (translationSlug) {
+          valueData.slug = translationSlug;
+        }
+        
         await this.translationRepo().save({
           model: MODEL_NAME,
           modelId: id,
           languageId: translation.languageId,
           name: translation.title,
-          value: translation.description,
+          value: Object.keys(valueData).length > 0 ? JSON.stringify(valueData) : undefined,
         });
       }
     }

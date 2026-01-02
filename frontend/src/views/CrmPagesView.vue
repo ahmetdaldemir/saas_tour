@@ -65,16 +65,6 @@
             <span v-else class="text-medium-emphasis">-</span>
           </template>
 
-          <template #item.isPublished="{ item }">
-            <v-chip
-              size="small"
-              :color="item.isPublished ? 'success' : 'warning'"
-              variant="flat"
-            >
-              {{ item.isPublished ? 'Yayında' : 'Taslak' }}
-            </v-chip>
-          </template>
-
           <template #item.isActive="{ item }">
             <v-chip
               size="small"
@@ -137,18 +127,17 @@
                     :loading="loadingCategories"
                     class="mb-2"
                   />
+                  <v-btn
+                    variant="text"
+                    size="small"
+                    prepend-icon="mdi-plus"
+                    @click="openCategoryDialog"
+                    class="mt-1"
+                  >
+                    Yeni Kategori Oluştur
+                  </v-btn>
                 </v-col>
                 <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="pageForm.slug"
-                    label="Slug (URL)"
-                    prepend-inner-icon="mdi-link"
-                    hint="URL-friendly identifier (otomatik oluşturulur)"
-                    persistent-hint
-                    class="mb-2"
-                  />
-                </v-col>
-                <v-col cols="12">
                   <v-text-field
                     v-model="pageForm.image"
                     label="Resim URL"
@@ -156,7 +145,7 @@
                     class="mb-2"
                   />
                 </v-col>
-                <v-col cols="12" md="4">
+                <v-col cols="12" md="6">
                   <v-switch
                     v-model="pageForm.isActive"
                     label="Aktif"
@@ -164,15 +153,7 @@
                     class="mb-2"
                   />
                 </v-col>
-                <v-col cols="12" md="4">
-                  <v-switch
-                    v-model="pageForm.isPublished"
-                    label="Yayında"
-                    color="primary"
-                    class="mb-2"
-                  />
-                </v-col>
-                <v-col cols="12" md="4">
+                <v-col cols="12" md="6">
                   <v-text-field
                     v-model.number="pageForm.sortOrder"
                     label="Sıralama"
@@ -205,6 +186,15 @@
                       v-model="pageForm.titleTranslations[lang.id]"
                       :label="`Başlık (${lang.name})`"
                       prepend-inner-icon="mdi-format-title"
+                      class="mt-2"
+                      @update:model-value="() => autoGenerateSlug(lang.id)"
+                    />
+                    <v-text-field
+                      v-model="pageForm.slugTranslations[lang.id]"
+                      :label="`Slug (${lang.name})`"
+                      prepend-inner-icon="mdi-link"
+                      hint="Otomatik oluşturulur, isterseniz düzenleyebilirsiniz"
+                      persistent-hint
                       class="mt-2"
                     />
                   </v-window-item>
@@ -252,6 +242,49 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Kategori Ekleme Dialog -->
+    <v-dialog v-model="showCategoryDialog" max-width="600">
+      <v-card>
+        <v-card-title class="d-flex align-center justify-space-between">
+          <div class="d-flex align-center gap-2">
+            <v-icon icon="mdi-folder-plus" size="24" />
+            <span class="text-h6">Yeni Kategori Oluştur</span>
+          </div>
+          <v-btn icon="mdi-close" variant="text" @click="closeCategoryDialog" />
+        </v-card-title>
+        <v-divider />
+        <v-card-text class="pa-6">
+          <v-text-field
+            v-model="categoryForm.slug"
+            label="Kategori Slug"
+            prepend-inner-icon="mdi-link"
+            hint="URL-friendly identifier (otomatik oluşturulur)"
+            persistent-hint
+            class="mb-4"
+          />
+          <div>
+            <label class="text-body-1 font-weight-medium mb-2 d-block">Kategori Adı</label>
+            <v-text-field
+              v-for="lang in availableLanguages"
+              :key="lang.id"
+              v-model="categoryForm.translations[lang.id]"
+              :label="`Kategori Adı (${lang.name})`"
+              prepend-inner-icon="mdi-folder"
+              class="mb-2"
+            />
+          </div>
+        </v-card-text>
+        <v-divider />
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="closeCategoryDialog">İptal</v-btn>
+          <v-btn color="primary" @click="saveCategory" :loading="savingCategory">
+            Kaydet
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -276,6 +309,15 @@ const savingPage = ref(false);
 const editingPage = ref<CrmPageDto | null>(null);
 const titleLanguageTab = ref('');
 const descriptionLanguageTab = ref('');
+const showCategoryDialog = ref(false);
+const savingCategory = ref(false);
+const categoryForm = reactive<{
+  slug: string;
+  translations: Record<string, string>;
+}>({
+  slug: '',
+  translations: {},
+});
 
 // Form Refs
 const pageFormRef = ref();
@@ -284,21 +326,19 @@ const pageFormValid = ref(false);
 // Form
 const pageForm = reactive<{
   categoryId: string;
-  slug: string;
   image: string;
   isActive: boolean;
-  isPublished: boolean;
   sortOrder: number;
   titleTranslations: Record<string, string>;
+  slugTranslations: Record<string, string>;
   descriptionTranslations: Record<string, string>;
 }>({
   categoryId: '',
-  slug: '',
   image: '',
   isActive: true,
-  isPublished: false,
   sortOrder: 0,
   titleTranslations: {},
+  slugTranslations: {},
   descriptionTranslations: {},
 });
 
@@ -352,7 +392,6 @@ const pageTableHeaders = [
   { title: 'Kategori', key: 'category', width: '150px' },
   { title: 'Başlık', key: 'title', width: '250px' },
   { title: 'Resim', key: 'image', sortable: false, width: '80px' },
-  { title: 'Yayın Durumu', key: 'isPublished', sortable: false, width: '120px' },
   { title: 'Durum', key: 'isActive', sortable: false, width: '100px' },
   { title: 'Görüntülenme', key: 'viewCount', width: '120px' },
   { title: 'İşlemler', key: 'actions', sortable: false, width: '120px' },
@@ -446,19 +485,84 @@ const closePageDialog = () => {
 
 const resetPageForm = () => {
   pageForm.categoryId = '';
-  pageForm.slug = '';
   pageForm.image = '';
   pageForm.isActive = true;
-  pageForm.isPublished = false;
   pageForm.sortOrder = 0;
   pageForm.titleTranslations = {};
+  pageForm.slugTranslations = {};
   pageForm.descriptionTranslations = {};
   
   // Initialize translations for all languages
   availableLanguages.value.forEach(lang => {
     pageForm.titleTranslations[lang.id] = '';
+    pageForm.slugTranslations[lang.id] = '';
     pageForm.descriptionTranslations[lang.id] = '';
   });
+};
+
+// Auto-generate slug from title
+const autoGenerateSlug = (languageId: string) => {
+  const title = pageForm.titleTranslations[languageId] || '';
+  if (title) {
+    const slug = title
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\-]+/g, '')
+      .replace(/\-\-+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '');
+    pageForm.slugTranslations[languageId] = slug;
+  }
+};
+
+// Category dialog functions
+const openCategoryDialog = () => {
+  categoryForm.slug = '';
+  categoryForm.translations = {};
+  availableLanguages.value.forEach(lang => {
+    categoryForm.translations[lang.id] = '';
+  });
+  showCategoryDialog.value = true;
+};
+
+const closeCategoryDialog = () => {
+  showCategoryDialog.value = false;
+  categoryForm.slug = '';
+  categoryForm.translations = {};
+};
+
+const saveCategory = async () => {
+  if (!auth.tenant) return;
+  
+  const defaultLang = availableLanguages.value.find(l => l.isDefault) || availableLanguages.value[0];
+  const defaultName = categoryForm.translations[defaultLang?.id || ''] || '';
+  
+  if (!defaultName) {
+    alert('Varsayılan dilde kategori adı girilmelidir');
+    return;
+  }
+  
+  const slug = categoryForm.slug || defaultName.toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  
+  try {
+    const categoryData = {
+      tenantId: auth.tenant.id,
+      slug,
+      translations: availableLanguages.value.map(lang => ({
+        languageId: lang.id,
+        name: categoryForm.translations[lang.id] || '',
+      })),
+    };
+    
+    await http.post('/crm/page-categories', categoryData);
+    await loadCategories();
+    closeCategoryDialog();
+  } catch (error: any) {
+    alert(error.response?.data?.message || 'Kategori kaydedilirken bir hata oluştu');
+  }
 };
 
 const savePage = async () => {
@@ -487,19 +591,42 @@ const savePage = async () => {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
     
+    // Check if we need to create category
+    let categoryId = pageForm.categoryId;
+    if (!categoryId && categoryForm.slug) {
+      // Create category first
+      const defaultLang = availableLanguages.value.find(l => l.isDefault) || availableLanguages.value[0];
+      const categoryData = {
+        tenantId: auth.tenant.id,
+        categorySlug: categoryForm.slug,
+        categoryTranslations: availableLanguages.value.map(lang => ({
+          languageId: lang.id,
+          name: categoryForm.translations[lang.id] || '',
+        })),
+      };
+      const { data: newCategory } = await http.post('/crm/page-categories', categoryData);
+      categoryId = newCategory.data.id;
+      await loadCategories();
+    }
+    
     const pageData = {
       tenantId: auth.tenant.id,
-      categoryId: pageForm.categoryId,
-      slug,
+      categoryId,
       image: pageForm.image || undefined,
       isActive: pageForm.isActive,
-      isPublished: pageForm.isPublished,
       sortOrder: pageForm.sortOrder || 0,
-      translations: availableLanguages.value.map(lang => ({
-        languageId: lang.id,
-        title: pageForm.titleTranslations[lang.id] || '',
-        description: pageForm.descriptionTranslations[lang.id] || '',
-      })),
+      translations: availableLanguages.value.map(lang => {
+        // Ensure slug is generated if not set
+        if (!pageForm.slugTranslations[lang.id] && pageForm.titleTranslations[lang.id]) {
+          autoGenerateSlug(lang.id);
+        }
+        return {
+          languageId: lang.id,
+          title: pageForm.titleTranslations[lang.id] || '',
+          slug: pageForm.slugTranslations[lang.id] || '',
+          description: pageForm.descriptionTranslations[lang.id] || '',
+        };
+      }),
     };
     
     if (editingPage.value) {
@@ -523,17 +650,43 @@ const editPage = (page: CrmPageDto) => {
   
   // Set form values
   pageForm.categoryId = page.categoryId;
-  pageForm.slug = page.slug;
   pageForm.image = page.image || '';
   pageForm.isActive = page.isActive;
-  pageForm.isPublished = page.isPublished;
   pageForm.sortOrder = page.sortOrder || 0;
   
-  // Set translations
+  // Set translations and extract slug from value (JSON)
   if (page.translations) {
     page.translations.forEach(trans => {
       pageForm.titleTranslations[trans.languageId] = trans.name || '';
-      pageForm.descriptionTranslations[trans.languageId] = trans.value || '';
+      pageForm.descriptionTranslations[trans.languageId] = '';
+      
+      // Try to parse value as JSON to get description and slug
+      if (trans.value) {
+        try {
+          const valueData = JSON.parse(trans.value);
+          if (valueData.description) {
+            pageForm.descriptionTranslations[trans.languageId] = valueData.description;
+          }
+          if (valueData.slug) {
+            pageForm.slugTranslations[trans.languageId] = valueData.slug;
+          }
+        } catch {
+          // Not JSON, treat as plain description
+          pageForm.descriptionTranslations[trans.languageId] = trans.value || '';
+        }
+      }
+      
+      // If no slug found, generate from title
+      if (!pageForm.slugTranslations[trans.languageId] && trans.name) {
+        pageForm.slugTranslations[trans.languageId] = trans.name
+          .toLowerCase()
+          .trim()
+          .replace(/\s+/g, '-')
+          .replace(/[^\w\-]+/g, '')
+          .replace(/\-\-+/g, '-')
+          .replace(/^-+/, '')
+          .replace(/-+$/, '');
+      }
     });
   }
   

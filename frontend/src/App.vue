@@ -39,12 +39,12 @@
       </v-footer>
     </template>
     <v-layout v-else>
-      <v-navigation-drawer v-model="drawer" app color="surface" class="pa-4">
-        <div class="drawer-header mb-6">
+      <v-navigation-drawer v-model="drawer" app color="surface" class="pa-3" width="280">
+        <div class="drawer-header mb-6 px-2">
           <h2 class="text-h6 font-weight-bold mb-1">{{ tenantName }}</h2>
-          <p class="text-caption text-medium-emphasis">Yönetim Modülleri</p>
+          <p class="text-body-2 text-medium-emphasis">Yönetim Modülleri</p>
         </div>
-        <v-list nav density="comfortable">
+        <v-list nav density="comfortable" class="px-2">
           <template v-for="item in navigationItems" :key="item.to || item.title">
             <!-- Regular menu item -->
             <v-list-item
@@ -54,18 +54,22 @@
               :title="item.title"
               :active="route.path === item.to"
               rounded="lg"
+              class="mb-1 menu-item"
+              :class="{ 'menu-item-active': route.path === item.to }"
             />
             <!-- Group menu item with children -->
             <v-list-group
               v-else
               :value="isGroupActive(item) ? item.value : undefined"
               :prepend-icon="item.icon"
+              class="mb-1"
             >
               <template #activator="{ props }">
                 <v-list-item
                   v-bind="props"
                   :title="item.title"
                   rounded="lg"
+                  class="menu-group-header"
                 />
               </template>
               <v-list-item
@@ -76,7 +80,8 @@
                 :title="child.title"
                 :active="route.path === child.to"
                 rounded="lg"
-                class="ml-4"
+                class="ml-6 mb-1 menu-item-child"
+                :class="{ 'menu-item-active': route.path === child.to }"
               />
             </v-list-group>
           </template>
@@ -262,6 +267,61 @@ watch(
 .drawer-header {
   display: flex;
   flex-direction: column;
+}
+
+/* Menu item styling for better readability */
+.menu-item,
+.menu-group-header {
+  font-size: 0.95rem !important;
+  font-weight: 500 !important;
+  min-height: 44px !important;
+  padding: 8px 12px !important;
+}
+
+.menu-item-child {
+  font-size: 0.9rem !important;
+  font-weight: 400 !important;
+  min-height: 40px !important;
+  padding: 6px 12px !important;
+}
+
+.menu-item-active {
+  background-color: rgba(var(--v-theme-primary), 0.1) !important;
+  color: rgb(var(--v-theme-primary)) !important;
+  font-weight: 600 !important;
+}
+
+/* Group header styling */
+.menu-group-header {
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+}
+
+/* Icon spacing */
+:deep(.v-list-item__prepend) {
+  margin-inline-end: 12px !important;
+}
+
+/* Better spacing for child items */
+.menu-item-child :deep(.v-list-item__prepend) {
+  margin-inline-end: 10px !important;
+}
+
+/* List group styling */
+:deep(.v-list-group__header) {
+  font-weight: 600 !important;
+}
+
+/* Active state for list items */
+:deep(.v-list-item--active) {
+  background-color: rgba(var(--v-theme-primary), 0.12) !important;
+  color: rgb(var(--v-theme-primary)) !important;
+}
+
+/* Hover effects */
+.menu-item:hover,
+.menu-item-child:hover {
+  background-color: rgba(var(--v-theme-primary), 0.05) !important;
 }
 
 </style>
