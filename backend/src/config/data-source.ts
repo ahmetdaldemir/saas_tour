@@ -58,6 +58,8 @@ import { FinanceCheck } from '../modules/finance/entities/finance-check.entity';
 import { FinanceLoan } from '../modules/finance/entities/finance-loan.entity';
 import { FinanceLoanInstallment } from '../modules/finance/entities/finance-loan-installment.entity';
 import { OpsTask } from '../modules/ops/entities/ops-task.entity';
+import { CrmPageCategory } from '../modules/crm/entities/crm-page-category.entity';
+import { CrmPage } from '../modules/crm/entities/crm-page.entity';
 
 const env = loadEnv();
 
@@ -133,6 +135,8 @@ export const AppDataSource = new DataSource({
           FinanceLoan,
           FinanceLoanInstallment,
           OpsTask,
+          CrmPageCategory,
+          CrmPage,
   ],
   // Migrations disabled - using TypeORM synchronize instead
   // migrations: ['dist/migrations/*.js'],
