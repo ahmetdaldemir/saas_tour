@@ -27,6 +27,7 @@ import MasterLocationsView from '../views/MasterLocationsView.vue';
 import CountriesView from '../views/CountriesView.vue';
 import FinanceView from '../views/FinanceView.vue';
 import TripsView from '../views/TripsView.vue';
+import CrmPagesView from '../views/CrmPagesView.vue';
 import { useAuthStore } from '../stores/auth';
 
 /**
@@ -157,6 +158,12 @@ const routes: RouteRecordRaw[] = [
     path: '/app/crm',
     name: 'crm',
     component: CrmView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/crm/pages',
+    name: 'crm-pages',
+    component: CrmPagesView,
     meta: { requiresAuth: true, layout: 'admin' },
   },
   {
