@@ -292,22 +292,25 @@
         </v-card-title>
         <v-divider />
         <v-card-text class="pa-6">
-          <v-text-field
-            v-model="categoryForm.slug"
-            label="Kategori Slug"
-            prepend-inner-icon="mdi-link"
-            hint="URL-friendly identifier (otomatik oluşturulur)"
-            persistent-hint
-            class="mb-4"
-          />
           <div>
-            <label class="text-body-1 font-weight-medium mb-2 d-block">Kategori Adı</label>
+            <label class="text-body-1 font-weight-medium mb-2 d-block">Kategori Adı ve Slug</label>
             <v-text-field
               v-for="lang in availableLanguages"
               :key="lang.id"
               v-model="categoryForm.translations[lang.id]"
               :label="`Kategori Adı (${lang.name})`"
               prepend-inner-icon="mdi-folder"
+              class="mb-2"
+              @update:model-value="() => autoGenerateCategorySlug(lang.id)"
+            />
+            <v-text-field
+              v-for="lang in availableLanguages"
+              :key="`slug-${lang.id}`"
+              v-model="categoryForm.slugTranslations[lang.id]"
+              :label="`Slug (${lang.name})`"
+              prepend-inner-icon="mdi-link"
+              hint="Otomatik oluşturulur, isterseniz düzenleyebilirsiniz"
+              persistent-hint
               class="mb-2"
             />
           </div>
@@ -351,11 +354,11 @@ const savingCategory = ref(false);
 const imageFile = ref<File | null>(null);
 const uploadingImage = ref(false);
 const categoryForm = reactive<{
-  slug: string;
   translations: Record<string, string>;
+  slugTranslations: Record<string, string>;
 }>({
-  slug: '',
   translations: {},
+  slugTranslations: {},
 });
 
 // Form Refs
@@ -558,18 +561,35 @@ const autoGenerateSlug = (languageId: string) => {
 
 // Category dialog functions
 const openCategoryDialog = () => {
-  categoryForm.slug = '';
   categoryForm.translations = {};
+  categoryForm.slugTranslations = {};
   availableLanguages.value.forEach(lang => {
     categoryForm.translations[lang.id] = '';
+    categoryForm.slugTranslations[lang.id] = '';
   });
   showCategoryDialog.value = true;
 };
 
 const closeCategoryDialog = () => {
   showCategoryDialog.value = false;
-  categoryForm.slug = '';
   categoryForm.translations = {};
+  categoryForm.slugTranslations = {};
+};
+
+// Auto-generate category slug from name
+const autoGenerateCategorySlug = (languageId: string) => {
+  const name = categoryForm.translations[languageId] || '';
+  if (name) {
+    const slug = name
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\-]+/g, '')
+      .replace(/\-\-+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '');
+    categoryForm.slugTranslations[languageId] = slug;
+  }
 };
 
 const saveCategory = async () => {
@@ -583,17 +603,20 @@ const saveCategory = async () => {
     return;
   }
   
-  const slug = categoryForm.slug || defaultName.toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+  // Ensure slugs are generated for all languages
+  availableLanguages.value.forEach(lang => {
+    if (!categoryForm.slugTranslations[lang.id] && categoryForm.translations[lang.id]) {
+      autoGenerateCategorySlug(lang.id);
+    }
+  });
   
   try {
     const categoryData = {
       tenantId: auth.tenant.id,
-      slug,
       translations: availableLanguages.value.map(lang => ({
         languageId: lang.id,
         name: categoryForm.translations[lang.id] || '',
+        slug: categoryForm.slugTranslations[lang.id] || '',
       })),
     };
     
@@ -674,15 +697,21 @@ const savePage = async () => {
     
     // Check if we need to create category
     let categoryId = pageForm.categoryId;
-    if (!categoryId && categoryForm.slug) {
+    if (!categoryId && Object.keys(categoryForm.translations).length > 0) {
       // Create category first
-      const defaultLang = availableLanguages.value.find(l => l.isDefault) || availableLanguages.value[0];
+      // Ensure slugs are generated for all languages
+      availableLanguages.value.forEach(lang => {
+        if (!categoryForm.slugTranslations[lang.id] && categoryForm.translations[lang.id]) {
+          autoGenerateCategorySlug(lang.id);
+        }
+      });
+      
       const categoryData = {
         tenantId: auth.tenant.id,
-        categorySlug: categoryForm.slug,
         categoryTranslations: availableLanguages.value.map(lang => ({
           languageId: lang.id,
           name: categoryForm.translations[lang.id] || '',
+          slug: categoryForm.slugTranslations[lang.id] || '',
         })),
       };
       const { data: newCategory } = await http.post('/crm/page-categories', categoryData);
