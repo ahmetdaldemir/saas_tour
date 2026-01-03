@@ -157,6 +157,42 @@
                       <div>Müşteriler: {{ item.stats.customers }}</div>
                     </div>
                   </template>
+                  <template #item.features="{ item }">
+                    <div class="d-flex gap-1">
+                      <v-chip
+                        v-if="item.features?.finance"
+                        size="x-small"
+                        color="success"
+                        variant="flat"
+                      >
+                        Finance
+                      </v-chip>
+                      <v-chip
+                        v-if="item.features?.vehicleTracking"
+                        size="x-small"
+                        color="info"
+                        variant="flat"
+                      >
+                        Vehicle
+                      </v-chip>
+                      <v-chip
+                        v-if="item.features?.chat"
+                        size="x-small"
+                        color="purple"
+                        variant="flat"
+                      >
+                        Chat
+                      </v-chip>
+                      <v-chip
+                        v-if="item.features?.ai"
+                        size="x-small"
+                        color="orange"
+                        variant="flat"
+                      >
+                        AI
+                      </v-chip>
+                    </div>
+                  </template>
                   <template #item.actions="{ item }">
                     <v-btn
                       icon
@@ -174,6 +210,15 @@
                       class="ml-2"
                     >
                       <v-icon>mdi-history</v-icon>
+                    </v-btn>
+                    <v-btn
+                      icon
+                      size="small"
+                      color="success"
+                      @click="editTenantFeatures(item.id)"
+                      class="ml-2"
+                    >
+                      <v-icon>mdi-cog</v-icon>
                     </v-btn>
                   </template>
                 </v-data-table>
@@ -535,6 +580,95 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Tenant Features Dialog -->
+    <v-dialog v-model="showFeaturesDialog" max-width="600">
+      <v-card>
+        <v-card-title>
+          <v-icon icon="mdi-cog" class="mr-2" />
+          Tenant Özellikleri
+        </v-card-title>
+        <v-divider />
+        <v-card-text>
+          <v-alert type="info" variant="tonal" class="mb-4">
+            Tenant için özellikleri açıp kapatabilirsiniz. Bu özellikler SaaS kullanıcılarının hangi modüllere erişebileceğini belirler.
+          </v-alert>
+          
+          <v-list>
+            <v-list-item>
+              <template #prepend>
+                <v-icon icon="mdi-cash" color="success" />
+              </template>
+              <v-list-item-title>On Muhasebe (Finance)</v-list-item-title>
+              <v-list-item-subtitle>Finans modülüne erişim</v-list-item-subtitle>
+              <template #append>
+                <v-switch
+                  v-model="tenantFeatures.finance"
+                  color="success"
+                  hide-details
+                />
+              </template>
+            </v-list-item>
+
+            <v-list-item>
+              <template #prepend>
+                <v-icon icon="mdi-car" color="info" />
+              </template>
+              <v-list-item-title>Araç Takip Sistemi (Vehicle Tracking)</v-list-item-title>
+              <v-list-item-subtitle>Araç takip modülüne erişim</v-list-item-subtitle>
+              <template #append>
+                <v-switch
+                  v-model="tenantFeatures.vehicleTracking"
+                  color="info"
+                  hide-details
+                />
+              </template>
+            </v-list-item>
+
+            <v-list-item>
+              <template #prepend>
+                <v-icon icon="mdi-message-text" color="purple" />
+              </template>
+              <v-list-item-title>Chat Sistemi</v-list-item-title>
+              <v-list-item-subtitle>Chat modülüne erişim</v-list-item-subtitle>
+              <template #append>
+                <v-switch
+                  v-model="tenantFeatures.chat"
+                  color="purple"
+                  hide-details
+                />
+              </template>
+            </v-list-item>
+
+            <v-list-item>
+              <template #prepend>
+                <v-icon icon="mdi-robot" color="orange" />
+              </template>
+              <v-list-item-title>Yapay Zeka (AI)</v-list-item-title>
+              <v-list-item-subtitle>AI içerik üretimi özelliği</v-list-item-subtitle>
+              <template #append>
+                <v-switch
+                  v-model="tenantFeatures.ai"
+                  color="orange"
+                  hide-details
+                />
+              </template>
+            </v-list-item>
+          </v-list>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn @click="showFeaturesDialog = false">İptal</v-btn>
+          <v-btn
+            color="primary"
+            @click="saveTenantFeatures"
+            :loading="savingFeatures"
+          >
+            Kaydet
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -583,8 +717,17 @@ const showLogsDialog = ref(false);
 const showTenantDialog = ref(false);
 const showTenantDetailsDialog = ref(false);
 const showActivityDialog = ref(false);
+const showFeaturesDialog = ref(false);
 const selectedTenant = ref<any>(null);
+const selectedTenantId = ref<string>('');
 const tenantActivity = ref<any>({ activities: [] });
+const tenantFeatures = ref({
+  finance: false,
+  vehicleTracking: false,
+  chat: false,
+  ai: false,
+});
+const savingFeatures = ref(false);
 
 // Servis istatistikleri için geçmiş veriler (her servis için)
 interface ServiceStatsHistory {
@@ -650,6 +793,7 @@ const tenantHeaders = [
   { title: 'Slug', key: 'slug' },
   { title: 'Kategori', key: 'category' },
   { title: 'Durum', key: 'isActive' },
+  { title: 'Özellikler', key: 'features' },
   { title: 'İstatistikler', key: 'stats' },
   { title: 'İşlemler', key: 'actions', sortable: false },
 ];
@@ -848,6 +992,40 @@ const viewTenantActivity = async (tenantId: string) => {
     showActivityDialog.value = true;
   } catch (error) {
     console.error('Failed to load tenant activity:', error);
+  }
+};
+
+const editTenantFeatures = async (tenantId: string) => {
+  selectedTenantId.value = tenantId;
+  try {
+    const { data } = await http.get(`/admin/tenants/${tenantId}/features`);
+    tenantFeatures.value = {
+      finance: data.finance || false,
+      vehicleTracking: data.vehicleTracking || false,
+      chat: data.chat || false,
+      ai: data.ai || false,
+    };
+    showFeaturesDialog.value = true;
+  } catch (error) {
+    console.error('Failed to load tenant features:', error);
+    alert('Özellikler yüklenemedi');
+  }
+};
+
+const saveTenantFeatures = async () => {
+  savingFeatures.value = true;
+  try {
+    await http.put(`/admin/tenants/${selectedTenantId.value}/features`, {
+      features: tenantFeatures.value,
+    });
+    showFeaturesDialog.value = false;
+    await loadTenants(); // Refresh tenant list
+    alert('Özellikler başarıyla güncellendi');
+  } catch (error: any) {
+    console.error('Failed to save tenant features:', error);
+    alert(error.response?.data?.message || 'Özellikler kaydedilemedi');
+  } finally {
+    savingFeatures.value = false;
   }
 };
 

@@ -293,9 +293,13 @@ export class DestinationController {
         });
       }
 
-      const result = await AiContentService.generateDestinationContent({
-        title: title.trim(),
-      });
+      const tenantId = req.auth?.tenantId;
+      const result = await AiContentService.generateDestinationContent(
+        {
+          title: title.trim(),
+        },
+        tenantId
+      );
 
       res.json({
         success: true,

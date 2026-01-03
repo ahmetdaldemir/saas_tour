@@ -450,10 +450,17 @@ Sadece JSON döndür, başka açıklama yapma.`;
         throw new Error('tenantId is required');
       }
 
-      // Check if AI is enabled for this tenant
+      // Check if AI feature is enabled for this tenant
+      const { TenantFeaturesService } = await import('./tenant-features.service');
+      const hasAiFeature = await TenantFeaturesService.hasFeature(tenantId, 'ai');
+      if (!hasAiFeature) {
+        throw new Error('AI feature is not enabled for this tenant. Please contact your administrator.');
+      }
+
+      // Check if AI is enabled in tenant settings (for backward compatibility)
       const aiEnabled = await this.isAiEnabled(tenantId);
       if (!aiEnabled) {
-        throw new Error('AI content generation is disabled for this tenant');
+        throw new Error('AI content generation is disabled in tenant settings');
       }
 
       const trimmedTitle = title.trim();

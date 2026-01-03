@@ -15,12 +15,19 @@ export const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL ?? '/api', // /api = relative to current origin
 });
 
-// Request interceptor - add auth token
+// Request interceptor - add auth token (admin or tenant)
 http.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('auth_token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Check for admin token first (for admin routes)
+    const adminToken = localStorage.getItem('saas_tour_admin_token');
+    if (adminToken) {
+      config.headers.Authorization = `Bearer ${adminToken}`;
+    } else {
+      // Fallback to tenant token
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
