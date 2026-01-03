@@ -398,20 +398,45 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
         # Zero-downtime deployment: Yeni container'ları build et, sonra graceful restart
         echo -e "${YELLOW}🔨 Container'lar rebuild ediliyor (zero-downtime)...${NC}"
         
+        # Önce hash prefix'li ve çakışan container'ları temizle
+        echo -e "${YELLOW}🧹 Çakışan container'lar temizleniyor...${NC}"
+        docker-compose down --remove-orphans 2>/dev/null || true
+        
+        # Hash prefix'li container'ları temizle
+        HASH_CONTAINERS=$(docker ps -a --format "{{.Names}}" | grep -E "^[a-f0-9]{8,}_" | grep -E "saas-tour|infra" || true)
+        if [ -n "$HASH_CONTAINERS" ]; then
+            echo "$HASH_CONTAINERS" | while IFS= read -r container; do
+                if [ -n "$container" ]; then
+                    echo "   - Removing hash-prefixed: $container"
+                    docker rm -f "$container" 2>/dev/null || true
+                fi
+            done
+        fi
+        
+        # Tüm saas-tour container'larını kontrol et ve çakışanları temizle
+        ALL_SAAS=$(docker ps -a --format "{{.ID}} {{.Names}}" | grep -iE "saas-tour" || true)
+        if [ -n "$ALL_SAAS" ]; then
+            echo "$ALL_SAAS" | while IFS= read -r line; do
+                container_id=$(echo "$line" | awk '{print $1}')
+                container_name=$(echo "$line" | awk '{print $2}')
+                # Eğer hash prefix'li veya çakışan bir isim varsa temizle
+                if echo "$container_name" | grep -qE "^[a-f0-9]{8,}_"; then
+                    echo "   - Removing: $container_name"
+                    docker rm -f "$container_id" 2>/dev/null || true
+                fi
+            done
+        fi
+        
+        docker container prune -f 2>/dev/null || true
+        sleep 2
+        
         # Önce yeni image'ları build et (container'lar çalışmaya devam eder)
         echo -e "${YELLOW}📦 Yeni image'lar build ediliyor...${NC}"
         docker-compose build --no-cache
         
         # Graceful restart: Önce yeni container'ları başlat, sonra eskileri durdur
         echo -e "${YELLOW}🔄 Container'lar graceful restart ile güncelleniyor...${NC}"
-        docker-compose up -d --no-deps --build
-        
-        # Eski container'ları temizle (sadece durmuş olanlar)
-        echo -e "${YELLOW}🧹 Eski container'lar temizleniyor...${NC}"
-        docker-compose down --remove-orphans 2>/dev/null || true
-        
-        # Container'ları tekrar başlat (yeni image'larla)
-        docker-compose up -d
+        docker-compose up -d --force-recreate --remove-orphans
     else
         # Full modunda - container'ları durdur ve yeniden başlat
         echo -e "${YELLOW}🔄 Application stack yeniden başlatılıyor...${NC}"
@@ -495,9 +520,10 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
             done <<< "$COMPOSE_CONTAINERS"
         fi
         
-        # Ek güvenlik: Hash prefix'li container'ları da temizle (örn: ca18ed3f0846_saas-tour-backend)
+        # Ek güvenlik: Hash prefix'li container'ları da temizle (örn: 30e7575fe239_saas-tour-backend, ca18ed3f0846_saas-tour-backend)
         echo -e "${YELLOW}🔍 Hash prefix'li container'lar temizleniyor...${NC}"
-        HASH_PREFIXED=$(docker ps -a --format "{{.Names}}" | grep -E "^[a-f0-9]+_saas-tour-(backend|frontend|worker)" || true)
+        # Tüm hash prefix'li container'ları bul (herhangi bir hex hash ile başlayan ve saas-tour içeren)
+        HASH_PREFIXED=$(docker ps -a --format "{{.Names}}" | grep -E "^[a-f0-9]{8,}_" | grep -E "saas-tour|infra" || true)
         if [ -n "$HASH_PREFIXED" ]; then
             while IFS= read -r container; do
                 if [ -n "$container" ]; then
@@ -508,13 +534,40 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
             done <<< "$HASH_PREFIXED"
         fi
         
+        # Tüm saas-tour ve infra ile ilgili container'ları zorla temizle (isim fark etmeksizin)
+        echo -e "${YELLOW}🔍 Tüm saas-tour/infra container'ları zorla temizleniyor...${NC}"
+        ALL_REMAINING=$(docker ps -a --format "{{.ID}} {{.Names}}" | grep -iE "saas-tour|infra" || true)
+        if [ -n "$ALL_REMAINING" ]; then
+            while IFS= read -r line; do
+                if [ -n "$line" ]; then
+                    container_id=$(echo "$line" | awk '{print $1}')
+                    container_name=$(echo "$line" | awk '{print $2}')
+                    echo "   - Removing: $container_name ($container_id)"
+                    docker stop "$container_id" 2>/dev/null || true
+                    docker rm -f "$container_id" 2>/dev/null || true
+                fi
+            done <<< "$ALL_REMAINING"
+        fi
+        
         
         # Docker prune (stopped container'ları temizle)
         echo -e "${YELLOW}🧹 Stopped container'lar temizleniyor...${NC}"
         docker container prune -f 2>/dev/null || true
         
+        # Son kontrol: Hala kalan container'lar var mı?
+        REMAINING_CONTAINERS=$(docker ps -a --format "{{.Names}}" | grep -iE "saas-tour|infra" || true)
+        if [ -n "$REMAINING_CONTAINERS" ]; then
+            echo -e "${YELLOW}⚠️  Hala kalan container'lar var, zorla temizleniyor...${NC}"
+            echo "$REMAINING_CONTAINERS" | while IFS= read -r container; do
+                if [ -n "$container" ]; then
+                    echo "   - Force removing: $container"
+                    docker rm -f "$container" 2>/dev/null || true
+                fi
+            done
+        fi
+        
         # Kısa bir bekleme (container'ların tamamen kaldırılması için)
-        sleep 3
+        sleep 5
         
         # Force recreate ile container'ları yeniden oluştur
         # Production'da dikkatli: Bu mod tüm container'ları yeniden başlatır
