@@ -81,7 +81,7 @@
                       required
                       :rules="[v => !!v || 'Başlık zorunludur']"
                     >
-                      <template v-if="lang.code === 'tr' && form.translations[lang.id].title" #append-inner>
+                      <template v-if="lang.code === 'tr' && form.translations[lang.id].title && hasAiFeature" #append-inner>
                         <v-btn
                           icon="mdi-auto-fix"
                           size="small"
@@ -91,6 +91,20 @@
                           @click="generateContent"
                           title="AI ile İçerik Oluştur"
                         />
+                      </template>
+                      <template v-else-if="lang.code === 'tr' && form.translations[lang.id].title && !hasAiFeature" #append-inner>
+                        <v-tooltip text="AI özelliği aktif değil. Yetki almak için destek ekibimizle iletişime geçin.">
+                          <template #activator="{ props }">
+                            <v-btn
+                              icon="mdi-auto-fix"
+                              size="small"
+                              variant="text"
+                              color="grey"
+                              disabled
+                              v-bind="props"
+                            />
+                          </template>
+                        </v-tooltip>
                       </template>
                     </v-text-field>
                   </v-col>
@@ -180,6 +194,7 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { http } from '../modules/http';
 import { useAuthStore } from '../stores/auth';
+import { useFeaturesStore } from '../stores/features';
 
 interface Translation {
   id: string;
@@ -237,6 +252,8 @@ const uploadingImage = ref(false);
 const generatingContent = ref(false);
 
 const auth = useAuthStore();
+const features = useFeaturesStore();
+const hasAiFeature = computed(() => features.hasFeature('ai'));
 
 const dialogTitle = computed(() => (editingId.value ? 'Destinasyonu duzenle' : 'Yeni destinasyon'));
 
@@ -579,6 +596,7 @@ const generateContent = async () => {
 };
 
 onMounted(async () => {
+  await features.initialize();
   await loadLanguages();
   // Load destinations after languages are loaded so we can find Turkish language
   await loadDestinations();
