@@ -51,6 +51,9 @@ function extractTenantSlug(host: string | undefined): string | null {
 /**
  * Tenant Resolution Middleware
  * Resolves tenant from Host header and sets req.tenant
+ * 
+ * NOTE: Admin routes (/api/admin/*) are excluded from tenant resolution
+ * as they operate on the main domain without tenant context
  */
 export const tenantMiddleware = async (
   req: TenantRequest,
@@ -58,6 +61,12 @@ export const tenantMiddleware = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    // Skip tenant resolution for admin routes (main domain operations)
+    if (req.path.startsWith('/api/admin/')) {
+      logger.debug('Skipping tenant resolution for admin route', { path: req.path });
+      return next();
+    }
+
     const host = req.get('host');
     const tenantSlug = extractTenantSlug(host);
 
