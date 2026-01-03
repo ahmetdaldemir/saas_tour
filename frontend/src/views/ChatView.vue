@@ -477,32 +477,37 @@ const formatTime = (date: string | Date) => {
 };
 
 const connectSocket = () => {
-  if (!auth.token || !auth.tenant) return;
+  if (!auth.token || !auth.tenant) {
+    console.warn('⚠️ Cannot connect socket: missing token or tenant');
+    return;
+  }
 
   // Determine WebSocket URL based on environment
+  // IMPORTANT: Always use domain (subdomain-based routing), not localhost:port
+  // Frontend uses subdomain-based routing (berg.saastour360.com or berg.local.saastour360.test:5001)
+  // Mobile uses api.saastour360.com
   let socketUrl: string;
   if (import.meta.env.VITE_WS_URL) {
     socketUrl = import.meta.env.VITE_WS_URL;
-  } else if (import.meta.env.MODE === 'development') {
-    // Development: use localhost
-    socketUrl = 'http://localhost:4001';
   } else {
-    // Production: use current host with same subdomain or api.saastour360.com
-    const host = window.location.host;
-    if (host.includes('saastour360.com')) {
-      // Use wss://api.saastour360.com for WebSocket in production
-      socketUrl = window.location.protocol === 'https:' 
-        ? 'wss://api.saastour360.com'
-        : 'ws://api.saastour360.com';
-    } else {
-      // Fallback to current host
-      socketUrl = window.location.origin;
-    }
+    // Always use current origin (domain-based) - Traefik will route to backend
+    // This works for both development (berg.local.saastour360.test:5001) and production (berg.saastour360.com)
+    socketUrl = window.location.origin;
   }
   
+  console.log('🔌 Connecting to Socket.io server:', {
+    url: socketUrl,
+    token: auth.token ? 'Bearer ***' : 'missing',
+    tenantId: auth.tenant?.id,
+  });
+  
   socket = io(socketUrl, {
+    // Send JWT token in both auth object (for polling) and extraHeaders (for websocket)
     auth: {
       token: auth.token,
+    },
+    extraHeaders: {
+      Authorization: `Bearer ${auth.token}`,
     },
     // Use polling first due to Cloudflare WebSocket issues, then try websocket
     transports: ['polling', 'websocket'],
@@ -522,7 +527,22 @@ const connectSocket = () => {
   });
 
   socket.on('connect', () => {
-    console.log('Chat socket connected');
+    console.log('✅ Chat socket connected', { socketId: socket.id, transport: socket.io.engine.transport.name });
+  });
+
+  socket.on('connect_error', (error: any) => {
+    console.error('❌ Chat socket connection error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      description: error.description,
+      context: error.context,
+      type: error.type,
+      transport: socket.io.engine?.transport?.name,
+    });
+  });
+
+  socket.on('disconnect', (reason: string) => {
+    console.warn('⚠️ Chat socket disconnected:', reason);
   });
 
   socket.on('joined_room', (data: any) => {

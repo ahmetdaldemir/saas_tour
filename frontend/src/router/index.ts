@@ -5,6 +5,7 @@ import CorporateView from '../views/public/CorporateView.vue';
 import ContactView from '../views/public/ContactView.vue';
 import LoginView from '../views/LoginView.vue';
 import RegisterView from '../views/RegisterView.vue';
+import AdminLoginView from '../views/AdminLoginView.vue';
 import DashboardView from '../views/DashboardView.vue';
 import ToursView from '../views/ToursView.vue';
 import TourDetailView from '../views/TourDetailView.vue';
@@ -26,7 +27,10 @@ import AdminDashboard from '../views/AdminDashboard.vue';
 import MasterLocationsView from '../views/MasterLocationsView.vue';
 import CountriesView from '../views/CountriesView.vue';
 import FinanceView from '../views/FinanceView.vue';
+import TripsView from '../views/TripsView.vue';
+import CrmPagesView from '../views/CrmPagesView.vue';
 import { useAuthStore } from '../stores/auth';
+import { useAdminAuthStore } from '../stores/admin-auth';
 
 /**
  * Check if current hostname is a subdomain
@@ -69,6 +73,20 @@ const routes: RouteRecordRaw[] = [
     name: 'home',
     component: HomeView,
     meta: { layout: 'public', isPublicSite: true },
+    beforeEnter: (to, from, next) => {
+      // Ana domain'de root URL'ye gidildiğinde admin login'e yönlendir
+      if (!isSubdomain()) {
+        const adminAuth = useAdminAuthStore();
+        // Eğer admin zaten giriş yapmışsa adminDashboard'a yönlendir
+        if (adminAuth.isAuthenticated) {
+          return next({ name: 'adminDashboard' });
+        }
+        // Değilse admin login'e yönlendir
+        return next({ name: 'adminLogin' });
+      }
+      // Subdomain'de normal home sayfasına git
+      next();
+    },
   },
   {
     path: '/corporate',
@@ -93,6 +111,18 @@ const routes: RouteRecordRaw[] = [
     name: 'register',
     component: RegisterView,
     meta: { layout: 'public' },
+  },
+  {
+    path: '/adminLogin',
+    name: 'adminLogin',
+    component: AdminLoginView,
+    meta: { layout: 'auth' },
+  },
+  {
+    path: '/adminDashboard',
+    name: 'adminDashboard',
+    component: AdminDashboard,
+    meta: { requiresAdminAuth: true, layout: 'admin' },
   },
   {
     path: '/app',
@@ -159,6 +189,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, layout: 'admin' },
   },
   {
+    path: '/app/crm/pages',
+    name: 'crm-pages',
+    component: CrmPagesView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
     path: '/app/reservations',
     name: 'reservations',
     component: ReservationsView,
@@ -186,6 +222,12 @@ const routes: RouteRecordRaw[] = [
     path: '/app/finance',
     name: 'finance',
     component: FinanceView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/trips',
+    name: 'trips',
+    component: TripsView,
     meta: { requiresAuth: true, layout: 'admin' },
   },
   {
@@ -238,16 +280,45 @@ export const router = createRouter({
 export const setupRouterGuards = (pinia: Pinia) => {
   router.beforeEach(async (to, _from, next) => {
     const auth = useAuthStore(pinia);
+    const adminAuth = useAdminAuthStore(pinia);
     const isSubdomainRoute = isSubdomain();
     
-    // Ana domain (saastour360.com) için: Sadece public sayfalar erişilebilir
-    if (!isSubdomainRoute) {
-      // Ana domain'de login/register/admin route'larına erişim yok
-      if (to.name === 'login' || to.name === 'register' || to.meta.requiresAuth) {
-        // Ana domain'de bu route'lara erişim yok, home'a yönlendir
-        return next({ name: 'home' });
+    // Admin route'ları için özel kontrol
+    if (to.meta.requiresAdminAuth === true) {
+      await adminAuth.ensureSession();
+      if (!adminAuth.isAuthenticated) {
+        return next({ name: 'adminLogin', query: { redirect: to.fullPath } });
       }
-      // Public sayfalara erişim izni ver
+      // Admin login sayfasındayken zaten authenticated ise adminDashboard'a yönlendir
+      if (to.name === 'adminLogin' && adminAuth.isAuthenticated) {
+        return next({ name: 'adminDashboard' });
+      }
+      return next();
+    }
+    
+    // Ana domain (saastour360.com) için: Sadece public sayfalar ve admin route'ları erişilebilir
+    if (!isSubdomainRoute) {
+      // Ana domain'de root URL'ye gidildiğinde admin login'e yönlendir
+      if (to.name === 'home') {
+        await adminAuth.ensureSession();
+        // Eğer admin zaten giriş yapmışsa adminDashboard'a yönlendir
+        if (adminAuth.isAuthenticated) {
+          return next({ name: 'adminDashboard' });
+        }
+        // Değilse admin login'e yönlendir
+        return next({ name: 'adminLogin' });
+      }
+      
+      // Ana domain'de login/register route'larına erişim yok (admin route'ları hariç)
+      // adminLogin ve adminDashboard route'larına izin ver
+      if (to.name === 'adminLogin' || to.name === 'adminDashboard') {
+        return next();
+      }
+      if (to.name === 'login' || to.name === 'register' || (to.meta.requiresAuth && !to.meta.requiresAdminAuth)) {
+        // Ana domain'de bu route'lara erişim yok, admin login'e yönlendir
+        return next({ name: 'adminLogin' });
+      }
+      // Public sayfalara ve admin route'larına erişim izni ver
       return next();
     }
     

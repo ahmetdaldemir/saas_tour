@@ -37,12 +37,12 @@ NC='\033[0m'
 #   export SFTP_PASSWORD="your-password"
 #   export SFTP_PORT="22"
 #   export SFTP_REMOTE_PATH="/var/www/html/saastour360"
-SFTP_HOST="${SFTP_HOST:-}"
-SFTP_USERNAME="${SFTP_USERNAME:-}"
-SFTP_PASSWORD="${SFTP_PASSWORD:-}"
-SFTP_PORT="${SFTP_PORT:-22}"
-SFTP_REMOTE_PATH="${SFTP_REMOTE_PATH:-/var/www/html/saastour360}"
-
+SFTP_HOST="185.209.228.189"
+SFTP_USERNAME="root"
+SFTP_PASSWORD="@198711Ad@"
+SFTP_PORT="22"
+SFTP_REMOTE_PATH="/var/www/html/saastour360"
+ 
 # Komut satırı argümanları
 MODE=${1:-production}
 FRESH_DB=false

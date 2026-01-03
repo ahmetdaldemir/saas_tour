@@ -16,25 +16,25 @@ import { API_ROUTES } from '../../../backend/src/config/api-routes';
 // For now, we'll define it here for frontend usage
 const API_ROUTES_FRONTEND = {
   auth: {
-    login: '/api/auth/login',
-    register: '/api/auth/register',
-    me: '/api/auth/me',
-    logout: '/api/auth/logout',
+    login: '/auth/login',
+    register: '/auth/register',
+    me: '/auth/me',
+    logout: '/auth/logout',
   },
   finance: {
     categories: {
-      list: '/api/finance/categories',
-      getById: (id: string) => `/api/finance/categories/${id}`,
-      create: '/api/finance/categories',
-      update: (id: string) => `/api/finance/categories/${id}`,
-      delete: (id: string) => `/api/finance/categories/${id}`,
+      list: '/finance/categories',
+      getById: (id: string) => `/finance/categories/${id}`,
+      create: '/finance/categories',
+      update: (id: string) => `/finance/categories/${id}`,
+      delete: (id: string) => `/finance/categories/${id}`,
     },
     transactions: {
-      list: '/api/finance/transactions',
-      getById: (id: string) => `/api/finance/transactions/${id}`,
-      create: '/api/finance/transactions',
-      update: (id: string) => `/api/finance/transactions/${id}`,
-      delete: (id: string) => `/api/finance/transactions/${id}`,
+      list: '/finance/transactions',
+      getById: (id: string) => `/finance/transactions/${id}`,
+      create: '/finance/transactions',
+      update: (id: string) => `/finance/transactions/${id}`,
+      delete: (id: string) => `/finance/transactions/${id}`,
     },
     // ... add other endpoints as needed
   },
@@ -44,8 +44,16 @@ class ApiService {
   private client: AxiosInstance;
 
   constructor() {
+    // Frontend uses subdomain-based routing (berg.saastour360.com/...)
+    // Mobile uses api.saastour360.com/...
+    // If VITE_API_BASE_URL is set, use it (for mobile or custom setup)
+    // Otherwise, use /api as baseURL (relative to current origin/subdomain)
+    const baseURL = import.meta.env.VITE_API_BASE_URL 
+      ? import.meta.env.VITE_API_BASE_URL 
+      : '/api'; // /api = relative to current origin (subdomain-based)
+    
     this.client = axios.create({
-      baseURL: import.meta.env.VITE_API_BASE_URL ?? 'https://api.saastour360.com/api',
+      baseURL,
       headers: {
         'Content-Type': 'application/json',
       },

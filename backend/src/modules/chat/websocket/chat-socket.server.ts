@@ -40,10 +40,10 @@ export class ChatSocketServer {
     
     // Allow all saastour360.com subdomains and tenant custom domains
     const allowedPatterns = [
-      /^https?:\/\/[a-z0-9-]+\.saastour360\.com$/i,
-      /^https?:\/\/[a-z0-9-]+\.local\.saastour360\.test$/i,
-      /^https?:\/\/(www\.)?bergrentacar\.com$/i, // Tenant custom domain
-      /^https?:\/\/(www\.)?sunsetcarrent\.com$/i, // Tenant custom domain
+      /^https?:\/\/[a-z0-9-]+\.saastour360\.com(:\d+)?$/i,
+      /^https?:\/\/[a-z0-9-]+\.local\.saastour360\.test(:\d+)?$/i,
+      /^https?:\/\/(www\.)?bergrentacar\.com(:\d+)?$/i, // Tenant custom domain
+      /^https?:\/\/(www\.)?sunsetcarrent\.com(:\d+)?$/i, // Tenant custom domain
       'https://api.saastour360.com',
       'http://api.saastour360.com',
       'http://localhost:5001',
@@ -59,13 +59,18 @@ export class ChatSocketServer {
       'sunsetcarrent.com',
     ];
     
+    logger.info('[Socket.io] Creating Socket.io server instance', {
+      path: '/socket.io/',
+      transports: ['polling', 'websocket'],
+    });
+    
     this.io = new SocketServer(httpServer, {
       cors: {
         origin: (origin, callback) => {
           try {
-            // Allow requests with no origin (like mobile apps or curl requests)
+            // Allow requests with no origin (like mobile apps, curl, or proxy requests)
             if (!origin) {
-              logger.info('[Socket.io CORS] No origin header, allowing request');
+              logger.info('[Socket.io CORS] No origin header, allowing request (proxy/Docker network)');
               return callback(null, true);
             }
             
@@ -131,7 +136,7 @@ export class ChatSocketServer {
         },
         methods: ['GET', 'POST', 'OPTIONS'],
         credentials: true,
-        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'Sec-WebSocket-Key', 'Sec-WebSocket-Version', 'Sec-WebSocket-Extensions'],
       },
       path: '/socket.io/',
       transports: ['polling', 'websocket'], // Prioritize polling
@@ -139,6 +144,14 @@ export class ChatSocketServer {
       connectTimeout: 45000,
       pingTimeout: 20000,
       pingInterval: 25000,
+      // Allow upgrade from polling to websocket
+      allowUpgrades: true,
+      // Cookie settings for polling
+      cookie: {
+        name: 'io',
+        httpOnly: false,
+        sameSite: 'lax',
+      },
     });
 
     // Add error handler for connection errors
@@ -148,13 +161,73 @@ export class ChatSocketServer {
         description: err.description,
         context: err.context,
         type: err.type,
+        req: err.req ? {
+          method: err.req.method,
+          url: err.req.url,
+          headers: {
+            origin: err.req.headers.origin,
+            authorization: err.req.headers.authorization ? 'Bearer ***' : undefined,
+            'sec-websocket-key': err.req.headers['sec-websocket-key'],
+            'sec-websocket-version': err.req.headers['sec-websocket-version'],
+          },
+        } : null,
       });
     });
+
+    // Log handshake attempts (before middleware)
+    this.io.engine.on('initial_headers', (headers, req) => {
+      logger.info('[Socket.io] Initial handshake headers', {
+        method: req.method,
+        url: req.url,
+        headers: {
+          origin: req.headers.origin,
+          authorization: req.headers.authorization ? 'Bearer ***' : undefined,
+          'sec-websocket-key': req.headers['sec-websocket-key'],
+          'sec-websocket-version': req.headers['sec-websocket-version'],
+        },
+      });
+    });
+
+    // Log all connection attempts (before middleware)
+    this.io.engine.on('connection', (socket: any) => {
+      logger.info('[Socket.io] Raw connection attempt', {
+        id: socket.id,
+        transport: socket.transport?.name,
+        handshake: {
+          headers: socket.handshake?.headers,
+          auth: socket.handshake?.auth,
+          query: socket.handshake?.query,
+        },
+      });
+    });
+
+    // Socket.io attaches its own request handler to the HTTP server
+    // Express app also attaches a request handler
+    // Socket.io's handler should run first for /socket.io/ paths
+    // We don't need to intercept here - Socket.io handles it automatically
+    // The Express middleware skip in app.ts should be sufficient
 
     this.setupMiddleware();
     this.setupEventHandlers();
 
-    logger.info('Chat WebSocket server initialized');
+    // Log when Socket.io is ready
+    this.io.on('connection', (socket: Socket) => {
+      logger.info('[Socket.io] ✅ New connection established (after middleware)', {
+        socketId: socket.id,
+        transport: socket.conn.transport.name,
+        handshake: {
+          headers: socket.handshake.headers,
+          auth: socket.handshake.auth,
+        },
+      });
+    });
+
+    // Verify Socket.io is properly attached
+    logger.info('✅ Chat WebSocket server initialized and ready', {
+      path: '/socket.io/',
+      transports: ['polling', 'websocket'],
+      httpServerListeners: httpServer.listenerCount('request'),
+    });
   }
 
   /**
@@ -166,25 +239,52 @@ export class ChatSocketServer {
         const auth = socket.handshake.auth as any;
         const authHeader = socket.handshake.headers.authorization;
 
+        logger.info('[Socket.io Auth] Handshake received', {
+          hasAuthObject: !!auth,
+          hasAuthToken: !!auth?.token,
+          hasAuthHeader: !!authHeader,
+          authKeys: auth ? Object.keys(auth) : [],
+          headers: Object.keys(socket.handshake.headers),
+        });
+
         let socketAuth: SocketAuth | null = null;
 
         // Admin authentication (JWT token)
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-          const token = authHeader.substring(7);
+        // Check both Authorization header and auth.token (for compatibility)
+        const token = authHeader?.startsWith('Bearer ') 
+          ? authHeader.substring(7) 
+          : auth?.token;
+
+        logger.info('[Socket.io Auth] Token extraction', {
+          hasToken: !!token,
+          tokenLength: token?.length,
+          fromHeader: !!authHeader?.startsWith('Bearer '),
+          fromAuth: !!auth?.token,
+        });
+
+        if (token) {
           try {
             const decoded = jwt.verify(token, this.config.auth.jwtSecret) as any;
             socketAuth = {
               tenantId: decoded.tenantId,
-              userId: decoded.userId,
+              userId: decoded.userId || decoded.sub,
               type: 'admin',
             };
+            logger.info('[Socket.io Auth] Admin authenticated via JWT', { 
+              tenantId: socketAuth.tenantId, 
+              userId: socketAuth.userId 
+            });
           } catch (error) {
-            logger.warn('Invalid JWT token in WebSocket connection', { error });
-            return next(new Error('Authentication failed'));
+            logger.warn('[Socket.io Auth] Invalid JWT token', { 
+              error: error instanceof Error ? error.message : String(error),
+              tokenPreview: token?.substring(0, 20) + '...',
+            });
+            // Don't return error yet, try widget authentication
           }
         }
-        // Widget authentication (public key)
-        else if (auth.tenantId && auth.publicKey) {
+
+        // Widget authentication (public key) - only if admin auth failed
+        if (!socketAuth && auth?.tenantId && auth?.publicKey) {
           const token = await ChatWidgetTokenService.validateToken(auth.tenantId, auth.publicKey);
           if (!token) {
             logger.warn('Invalid widget token in WebSocket connection', {
@@ -199,7 +299,18 @@ export class ChatSocketServer {
             type: 'visitor',
             publicKey: auth.publicKey,
           };
-        } else {
+          logger.info('Widget visitor authenticated', { 
+            tenantId: socketAuth.tenantId, 
+            visitorId: socketAuth.visitorId 
+          });
+        }
+
+        if (!socketAuth) {
+          logger.warn('WebSocket connection rejected: No valid authentication', {
+            hasAuthHeader: !!authHeader,
+            hasAuthToken: !!auth?.token,
+            hasWidgetAuth: !!(auth?.tenantId && auth?.publicKey),
+          });
           return next(new Error('Authentication required'));
         }
 

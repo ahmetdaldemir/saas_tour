@@ -54,6 +54,16 @@ export class RentacarController {
     res.json(vehiclesWithBrandModel);
   });
 
+  static listPlates = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const tenantId = req.auth?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const plates = await VehicleService.listPlates(tenantId);
+    res.json(plates);
+  });
+
   static searchVehicles = asyncHandler(async (req: Request, res: Response) => {
     const {
       tenantId,

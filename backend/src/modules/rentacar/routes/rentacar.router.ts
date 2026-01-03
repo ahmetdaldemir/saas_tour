@@ -5,6 +5,8 @@ import { authenticate } from '../../auth/middleware/auth.middleware';
 import { authorize } from '../../auth/middleware/authorize.middleware';
 import { Permission } from '../../auth/permissions';
 import { upload } from '../../shared/controllers/file-upload.controller';
+import tripsRouter from './trips.router';
+import { VehicleTrackingController } from '../controllers/vehicle-tracking.controller';
 
 const router = Router();
 
@@ -19,6 +21,8 @@ router.post('/reservations', RentacarController.createReservation);
 
 // Protected endpoints - authentication and authorization required
 router.use(authenticate);
+// List vehicle plates (requires authentication)
+router.get('/plates', RentacarController.listPlates);
 // Get single vehicle (requires authentication)
 router.get('/vehicles/:id', (req, res, next) => RentacarController.getVehicle(req as AuthenticatedRequest, res).catch(next));
 router.post('/vehicles', authorize(Permission.VEHICLE_CREATE), RentacarController.createVehicle);
@@ -38,5 +42,14 @@ router.post('/vehicles/:vehicleId/images', authenticate, authorize(Permission.VE
 router.put('/vehicles/:vehicleId/images/:imageId', authenticate, authorize(Permission.VEHICLE_UPDATE), (req, res, next) => RentacarController.updateVehicleImage(req as AuthenticatedRequest, res).catch(next));
 router.delete('/vehicles/:vehicleId/images/:imageId', authenticate, authorize(Permission.VEHICLE_UPDATE), (req, res, next) => RentacarController.deleteVehicleImage(req as AuthenticatedRequest, res).catch(next));
 router.post('/vehicles/:vehicleId/images/reorder', authenticate, authorize(Permission.VEHICLE_UPDATE), (req, res, next) => RentacarController.reorderVehicleImages(req as AuthenticatedRequest, res).catch(next));
+
+// Trips routes
+router.use('/trips', tripsRouter);
+
+// Vehicle tracking routes
+router.get('/tracking/providers', authenticate, VehicleTrackingController.listProviders);
+router.get('/tracking/:plate', authenticate, authorize(Permission.VEHICLE_VIEW), VehicleTrackingController.getVehicleLocation);
+router.get('/tracking/:plate/info', authenticate, authorize(Permission.VEHICLE_VIEW), VehicleTrackingController.getVehicleTrackingInfo);
+router.post('/tracking/batch', authenticate, authorize(Permission.VEHICLE_VIEW), VehicleTrackingController.getMultipleVehicleLocations);
 
 export default router;

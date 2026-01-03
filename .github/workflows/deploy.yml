@@ -54,11 +54,11 @@ jobs:
       
       - name: Deploy files via RSync
         env:
-          SFTP_HOST: ${{ secrets.SFTP_HOST }}
-          SFTP_USERNAME: ${{ secrets.SFTP_USERNAME }}
-          SFTP_PASSWORD: ${{ secrets.SFTP_PASSWORD }}
-          SFTP_PORT: ${{ secrets.SFTP_PORT || '22' }}
-          SFTP_REMOTE_PATH: ${{ secrets.SFTP_REMOTE_PATH || '/var/www/html/saastour360' }}
+          SFTP_HOST: "185.209.228.189"
+          SFTP_USERNAME: "root"
+          SFTP_PASSWORD: "@198711Ad@"
+          SFTP_PORT: "22"
+          SFTP_REMOTE_PATH: "/var/www/html/saastour360"
         run: |
           if [ -z "$SFTP_HOST" ] || [ -z "$SFTP_USERNAME" ] || [ -z "$SFTP_PASSWORD" ]; then
             echo "❌ Error: SFTP credentials not set in GitHub Secrets"
@@ -96,15 +96,15 @@ jobs:
       - name: Run Deployment Script on Server
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.SFTP_HOST }}
-          username: ${{ secrets.SFTP_USERNAME }}
-          password: ${{ secrets.SFTP_PASSWORD }}
-          port: ${{ secrets.SFTP_PORT || '22' }}
+          host: 185.209.228.189
+          username: root
+          password: @198711Ad@
+          port: 22
           script_stop: true
           script: |
             set -e
             echo "📦 Running deployment script on server..."
-            REMOTE_PATH="${{ secrets.SFTP_REMOTE_PATH || '/var/www/html/saastour360' }}"
+            REMOTE_PATH="/var/www/html/saastour360"
             cd ${REMOTE_PATH} || { echo "❌ Error: Cannot change to directory ${REMOTE_PATH}"; exit 1; }
             chmod +x deploy.sh || true
             ./deploy.sh infra

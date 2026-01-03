@@ -37,10 +37,10 @@ export const createApp = (): Express => {
       
       // Allow all saastour360.com subdomains and local development
       const allowedPatterns = [
-        /^https?:\/\/[a-z0-9-]+\.saastour360\.com$/i,
-        /^https?:\/\/[a-z0-9-]+\.local\.saastour360\.test$/i,
-        /^https?:\/\/(www\.)?bergrentacar\.com$/i, // Tenant custom domain
-        /^https?:\/\/(www\.)?sunsetcarrent\.com$/i, // Tenant custom domain
+        /^https?:\/\/[a-z0-9-]+\.saastour360\.com(:\d+)?$/i,
+        /^https?:\/\/[a-z0-9-]+\.local\.saastour360\.test(:\d+)?$/i,
+        /^https?:\/\/(www\.)?bergrentacar\.com(:\d+)?$/i, // Tenant custom domain
+        /^https?:\/\/(www\.)?sunsetcarrent\.com(:\d+)?$/i, // Tenant custom domain
         'https://api.saastour360.com',
         'http://api.saastour360.com',
         'http://localhost:5001',
@@ -107,7 +107,13 @@ export const createApp = (): Express => {
   app.use(json());
 
   // Request logging middleware (should be early in the chain)
-  app.use(requestLogger);
+  // Skip Socket.io requests (they're logged by Socket.io itself)
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/socket.io/')) {
+      return next(); // Skip request logger for Socket.io
+    }
+    requestLogger(req, res, next);
+  });
 
   // Public klasörünü static olarak serve et (uploads için)
   // Production'da: /app/dist/app.js -> /app/public
@@ -194,8 +200,27 @@ export const createApp = (): Express => {
     }
   });
 
+  // IMPORTANT: Socket.io requests are handled at HTTP server level, before Express
+  // This middleware should NEVER be reached for Socket.io requests
+  // If we reach here, it's a critical error - Socket.io handler failed
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/socket.io/')) {
+      logger.error('[APP] CRITICAL: Socket.io request reached Express (Socket.io handler failed!)', { 
+        path: req.path, 
+        method: req.method,
+        url: req.url,
+      });
+      // Return 503 Service Unavailable - Socket.io service is not working
+      return res.status(503).json({ 
+        error: 'Socket.io service unavailable',
+        message: 'WebSocket server is not responding. Please contact support.',
+      });
+    }
+    next();
+  });
+
   // Tenant resolution middleware (extracts tenant from Host header)
-  // Must be AFTER public routes like /widget.js
+  // Must be AFTER public routes like /widget.js and Socket.io skip
   app.use(tenantMiddleware);
 
   // Register all routes

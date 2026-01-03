@@ -54,20 +54,21 @@ services:
       - "traefik.http.routers.backend-chat-api-https.tls.certresolver=le"
       - "traefik.http.routers.backend-chat-api-https.priority=20"
       # HTTP Router for Socket.io (WebSocket) - ALL subdomains including api.saastour360.com
+      # IMPORTANT: Use same backend service, not a separate backend-ws service
       - "traefik.http.routers.backend-ws-http.rule=(HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) || HostRegexp(`[a-z0-9-]+\\.local\\.saastour360\\.test`) || Host(`api.saastour360.com`)) && PathPrefix(`/socket.io/`)"
       - "traefik.http.routers.backend-ws-http.entrypoints=web"
-      - "traefik.http.routers.backend-ws-http.service=backend-ws"
+      - "traefik.http.routers.backend-ws-http.service=backend"
       - "traefik.http.routers.backend-ws-http.priority=20"
       # HTTPS Router for Socket.io (WebSocket) - ALL subdomains including api.saastour360.com
       - "traefik.http.routers.backend-ws-https.rule=(HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) || Host(`api.saastour360.com`)) && PathPrefix(`/socket.io/`)"
       - "traefik.http.routers.backend-ws-https.entrypoints=websecure"
-      - "traefik.http.routers.backend-ws-https.service=backend-ws"
+      - "traefik.http.routers.backend-ws-https.service=backend"
       - "traefik.http.routers.backend-ws-https.tls=true"
       - "traefik.http.routers.backend-ws-https.tls.certresolver=le"
       - "traefik.http.routers.backend-ws-https.priority=20"
-      # WebSocket service configuration - Traefik automatically handles WebSocket upgrades
-      - "traefik.http.services.backend-ws.loadbalancer.server.port=3000"
-      - "traefik.http.services.backend-ws.loadbalancer.sticky.cookie=true"
+      # WebSocket service configuration - Use same backend service (port 3000)
+      # Traefik automatically handles WebSocket upgrades
+      - "traefik.http.services.backend.loadbalancer.sticky.cookie=true"
       # Important: Allow WebSocket upgrade headers and pass through CORS headers from backend
       - "traefik.http.middlewares.backend-ws-headers.headers.customrequestheaders.Connection=Upgrade"
       - "traefik.http.middlewares.backend-ws-headers.headers.customrequestheaders.Upgrade=websocket"
@@ -90,7 +91,7 @@ services:
       - "traefik.http.routers.backend-uploads-https.tls.certresolver=le"
       - "traefik.http.routers.backend-uploads-https.priority=15"
       # HTTP Router (local + production) - Backend API (including api.saastour360.com)
-      - "traefik.http.routers.backend-http.rule=(HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) || HostRegexp(`[a-z0-9-]+\\.local\\.saastour360\\.test`) || Host(`api.saastour360.com`)) && PathPrefix(`/api`)"
+      - "traefik.http.routers.backend-http.rule=(Host(`saastour360.com`) || Host(`local.saastour360.test`) || HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) || HostRegexp(`[a-z0-9-]+\\.local\\.saastour360\\.test`) || Host(`api.saastour360.com`)) && PathPrefix(`/api`)"
       - "traefik.http.routers.backend-http.entrypoints=web"
       - "traefik.http.routers.backend-http.service=backend"
       - "traefik.http.routers.backend-http.priority=10"
@@ -145,12 +146,13 @@ services:
       - "traefik.enable=true"
       # HTTP Router (local + production) - Frontend (catch-all, lowest priority)
       # This will match requests that don't match backend routes (priority 1 = lowest)
-      - "traefik.http.routers.frontend-http.rule=(HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) || HostRegexp(`[a-z0-9-]+\\.local\\.saastour360\\.test`)) && !Host(`chat.saastour360.com`)"
+      # Include main domain: saastour360.com and local.saastour360.test
+      - "traefik.http.routers.frontend-http.rule=(Host(`saastour360.com`) || Host(`local.saastour360.test`) || HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) || HostRegexp(`[a-z0-9-]+\\.local\\.saastour360\\.test`)) && !Host(`chat.saastour360.com`)"
       - "traefik.http.routers.frontend-http.entrypoints=web"
       - "traefik.http.routers.frontend-http.service=frontend"
       - "traefik.http.routers.frontend-http.priority=1"
       # HTTPS Router (production only) - Frontend (catch-all, lowest priority)
-      - "traefik.http.routers.frontend-https.rule=HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`) && !Host(`chat.saastour360.com`)"
+      - "traefik.http.routers.frontend-https.rule=(Host(`saastour360.com`) || HostRegexp(`[a-z0-9-]+\\.saastour360\\.com`)) && !Host(`chat.saastour360.com`)"
       - "traefik.http.routers.frontend-https.entrypoints=websecure"
       - "traefik.http.routers.frontend-https.service=frontend"
       - "traefik.http.routers.frontend-https.tls=true"

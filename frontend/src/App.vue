@@ -39,21 +39,52 @@
       </v-footer>
     </template>
     <v-layout v-else>
-      <v-navigation-drawer v-model="drawer" app color="surface" class="pa-4">
-        <div class="drawer-header mb-6">
+      <v-navigation-drawer v-model="drawer" app color="surface" class="pa-3" width="280">
+        <div class="drawer-header mb-6 px-2">
           <h2 class="text-h6 font-weight-bold mb-1">{{ tenantName }}</h2>
-          <p class="text-caption text-medium-emphasis">Yönetim Modülleri</p>
+          <p class="text-body-2 text-medium-emphasis">Yönetim Modülleri</p>
         </div>
-        <v-list nav density="comfortable">
-          <v-list-item
-            v-for="item in navigationItems"
-            :key="item.to"
-            :to="item.to"
-            :prepend-icon="item.icon"
-            :title="item.title"
-            :active="route.path === item.to"
-            rounded="lg"
-          />
+        <v-list nav density="comfortable" class="px-2">
+          <template v-for="item in navigationItems" :key="item.to || item.title">
+            <!-- Regular menu item -->
+            <v-list-item
+              v-if="!item.children"
+              :to="item.to"
+              :prepend-icon="item.icon"
+              :title="item.title"
+              :active="route.path === item.to"
+              rounded="lg"
+              class="mb-1 menu-item"
+              :class="{ 'menu-item-active': route.path === item.to }"
+            />
+            <!-- Group menu item with children -->
+            <v-list-group
+              v-else
+              :value="isGroupActive(item) ? item.value : undefined"
+              :prepend-icon="item.icon"
+              class="mb-1"
+            >
+              <template #activator="{ props }">
+                <v-list-item
+                  v-bind="props"
+                  :title="item.title"
+                  rounded="lg"
+                  class="menu-group-header"
+                />
+              </template>
+              <v-list-item
+                v-for="child in item.children"
+                :key="child.to"
+                :to="child.to"
+                :prepend-icon="child.icon"
+                :title="child.title"
+                :active="route.path === child.to"
+                rounded="lg"
+                class="ml-6 mb-1 menu-item-child"
+                :class="{ 'menu-item-active': route.path === child.to }"
+              />
+            </v-list-group>
+          </template>
         </v-list>
       </v-navigation-drawer>
 
@@ -61,8 +92,12 @@
         <v-app-bar-nav-icon @click="drawer = !drawer" />
         <v-toolbar-title>{{ tenantName }}</v-toolbar-title>
         <v-spacer />
-        <div class="d-flex align-center gap-4 pr-4" v-if="auth.user">
-          <div class="text-right mr-4">
+        <div class="d-flex align-center gap-4 pr-4" v-if="adminAuth.user || auth.user">
+          <div class="text-right mr-4" v-if="adminAuth.user">
+            <div class="font-weight-medium">{{ adminAuth.user.name || adminAuth.user.username }}</div>
+            <small class="text-medium-emphasis">Admin</small>
+          </div>
+          <div class="text-right mr-4" v-else-if="auth.user">
             <div class="font-weight-medium">{{ auth.user.name }}</div>
             <small class="text-medium-emphasis">{{ auth.user.email }}</small>
           </div>
@@ -83,8 +118,10 @@
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth';
+import { useAdminAuthStore } from './stores/admin-auth';
 
 const auth = useAuthStore();
+const adminAuth = useAdminAuthStore();
 const router = useRouter();
 const route = useRoute();
 const drawer = ref(true);
@@ -121,59 +158,124 @@ function isSubdomain(): boolean {
 }
 
 const layout = computed(() => {
-  // Ana domain'de her zaman public layout
+  // Ana domain'de her zaman public layout (admin route'ları hariç)
   if (!isSubdomain()) {
+    if (route.meta.requiresAdminAuth) {
+      return 'admin';
+    }
     return 'public';
   }
   // Subdomain'de route meta'dan layout al
   return (route.meta.layout as string) ?? (route.meta.requiresAuth ? 'admin' : 'public');
 });
-const tenantName = computed(() => auth.tenant?.name ?? 'SaaS Yönetim Paneli');
+const tenantName = computed(() => {
+  if (adminAuth.isAuthenticated) {
+    return 'Admin Panel';
+  }
+  return auth.tenant?.name ?? 'SaaS Yönetim Paneli';
+});
 
 const navigationItems = computed(() => {
-  const items = [
+  // Admin kullanıcıları için sadece admin dashboard
+  if (adminAuth.isAuthenticated) {
+    return [
+      { title: 'Admin Dashboard', to: '/adminDashboard', icon: 'mdi-monitor-dashboard' },
+    ];
+  }
+
+  const items: Array<{
+    title: string;
+    to?: string;
+    icon: string;
+    children?: Array<{ title: string; to: string; icon: string }>;
+    value?: string;
+  }> = [
+    // Genel
     { title: 'Genel Bakış', to: '/app/dashboard', icon: 'mdi-view-dashboard-outline' },
-    { title: 'Diller', to: '/app/languages', icon: 'mdi-translate' },
-    { title: 'Ülkeler', to: '/app/countries', icon: 'mdi-earth' },
-    { title: 'Destinasyonlar', to: '/app/destinations', icon: 'mdi-map-marker-radius' },
-    { title: 'Oteller', to: '/app/hotels', icon: 'mdi-bed' },
-    { title: 'Blog', to: '/app/blogs', icon: 'mdi-file-document-outline' },
+    
+    // İçerik Yönetimi
+    {
+      title: 'İçerik Yönetimi',
+      icon: 'mdi-file-document-multiple-outline',
+      value: 'content',
+      children: [
+        { title: 'Diller', to: '/app/languages', icon: 'mdi-translate' },
+        { title: 'Ülkeler', to: '/app/countries', icon: 'mdi-earth' },
+        { title: 'Destinasyonlar', to: '/app/destinations', icon: 'mdi-map-marker-radius' },
+        { title: 'Oteller', to: '/app/hotels', icon: 'mdi-bed' },
+        { title: 'Blog', to: '/app/blogs', icon: 'mdi-file-document-outline' },
+      ],
+    },
   ];
 
+  // Tour kategorisi için
   if (auth.tenant?.category === 'tour') {
     items.push({ title: 'Turlar', to: '/app/tours', icon: 'mdi-airballoon' });
   }
 
+  // Rent A Car kategorisi için
   if (auth.tenant?.category === 'rentacar') {
-    items.push({ title: 'Rent A Car', to: '/app/rentacar', icon: 'mdi-car-sports' });
-    items.push({ title: 'Müşteriler', to: '/app/customers', icon: 'mdi-account-multiple' });
-    items.push({ title: 'CRM', to: '/app/crm', icon: 'mdi-account-group' });
-    items.push({ title: 'Rezervasyonlar', to: '/app/reservations', icon: 'mdi-calendar-check' });
+    items.push({
+      title: 'Rent A Car',
+      icon: 'mdi-car-sports',
+      value: 'rentacar',
+      children: [
+        { title: 'Araçlar', to: '/app/rentacar', icon: 'mdi-car-sports' },
+        { title: 'Rezervasyonlar', to: '/app/reservations', icon: 'mdi-calendar-check' },
+        { title: 'Seyahatler', to: '/app/trips', icon: 'mdi-map-marker-path' },
+        { title: 'VIP Transfer', to: '/app/transfer', icon: 'mdi-car-limousine' },
+      ],
+    });
+
+    items.push({
+      title: 'CRM',
+      icon: 'mdi-account-group',
+      value: 'crm',
+      children: [
+        { title: 'Müşteriler', to: '/app/customers', icon: 'mdi-account-multiple' },
+        { title: 'Sayfalar', to: '/app/crm/pages', icon: 'mdi-file-document-edit' },
+        { title: 'Diğer', to: '/app/crm', icon: 'mdi-cog' },
+      ],
+    });
+
     items.push({ title: 'Ön Muhasebe', to: '/app/finance', icon: 'mdi-cash-multiple' });
   }
 
-  // VIP Transfer modülü (rentacar kullanıcıları için)
-  if (auth.tenant?.category === 'rentacar') {
-    items.push({ title: 'VIP Transfer', to: '/app/transfer', icon: 'mdi-car-limousine' });
-  }
-
-  // Chat / Agency menüsü (tüm tenant'lar için)
+  // İletişim
   items.push({ title: 'Chat / Agency', to: '/app/chat', icon: 'mdi-chat-outline' });
 
-  // Ortak menü öğeleri
-  items.push({ title: 'Master Lokasyonlar', to: '/app/master-locations', icon: 'mdi-map-marker-multiple' });
-  items.push({ title: 'Kullanıcılar', to: '/app/users', icon: 'mdi-account-group-outline' });
-  items.push({ title: 'Anketler', to: '/app/surveys', icon: 'mdi-clipboard-text-outline' });
-  items.push({ title: 'Mail Şablonları', to: '/app/email-templates', icon: 'mdi-email-multiple-outline' });
-  items.push({ title: 'Ayarlar', to: '/app/settings', icon: 'mdi-cog-outline' });
-  items.push({ title: 'Admin Dashboard', to: '/app/admin', icon: 'mdi-monitor-dashboard' });
+  // Sistem
+  items.push({
+    title: 'Sistem',
+    icon: 'mdi-cog-outline',
+    value: 'system',
+    children: [
+      { title: 'Master Lokasyonlar', to: '/app/master-locations', icon: 'mdi-map-marker-multiple' },
+      { title: 'Kullanıcılar', to: '/app/users', icon: 'mdi-account-group-outline' },
+      { title: 'Anketler', to: '/app/surveys', icon: 'mdi-clipboard-text-outline' },
+      { title: 'Mail Şablonları', to: '/app/email-templates', icon: 'mdi-email-multiple-outline' },
+      { title: 'Ayarlar', to: '/app/settings', icon: 'mdi-cog-outline' },
+      { title: 'Admin Dashboard', to: '/app/admin', icon: 'mdi-monitor-dashboard' },
+    ],
+  });
 
   return items;
 });
 
 const handleLogout = () => {
-  auth.logout();
-  router.replace({ name: 'login' });
+  if (adminAuth.isAuthenticated) {
+    adminAuth.logout();
+    router.replace({ name: 'adminLogin' });
+  } else {
+    auth.logout();
+    router.replace({ name: 'login' });
+  }
+};
+
+// Check if a menu group should be active (expanded) based on current route
+const isGroupActive = (item: { value?: string; children?: Array<{ to: string }> }): boolean => {
+  if (!item.children || !item.value) return false;
+  return item.children.some(child => route.path === child.to || route.path.startsWith(child.to + '/'));
 };
 
 watch(
@@ -191,6 +293,61 @@ watch(
 .drawer-header {
   display: flex;
   flex-direction: column;
+}
+
+/* Menu item styling for better readability */
+.menu-item,
+.menu-group-header {
+  font-size: 0.95rem !important;
+  font-weight: 500 !important;
+  min-height: 44px !important;
+  padding: 8px 12px !important;
+}
+
+.menu-item-child {
+  font-size: 0.9rem !important;
+  font-weight: 400 !important;
+  min-height: 40px !important;
+  padding: 6px 12px !important;
+}
+
+.menu-item-active {
+  background-color: rgba(var(--v-theme-primary), 0.1) !important;
+  color: rgb(var(--v-theme-primary)) !important;
+  font-weight: 600 !important;
+}
+
+/* Group header styling */
+.menu-group-header {
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+}
+
+/* Icon spacing */
+:deep(.v-list-item__prepend) {
+  margin-inline-end: 12px !important;
+}
+
+/* Better spacing for child items */
+.menu-item-child :deep(.v-list-item__prepend) {
+  margin-inline-end: 10px !important;
+}
+
+/* List group styling */
+:deep(.v-list-group__header) {
+  font-weight: 600 !important;
+}
+
+/* Active state for list items */
+:deep(.v-list-item--active) {
+  background-color: rgba(var(--v-theme-primary), 0.12) !important;
+  color: rgb(var(--v-theme-primary)) !important;
+}
+
+/* Hover effects */
+.menu-item:hover,
+.menu-item-child:hover {
+  background-color: rgba(var(--v-theme-primary), 0.05) !important;
 }
 
 </style>

@@ -15,6 +15,7 @@ router.get('/site', TenantSettingsController.getSite);
 router.get('/mail', TenantSettingsController.getMail);
 router.get('/payment', TenantSettingsController.getPayment);
 router.get('/ai', TenantSettingsController.getAi);
+router.get('/features', TenantSettingsController.getFeatures);
 
 // Protected PUT endpoints - authentication and authorization required
 router.use(authenticate);

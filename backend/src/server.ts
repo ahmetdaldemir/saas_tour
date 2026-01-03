@@ -7,6 +7,8 @@ import { startFinanceReminderScheduler } from './services/finance-reminder-sched
 import { ChatSocketServer } from './modules/chat/websocket/chat-socket.server';
 import { logger } from './utils/logger';
 import { getRedisClient } from './config/redis.config';
+// Initialize vehicle tracking providers
+import './modules/rentacar/services/vehicle-tracking.service';
 
 const start = async () => {
   const config = loadEnv();
@@ -38,11 +40,31 @@ const start = async () => {
   const app = createApp();
   const port = config.app.port;
 
-  // Create HTTP server for WebSocket support
-  const httpServer = createServer(app);
+  // Create HTTP server WITHOUT Express app first
+  // We'll attach Express app after Socket.io to ensure Socket.io handles its paths first
+  const httpServer = createServer();
 
-  // Initialize WebSocket server for chat
-  new ChatSocketServer(httpServer);
+  // Initialize WebSocket server for chat FIRST (before Express)
+  // Socket.io attaches its own request handler to the HTTP server
+  // IMPORTANT: Socket.io's handler MUST run BEFORE Express app's handler
+  const chatSocketServer = new ChatSocketServer(httpServer);
+  
+  // Now attach Express app - Socket.io will handle /socket.io/ paths before Express sees them
+  httpServer.on('request', (req, res) => {
+    // If it's a Socket.io request, let Socket.io handle it (should already be handled)
+    if (req.url?.startsWith('/socket.io/')) {
+      // Socket.io should have already handled this, but if not, don't pass to Express
+      logger.warn('[SERVER] Socket.io request reached Express handler (unexpected)', {
+        method: req.method,
+        url: req.url,
+      });
+      return;
+    }
+    // Pass all other requests to Express app
+    app(req, res);
+  });
+  
+  logger.info('HTTP server and Socket.io initialized (Socket.io before Express)');
 
   // Currency scheduler'ı başlat (production'da)
   if (config.nodeEnv === 'production') {
