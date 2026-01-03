@@ -98,7 +98,7 @@ jobs:
         with:
           host: 185.209.228.189
           username: root
-          password: @198711Ad@
+          password: "@198711Ad@"
           port: 22
           script_stop: true
           script: |
