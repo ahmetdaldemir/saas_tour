@@ -115,13 +115,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import { useAdminAuthStore } from './stores/admin-auth';
 
 const auth = useAuthStore();
 const adminAuth = useAdminAuthStore();
+const features = useFeaturesStore();
 const router = useRouter();
 const route = useRoute();
 const drawer = ref(true);
@@ -215,17 +216,23 @@ const navigationItems = computed(() => {
 
   // Rent A Car kategorisi için
   if (auth.tenant?.category === 'rentacar') {
-    items.push({
-      title: 'Rent A Car',
-      icon: 'mdi-car-sports',
-      value: 'rentacar',
-      children: [
+      const rentacarChildren = [
         { title: 'Araçlar', to: '/app/rentacar', icon: 'mdi-car-sports' },
         { title: 'Rezervasyonlar', to: '/app/reservations', icon: 'mdi-calendar-check' },
-        { title: 'Seyahatler', to: '/app/trips', icon: 'mdi-map-marker-path' },
         { title: 'VIP Transfer', to: '/app/transfer', icon: 'mdi-car-limousine' },
-      ],
-    });
+      ];
+      
+      // Add trips only if vehicle tracking feature is enabled
+      if (features.hasFeature('vehicleTracking')) {
+        rentacarChildren.splice(2, 0, { title: 'Seyahatler', to: '/app/trips', icon: 'mdi-map-marker-path' });
+      }
+      
+      items.push({
+        title: 'Rent A Car',
+        icon: 'mdi-car-sports',
+        value: 'rentacar',
+        children: rentacarChildren,
+      });
 
     items.push({
       title: 'CRM',
@@ -238,11 +245,20 @@ const navigationItems = computed(() => {
       ],
     });
 
-    items.push({ title: 'Ön Muhasebe', to: '/app/finance', icon: 'mdi-cash-multiple' });
+    // Feature-based menu items
+    if (features.hasFeature('finance')) {
+      items.push({ title: 'Ön Muhasebe', to: '/app/finance', icon: 'mdi-cash-multiple' });
+    }
+    
+    if (features.hasFeature('vehicleTracking')) {
+      items.push({ title: 'Araç Takip Sistemi', to: '/app/trips', icon: 'mdi-map-marker-path' });
+    }
   }
 
-  // İletişim
-  items.push({ title: 'Chat / Agency', to: '/app/chat', icon: 'mdi-chat-outline' });
+  // İletişim - Feature check
+  if (features.hasFeature('chat')) {
+    items.push({ title: 'Chat / Agency', to: '/app/chat', icon: 'mdi-chat-outline' });
+  }
 
   // Sistem
   items.push({
@@ -255,7 +271,6 @@ const navigationItems = computed(() => {
       { title: 'Anketler', to: '/app/surveys', icon: 'mdi-clipboard-text-outline' },
       { title: 'Mail Şablonları', to: '/app/email-templates', icon: 'mdi-email-multiple-outline' },
       { title: 'Ayarlar', to: '/app/settings', icon: 'mdi-cog-outline' },
-      { title: 'Admin Dashboard', to: '/app/admin', icon: 'mdi-monitor-dashboard' },
     ],
   });
 
@@ -271,6 +286,19 @@ const handleLogout = () => {
     router.replace({ name: 'login' });
   }
 };
+
+// Initialize features when authenticated
+watch(() => auth.isAuthenticated, async (isAuth) => {
+  if (isAuth && !features.initialized) {
+    await features.initialize();
+  }
+}, { immediate: true });
+
+onMounted(async () => {
+  if (auth.isAuthenticated && !features.initialized) {
+    await features.initialize();
+  }
+});
 
 // Check if a menu group should be active (expanded) based on current route
 const isGroupActive = (item: { value?: string; children?: Array<{ to: string }> }): boolean => {

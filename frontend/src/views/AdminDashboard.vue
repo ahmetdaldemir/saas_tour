@@ -36,6 +36,10 @@
               <v-icon start icon="mdi-email-send" />
               Email Test
             </v-tab>
+            <v-tab value="advertisement">
+              <v-icon start icon="mdi-bullhorn" />
+              Reklam Alanı
+            </v-tab>
           </v-tabs>
 
           <v-window v-model="activeTab">

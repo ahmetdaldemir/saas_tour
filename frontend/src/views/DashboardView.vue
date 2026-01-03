@@ -533,6 +533,74 @@
         </v-card>
       </v-col>
     </v-row>
+
+    <!-- Reklam Alanı - Premium Özellikler -->
+    <v-row class="mt-4">
+      <v-col cols="12">
+        <v-card elevation="2" rounded="lg" color="primary" variant="tonal">
+          <v-card-title class="d-flex align-center pa-3">
+            <v-icon icon="mdi-star" color="primary" class="mr-2" />
+            <span class="text-subtitle-1 font-weight-bold">Premium Özellikler</span>
+            <v-spacer />
+            <v-chip color="primary" size="small" variant="flat">Ücretli Özellikler</v-chip>
+          </v-card-title>
+          <v-divider />
+          <v-card-text class="pa-4">
+            <v-row>
+              <v-col cols="12" sm="6" md="3">
+                <v-card variant="outlined" class="h-100 text-center pa-3">
+                  <v-icon icon="mdi-cash-multiple" size="40" color="success" class="mb-2" />
+                  <div class="text-subtitle-2 font-weight-bold mb-1">Ön Muhasebe</div>
+                  <div class="text-caption text-medium-emphasis mb-2">
+                    Finansal işlemlerinizi yönetin
+                  </div>
+                  <v-chip color="success" size="x-small" variant="flat">Ücretli</v-chip>
+                </v-card>
+              </v-col>
+              <v-col cols="12" sm="6" md="3">
+                <v-card variant="outlined" class="h-100 text-center pa-3">
+                  <v-icon icon="mdi-car" size="40" color="info" class="mb-2" />
+                  <div class="text-subtitle-2 font-weight-bold mb-1">Araç Takip</div>
+                  <div class="text-caption text-medium-emphasis mb-2">
+                    Araçlarınızı gerçek zamanlı takip edin
+                  </div>
+                  <v-chip color="info" size="x-small" variant="flat">Ücretli</v-chip>
+                </v-card>
+              </v-col>
+              <v-col cols="12" sm="6" md="3">
+                <v-card variant="outlined" class="h-100 text-center pa-3">
+                  <v-icon icon="mdi-message-text" size="40" color="purple" class="mb-2" />
+                  <div class="text-subtitle-2 font-weight-bold mb-1">Chat Sistemi</div>
+                  <div class="text-caption text-medium-emphasis mb-2">
+                    Müşterilerinizle anlık iletişim
+                  </div>
+                  <v-chip color="purple" size="x-small" variant="flat">Ücretli</v-chip>
+                </v-card>
+              </v-col>
+              <v-col cols="12" sm="6" md="3">
+                <v-card variant="outlined" class="h-100 text-center pa-3">
+                  <v-icon icon="mdi-robot" size="40" color="orange" class="mb-2" />
+                  <div class="text-subtitle-2 font-weight-bold mb-1">Yapay Zeka</div>
+                  <div class="text-caption text-medium-emphasis mb-2">
+                    AI ile içerik üretimi
+                  </div>
+                  <v-chip color="orange" size="x-small" variant="flat">Ücretli</v-chip>
+                </v-card>
+              </v-col>
+            </v-row>
+            <v-alert type="info" variant="tonal" class="mt-4" density="compact">
+              <div class="d-flex align-center">
+                <v-icon icon="mdi-information" class="mr-2" />
+                <div>
+                  <strong>Bu özellikleri kullanmak için yetki alın.</strong>
+                  <div class="text-caption mt-1">Detaylı bilgi için destek ekibimizle iletişime geçin.</div>
+                </div>
+              </div>
+            </v-alert>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
   </v-container>
 </template>
 

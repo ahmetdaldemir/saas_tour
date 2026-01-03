@@ -222,13 +222,13 @@ const routes: RouteRecordRaw[] = [
     path: '/app/finance',
     name: 'finance',
     component: FinanceView,
-    meta: { requiresAuth: true, layout: 'admin' },
+    meta: { requiresAuth: true, layout: 'admin', requiresFeature: 'finance' },
   },
   {
     path: '/app/trips',
     name: 'trips',
     component: TripsView,
-    meta: { requiresAuth: true, layout: 'admin' },
+    meta: { requiresAuth: true, layout: 'admin', requiresFeature: 'vehicleTracking' },
   },
   {
     path: '/app/surveys',
@@ -258,7 +258,7 @@ const routes: RouteRecordRaw[] = [
     path: '/app/chat',
     name: 'chat',
     component: ChatView,
-    meta: { requiresAuth: true, layout: 'admin' },
+    meta: { requiresAuth: true, layout: 'admin', requiresFeature: 'chat' },
   },
   {
     path: '/app/admin',
@@ -333,6 +333,28 @@ export const setupRouterGuards = (pinia: Pinia) => {
     // Auth gerektiren route'lar için kontrol
     if (to.meta.requiresAuth === true && !auth.isAuthenticated) {
       return next({ name: 'login', query: { redirect: to.fullPath } });
+    }
+
+    // Feature-based authorization check
+    if (to.meta.requiresAuth === true && auth.isAuthenticated) {
+      const { useFeaturesStore } = await import('../stores/features');
+      const featuresStore = useFeaturesStore();
+      await featuresStore.initialize();
+      
+      // Check feature requirements
+      if (to.meta.requiresFeature) {
+        const requiredFeature = to.meta.requiresFeature as 'finance' | 'vehicleTracking' | 'chat' | 'ai';
+        if (!featuresStore.hasFeature(requiredFeature)) {
+          // User doesn't have required feature, redirect to dashboard with message
+          return next({ 
+            name: 'dashboard',
+            query: { 
+              error: 'feature_not_enabled',
+              feature: requiredFeature 
+            } 
+          });
+        }
+      }
     }
 
     // Role-based authorization check

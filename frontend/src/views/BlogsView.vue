@@ -140,7 +140,7 @@
                       prepend-inner-icon="mdi-format-title"
                       required
                     >
-                      <template v-if="lang.code === 'tr' && blogForm.translations[lang.id].title" #append-inner>
+                      <template v-if="lang.code === 'tr' && blogForm.translations[lang.id].title && hasAiFeature" #append-inner>
                         <v-btn
                           icon="mdi-auto-fix"
                           size="small"
@@ -150,6 +150,20 @@
                           @click="generateContent"
                           title="AI ile İçerik Oluştur"
                         />
+                      </template>
+                      <template v-else-if="lang.code === 'tr' && blogForm.translations[lang.id].title && !hasAiFeature" #append-inner>
+                        <v-tooltip text="AI özelliği aktif değil. Yetki almak için destek ekibimizle iletişime geçin.">
+                          <template #activator="{ props }">
+                            <v-btn
+                              icon="mdi-auto-fix"
+                              size="small"
+                              variant="text"
+                              color="grey"
+                              disabled
+                              v-bind="props"
+                            />
+                          </template>
+                        </v-tooltip>
                       </template>
                     </v-text-field>
                   </v-col>
@@ -237,6 +251,7 @@
 import { computed, reactive, ref, onMounted, watch } from 'vue';
 import { http } from '../modules/http';
 import { useAuthStore } from '../stores/auth';
+import { useFeaturesStore } from '../stores/features';
 import { translateText } from '../services/deepl';
 
 // Interfaces
@@ -281,6 +296,8 @@ interface BlogDto {
 }
 
 const auth = useAuthStore();
+const features = useFeaturesStore();
+const hasAiFeature = computed(() => features.hasFeature('ai'));
 
 // Data
 const blogs = ref<BlogDto[]>([]);
