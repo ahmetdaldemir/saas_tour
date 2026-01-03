@@ -297,7 +297,7 @@ interface BlogDto {
 
 const auth = useAuthStore();
 const features = useFeaturesStore();
-const hasAiFeature = computed(() => features.hasFeature('ai'));
+const hasAiFeature = computed(() => features.initialized && features.hasFeature('ai'));
 
 // Data
 const blogs = ref<BlogDto[]>([]);

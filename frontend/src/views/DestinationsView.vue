@@ -253,7 +253,7 @@ const generatingContent = ref(false);
 
 const auth = useAuthStore();
 const features = useFeaturesStore();
-const hasAiFeature = computed(() => features.hasFeature('ai'));
+const hasAiFeature = computed(() => features.initialized && features.hasFeature('ai'));
 
 const dialogTitle = computed(() => (editingId.value ? 'Destinasyonu duzenle' : 'Yeni destinasyon'));
 
