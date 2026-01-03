@@ -180,12 +180,24 @@ Sadece JSON döndür, başka açıklama yapma.`;
    * Step 1: Generate Turkish content using AI
    * Step 2: Translate to all other active languages
    */
-  static async generateDestinationContent(input: DestinationContentInput): Promise<GeneratedContentResponse> {
+  static async generateDestinationContent(
+    input: DestinationContentInput,
+    tenantId?: string
+  ): Promise<GeneratedContentResponse> {
     try {
       const { title } = input;
 
       if (!title || !title.trim()) {
         throw new Error('Title is required');
+      }
+
+      // Check AI feature if tenantId is provided
+      if (tenantId) {
+        const { TenantFeaturesService } = await import('./tenant-features.service');
+        const hasAiFeature = await TenantFeaturesService.hasFeature(tenantId, 'ai');
+        if (!hasAiFeature) {
+          throw new Error('AI feature is not enabled for this tenant. Please contact your administrator.');
+        }
       }
 
       // Step 1: Generate Turkish content using AI
@@ -356,12 +368,24 @@ Sadece JSON döndür, başka açıklama yapma.`;
    * Step 1: Generate Turkish content using AI
    * Step 2: Translate to all other active languages
    */
-  static async generateBlogContent(input: BlogContentInput): Promise<GeneratedBlogContentResponse> {
+  static async generateBlogContent(
+    input: BlogContentInput,
+    tenantId?: string
+  ): Promise<GeneratedBlogContentResponse> {
     try {
       const { title } = input;
 
       if (!title || !title.trim()) {
         throw new Error('Title is required');
+      }
+
+      // Check AI feature if tenantId is provided
+      if (tenantId) {
+        const { TenantFeaturesService } = await import('./tenant-features.service');
+        const hasAiFeature = await TenantFeaturesService.hasFeature(tenantId, 'ai');
+        if (!hasAiFeature) {
+          throw new Error('AI feature is not enabled for this tenant. Please contact your administrator.');
+        }
       }
 
       // Step 1: Generate Turkish content using AI

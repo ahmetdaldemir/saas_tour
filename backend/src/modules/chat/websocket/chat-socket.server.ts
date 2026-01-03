@@ -38,18 +38,20 @@ export class ChatSocketServer {
   constructor(httpServer: HttpServer) {
     this.config = loadEnv();
     
-    // Allow all saastour360.com subdomains and tenant custom domains
-    const allowedPatterns = [
-      /^https?:\/\/[a-z0-9-]+\.saastour360\.com(:\d+)?$/i,
-      /^https?:\/\/[a-z0-9-]+\.local\.saastour360\.test(:\d+)?$/i,
-      /^https?:\/\/(www\.)?bergrentacar\.com(:\d+)?$/i, // Tenant custom domain
-      /^https?:\/\/(www\.)?sunsetcarrent\.com(:\d+)?$/i, // Tenant custom domain
-      'https://api.saastour360.com',
-      'http://api.saastour360.com',
-      'http://localhost:5001',
-      'http://localhost:4001',
-      'http://localhost:3000',
-    ];
+            // Allow all saastour360.com subdomains, main domain, and tenant custom domains
+            const allowedPatterns = [
+              /^https?:\/\/[a-z0-9-]+\.saastour360\.com(:\d+)?$/i, // Subdomains (berg.saastour360.com)
+              /^https?:\/\/(www\.)?saastour360\.com(:\d+)?$/i, // Main domain (saastour360.com, www.saastour360.com)
+              /^https?:\/\/[a-z0-9-]+\.local\.saastour360\.test(:\d+)?$/i, // Local subdomains
+              /^https?:\/\/(www\.)?local\.saastour360\.test(:\d+)?$/i, // Local main domain
+              /^https?:\/\/(www\.)?bergrentacar\.com(:\d+)?$/i, // Tenant custom domain
+              /^https?:\/\/(www\.)?sunsetcarrent\.com(:\d+)?$/i, // Tenant custom domain
+              'https://api.saastour360.com',
+              'http://api.saastour360.com',
+              'http://localhost:5001',
+              'http://localhost:4001',
+              'http://localhost:3000',
+            ];
     
     // Known tenant custom domains
     const knownTenantDomains = [

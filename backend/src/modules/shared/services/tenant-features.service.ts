@@ -5,6 +5,7 @@ export type TenantFeatures = {
   finance?: boolean;
   vehicleTracking?: boolean;
   chat?: boolean;
+  ai?: boolean;
 };
 
 export class TenantFeaturesService {
@@ -19,6 +20,7 @@ export class TenantFeaturesService {
       finance: features.finance ?? false,
       vehicleTracking: features.vehicleTracking ?? false,
       chat: features.chat ?? false,
+      ai: features.ai ?? false,
     };
   }
 

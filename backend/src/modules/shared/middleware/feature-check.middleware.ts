@@ -6,7 +6,7 @@ import { ForbiddenError } from '../../../utils/errors';
 /**
  * Middleware to check if tenant has a specific feature enabled
  */
-export function requireFeature(feature: 'finance' | 'vehicleTracking' | 'chat') {
+export function requireFeature(feature: 'finance' | 'vehicleTracking' | 'chat' | 'ai') {
   return async (req: TenantRequest, res: Response, next: NextFunction) => {
     try {
       if (!req.tenant) {

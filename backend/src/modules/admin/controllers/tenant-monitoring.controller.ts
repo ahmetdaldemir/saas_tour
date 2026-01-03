@@ -3,6 +3,7 @@ import { AppDataSource } from '../../../config/data-source';
 import { Tenant } from '../../tenants/entities/tenant.entity';
 import { Reservation } from '../../shared/entities/reservation.entity';
 import { Customer } from '../../shared/entities/customer.entity';
+import { TenantFeaturesService } from '../../shared/services/tenant-features.service';
 import { asyncHandler } from '../../../utils/errors';
 
 export class TenantMonitoringController {
@@ -34,6 +35,9 @@ export class TenantMonitoringController {
           relations: ['tour', 'tourSession'],
         });
 
+        // Get tenant features
+        const features = await TenantFeaturesService.getFeatures(tenant.id);
+
         return {
           id: tenant.id,
           name: tenant.name,
@@ -44,6 +48,7 @@ export class TenantMonitoringController {
           supportEmail: tenant.supportEmail,
           createdAt: tenant.createdAt,
           updatedAt: tenant.updatedAt,
+          features, // Include features in response
           stats: {
             reservations: reservationCount,
             customers: customerCount,
@@ -150,6 +155,54 @@ export class TenantMonitoringController {
       activities,
       total: activities.length,
     });
+  });
+
+  /**
+   * Update tenant features (Admin only)
+   */
+  static updateTenantFeatures = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { features } = req.body;
+
+    if (!features || typeof features !== 'object') {
+      return res.status(400).json({ message: 'Features object is required' });
+    }
+
+    // Validate tenant exists
+    const tenantRepo = AppDataSource.getRepository(Tenant);
+    const tenant = await tenantRepo.findOne({ where: { id } });
+    if (!tenant) {
+      return res.status(404).json({ message: 'Tenant not found' });
+    }
+
+    // Update features
+    await TenantFeaturesService.updateFeatures(id, features);
+
+    // Get updated features
+    const updatedFeatures = await TenantFeaturesService.getFeatures(id);
+
+    res.json({
+      success: true,
+      message: 'Tenant features updated successfully',
+      features: updatedFeatures,
+    });
+  });
+
+  /**
+   * Get tenant features (Admin only)
+   */
+  static getTenantFeatures = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+
+    // Validate tenant exists
+    const tenantRepo = AppDataSource.getRepository(Tenant);
+    const tenant = await tenantRepo.findOne({ where: { id } });
+    if (!tenant) {
+      return res.status(404).json({ message: 'Tenant not found' });
+    }
+
+    const features = await TenantFeaturesService.getFeatures(id);
+    res.json(features);
   });
 }
 
