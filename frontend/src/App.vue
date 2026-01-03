@@ -119,6 +119,7 @@ import { computed, ref, watch, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import { useAdminAuthStore } from './stores/admin-auth';
+import { useFeaturesStore } from './stores/features';
 
 const auth = useAuthStore();
 const adminAuth = useAdminAuthStore();
@@ -223,7 +224,8 @@ const navigationItems = computed(() => {
       ];
       
       // Add trips only if vehicle tracking feature is enabled
-      if (features.hasFeature('vehicleTracking')) {
+      // Check if features is initialized to avoid errors
+      if (features.initialized && features.hasFeature('vehicleTracking')) {
         rentacarChildren.splice(2, 0, { title: 'Seyahatler', to: '/app/trips', icon: 'mdi-map-marker-path' });
       }
       
@@ -246,17 +248,15 @@ const navigationItems = computed(() => {
     });
 
     // Feature-based menu items
-    if (features.hasFeature('finance')) {
+    // Check if features is initialized to avoid errors
+    if (features.initialized && features.hasFeature('finance')) {
       items.push({ title: 'Ön Muhasebe', to: '/app/finance', icon: 'mdi-cash-multiple' });
-    }
-    
-    if (features.hasFeature('vehicleTracking')) {
-      items.push({ title: 'Araç Takip Sistemi', to: '/app/trips', icon: 'mdi-map-marker-path' });
     }
   }
 
   // İletişim - Feature check
-  if (features.hasFeature('chat')) {
+  // Check if features is initialized to avoid errors
+  if (features.initialized && features.hasFeature('chat')) {
     items.push({ title: 'Chat / Agency', to: '/app/chat', icon: 'mdi-chat-outline' });
   }
 
