@@ -1225,8 +1225,8 @@ onMounted(async () => {
 
 <style scoped>
 .dashboard-container {
-  padding: 16px !important;
-  background: #f5f5f5;
+  padding: 20px !important;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
   min-height: 100vh;
 }
 
@@ -1236,36 +1236,72 @@ onMounted(async () => {
 
 .reservations-list {
   max-height: calc(100vh - 200px);
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.reservations-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.reservations-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.reservations-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.reservations-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .reservation-item-card {
   border-bottom: 1px solid #e5e7eb;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: white;
+  margin-bottom: 4px;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .reservation-item-card:hover {
-  background-color: #f9fafb;
+  background-color: #f8fafc;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
 }
 
 .reservation-item-card.selected {
-  background-color: #eff6ff;
-  border-left: 3px solid #3b82f6;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-left: 4px solid #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
 }
 
 .stat-item-card {
-  transition: background 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 8px;
+  margin-bottom: 4px;
 }
 
 .stat-item-card:hover {
-  background-color: #f9fafb;
+  background-color: #f8fafc;
+  transform: translateX(4px);
 }
 
 .currency-item {
-  padding: 4px 8px;
-  background: rgba(25, 118, 210, 0.05);
-  border-radius: 4px;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, rgba(25, 118, 210, 0.08) 0%, rgba(25, 118, 210, 0.05) 100%);
+  border-radius: 6px;
+  border: 1px solid rgba(25, 118, 210, 0.1);
+  transition: all 0.2s ease;
+}
+
+.currency-item:hover {
+  background: linear-gradient(135deg, rgba(25, 118, 210, 0.12) 0%, rgba(25, 118, 210, 0.08) 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(25, 118, 210, 0.1);
 }
 
 .compact-table {
@@ -1273,7 +1309,7 @@ onMounted(async () => {
 }
 
 :deep(.compact-table .v-data-table__thead) {
-  background: rgba(0, 0, 0, 0.02);
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
 }
 
 :deep(.compact-table .v-data-table__thead th) {
@@ -1282,30 +1318,79 @@ onMounted(async () => {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  padding: 8px 12px;
+  padding: 10px 12px;
 }
 
 :deep(.compact-table .v-data-table__tbody tr) {
-  transition: background 0.2s;
+  transition: all 0.2s ease;
 }
 
 :deep(.compact-table .v-data-table__tbody tr:hover) {
-  background: rgba(25, 118, 210, 0.04);
+  background: linear-gradient(135deg, rgba(25, 118, 210, 0.04) 0%, rgba(25, 118, 210, 0.02) 100%);
+  transform: scale(1.01);
 }
 
 :deep(.compact-table .v-data-table__tbody td) {
-  padding: 8px 12px;
+  padding: 10px 12px;
   font-size: 0.75rem;
 }
 
 .empty-state-compact {
   text-align: center;
-  padding: 24px 16px;
+  padding: 32px 16px;
   color: #94a3b8;
 }
 
 #map {
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* Card improvements */
+:deep(.v-card) {
+  border-radius: 12px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+:deep(.v-card:hover) {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+  transform: translateY(-2px);
+}
+
+/* Better spacing */
+.v-card-title {
+  padding: 16px 20px !important;
+}
+
+.v-card-text {
+  padding: 16px 20px !important;
+}
+
+/* Improved typography */
+.stat-label {
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.stat-value {
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.customer-name {
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.reservation-id {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.earned-amount {
+  font-weight: 700;
+  letter-spacing: -0.3px;
 }
 </style>

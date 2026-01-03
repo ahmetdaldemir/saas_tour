@@ -223,10 +223,10 @@ const navigationItems = computed(() => {
         { title: 'VIP Transfer', to: '/app/transfer', icon: 'mdi-car-limousine' },
       ];
       
-      // Add trips only if vehicle tracking feature is enabled
+      // Add vehicle tracking only if feature is enabled
       // Check if features is initialized to avoid errors
       if (features.initialized && features.hasFeature('vehicleTracking')) {
-        rentacarChildren.splice(2, 0, { title: 'Seyahatler', to: '/app/trips', icon: 'mdi-map-marker-path' });
+        rentacarChildren.splice(2, 0, { title: 'Araç Takip', to: '/app/trips', icon: 'mdi-map-marker-path' });
       }
       
       items.push({

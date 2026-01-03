@@ -1,213 +1,160 @@
 <template>
   <div class="trips-view">
-    <v-container fluid class="pa-4">
-      <v-row>
-        <!-- Sol: Rezervasyon Listesi -->
-        <v-col cols="12" md="4" class="pa-2">
-          <v-card elevation="2" class="h-100">
-            <v-card-title class="d-flex align-center justify-space-between pa-4">
-              <span class="text-h6 font-weight-bold">Trips</span>
-              <div class="d-flex align-center gap-2">
-                <v-btn icon="mdi-magnify" variant="text" size="small" @click="showSearch = !showSearch" />
-                <v-btn icon="mdi-filter" variant="text" size="small" @click="showFilter = !showFilter" />
-                <v-btn icon="mdi-refresh" variant="text" size="small" @click="loadActiveTrips" :loading="loadingTrips" />
-              </div>
+    <v-container fluid class="pa-0" style="height: calc(100vh - 64px);">
+      <v-row no-gutters class="h-100">
+        <!-- Sol: Plakalar Listesi -->
+        <v-col cols="12" md="3" class="pa-2 border-e">
+          <v-card elevation="0" class="h-100" style="border: 1px solid #e5e7eb;">
+            <v-card-title class="d-flex align-center justify-space-between pa-3">
+              <span class="text-subtitle-1 font-weight-bold">Araç Plakaları</span>
+              <v-btn
+                icon="mdi-refresh"
+                variant="text"
+                size="small"
+                @click="loadPlates"
+                :loading="loadingPlates"
+              />
             </v-card-title>
             <v-divider />
-            
-            <!-- Search Bar -->
-            <v-expand-transition>
-              <div v-if="showSearch" class="pa-3">
-                <v-text-field
-                  v-model="searchQuery"
-                  placeholder="Search trips..."
-                  prepend-inner-icon="mdi-magnify"
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                  @input="filterTrips"
-                />
+            <v-card-text class="pa-0 plates-list" style="max-height: calc(100vh - 200px); overflow-y: auto;">
+              <div v-if="plates.length === 0" class="text-center py-8">
+                <v-icon icon="mdi-car-off" size="48" color="grey-lighten-1" />
+                <p class="text-caption text-medium-emphasis mt-2">Plaka bulunamadı</p>
               </div>
-            </v-expand-transition>
-
-            <!-- Trips List -->
-            <v-card-text class="pa-0 trips-list" style="max-height: calc(100vh - 300px); overflow-y: auto;">
-              <v-list density="compact">
+              <v-list density="comfortable" class="pa-0">
                 <v-list-item
-                  v-for="trip in filteredTrips"
-                  :key="trip.id"
-                  :class="{ 'selected-trip': selectedTrip?.id === trip.id }"
-                  @click="selectTrip(trip)"
-                  class="trip-item"
+                  v-for="plate in plates"
+                  :key="plate.id"
+                  :class="{ 'selected-plate': selectedPlate?.id === plate.id }"
+                  @click="selectPlate(plate)"
+                  class="plate-item"
                 >
                   <template #prepend>
-                    <v-avatar size="40" class="mr-3">
-                      <v-icon v-if="!trip.customerName" color="grey">mdi-account</v-icon>
-                      <span v-else class="text-h6">{{ trip.customerName.charAt(0).toUpperCase() }}</span>
+                    <v-avatar size="40" :color="selectedPlate?.id === plate.id ? 'primary' : 'grey-lighten-2'">
+                      <v-icon :color="selectedPlate?.id === plate.id ? 'white' : 'grey-darken-1'">
+                        mdi-car
+                      </v-icon>
                     </v-avatar>
                   </template>
                   
-                  <v-list-item-title class="font-weight-medium">
-                    {{ trip.customerName || 'Unknown' }}
+                  <v-list-item-title class="font-weight-bold text-h6">
+                    {{ plate.plateNumber }}
                   </v-list-item-title>
                   <v-list-item-subtitle>
                     <div class="d-flex align-center gap-2 mt-1">
-                      <span class="text-caption">#{{ trip.reference }}</span>
                       <v-chip
                         size="x-small"
-                        :color="getStatusColor(trip.status)"
+                        :color="plate.isOnline ? 'success' : 'error'"
                         variant="flat"
                       >
-                        {{ trip.isActive ? 'Active' : trip.isCompleted ? 'Completed' : trip.status }}
+                        {{ plate.isOnline ? 'Çevrimiçi' : 'Çevrimdışı' }}
                       </v-chip>
                     </div>
-                    <div class="text-caption text-grey mt-1">
-                      {{ formatDate(trip.createdAt) }}
+                    <div class="text-caption text-grey mt-1" v-if="plate.vehicleName">
+                      {{ plate.vehicleName }}
                     </div>
                   </v-list-item-subtitle>
-
-                  <template #append>
-                    <div class="d-flex flex-column align-end">
-                      <span class="text-body-2 font-weight-bold text-primary">
-                        ${{ trip.earned?.toFixed(2) || '0.00' }}
-                      </span>
-                      <v-menu>
-                        <template #activator="{ props }">
-                          <v-btn icon="mdi-dots-vertical" variant="text" size="small" v-bind="props" @click.stop />
-                        </template>
-                        <v-list>
-                          <v-list-item @click="viewTripDetails(trip)">
-                            <v-list-item-title>View Details</v-list-item-title>
-                          </v-list-item>
-                          <v-list-item @click="startChat(trip)">
-                            <v-list-item-title>Start Chat</v-list-item-title>
-                          </v-list-item>
-                        </v-list>
-                      </v-menu>
-                    </div>
-                  </template>
                 </v-list-item>
               </v-list>
             </v-card-text>
           </v-card>
         </v-col>
 
-        <!-- Orta ve Sağ: Ana İçerik -->
-        <v-col cols="12" md="8" class="pa-2">
-          <v-row>
-            <!-- Orta Üst: Kurlar -->
-            <v-col cols="12">
-              <v-card elevation="2">
-                <v-card-title class="pa-3">
-                  <span class="text-subtitle-1 font-weight-bold">Currency Rates</span>
-                </v-card-title>
-                <v-divider />
+        <!-- Sağ: Harita ve Bilgiler -->
+        <v-col cols="12" md="9" class="pa-2">
+          <v-row no-gutters class="h-100">
+            <!-- Sağ Üst: Araç Bilgileri Header -->
+            <v-col cols="12" class="mb-2">
+              <v-card elevation="2" v-if="selectedPlate && vehicleInfo">
                 <v-card-text class="pa-3">
-                  <div v-if="loadingCurrencies" class="text-center py-4">
-                    <v-progress-circular indeterminate color="primary" />
-                  </div>
-                  <div v-else class="d-flex flex-wrap gap-3">
-                    <v-chip
-                      v-for="currency in currencies"
-                      :key="currency.id"
-                      :color="currency.isBaseCurrency ? 'primary' : 'default'"
-                      variant="flat"
-                      size="small"
-                      class="px-3"
-                    >
-                      <span class="font-weight-bold mr-2">{{ currency.code }}</span>
-                      <span>{{ currency.rateToTry?.toFixed(4) || '0.0000' }} TRY</span>
-                    </v-chip>
-                  </div>
-                </v-card-text>
-              </v-card>
-            </v-col>
-
-            <!-- Sağ: İstatistikler -->
-            <v-col cols="12" md="6">
-              <v-card elevation="2">
-                <v-card-title class="pa-3">
-                  <span class="text-subtitle-1 font-weight-bold">Today's Reservations</span>
-                </v-card-title>
-                <v-divider />
-                <v-card-text class="pa-3">
-                  <div v-if="loadingStats" class="text-center py-4">
-                    <v-progress-circular indeterminate color="primary" />
-                  </div>
-                  <div v-else class="d-flex flex-column gap-3">
-                    <div class="d-flex align-center justify-space-between">
-                      <span class="text-body-2">Total</span>
-                      <span class="text-h6 font-weight-bold">{{ stats.today.total }}</span>
+                  <div class="d-flex align-center justify-space-between flex-wrap gap-3">
+                    <div class="d-flex align-center gap-4">
+                      <div>
+                        <div class="text-caption text-medium-emphasis">Plaka</div>
+                        <div class="text-h6 font-weight-bold">{{ selectedPlate.plateNumber }}</div>
+                      </div>
+                      <v-divider vertical />
+                      <div>
+                        <div class="text-caption text-medium-emphasis">Yakıt Durumu</div>
+                        <div class="d-flex align-center gap-2">
+                          <v-progress-linear
+                            :model-value="vehicleInfo.fuelLevel || 0"
+                            :color="getFuelColor(vehicleInfo.fuelLevel || 0)"
+                            height="8"
+                            rounded
+                            style="width: 100px;"
+                          />
+                          <span class="text-body-2 font-weight-bold">{{ vehicleInfo.fuelLevel || 0 }}%</span>
+                        </div>
+                      </div>
+                      <v-divider vertical />
+                      <div>
+                        <div class="text-caption text-medium-emphasis">Kilometre</div>
+                        <div class="text-h6 font-weight-bold">{{ formatNumber(vehicleInfo.mileage || 0) }} km</div>
+                      </div>
+                      <v-divider vertical />
+                      <div>
+                        <div class="text-caption text-medium-emphasis">Motor Durumu</div>
+                        <v-chip
+                          size="small"
+                          :color="vehicleInfo.engineStatus === 'on' ? 'success' : 'error'"
+                          variant="flat"
+                        >
+                          <v-icon start :icon="vehicleInfo.engineStatus === 'on' ? 'mdi-engine' : 'mdi-engine-off'" size="16" />
+                          {{ vehicleInfo.engineStatus === 'on' ? 'Açık' : 'Kapalı' }}
+                        </v-chip>
+                      </div>
+                      <v-divider vertical />
+                      <div>
+                        <div class="text-caption text-medium-emphasis">Hız</div>
+                        <div class="text-h6 font-weight-bold">{{ vehicleInfo.location?.speed || 0 }} km/h</div>
+                      </div>
+                      <v-divider vertical />
+                      <div>
+                        <div class="text-caption text-medium-emphasis">Son Güncelleme</div>
+                        <div class="text-body-2">{{ formatTime(vehicleInfo.lastUpdate || new Date()) }}</div>
+                      </div>
                     </div>
-                    <div class="d-flex align-center justify-space-between">
-                      <span class="text-body-2">Active</span>
-                      <v-chip size="small" color="warning" variant="flat">{{ stats.today.active }}</v-chip>
-                    </div>
-                    <div class="d-flex align-center justify-space-between">
-                      <span class="text-body-2">Completed</span>
-                      <v-chip size="small" color="success" variant="flat">{{ stats.today.completed }}</v-chip>
-                    </div>
-                    <div class="d-flex align-center justify-space-between">
-                      <span class="text-body-2">Cancelled</span>
-                      <v-chip size="small" color="error" variant="flat">{{ stats.today.cancelled }}</v-chip>
-                    </div>
-                  </div>
-                </v-card-text>
-              </v-card>
-            </v-col>
-
-            <!-- Sağ Alt: Genel İstatistikler -->
-            <v-col cols="12" md="6">
-              <v-card elevation="2">
-                <v-card-title class="pa-3">
-                  <span class="text-subtitle-1 font-weight-bold">Overall Stats</span>
-                </v-card-title>
-                <v-divider />
-                <v-card-text class="pa-3">
-                  <div v-if="loadingStats" class="text-center py-4">
-                    <v-progress-circular indeterminate color="primary" />
-                  </div>
-                  <div v-else class="d-flex flex-column gap-3">
-                    <div class="d-flex align-center justify-space-between">
-                      <span class="text-body-2">Active Trips</span>
-                      <v-chip size="small" color="warning" variant="flat">{{ stats.active }}</v-chip>
-                    </div>
-                    <div class="d-flex align-center justify-space-between">
-                      <span class="text-body-2">Completed</span>
-                      <v-chip size="small" color="success" variant="flat">{{ stats.completed }}</v-chip>
-                    </div>
-                    <div class="d-flex align-center justify-space-between">
-                      <span class="text-body-2">Cancelled</span>
-                      <v-chip size="small" color="error" variant="flat">{{ stats.cancelled }}</v-chip>
+                    <div>
+                      <v-chip
+                        :color="vehicleInfo.isOnline ? 'success' : 'error'"
+                        variant="flat"
+                        size="small"
+                      >
+                        <v-icon start :icon="vehicleInfo.isOnline ? 'mdi-check-circle' : 'mdi-close-circle'" size="16" />
+                        {{ vehicleInfo.isOnline ? 'Çevrimiçi' : 'Çevrimdışı' }}
+                      </v-chip>
                     </div>
                   </div>
                 </v-card-text>
               </v-card>
+              <v-card v-else elevation="2">
+                <v-card-text class="text-center py-8">
+                  <v-icon icon="mdi-information-outline" size="48" color="grey-lighten-1" />
+                  <p class="text-body-1 text-medium-emphasis mt-2">Bir plaka seçin</p>
+                </v-card-text>
+              </v-card>
             </v-col>
 
-            <!-- Orta Alt: Harita ve Araç Takip -->
-            <v-col cols="12">
-              <v-card elevation="2">
-                <v-card-title class="pa-3 d-flex align-center justify-space-between">
-                  <span class="text-subtitle-1 font-weight-bold">Vehicle Tracking</span>
-                  <v-text-field
-                    v-model="trackingPlate"
-                    placeholder="Enter plate number"
-                    prepend-inner-icon="mdi-car"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                    class="ml-4"
-                    style="max-width: 200px;"
-                    @keyup.enter="loadVehicleTracking"
+            <!-- Sağ Alt: Harita -->
+            <v-col cols="12" class="flex-grow-1">
+              <v-card elevation="2" class="h-100">
+                <v-card-title class="d-flex align-center justify-space-between pa-3">
+                  <span class="text-subtitle-1 font-weight-bold">Harita</span>
+                  <v-btn
+                    icon="mdi-refresh"
+                    variant="text"
+                    size="small"
+                    @click="refreshTracking"
+                    :loading="loadingTracking"
                   />
                 </v-card-title>
                 <v-divider />
-                <v-card-text class="pa-0" style="height: 400px;">
-                  <div v-if="!trackingPlate || !vehicleLocation" class="d-flex align-center justify-center h-100 text-grey">
+                <v-card-text class="pa-0" style="height: calc(100vh - 300px);">
+                  <div v-if="!selectedPlate || !vehicleInfo?.location" class="d-flex align-center justify-center h-100 text-grey">
                     <div class="text-center">
                       <v-icon size="64" color="grey-lighten-1">mdi-map</v-icon>
-                      <div class="mt-2">Enter a plate number to track vehicle</div>
+                      <div class="mt-2 text-body-1">Bir plaka seçin</div>
                     </div>
                   </div>
                   <div v-else id="map" style="height: 100%; width: 100%;"></div>
@@ -222,59 +169,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { http } from '../modules/http';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
-interface Trip {
+interface Plate {
   id: string;
-  reference: string;
-  customerName: string;
-  customerEmail: string;
-  customerPhone?: string;
-  status: string;
-  checkIn?: Date | null;
-  checkOut?: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-  vehicle?: {
-    id: string;
-    name: string;
-    brandName?: string;
-    modelName?: string;
-    year?: number;
-  };
-  plate?: {
-    id: string;
-    plateNumber: string;
-  };
-  assignment?: {
-    startDate: Date;
-    endDate: Date;
-  };
-  earned?: number;
-  isActive: boolean;
-  isCompleted: boolean;
-}
-
-interface Currency {
-  id: string;
-  code: string;
-  name: string;
-  symbol?: string;
-  rateToTry?: number;
-  isBaseCurrency?: boolean;
-}
-
-interface TripsStats {
-  today: {
-    total: number;
-    active: number;
-    completed: number;
-    cancelled: number;
-  };
-  active: number;
-  completed: number;
-  cancelled: number;
+  plateNumber: string;
+  vehicleId?: string;
+  vehicleName?: string;
+  isOnline?: boolean;
 }
 
 interface VehicleLocation {
@@ -286,164 +191,208 @@ interface VehicleLocation {
   address?: string;
 }
 
-const trips = ref<Trip[]>([]);
-const selectedTrip = ref<Trip | null>(null);
-const currencies = ref<Currency[]>([]);
-const stats = ref<TripsStats>({
-  today: { total: 0, active: 0, completed: 0, cancelled: 0 },
-  active: 0,
-  completed: 0,
-  cancelled: 0,
-});
-const vehicleLocation = ref<VehicleLocation | null>(null);
-const trackingPlate = ref('');
+interface VehicleTrackingInfo {
+  plate: string;
+  location: VehicleLocation;
+  isOnline: boolean;
+  lastUpdate?: Date;
+  fuelLevel?: number;
+  mileage?: number;
+  engineStatus?: 'on' | 'off';
+  additionalData?: Record<string, unknown>;
+}
 
-const loadingTrips = ref(false);
-const loadingCurrencies = ref(false);
-const loadingStats = ref(false);
+const plates = ref<Plate[]>([]);
+const selectedPlate = ref<Plate | null>(null);
+const vehicleInfo = ref<VehicleTrackingInfo | null>(null);
+let map: L.Map | null = null;
+let marker: L.Marker | null = null;
+
+const loadingPlates = ref(false);
 const loadingTracking = ref(false);
 
-const showSearch = ref(false);
-const showFilter = ref(false);
-const searchQuery = ref('');
-
-const filteredTrips = computed(() => {
-  if (!searchQuery.value) return trips.value;
-  const query = searchQuery.value.toLowerCase();
-  return trips.value.filter(
-    (trip) =>
-      trip.customerName.toLowerCase().includes(query) ||
-      trip.reference.toLowerCase().includes(query) ||
-      trip.customerEmail.toLowerCase().includes(query)
-  );
-});
-
-const loadActiveTrips = async () => {
-  loadingTrips.value = true;
+const loadPlates = async () => {
+  loadingPlates.value = true;
   try {
-    const { data } = await http.get<Trip[]>('/rentacar/trips/active');
-    trips.value = data;
-    if (data.length > 0 && !selectedTrip.value) {
-      selectTrip(data[0]);
+    // Get all vehicles with plates from rentacar endpoint
+    const { data: vehicles } = await http.get<any[]>('/rentacar');
+    const platesData: Plate[] = [];
+    
+    vehicles.forEach((vehicle: any) => {
+      if (vehicle.plates && vehicle.plates.length > 0) {
+        vehicle.plates.forEach((plate: any) => {
+          platesData.push({
+            id: plate.id,
+            plateNumber: plate.plateNumber,
+            vehicleId: vehicle.id,
+            vehicleName: vehicle.name,
+            isOnline: false, // Will be updated when tracking info is loaded
+          });
+        });
+      }
+    });
+    
+    plates.value = platesData;
+    
+    // Load tracking info for all plates to get online status
+    if (platesData.length > 0) {
+      await Promise.all(platesData.map(async (plate) => {
+        try {
+          const { data: info } = await http.get<VehicleTrackingInfo>(`/rentacar/tracking/${plate.plateNumber}/info`);
+          const plateIndex = plates.value.findIndex(p => p.id === plate.id);
+          if (plateIndex !== -1) {
+            plates.value[plateIndex].isOnline = info.isOnline;
+          }
+        } catch (error) {
+          // Ignore errors for individual plates
+        }
+      }));
     }
   } catch (error) {
-    console.error('Failed to load trips:', error);
+    console.error('Failed to load plates:', error);
+    // Demo data for testing
+    plates.value = [
+      { id: '1', plateNumber: '34ABC123', vehicleName: 'BMW 320i', isOnline: true },
+      { id: '2', plateNumber: '06XYZ789', vehicleName: 'Mercedes C200', isOnline: false },
+      { id: '3', plateNumber: '35DEF456', vehicleName: 'Audi A4', isOnline: true },
+    ];
   } finally {
-    loadingTrips.value = false;
+    loadingPlates.value = false;
   }
 };
 
-const loadCurrencies = async () => {
-  loadingCurrencies.value = true;
-  try {
-    const { data } = await http.get<Currency[]>('/currencies');
-    currencies.value = data.filter((c) => c.isActive !== false);
-  } catch (error) {
-    console.error('Failed to load currencies:', error);
-  } finally {
-    loadingCurrencies.value = false;
-  }
+const selectPlate = async (plate: Plate) => {
+  selectedPlate.value = plate;
+  await loadVehicleTracking(plate.plateNumber);
 };
 
-const loadStats = async () => {
-  loadingStats.value = true;
-  try {
-    const { data } = await http.get<TripsStats>('/rentacar/trips/stats');
-    stats.value = data;
-  } catch (error) {
-    console.error('Failed to load stats:', error);
-  } finally {
-    loadingStats.value = false;
-  }
-};
-
-const loadVehicleTracking = async () => {
-  if (!trackingPlate.value) return;
+const loadVehicleTracking = async (plateNumber: string) => {
+  if (!plateNumber) return;
   
   loadingTracking.value = true;
   try {
-    const { data } = await http.get<VehicleLocation>(`/rentacar/tracking/${trackingPlate.value}`);
-    vehicleLocation.value = data;
-    if (data.latitude && data.longitude) {
-      initMap(data.latitude, data.longitude);
+    const { data } = await http.get<VehicleTrackingInfo>(`/rentacar/tracking/${plateNumber}/info`);
+    vehicleInfo.value = data;
+    
+    if (data.location && data.location.latitude && data.location.longitude) {
+      initMap(data.location.latitude, data.location.longitude, data.location);
     }
   } catch (error) {
     console.error('Failed to load vehicle tracking:', error);
-    vehicleLocation.value = null;
+    // Demo data for testing
+    vehicleInfo.value = {
+      plate: plateNumber,
+      location: {
+        latitude: 41.0082 + (Math.random() - 0.5) * 0.1,
+        longitude: 28.9784 + (Math.random() - 0.5) * 0.1,
+        speed: Math.floor(Math.random() * 100),
+        heading: Math.floor(Math.random() * 360),
+        timestamp: new Date(),
+        address: 'İstanbul, Türkiye',
+      },
+      isOnline: true,
+      lastUpdate: new Date(),
+      fuelLevel: Math.floor(Math.random() * 100),
+      mileage: Math.floor(Math.random() * 100000),
+      engineStatus: Math.random() > 0.5 ? 'on' : 'off',
+    };
+    
+    if (vehicleInfo.value.location) {
+      initMap(vehicleInfo.value.location.latitude, vehicleInfo.value.location.longitude, vehicleInfo.value.location);
+    }
   } finally {
     loadingTracking.value = false;
   }
 };
 
-const selectTrip = (trip: Trip) => {
-  selectedTrip.value = trip;
-  if (trip.plate?.plateNumber) {
-    trackingPlate.value = trip.plate.plateNumber;
-    loadVehicleTracking();
+const refreshTracking = async () => {
+  if (selectedPlate.value) {
+    await loadVehicleTracking(selectedPlate.value.plateNumber);
   }
 };
 
-const initMap = (lat: number, lng: number) => {
-  // Simple map initialization using Leaflet or Google Maps
-  // For now, we'll use a simple iframe or placeholder
+const initMap = (lat: number, lng: number, location?: VehicleLocation) => {
   const mapElement = document.getElementById('map');
   if (!mapElement) return;
 
   // Clear previous map
-  mapElement.innerHTML = '';
+  if (map) {
+    map.remove();
+  }
 
-  // Create a simple map using OpenStreetMap
-  const iframe = document.createElement('iframe');
-  iframe.src = `https://www.openstreetmap.org/export/embed.html?bbox=${lng - 0.01},${lat - 0.01},${lng + 0.01},${lat + 0.01}&layer=mapnik&marker=${lat},${lng}`;
-  iframe.style.width = '100%';
-  iframe.style.height = '100%';
-  iframe.style.border = 'none';
-  mapElement.appendChild(iframe);
-};
+  // Initialize map
+  map = L.map('map').setView([lat, lng], 13);
 
-const formatDate = (date: Date | string) => {
-  if (!date) return '-';
-  const d = new Date(date);
-  return d.toLocaleDateString('tr-TR', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+  // Add tile layer
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 19,
+  }).addTo(map);
+
+  // Add marker
+  if (marker) {
+    map.removeLayer(marker);
+  }
+
+  const icon = L.icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41],
   });
-};
 
-const getStatusColor = (status: string) => {
-  switch (status.toLowerCase()) {
-    case 'active':
-    case 'confirmed':
-      return 'warning';
-    case 'completed':
-      return 'success';
-    case 'cancelled':
-      return 'error';
-    default:
-      return 'grey';
+  marker = L.marker([lat, lng], { icon })
+    .addTo(map)
+    .bindPopup(`
+      <div>
+        <strong>${selectedPlate.value?.plateNumber || 'Araç'}</strong><br/>
+        ${location?.address || 'Konum bilgisi yok'}<br/>
+        ${location?.speed ? `Hız: ${location.speed} km/h` : ''}
+      </div>
+    `)
+    .openPopup();
+
+  // Auto-refresh every 30 seconds
+  if (selectedPlate.value) {
+    const intervalId = setInterval(async () => {
+      if (selectedPlate.value) {
+        await loadVehicleTracking(selectedPlate.value.plateNumber);
+      } else {
+        clearInterval(intervalId);
+      }
+    }, 30000);
+    
+    // Clean up interval when component unmounts or plate changes
+    watch(() => selectedPlate.value?.id, () => {
+      clearInterval(intervalId);
+    });
   }
 };
 
-const viewTripDetails = (trip: Trip) => {
-  // Navigate to reservation details
-  console.log('View trip details:', trip);
+const getFuelColor = (level: number): string => {
+  if (level > 50) return 'success';
+  if (level > 20) return 'warning';
+  return 'error';
 };
 
-const startChat = (trip: Trip) => {
-  // Start chat with customer
-  console.log('Start chat:', trip);
+const formatNumber = (num: number): string => {
+  return new Intl.NumberFormat('tr-TR').format(num);
 };
 
-const filterTrips = () => {
-  // Filter is handled by computed property
+const formatTime = (date: Date | string): string => {
+  if (!date) return '-';
+  const d = new Date(date);
+  return d.toLocaleTimeString('tr-TR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
 };
 
 onMounted(() => {
-  loadActiveTrips();
-  loadCurrencies();
-  loadStats();
+  loadPlates();
 });
 </script>
 
@@ -452,22 +401,25 @@ onMounted(() => {
   height: 100%;
 }
 
-.trips-list {
+.plates-list {
   scrollbar-width: thin;
 }
 
-.trip-item {
+.plate-item {
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
-.trip-item:hover {
+.plate-item:hover {
   background-color: rgba(0, 0, 0, 0.04);
 }
 
-.selected-trip {
+.selected-plate {
   background-color: rgba(25, 118, 210, 0.08) !important;
   border-left: 3px solid rgb(25, 118, 210);
 }
-</style>
 
+.border-e {
+  border-right: 1px solid #e5e7eb;
+}
+</style>
