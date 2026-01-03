@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import { TenantSettingsService } from '../services/tenant-settings.service';
+import { TenantFeaturesService } from '../services/tenant-features.service';
 import { SettingsCategory, TenantSettings } from '../entities/tenant-settings.entity';
 import { AuthenticatedRequest } from '../../auth/middleware/auth.middleware';
+import { TenantRequest } from '../../../middleware/tenant.middleware';
 
 export class TenantSettingsController {
   static async getAll(req: Request, res: Response) {
@@ -220,6 +222,19 @@ export class TenantSettingsController {
       res.json(response);
     } catch (error) {
       res.status(400).json({ message: (error as Error).message });
+    }
+  }
+
+  static async getFeatures(req: TenantRequest, res: Response) {
+    try {
+      if (!req.tenant) {
+        return res.status(400).json({ message: 'Tenant not found' });
+      }
+
+      const features = await TenantFeaturesService.getFeatures(req.tenant.id);
+      return res.json(features);
+    } catch (error) {
+      return res.status(400).json({ message: (error as Error).message });
     }
   }
 }

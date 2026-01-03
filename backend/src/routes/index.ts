@@ -41,6 +41,7 @@ import chatWidgetRouter from '../modules/chat/routes/chat-widget.router';
 import opsTaskRouter from '../modules/ops/routes/ops-task.router';
 import crmPageCategoryRouter from '../modules/crm/routes/crm-page-category.router';
 import crmPageRouter from '../modules/crm/routes/crm-page.router';
+import adminAuthRouter from '../modules/admin/routes/admin-auth.router';
 
 export const registerRoutes = (app: Express) => {
   app.get('/health', (_req, res) => {
@@ -99,4 +100,5 @@ export const registerRoutes = (app: Express) => {
   app.use('/api/ops/tasks', opsTaskRouter);
   app.use('/api/admin/monitoring', monitoringRouter);
   app.use('/api/admin', tenantMonitoringRouter);
+  app.use('/api/admin/auth', adminAuthRouter);
 };

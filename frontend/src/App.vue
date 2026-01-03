@@ -92,8 +92,12 @@
         <v-app-bar-nav-icon @click="drawer = !drawer" />
         <v-toolbar-title>{{ tenantName }}</v-toolbar-title>
         <v-spacer />
-        <div class="d-flex align-center gap-4 pr-4" v-if="auth.user">
-          <div class="text-right mr-4">
+        <div class="d-flex align-center gap-4 pr-4" v-if="adminAuth.user || auth.user">
+          <div class="text-right mr-4" v-if="adminAuth.user">
+            <div class="font-weight-medium">{{ adminAuth.user.name || adminAuth.user.username }}</div>
+            <small class="text-medium-emphasis">Admin</small>
+          </div>
+          <div class="text-right mr-4" v-else-if="auth.user">
             <div class="font-weight-medium">{{ auth.user.name }}</div>
             <small class="text-medium-emphasis">{{ auth.user.email }}</small>
           </div>
@@ -114,8 +118,10 @@
 import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth';
+import { useAdminAuthStore } from './stores/admin-auth';
 
 const auth = useAuthStore();
+const adminAuth = useAdminAuthStore();
 const router = useRouter();
 const route = useRoute();
 const drawer = ref(true);
@@ -152,16 +158,31 @@ function isSubdomain(): boolean {
 }
 
 const layout = computed(() => {
-  // Ana domain'de her zaman public layout
+  // Ana domain'de her zaman public layout (admin route'ları hariç)
   if (!isSubdomain()) {
+    if (route.meta.requiresAdminAuth) {
+      return 'admin';
+    }
     return 'public';
   }
   // Subdomain'de route meta'dan layout al
   return (route.meta.layout as string) ?? (route.meta.requiresAuth ? 'admin' : 'public');
 });
-const tenantName = computed(() => auth.tenant?.name ?? 'SaaS Yönetim Paneli');
+const tenantName = computed(() => {
+  if (adminAuth.isAuthenticated) {
+    return 'Admin Panel';
+  }
+  return auth.tenant?.name ?? 'SaaS Yönetim Paneli';
+});
 
 const navigationItems = computed(() => {
+  // Admin kullanıcıları için sadece admin dashboard
+  if (adminAuth.isAuthenticated) {
+    return [
+      { title: 'Admin Dashboard', to: '/adminDashboard', icon: 'mdi-monitor-dashboard' },
+    ];
+  }
+
   const items: Array<{
     title: string;
     to?: string;
@@ -242,8 +263,13 @@ const navigationItems = computed(() => {
 });
 
 const handleLogout = () => {
-  auth.logout();
-  router.replace({ name: 'login' });
+  if (adminAuth.isAuthenticated) {
+    adminAuth.logout();
+    router.replace({ name: 'adminLogin' });
+  } else {
+    auth.logout();
+    router.replace({ name: 'login' });
+  }
 };
 
 // Check if a menu group should be active (expanded) based on current route
