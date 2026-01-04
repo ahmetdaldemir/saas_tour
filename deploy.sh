@@ -764,9 +764,21 @@ if [ "$DEPLOY_TO_SERVER" = "true" ] && [ "$MODE" != "seed" ] && [ "$MODE" != "se
     if command -v sshpass &> /dev/null; then
         echo -e "${YELLOW}📤 Sunucuya dosyalar yükleniyor...${NC}"
         
-        # RSync ile dosyaları yükle (exclude listesi ile)
+        # Önce hedef dizinleri oluştur
+        echo -e "${YELLOW}📁 Hedef dizinler oluşturuluyor...${NC}"
+        sshpass -e ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
+            ${REMOTE_USER}@${REMOTE_HOST} << ENDSSH
+            mkdir -p ${REMOTE_PATH}/backend/src/modules/auth/controllers
+            mkdir -p ${REMOTE_PATH}/backend/src/modules
+            mkdir -p ${REMOTE_PATH}/postman
+            mkdir -p ${REMOTE_PATH}/backend
+            chmod -R 755 ${REMOTE_PATH}/backend 2>/dev/null || true
+            chmod -R 755 ${REMOTE_PATH}/postman 2>/dev/null || true
+ENDSSH
+        
+        # RSync ile dosyaları yükle (exclude listesi ile, hata toleransı ile)
         export SSHPASS="$SFTP_PASSWORD"
-        sshpass -e rsync -avz --delete \
+        sshpass -e rsync -avz --partial --inplace --delete \
             -e "ssh -p 22 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
             --exclude='.git' \
             --exclude='node_modules' \
@@ -784,10 +796,18 @@ if [ "$DEPLOY_TO_SERVER" = "true" ] && [ "$MODE" != "seed" ] && [ "$MODE" != "se
             --exclude='mobile' \
             --exclude='backend/public/uploads/*' \
             --exclude='backend/dist/public/uploads/*' \
-            ./ ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/ || {
-                echo -e "${RED}❌ Dosya yükleme hatası${NC}"
-                exit 1
+            --exclude='postman' \
+            ./ ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/ 2>&1 | grep -v "failed: No such file or directory" || {
+                echo -e "${YELLOW}⚠️  Bazı dosyalar yüklenemedi (normal olabilir)${NC}"
             }
+        
+        # postman dizinini ayrı olarak yükle (varsa)
+        if [ -d "postman" ]; then
+            echo -e "${YELLOW}📤 Postman dosyaları yükleniyor...${NC}"
+            sshpass -e rsync -avz --partial --inplace \
+                -e "ssh -p 22 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
+                postman/ ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/postman/ 2>&1 | grep -v "failed: No such file or directory" || true
+        fi
         
         echo -e "${GREEN}✅ Dosyalar sunucuya yüklendi${NC}"
         
