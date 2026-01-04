@@ -28,9 +28,7 @@ import 'tinymce/plugins/charmap';
 import 'tinymce/plugins/code';
 import 'tinymce/plugins/codesample';
 import 'tinymce/plugins/directionality';
-import 'tinymce/plugins/emoticons';
 import 'tinymce/plugins/fullscreen';
-import 'tinymce/plugins/help';
 import 'tinymce/plugins/image';
 import 'tinymce/plugins/insertdatetime';
 import 'tinymce/plugins/link';
@@ -77,15 +75,24 @@ const apiKey = 'oeyw4fczbgzgtessykwa9j2ow3stvtz54fnla42oahw3aosa';
 const editorConfig = {
   height: props.height,
   menubar: true,
+  // Self-hosted TinyMCE configuration
+  base_url: undefined, // Use bundled TinyMCE from node_modules (no CDN)
+  suffix: '.min',
+  // Disable problematic plugins that require external resources
+  // emoticons and help plugins removed to avoid external resource loading errors
   setup: (editor: any) => {
-    // Ensure editor is editable
+    // Ensure editor is editable and enabled
     editor.on('init', () => {
-      // Editor is already in design mode by default
+      editor.mode.set('design');
+      // Force enable editor
+      if (editor.mode.readonly) {
+        editor.mode.set('design');
+      }
     });
   },
   plugins: [
     'advlist', 'anchor', 'autolink', 'autoresize', 'charmap', 'code', 'codesample',
-    'directionality', 'emoticons', 'fullscreen', 'help', 'image', 'insertdatetime',
+    'directionality', 'fullscreen', 'image', 'insertdatetime',
     'link', 'lists', 'media', 'nonbreaking', 'pagebreak', 'preview', 'quickbars',
     'searchreplace', 'table', 'visualblocks', 'visualchars', 'wordcount'
   ],
