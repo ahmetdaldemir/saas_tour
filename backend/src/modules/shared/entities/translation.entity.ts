@@ -24,5 +24,8 @@ export class Translation extends BaseEntity {
 
   @Column({ type: 'text', nullable: true })
   value?: string; // Generic value field for description, shortDescription, or any other content
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  slug?: string; // URL-friendly slug generated from name
 }
 
