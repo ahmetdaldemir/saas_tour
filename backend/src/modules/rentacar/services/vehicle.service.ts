@@ -793,6 +793,8 @@ export class VehicleService {
       fuelType: string;
       seats: number;
       luggage: number;
+      largeLuggage: number;
+      smallLuggage: number;
       doors: number;
       description?: string;
       images?: Array<{ id: string; url: string; alt?: string; isPrimary: boolean; order: number }>;
@@ -1136,6 +1138,8 @@ export class VehicleService {
         fuelType: vehicle.fuelType,
         seats: vehicle.seats,
         luggage: vehicle.luggage,
+        largeLuggage: vehicle.largeLuggage,
+        smallLuggage: vehicle.smallLuggage,
         doors: vehicle.doors,
         description: vehicle.description,
         images: sortedImages.map(img => ({
