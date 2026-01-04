@@ -10,8 +10,8 @@ FROM node:20-alpine
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Docker CLI yükle (Docker socket üzerinden erişim için)
-RUN apk add --no-cache docker-cli
+# Docker CLI ve PostgreSQL client yükle (Docker socket ve pg_dump için)
+RUN apk add --no-cache docker-cli postgresql-client
 
 COPY package*.json ./
 # Production'da script'lerin çalıştırılabilmesi için ts-node gerekli
