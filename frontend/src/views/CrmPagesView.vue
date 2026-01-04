@@ -102,7 +102,7 @@
     </v-card>
 
     <!-- Sayfa Ekleme/Düzenleme Dialog -->
-    <v-dialog v-model="showPageDialog" max-width="1200" scrollable>
+    <v-dialog v-model="showPageDialog" max-width="1400" fullscreen-sm-and-down scrollable>
       <v-card>
         <v-card-title class="d-flex align-center justify-space-between">
           <div class="d-flex align-center gap-2">
@@ -256,11 +256,12 @@
                     :key="lang.id"
                     :value="lang.id"
                   >
-                    <v-textarea
+                    <label class="text-body-2 text-medium-emphasis mb-2 d-block">Açıklama ({{ lang.name }})</label>
+                    <TinyMceEditor
                       v-model="pageForm.descriptionTranslations[lang.id]"
-                      :label="`Açıklama (${lang.name})`"
-                      prepend-inner-icon="mdi-text"
-                      rows="6"
+                      :height="300"
+                      :dialog-visible="showPageDialog"
+                      placeholder="Sayfa açıklaması girin..."
                       class="mt-2"
                     />
                   </v-window-item>
@@ -336,6 +337,7 @@
 import { computed, reactive, ref, onMounted, watch } from 'vue';
 import { http } from '../modules/http';
 import { useAuthStore } from '../stores/auth';
+import TinyMceEditor from '../components/TinyMceEditor.vue';
 
 const auth = useAuthStore();
 

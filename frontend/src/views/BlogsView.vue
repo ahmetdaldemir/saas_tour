@@ -177,12 +177,12 @@
                     />
                   </v-col>
                   <v-col cols="12">
-                    <v-textarea
+                    <label class="text-body-2 text-medium-emphasis mb-2 d-block">İçerik ({{ lang.name }}) <span class="text-error">*</span></label>
+                    <TinyMceEditor
                       v-model="blogForm.translations[lang.id].content"
-                      :label="`İçerik (${lang.name})`"
-                      prepend-inner-icon="mdi-text"
-                      rows="15"
-                      required
+                      :height="500"
+                      :dialog-visible="showBlogDialog"
+                      placeholder="Blog içeriği girin..."
                     />
                   </v-col>
                 </v-row>
@@ -251,6 +251,7 @@
 import { computed, reactive, ref, onMounted, watch } from 'vue';
 import { http } from '../modules/http';
 import { useAuthStore } from '../stores/auth';
+import TinyMceEditor from '../components/TinyMceEditor.vue';
 import { useFeaturesStore } from '../stores/features';
 import { translateText } from '../services/deepl';
 

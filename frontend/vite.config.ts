@@ -28,6 +28,14 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          // Ensure TinyMCE language files are properly handled
+          assetFileNames: 'assets/[name].[ext]',
+        },
+      },
+    },
     logLevel: 'warn', // Sadece uyarıları ve hataları göster (Sass deprecation uyarılarını azaltır)
   };
 });
