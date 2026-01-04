@@ -3,9 +3,9 @@
     <Editor
       v-if="dialogVisible"
       :model-value="modelValue"
-      :api-key="apiKey"
       :init="editorConfig"
       @update:model-value="handleUpdate"
+      :disabled="false"
     />
   </div>
 </template>
@@ -69,15 +69,18 @@ const emit = defineEmits<{
   'update:modelValue': [value: string];
 }>();
 
-// TinyMCE API Key
-const apiKey = 'oeyw4fczbgzgtessykwa9j2ow3stvtz54fnla42oahw3aosa';
+// TinyMCE - Use GPL license for self-hosted (no API key to avoid CDN loading)
+// API key causes TinyMCE to try loading from CDN, so we use GPL license instead
+const apiKey = undefined;
 
 const editorConfig = {
   height: props.height,
   menubar: true,
-  // Self-hosted TinyMCE configuration
-  base_url: undefined, // Use bundled TinyMCE from node_modules (no CDN)
+  // Self-hosted TinyMCE - GPL license (no API key = no CDN)
+  license_key: 'gpl',
   suffix: '.min',
+  // Disable external resource loading completely
+  external_plugins: {},
   // Disable problematic plugins that require external resources
   // emoticons and help plugins removed to avoid external resource loading errors
   setup: (editor: any) => {

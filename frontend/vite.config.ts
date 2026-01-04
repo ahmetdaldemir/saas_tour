@@ -35,6 +35,16 @@ export default defineConfig(({ mode }) => {
           assetFileNames: 'assets/[name].[ext]',
         },
       },
+      // Ensure TinyMCE files are properly bundled
+      commonjsOptions: {
+        include: [/node_modules/],
+        transformMixedEsModules: true,
+      },
+    },
+    // Optimize TinyMCE dependencies
+    optimizeDeps: {
+      include: ['tinymce', '@tinymce/tinymce-vue'],
+      exclude: [],
     },
     logLevel: 'warn', // Sadece uyarıları ve hataları göster (Sass deprecation uyarılarını azaltır)
   };
