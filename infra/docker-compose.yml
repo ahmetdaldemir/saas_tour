@@ -25,6 +25,8 @@ services:
       # Note: Backend serves from /app/public/uploads (Dockerfile: COPY public ./public)
       # Volume mount path must match the actual path where files are served from
       - uploads_data:/app/public/uploads
+      # Database backup klasörünü kalıcı hale getir
+      - backups_data:/app/backups
     networks:
       - internal
       - web
@@ -166,6 +168,8 @@ services:
 
 volumes:
   uploads_data:
+    driver: local
+  backups_data:
     driver: local
 
 networks:
