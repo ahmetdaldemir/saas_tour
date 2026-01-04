@@ -11,12 +11,32 @@
         <div class="d-flex gap-2">
           <v-btn
             v-if="selectedDestinations.length > 0"
+            color="warning"
+            prepend-icon="mdi-eye-off"
+            @click="bulkDeactivate"
+            :loading="bulkDeactivating"
+            variant="outlined"
+          >
+            Pasif Yap ({{ selectedDestinations.length }})
+          </v-btn>
+          <v-btn
+            v-if="selectedDestinations.length > 0"
+            color="success"
+            prepend-icon="mdi-eye"
+            @click="bulkActivate"
+            :loading="bulkActivating"
+            variant="outlined"
+          >
+            Aktif Yap ({{ selectedDestinations.length }})
+          </v-btn>
+          <v-btn
+            v-if="selectedDestinations.length > 0"
             color="error"
             prepend-icon="mdi-delete-multiple"
             @click="bulkDelete"
             :loading="bulkDeleting"
           >
-            Seçilenleri Sil ({{ selectedDestinations.length }})
+            Sil ({{ selectedDestinations.length }})
           </v-btn>
           <v-btn color="primary" prepend-icon="mdi-map-plus" @click="openCreate">
             Yeni Destinasyon
@@ -85,7 +105,7 @@
       </v-data-table>
     </v-card>
 
-    <v-dialog v-model="dialog" max-width="800" persistent>
+    <v-dialog v-model="dialog" max-width="1400" fullscreen-sm-and-down persistent>
       <v-card>
         <v-card-title class="d-flex align-center justify-space-between">
           <span class="text-h6">{{ dialogTitle }}</span>
@@ -159,12 +179,11 @@
                     />
                   </v-col>
                   <v-col cols="12">
-                    <v-textarea
+                    <label class="text-body-2 text-medium-emphasis mb-2 d-block">Açıklama</label>
+                    <TinyMceEditor
                       v-model="form.translations[lang.id].description"
-                      label="Açıklama"
-                      prepend-inner-icon="mdi-text"
-                      rows="4"
-                      hint="Detaylı açıklama (isteğe bağlı)"
+                      :height="300"
+                      placeholder="Detaylı açıklama girin..."
                     />
                   </v-col>
                 </v-row>
@@ -263,6 +282,7 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { http } from '../modules/http';
 import { useAuthStore } from '../stores/auth';
+import TinyMceEditor from '../components/TinyMceEditor.vue';
 import { useFeaturesStore } from '../stores/features';
 
 interface Translation {
@@ -320,6 +340,8 @@ const loading = ref(false);
 const submitting = ref(false);
 const removing = ref<string | null>(null);
 const bulkDeleting = ref(false);
+const bulkDeactivating = ref(false);
+const bulkActivating = ref(false);
 const updatingActive = ref<string | null>(null);
 const updatingFeatured = ref<string | null>(null);
 const formError = ref('');
@@ -544,6 +566,96 @@ const handleSubmit = async () => {
     formError.value = err.response?.data?.error?.message || err.message || 'İşlem başarısız';
   } finally {
     submitting.value = false;
+  }
+};
+
+const bulkActivate = async () => {
+  if (selectedDestinations.value.length === 0) {
+    return;
+  }
+
+  const count = selectedDestinations.value.length;
+  const confirmMessage = `${count} destinasyon aktif yapılacak. Devam etmek istiyor musunuz?`;
+  if (!confirm(confirmMessage)) {
+    return;
+  }
+
+  bulkActivating.value = true;
+  const selectedIds = selectedDestinations.value.map(d => d.id);
+  const selectedNames = selectedDestinations.value.map(d => getDisplayName(d));
+  
+  try {
+    // Activate all selected destinations in parallel
+    const activatePromises = selectedDestinations.value.map(destination => 
+      http.patch(`/destinations/${destination.id}`, { isActive: true })
+    );
+    
+    await Promise.all(activatePromises);
+    
+    // Update local state
+    destinations.value.forEach(d => {
+      if (selectedIds.includes(d.id)) {
+        d.isActive = true;
+      }
+    });
+    selectedDestinations.value = [];
+    
+    // Show success message
+    alert(`✅ ${count} destinasyon başarıyla aktif yapıldı:\n${selectedNames.join('\n')}`);
+    
+    // Reload destinations to ensure consistency
+    await loadDestinations();
+  } catch (error: any) {
+    console.error('Failed to activate destinations:', error);
+    const errorMessage = error.response?.data?.error?.message || 'Destinasyonlar aktif yapılırken bir hata oluştu';
+    alert(`❌ Hata: ${errorMessage}`);
+  } finally {
+    bulkActivating.value = false;
+  }
+};
+
+const bulkDeactivate = async () => {
+  if (selectedDestinations.value.length === 0) {
+    return;
+  }
+
+  const count = selectedDestinations.value.length;
+  const confirmMessage = `${count} destinasyon pasif yapılacak. Devam etmek istiyor musunuz?`;
+  if (!confirm(confirmMessage)) {
+    return;
+  }
+
+  bulkDeactivating.value = true;
+  const selectedIds = selectedDestinations.value.map(d => d.id);
+  const selectedNames = selectedDestinations.value.map(d => getDisplayName(d));
+  
+  try {
+    // Deactivate all selected destinations in parallel
+    const deactivatePromises = selectedDestinations.value.map(destination => 
+      http.patch(`/destinations/${destination.id}`, { isActive: false })
+    );
+    
+    await Promise.all(deactivatePromises);
+    
+    // Update local state
+    destinations.value.forEach(d => {
+      if (selectedIds.includes(d.id)) {
+        d.isActive = false;
+      }
+    });
+    selectedDestinations.value = [];
+    
+    // Show success message
+    alert(`✅ ${count} destinasyon başarıyla pasif yapıldı:\n${selectedNames.join('\n')}`);
+    
+    // Reload destinations to ensure consistency
+    await loadDestinations();
+  } catch (error: any) {
+    console.error('Failed to deactivate destinations:', error);
+    const errorMessage = error.response?.data?.error?.message || 'Destinasyonlar pasif yapılırken bir hata oluştu';
+    alert(`❌ Hata: ${errorMessage}`);
+  } finally {
+    bulkDeactivating.value = false;
   }
 };
 
