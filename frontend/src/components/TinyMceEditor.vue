@@ -1,55 +1,110 @@
 <template>
-  <div class="tinymce-editor">
-    <Editor
-      v-if="dialogVisible"
-      :model-value="modelValue"
-      :init="editorConfig"
-      @update:model-value="handleUpdate"
-      :disabled="false"
-    />
+  <div class="rich-text-editor" v-if="dialogVisible">
+    <div v-if="editor" class="editor-toolbar">
+      <v-btn
+        :variant="editor.isActive('bold') ? 'flat' : 'text'"
+        size="small"
+        icon="mdi-format-bold"
+        @click="editor.chain().focus().toggleBold().run()"
+      />
+      <v-btn
+        :variant="editor.isActive('italic') ? 'flat' : 'text'"
+        size="small"
+        icon="mdi-format-italic"
+        @click="editor.chain().focus().toggleItalic().run()"
+      />
+      <v-btn
+        :variant="editor.isActive('underline') ? 'flat' : 'text'"
+        size="small"
+        icon="mdi-format-underline"
+        @click="editor.chain().focus().toggleUnderline().run()"
+      />
+      <v-divider vertical class="mx-1" />
+      <v-btn
+        :variant="editor.isActive({ heading: { level: 1 } }) ? 'flat' : 'text'"
+        size="small"
+        icon="mdi-format-header-1"
+        @click="editor.chain().focus().toggleHeading({ level: 1 }).run()"
+      />
+      <v-btn
+        :variant="editor.isActive({ heading: { level: 2 } }) ? 'flat' : 'text'"
+        size="small"
+        icon="mdi-format-header-2"
+        @click="editor.chain().focus().toggleHeading({ level: 2 }).run()"
+      />
+      <v-btn
+        :variant="editor.isActive({ heading: { level: 3 } }) ? 'flat' : 'text'"
+        size="small"
+        icon="mdi-format-header-3"
+        @click="editor.chain().focus().toggleHeading({ level: 3 }).run()"
+      />
+      <v-divider vertical class="mx-1" />
+      <v-btn
+        :variant="editor.isActive('bulletList') ? 'flat' : 'text'"
+        size="small"
+        icon="mdi-format-list-bulleted"
+        @click="editor.chain().focus().toggleBulletList().run()"
+      />
+      <v-btn
+        :variant="editor.isActive('orderedList') ? 'flat' : 'text'"
+        size="small"
+        icon="mdi-format-list-numbered"
+        @click="editor.chain().focus().toggleOrderedList().run()"
+      />
+      <v-divider vertical class="mx-1" />
+      <v-btn
+        size="small"
+        icon="mdi-link"
+        @click="setLink"
+      />
+      <v-btn
+        size="small"
+        icon="mdi-image"
+        @click="addImage"
+      />
+      <v-btn
+        size="small"
+        icon="mdi-table"
+        @click="editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()"
+      />
+      <v-divider vertical class="mx-1" />
+      <v-btn
+        size="small"
+        icon="mdi-format-quote-close"
+        @click="editor.chain().focus().toggleBlockquote().run()"
+      />
+      <v-btn
+        size="small"
+        icon="mdi-code-tags"
+        @click="editor.chain().focus().toggleCodeBlock().run()"
+      />
+      <v-spacer />
+      <v-btn
+        size="small"
+        icon="mdi-undo"
+        @click="editor.chain().focus().undo().run()"
+      />
+      <v-btn
+        size="small"
+        icon="mdi-redo"
+        @click="editor.chain().focus().redo().run()"
+      />
+    </div>
+    <EditorContent :editor="editor" class="editor-content" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from 'vue';
-import Editor from '@tinymce/tinymce-vue';
-// TinyMCE core
-import 'tinymce/tinymce';
-import 'tinymce/themes/silver';
-import 'tinymce/icons/default';
-import 'tinymce/models/dom';
-
-// Plugins - Only import plugins that exist in the free version
-import 'tinymce/plugins/advlist';
-import 'tinymce/plugins/anchor';
-import 'tinymce/plugins/autolink';
-import 'tinymce/plugins/autoresize';
-import 'tinymce/plugins/charmap';
-import 'tinymce/plugins/code';
-import 'tinymce/plugins/codesample';
-import 'tinymce/plugins/directionality';
-import 'tinymce/plugins/fullscreen';
-import 'tinymce/plugins/image';
-import 'tinymce/plugins/insertdatetime';
-import 'tinymce/plugins/link';
-import 'tinymce/plugins/lists';
-import 'tinymce/plugins/media';
-import 'tinymce/plugins/nonbreaking';
-import 'tinymce/plugins/pagebreak';
-import 'tinymce/plugins/preview';
-import 'tinymce/plugins/quickbars';
-import 'tinymce/plugins/searchreplace';
-import 'tinymce/plugins/table';
-import 'tinymce/plugins/visualblocks';
-import 'tinymce/plugins/visualchars';
-import 'tinymce/plugins/wordcount';
-
-// Language pack - TinyMCE 8.x language files are loaded dynamically
-// We'll configure it in the editor config below
-
-// CSS
-import 'tinymce/skins/ui/oxide/skin.min.css';
-import 'tinymce/skins/content/default/content.min.css';
+import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue';
+import { useEditor, EditorContent } from '@tiptap/vue-3';
+import StarterKit from '@tiptap/starter-kit';
+import { Image } from '@tiptap/extension-image';
+import { Link } from '@tiptap/extension-link';
+import { Table } from '@tiptap/extension-table';
+import { TableRow } from '@tiptap/extension-table-row';
+import { TableCell } from '@tiptap/extension-table-cell';
+import { TableHeader } from '@tiptap/extension-table-header';
+import { Underline } from '@tiptap/extension-underline';
 
 interface Props {
   modelValue?: string;
@@ -69,101 +124,200 @@ const emit = defineEmits<{
   'update:modelValue': [value: string];
 }>();
 
-// TinyMCE - Use GPL license for self-hosted (no API key to avoid CDN loading)
-// API key causes TinyMCE to try loading from CDN, so we use GPL license instead
-const apiKey = undefined;
-
-const editorConfig = {
-  height: props.height,
-  menubar: true,
-  // Self-hosted TinyMCE - GPL license (no API key = no CDN)
-  license_key: 'gpl',
-  suffix: '.min',
-  // Disable external resource loading completely
-  external_plugins: {},
-  // Disable problematic plugins that require external resources
-  // emoticons and help plugins removed to avoid external resource loading errors
-  setup: (editor: any) => {
-    // Ensure editor is editable and enabled
-    editor.on('init', () => {
-      editor.mode.set('design');
-      // Force enable editor
-      if (editor.mode.readonly) {
-        editor.mode.set('design');
-      }
-    });
-  },
-  plugins: [
-    'advlist', 'anchor', 'autolink', 'autoresize', 'charmap', 'code', 'codesample',
-    'directionality', 'fullscreen', 'image', 'insertdatetime',
-    'link', 'lists', 'media', 'nonbreaking', 'pagebreak', 'preview', 'quickbars',
-    'searchreplace', 'table', 'visualblocks', 'visualchars', 'wordcount'
+const editor = useEditor({
+  extensions: [
+    StarterKit.configure({
+      heading: {
+        levels: [1, 2, 3, 4, 5, 6],
+      },
+    }),
+    Underline,
+    Image.configure({
+      inline: true,
+      allowBase64: true,
+    }),
+    Link.configure({
+      openOnClick: false,
+      HTMLAttributes: {
+        rel: 'noopener noreferrer',
+        target: '_blank',
+      },
+    }),
+    Table.configure({
+      resizable: true,
+    }),
+    TableRow,
+    TableHeader,
+    TableCell,
   ],
-  toolbar: 'undo redo | formatselect | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image media table | code preview fullscreen | removeformat',
-  content_style: 'body { font-family: Arial, sans-serif; font-size: 14px; }',
-  placeholder: props.placeholder,
-  // Language: Try Turkish, fallback to English if file not found
-  // TinyMCE will automatically fall back to English if Turkish language file is not available
-  branding: false,
-  promotion: false,
-  resize: true,
-  autosave_ask_before_unload: false,
-  paste_as_text: false,
-  paste_data_images: true,
-  image_advtab: true,
-  image_caption: true,
-  image_title: true,
-  link_title: true,
-  table_default_attributes: {
-    border: '1'
+  content: props.modelValue || '',
+  editorProps: {
+    attributes: {
+      class: 'prose prose-sm mx-auto focus:outline-none',
+      style: `min-height: ${props.height}px; padding: 16px;`,
+    },
   },
-  table_default_styles: {
-    'border-collapse': 'collapse',
-    'width': '100%'
+  onUpdate: ({ editor }) => {
+    emit('update:modelValue', editor.getHTML());
   },
-  quickbars_selection_toolbar: 'bold italic | quicklink quickimage quicktable',
-  quickbars_insert_toolbar: 'quickimage quicktable',
-  noneditable_class: 'mceNonEditable',
-  toolbar_mode: 'sliding',
-  contextmenu: 'link image table',
+});
+
+const setLink = () => {
+  const previousUrl = editor.value?.getAttributes('link').href;
+  const url = window.prompt('URL', previousUrl);
+
+  if (url === null) {
+    return;
+  }
+
+  if (url === '') {
+    editor.value?.chain().focus().extendMarkRange('link').unsetLink().run();
+    return;
+  }
+
+  editor.value?.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
 };
 
-const handleUpdate = (value: string) => {
-  emit('update:modelValue', value);
-};
-
-// Fix for TinyMCE in modals - allow focus on TinyMCE dialogs
-const handleFocusIn = (e: FocusEvent) => {
-  const target = e.target as HTMLElement;
-  if (target && (target.closest('.tox-tinymce-aux') || target.closest('.moxman-window') || target.closest('.tam-assetmanager-root'))) {
-    e.stopImmediatePropagation();
+const addImage = () => {
+  const url = window.prompt('Resim URL');
+  if (url) {
+    editor.value?.chain().focus().setImage({ src: url }).run();
   }
 };
 
-onMounted(() => {
-  document.addEventListener('focusin', handleFocusIn, true);
+watch(() => props.modelValue, (newValue) => {
+  if (editor.value && editor.value.getHTML() !== newValue) {
+    editor.value.commands.setContent(newValue || '');
+  }
+});
+
+watch(() => props.dialogVisible, (visible) => {
+  if (visible && !editor.value) {
+    // Editor will be created on mount
+  }
 });
 
 onUnmounted(() => {
-  document.removeEventListener('focusin', handleFocusIn, true);
+  if (editor.value) {
+    editor.value.destroy();
+  }
 });
-
-watch(() => props.modelValue, (newValue) => {
-  // External updates to modelValue will be handled by v-model
-}, { immediate: true });
 </script>
 
 <style scoped>
-.tinymce-editor {
+.rich-text-editor {
+  width: 100%;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background: white;
+}
+
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  border-bottom: 1px solid #e0e0e0;
+  background: #fafafa;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.editor-content {
+  min-height: 300px;
+}
+
+.editor-content :deep(.ProseMirror) {
+  outline: none;
+  min-height: 300px;
+  padding: 16px;
+}
+
+.editor-content :deep(.ProseMirror p.is-editor-empty:first-child::before) {
+  color: #adb5bd;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.editor-content :deep(.ProseMirror img) {
+  max-width: 100%;
+  height: auto;
+}
+
+.editor-content :deep(.ProseMirror table) {
+  border-collapse: collapse;
+  margin: 16px 0;
+  overflow: hidden;
+  table-layout: fixed;
   width: 100%;
 }
 
-.tinymce-editor :deep(.tox-tinymce) {
-  border-radius: 4px;
+.editor-content :deep(.ProseMirror table td),
+.editor-content :deep(.ProseMirror table th) {
+  border: 1px solid #ced4da;
+  box-sizing: border-box;
+  min-width: 1em;
+  padding: 8px;
+  position: relative;
+  vertical-align: top;
 }
 
-.tinymce-editor :deep(.tox-edit-area__iframe) {
-  min-height: 300px;
+.editor-content :deep(.ProseMirror table th) {
+  background-color: #f1f3f5;
+  font-weight: bold;
+}
+
+.editor-content :deep(.ProseMirror a) {
+  color: #1976d2;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.editor-content :deep(.ProseMirror h1),
+.editor-content :deep(.ProseMirror h2),
+.editor-content :deep(.ProseMirror h3) {
+  font-weight: 600;
+  line-height: 1.25;
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}
+
+.editor-content :deep(.ProseMirror h1) { font-size: 2em; }
+.editor-content :deep(.ProseMirror h2) { font-size: 1.5em; }
+.editor-content :deep(.ProseMirror h3) { font-size: 1.25em; }
+
+.editor-content :deep(.ProseMirror ul),
+.editor-content :deep(.ProseMirror ol) {
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+
+.editor-content :deep(.ProseMirror blockquote) {
+  border-left: 4px solid #e0e0e0;
+  padding-left: 1em;
+  margin: 1em 0;
+  font-style: italic;
+}
+
+.editor-content :deep(.ProseMirror code) {
+  background-color: #f5f5f5;
+  border-radius: 3px;
+  padding: 2px 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.editor-content :deep(.ProseMirror pre) {
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  padding: 12px;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.editor-content :deep(.ProseMirror pre code) {
+  background: none;
+  padding: 0;
 }
 </style>
-
