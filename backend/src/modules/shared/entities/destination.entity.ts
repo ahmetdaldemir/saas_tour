@@ -16,4 +16,7 @@ export class Destination extends BaseEntity {
 
   @Column({ name: 'is_featured', default: false })
   isFeatured!: boolean;
+
+  @Column({ name: 'is_active', default: true })
+  isActive!: boolean;
 }

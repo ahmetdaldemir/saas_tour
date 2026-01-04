@@ -50,7 +50,8 @@
     "extra": {
       "eas": {
         "projectId": "your-project-id"
-      }
+      },
+      "apiBaseUrl": "http://192.168.1.180:4001/api"
     }
   }
 }

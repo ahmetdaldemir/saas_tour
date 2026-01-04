@@ -15,11 +15,26 @@ export interface TenantRequest extends Request {
 }
 
 /**
+ * Check if hostname is an IP address (IPv4 or IPv6)
+ */
+function isIpAddress(hostname: string): boolean {
+  // IPv4 pattern: numbers and dots (e.g., 192.168.1.1, 10.0.2.2)
+  const ipv4Pattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+  
+  // IPv6 pattern: contains colons (e.g., ::1, 2001:0db8::1)
+  const ipv6Pattern = /:/;
+  
+  return ipv4Pattern.test(hostname) || ipv6Pattern.test(hostname);
+}
+
+/**
  * Extract tenant slug from Host header
  * Examples:
  *   - sunset.saastour360.com -> sunset
  *   - sunset.local.saastour360.test -> sunset
  *   - sunset.local.saastour360.test:9001 -> sunset
+ *   - 10.0.2.2:4001 -> null (IP address, not a tenant subdomain)
+ *   - localhost:4001 -> null (IP address/localhost, not a tenant subdomain)
  */
 function extractTenantSlug(host: string | undefined): string | null {
   if (!host) {
@@ -28,6 +43,11 @@ function extractTenantSlug(host: string | undefined): string | null {
 
   // Remove port if present
   const hostname = host.split(':')[0];
+
+  // Skip IP addresses (mobile apps, localhost, etc.)
+  if (isIpAddress(hostname) || hostname === 'localhost') {
+    return null;
+  }
 
   // Split by dots
   const parts = hostname.split('.');

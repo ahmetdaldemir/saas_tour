@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, Button, Card, Divider } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { Text, Button, Card, Divider, Chip } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTasksStore } from '../store/tasks.store';
 import { OpsTaskType } from '../services/ops.service';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { theme } from '../styles/theme';
 
 export default function TaskDetailScreen() {
   const navigation = useNavigation();
@@ -18,8 +19,11 @@ export default function TaskDetailScreen() {
 
   if (isLoading || !selectedTask) {
     return (
-      <View style={styles.container}>
-        <Text>Yükleniyor...</Text>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <Text variant="bodyMedium" style={styles.loadingText}>
+          Yükleniyor...
+        </Text>
       </View>
     );
   }
@@ -32,86 +36,138 @@ export default function TaskDetailScreen() {
     navigation.navigate('ReturnFlow' as never, { taskId: selectedTask.id } as never);
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return theme.colors.success;
+      case 'in_progress':
+        return theme.colors.primary;
+      case 'pending':
+        return theme.colors.warning;
+      default:
+        return theme.colors.textSecondary;
+    }
+  };
+
   return (
     <ScrollView style={styles.container}>
-      <Card style={styles.card}>
-        <Card.Content>
-          <Text variant="headlineSmall" style={styles.title}>
-            Rezervasyon Detayı
-          </Text>
-          <Divider style={styles.divider} />
-
-          <View style={styles.row}>
-            <Text variant="bodyMedium" style={styles.label}>
-              Referans:
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <MaterialCommunityIcons
+            name={selectedTask.type === OpsTaskType.CHECKOUT ? 'arrow-up-circle' : 'arrow-down-circle'}
+            size={32}
+            color={selectedTask.type === OpsTaskType.CHECKOUT ? theme.colors.primary : theme.colors.secondary}
+          />
+          <View style={styles.headerText}>
+            <Text variant="headlineSmall" style={styles.headerTitle}>
+              {selectedTask.type === OpsTaskType.CHECKOUT ? 'Araç Çıkışı' : 'Araç Dönüşü'}
             </Text>
-            <Text variant="bodyLarge">{selectedTask.reservation.reference}</Text>
+            <Text variant="bodySmall" style={styles.headerSubtitle}>
+              {selectedTask.reservation.reference}
+            </Text>
           </View>
+        </View>
+        <Chip
+          icon={() => (
+            <MaterialCommunityIcons
+              name={selectedTask.status === 'completed' ? 'check-circle' : selectedTask.status === 'in_progress' ? 'clock-outline' : 'clock-alert-outline'}
+              size={14}
+              color={getStatusColor(selectedTask.status)}
+            />
+          )}
+          style={[styles.statusChip, { backgroundColor: `${getStatusColor(selectedTask.status)}20` }]}
+          textStyle={{ color: getStatusColor(selectedTask.status), fontWeight: '600' }}
+        >
+          {selectedTask.status === 'pending' ? 'Beklemede' : selectedTask.status === 'in_progress' ? 'Devam Ediyor' : 'Tamamlandı'}
+        </Chip>
+      </View>
 
-          <View style={styles.row}>
-            <Text variant="bodyMedium" style={styles.label}>
-              Müşteri:
-            </Text>
-            <Text variant="bodyLarge" style={styles.customerName}>
-              {selectedTask.reservation.customerName}
-            </Text>
+      <Card style={styles.card} mode="elevated">
+        <Card.Content style={styles.cardContent}>
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <MaterialCommunityIcons name="account" size={20} color={theme.colors.primary} />
+              <Text variant="titleMedium" style={styles.sectionTitle}>
+                Müşteri Bilgileri
+              </Text>
+            </View>
+            <View style={styles.infoItem}>
+              <Text variant="bodySmall" style={styles.infoLabel}>Ad Soyad</Text>
+              <Text variant="bodyLarge" style={styles.infoValue}>
+                {selectedTask.reservation.customerName}
+              </Text>
+            </View>
           </View>
 
           {selectedTask.vehicle && (
-            <>
+            <View style={styles.section}>
               <Divider style={styles.divider} />
-              <Text variant="titleMedium" style={styles.sectionTitle}>
-                Araç Bilgileri
-              </Text>
-              <View style={styles.row}>
-                <Text variant="bodyMedium" style={styles.label}>
-                  Plaka:
+              <View style={styles.sectionHeader}>
+                <MaterialCommunityIcons name="car" size={20} color={theme.colors.primary} />
+                <Text variant="titleMedium" style={styles.sectionTitle}>
+                  Araç Bilgileri
                 </Text>
-                <Text variant="bodyLarge">{selectedTask.vehicle.plateNumber}</Text>
               </View>
-              <View style={styles.row}>
-                <Text variant="bodyMedium" style={styles.label}>
-                  Marka/Model:
+              <View style={styles.infoItem}>
+                <Text variant="bodySmall" style={styles.infoLabel}>Plaka</Text>
+                <Text variant="bodyLarge" style={[styles.infoValue, styles.plateNumber]}>
+                  {selectedTask.vehicle.plateNumber}
                 </Text>
-                <Text variant="bodyLarge">
+              </View>
+              <View style={styles.infoItem}>
+                <Text variant="bodySmall" style={styles.infoLabel}>Marka / Model</Text>
+                <Text variant="bodyLarge" style={styles.infoValue}>
                   {selectedTask.vehicle.brand} {selectedTask.vehicle.model}
                 </Text>
               </View>
               {selectedTask.vehicle.year && (
-                <View style={styles.row}>
-                  <Text variant="bodyMedium" style={styles.label}>
-                    Yıl:
+                <View style={styles.infoItem}>
+                  <Text variant="bodySmall" style={styles.infoLabel}>Yıl</Text>
+                  <Text variant="bodyLarge" style={styles.infoValue}>
+                    {selectedTask.vehicle.year}
                   </Text>
-                  <Text variant="bodyLarge">{selectedTask.vehicle.year}</Text>
                 </View>
               )}
-            </>
+            </View>
           )}
 
-          <Divider style={styles.divider} />
-          <Text variant="titleMedium" style={styles.sectionTitle}>
-            Tarih Bilgileri
-          </Text>
-          {selectedTask.reservation.checkIn && (
-            <View style={styles.row}>
-              <Text variant="bodyMedium" style={styles.label}>
-                Çıkış:
-              </Text>
-              <Text variant="bodyLarge">
-                {new Date(selectedTask.reservation.checkIn).toLocaleString('tr-TR')}
+          <View style={styles.section}>
+            <Divider style={styles.divider} />
+            <View style={styles.sectionHeader}>
+              <MaterialCommunityIcons name="calendar" size={20} color={theme.colors.primary} />
+              <Text variant="titleMedium" style={styles.sectionTitle}>
+                Tarih Bilgileri
               </Text>
             </View>
-          )}
-          {selectedTask.reservation.checkOut && (
-            <View style={styles.row}>
-              <Text variant="bodyMedium" style={styles.label}>
-                Dönüş:
-              </Text>
-              <Text variant="bodyLarge">
-                {new Date(selectedTask.reservation.checkOut).toLocaleString('tr-TR')}
-              </Text>
-            </View>
-          )}
+            {selectedTask.reservation.checkIn && (
+              <View style={styles.infoItem}>
+                <Text variant="bodySmall" style={styles.infoLabel}>Çıkış Tarihi</Text>
+                <Text variant="bodyLarge" style={styles.infoValue}>
+                  {new Date(selectedTask.reservation.checkIn).toLocaleString('tr-TR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </Text>
+              </View>
+            )}
+            {selectedTask.reservation.checkOut && (
+              <View style={styles.infoItem}>
+                <Text variant="bodySmall" style={styles.infoLabel}>Dönüş Tarihi</Text>
+                <Text variant="bodyLarge" style={styles.infoValue}>
+                  {new Date(selectedTask.reservation.checkOut).toLocaleString('tr-TR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </Text>
+              </View>
+            )}
+          </View>
         </Card.Content>
       </Card>
 
@@ -120,9 +176,10 @@ export default function TaskDetailScreen() {
           <Button
             mode="contained"
             onPress={handleStartCheckout}
-            icon={() => <Icon name="car-outline" size={24} />}
+            icon="arrow-up-circle"
             style={styles.actionButton}
             contentStyle={styles.actionButtonContent}
+            buttonColor={theme.colors.primary}
           >
             Araç Çıkışı Başlat
           </Button>
@@ -132,9 +189,10 @@ export default function TaskDetailScreen() {
           <Button
             mode="contained"
             onPress={handleStartReturn}
-            icon={() => <Icon name="car-return" size={24} />}
+            icon="arrow-down-circle"
             style={styles.actionButton}
             contentStyle={styles.actionButtonContent}
+            buttonColor={theme.colors.secondary}
           >
             Araç Dönüşü Başlat
           </Button>
@@ -147,41 +205,100 @@ export default function TaskDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: theme.colors.background,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: theme.colors.background,
+    gap: theme.spacing.md,
+  },
+  loadingText: {
+    color: theme.colors.textSecondary,
+  },
+  header: {
+    padding: theme.spacing.lg,
+    backgroundColor: theme.colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+    marginBottom: theme.spacing.md,
+  },
+  headerText: {
+    flex: 1,
+  },
+  headerTitle: {
+    color: theme.colors.text,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    color: theme.colors.textSecondary,
+  },
+  statusChip: {
+    alignSelf: 'flex-start',
+    height: 32,
+    borderRadius: theme.borderRadius.sm,
   },
   card: {
-    margin: 16,
-    elevation: 2,
+    margin: theme.spacing.md,
+    borderRadius: theme.borderRadius.lg,
+    backgroundColor: theme.colors.surface,
+    ...theme.elevation.md,
   },
-  title: {
-    marginBottom: 8,
+  cardContent: {
+    padding: theme.spacing.md,
   },
-  divider: {
-    marginVertical: 16,
+  section: {
+    marginBottom: theme.spacing.sm,
   },
-  row: {
+  sectionHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  label: {
-    color: '#666',
-  },
-  customerName: {
-    fontWeight: 'bold',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
   },
   sectionTitle: {
-    marginTop: 8,
-    marginBottom: 12,
+    color: theme.colors.text,
+    fontWeight: '600',
+  },
+  divider: {
+    marginVertical: theme.spacing.md,
+    backgroundColor: theme.colors.divider,
+  },
+  infoItem: {
+    marginBottom: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
+  },
+  infoLabel: {
+    color: theme.colors.textSecondary,
+    marginBottom: 4,
+  },
+  infoValue: {
+    color: theme.colors.text,
+    fontWeight: '500',
+  },
+  plateNumber: {
+    letterSpacing: 2,
+    fontWeight: '700',
+    fontSize: 18,
   },
   actions: {
-    padding: 16,
+    padding: theme.spacing.md,
+    paddingBottom: theme.spacing.xl,
   },
   actionButton: {
-    marginBottom: 8,
+    marginBottom: theme.spacing.sm,
+    borderRadius: theme.borderRadius.md,
+    ...theme.elevation.sm,
   },
   actionButtonContent: {
-    paddingVertical: 8,
+    paddingVertical: theme.spacing.sm,
   },
 });
 

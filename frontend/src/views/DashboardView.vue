@@ -1,93 +1,79 @@
 <template>
   <v-container fluid class="dashboard-container">
-    <v-row>
-      <!-- Sol: Rezervasyonlar Listesi (col-2) -->
-      <v-col cols="12" md="2" class="pa-2">
-        <v-card elevation="0" class="h-100 reservation-card" style="border: 1px solid #e5e7eb;">
-          <v-card-title class="d-flex align-center justify-space-between pa-2" style="min-height: 40px;">
-            <span class="text-body-2 font-weight-bold" style="font-size: 0.75rem;">Rezervasyonlar</span>
-            <v-btn
-              icon="mdi-refresh"
-              variant="text"
-              size="x-small"
-              @click="loadReservations"
-              :loading="loadingReservations"
-              style="min-width: 24px; width: 24px; height: 24px;"
-            />
+        <!-- Reklam Alanı - Premium Özellikler -->
+        <v-row class="mt-4">
+      <v-col cols="12">
+        <v-card elevation="2" rounded="lg" color="primary" variant="tonal">
+          <v-card-title class="d-flex align-center pa-3">
+            <v-icon icon="mdi-star" color="primary" class="mr-2" />
+            <span class="text-subtitle-1 font-weight-bold">Premium Özellikler</span>
+            <v-spacer />
+            <v-chip color="primary" size="small" variant="flat">Ücretli Özellikler</v-chip>
           </v-card-title>
           <v-divider />
-          <v-card-text class="pa-0 reservations-list" style="max-height: calc(100vh - 200px); overflow-y: auto;">
-            <div v-if="reservations.length === 0" class="text-center py-8">
-              <v-icon icon="mdi-information-outline" size="24" color="grey-lighten-1" />
-              <p class="text-caption text-medium-emphasis mt-2" style="font-size: 0.7rem;">Rezervasyon bulunamadı</p>
-            </div>
-            <div
-              v-for="(reservation, index) in reservations"
-              :key="reservation.id"
-              class="reservation-item-card"
-              :class="{ 'selected': selectedReservation?.id === reservation.id }"
-              @click="selectReservation(reservation)"
-            >
-              <div class="d-flex align-center justify-space-between pa-2">
-                <span class="reservation-id" style="font-size: 0.7rem; font-weight: 600; color: #6b7280;">
-                  #{{ reservation.reference }}
-                </span>
-                <v-menu>
-                  <template #activator="{ props }">
-                    <v-btn
-                      icon="mdi-dots-vertical"
-                      variant="text"
-                      size="x-small"
-                      v-bind="props"
-                      @click.stop
-                      style="min-width: 20px; width: 20px; height: 20px;"
-                    />
-                  </template>
-                  <v-list density="compact">
-                    <v-list-item @click="viewReservationDetails(reservation)">
-                      <v-list-item-title style="font-size: 0.75rem;">Detayları Gör</v-list-item-title>
-                    </v-list-item>
-                  </v-list>
-                </v-menu>
-              </div>
-              <div class="d-flex align-center pa-2 pt-0">
-                <v-avatar size="32" class="mr-2">
-                  <span style="font-size: 0.75rem; font-weight: 600;">
-                    {{ getInitials(reservation.customerName) }}
-                  </span>
-                </v-avatar>
-                <div class="flex-grow-1">
-                  <div class="customer-name" style="font-size: 0.75rem; font-weight: 500; line-height: 1.2;">
-                    {{ reservation.customerName }}
+          <v-card-text class="pa-4">
+            <v-row>
+              <v-col cols="12" sm="6" md="3">
+                <v-card variant="outlined" class="h-100 text-center pa-3">
+                  <v-icon icon="mdi-cash-multiple" size="40" color="success" class="mb-2" />
+                  <div class="text-subtitle-2 font-weight-bold mb-1">Ön Muhasebe</div>
+                  <div class="text-caption text-medium-emphasis mb-2">
+                    Finansal işlemlerinizi yönetin
                   </div>
-                  <div class="reservation-date" style="font-size: 0.65rem; color: #9ca3af; margin-top: 2px;">
-                    {{ formatReservationDate(reservation.createdAt) }}
+                  <v-chip color="success" size="x-small" variant="flat">Ücretli</v-chip>
+                </v-card>
+              </v-col>
+              <v-col cols="12" sm="6" md="3">
+                <v-card variant="outlined" class="h-100 text-center pa-3">
+                  <v-icon icon="mdi-car" size="40" color="info" class="mb-2" />
+                  <div class="text-subtitle-2 font-weight-bold mb-1">Araç Takip</div>
+                  <div class="text-caption text-medium-emphasis mb-2">
+                    Araçlarınızı gerçek zamanlı takip edin
                   </div>
-                  <v-chip
-                    size="x-small"
-                    :color="getStatusColor(reservation.status)"
-                    variant="flat"
-                    class="mt-1"
-                    style="height: 18px; font-size: 0.65rem; font-weight: 500;"
-                  >
-                    {{ getStatusText(reservation.status) }}
-                  </v-chip>
+                  <v-chip color="info" size="x-small" variant="flat">Ücretli</v-chip>
+                </v-card>
+              </v-col>
+              <v-col cols="12" sm="6" md="3">
+                <v-card variant="outlined" class="h-100 text-center pa-3">
+                  <v-icon icon="mdi-message-text" size="40" color="purple" class="mb-2" />
+                  <div class="text-subtitle-2 font-weight-bold mb-1">Chat Sistemi</div>
+                  <div class="text-caption text-medium-emphasis mb-2">
+                    Müşterilerinizle anlık iletişim
+                  </div>
+                  <v-chip color="purple" size="x-small" variant="flat">Ücretli</v-chip>
+                </v-card>
+              </v-col>
+              <v-col cols="12" sm="6" md="3">
+                <v-card variant="outlined" class="h-100 text-center pa-3">
+                  <v-icon icon="mdi-robot" size="40" color="orange" class="mb-2" />
+                  <div class="text-subtitle-2 font-weight-bold mb-1">Yapay Zeka</div>
+                  <div class="text-caption text-medium-emphasis mb-2">
+                    AI ile içerik üretimi
+                  </div>
+                  <v-chip color="orange" size="x-small" variant="flat">Ücretli</v-chip>
+                </v-card>
+              </v-col>
+            </v-row>
+            <v-alert type="info" variant="tonal" class="mt-4" density="compact">
+              <div class="d-flex align-center">
+                <v-icon icon="mdi-information" class="mr-2" />
+                <div>
+                  <strong>Bu özellikleri kullanmak için yetki alın.</strong>
+                  <div class="text-caption mt-1">Detaylı bilgi için destek ekibimizle iletişime geçin.</div>
                 </div>
               </div>
-              <v-divider class="mx-2" />
-              <div class="d-flex align-center justify-space-between pa-2">
-                <span style="font-size: 0.65rem; color: #6b7280; font-weight: 500;">Kazanç</span>
-                <span class="earned-amount" style="font-size: 0.875rem; font-weight: 600; color: #059669;">
-                  {{ formatCurrency(reservation.earned || 0) }}
-                </span>
-              </div>
-            </div>
+            </v-alert>
           </v-card-text>
         </v-card>
       </v-col>
+    </v-row>
+    <v-row>
+ 
 
-      <!-- Orta: Kurlar ve Araç Takip (col-8) -->
-      <v-col cols="12" md="8" class="pa-2">
+
+      <!-- Sağ: İstatistikler - Minimal Kartlar -->
+             <!-- Orta: Kurlar ve Araç Takip (col-8) -->
+      <v-col cols="12" md="12" class="pa-2">
         <v-row>
           <!-- Üst: Kur Bilgisi (Küçük, İkon - Price) -->
           <v-col cols="12">
@@ -116,104 +102,57 @@
           </v-col>
 
           <!-- Alt: Araç Takip -->
-          <v-col cols="12">
-            <v-card elevation="2" rounded="lg">
-              <v-card-title class="pa-3">
-                <span class="text-subtitle-1 font-weight-bold">Araç Takip</span>
-              </v-card-title>
-              <v-divider />
+   
+        </v-row>
+      </v-col>
+
+      <v-col cols="12" md="12" class="pa-2">
+        <v-row dense>
+          <v-col
+            v-for="stat in statsList"
+            :key="stat.key"
+            cols="6"
+            sm="4"
+            md="2"
+            class="pa-1"
+          >
+            <v-card
+              elevation="0"
+              class="stat-card-minimal"
+              :style="{ borderLeft: `4px solid ${getStatColor(stat.iconColor)}` }"
+            >
               <v-card-text class="pa-3">
-                <v-select
-                  v-model="selectedPlate"
-                  :items="plates"
-                  item-title="plateNumber"
-                  item-value="plateNumber"
-                  label="Plaka Seçin"
-                  variant="outlined"
-                  density="compact"
-                  :loading="loadingPlates"
-                  @update:model-value="trackVehicle"
-                  prepend-inner-icon="mdi-car"
-                />
-                
-                <div v-if="trackingInfo && selectedPlate" class="mt-3">
-                  <v-row dense>
-                    <v-col cols="6" md="3">
-                      <div class="text-caption text-medium-emphasis">Hız</div>
-                      <div class="text-body-2 font-weight-bold">
-                        {{ trackingInfo.lastLocation?.speed || 0 }} km/h
-                      </div>
-                    </v-col>
-                    <v-col cols="6" md="3">
-                      <div class="text-caption text-medium-emphasis">Yakıt</div>
-                      <div class="text-body-2 font-weight-bold">
-                        {{ trackingInfo.fuelLevel || 0 }}%
-                      </div>
-                    </v-col>
-                    <v-col cols="6" md="3">
-                      <div class="text-caption text-medium-emphasis">Kontak</div>
-                      <div class="text-body-2 font-weight-bold">
-                        {{ trackingInfo.ignitionStatus ? 'Açık' : 'Kapalı' }}
-                      </div>
-                    </v-col>
-                    <v-col cols="6" md="3">
-                      <div class="text-caption text-medium-emphasis">Kilometre</div>
-                      <div class="text-body-2 font-weight-bold">
-                        {{ trackingInfo.mileage || 0 }} km
-                      </div>
-                    </v-col>
-                  </v-row>
-                  
-                  <div v-if="trackingInfo.lastLocation" class="mt-3">
-                    <div id="map" style="height: 300px; width: 100%; border-radius: 8px;"></div>
+                <div class="d-flex align-center justify-space-between">
+                  <div class="flex-grow-1">
+                    <div
+                      class="stat-value-minimal"
+                      :style="{ color: getStatColor(stat.iconColor) }"
+                    >
+                      {{ formatNumber(stat.value) }}
+                    </div>
+                    <div class="stat-label-minimal">
+                      {{ stat.label }}
+                    </div>
+                    <v-progress-linear
+                      v-if="stat.showProgress"
+                      :model-value="getProgressValue(stat.value, stat.maxValue || 100)"
+                      :color="stat.iconColor"
+                      height="4"
+                      rounded
+                      class="mt-2"
+                    />
                   </div>
-                </div>
-                <div v-else-if="selectedPlate && loadingTracking" class="text-center py-4">
-                  <v-progress-circular indeterminate color="primary" />
-                </div>
-                <div v-else-if="selectedPlate && !trackingInfo" class="text-center py-4">
-                  <v-icon icon="mdi-alert-circle-outline" size="32" color="warning" />
-                  <p class="text-caption text-medium-emphasis mt-2">Araç bilgisi bulunamadı</p>
+                  <v-icon
+                    :icon="stat.icon"
+                    size="32"
+                    :color="stat.iconColor"
+                    class="ml-2"
+                  />
                 </div>
               </v-card-text>
             </v-card>
           </v-col>
         </v-row>
-      </v-col>
-
-      <!-- Sağ: İstatistikler (col-2) -->
-      <v-col cols="12" md="2" class="pa-2">
-        <v-card elevation="0" class="h-100 stats-card" style="border: 1px solid #e5e7eb;">
-          <v-card-title class="pa-2" style="min-height: 40px;">
-            <span class="text-body-2 font-weight-bold" style="font-size: 0.75rem;">İstatistikler</span>
-          </v-card-title>
-          <v-divider />
-          <v-card-text class="pa-0">
-            <div v-if="loadingStats" class="text-center py-4">
-              <v-progress-circular indeterminate color="primary" size="20" />
-            </div>
-            <div v-else>
-              <div
-                v-for="(stat, index) in statsList"
-                :key="stat.key"
-                class="stat-item-card"
-              >
-                <div class="d-flex align-center justify-space-between pa-2">
-                  <div class="flex-grow-1">
-                    <div class="stat-label" style="font-size: 0.7rem; color: #6b7280; font-weight: 500; line-height: 1.2;">
-                      {{ stat.label }}
-                    </div>
-                    <div class="stat-value" style="font-size: 0.875rem; font-weight: 600; color: #111827; margin-top: 4px;">
-                      {{ formatNumber(stat.value) }}
-                    </div>
-                  </div>
-                  <v-icon :icon="stat.icon" size="20" :color="stat.iconColor" class="ml-2" />
-                </div>
-                <v-divider v-if="index < statsList.length - 1" class="mx-2" />
-              </div>
-            </div>
-          </v-card-text>
-        </v-card>
       </v-col>
     </v-row>
 
@@ -534,73 +473,7 @@
       </v-col>
     </v-row>
 
-    <!-- Reklam Alanı - Premium Özellikler -->
-    <v-row class="mt-4">
-      <v-col cols="12">
-        <v-card elevation="2" rounded="lg" color="primary" variant="tonal">
-          <v-card-title class="d-flex align-center pa-3">
-            <v-icon icon="mdi-star" color="primary" class="mr-2" />
-            <span class="text-subtitle-1 font-weight-bold">Premium Özellikler</span>
-            <v-spacer />
-            <v-chip color="primary" size="small" variant="flat">Ücretli Özellikler</v-chip>
-          </v-card-title>
-          <v-divider />
-          <v-card-text class="pa-4">
-            <v-row>
-              <v-col cols="12" sm="6" md="3">
-                <v-card variant="outlined" class="h-100 text-center pa-3">
-                  <v-icon icon="mdi-cash-multiple" size="40" color="success" class="mb-2" />
-                  <div class="text-subtitle-2 font-weight-bold mb-1">Ön Muhasebe</div>
-                  <div class="text-caption text-medium-emphasis mb-2">
-                    Finansal işlemlerinizi yönetin
-                  </div>
-                  <v-chip color="success" size="x-small" variant="flat">Ücretli</v-chip>
-                </v-card>
-              </v-col>
-              <v-col cols="12" sm="6" md="3">
-                <v-card variant="outlined" class="h-100 text-center pa-3">
-                  <v-icon icon="mdi-car" size="40" color="info" class="mb-2" />
-                  <div class="text-subtitle-2 font-weight-bold mb-1">Araç Takip</div>
-                  <div class="text-caption text-medium-emphasis mb-2">
-                    Araçlarınızı gerçek zamanlı takip edin
-                  </div>
-                  <v-chip color="info" size="x-small" variant="flat">Ücretli</v-chip>
-                </v-card>
-              </v-col>
-              <v-col cols="12" sm="6" md="3">
-                <v-card variant="outlined" class="h-100 text-center pa-3">
-                  <v-icon icon="mdi-message-text" size="40" color="purple" class="mb-2" />
-                  <div class="text-subtitle-2 font-weight-bold mb-1">Chat Sistemi</div>
-                  <div class="text-caption text-medium-emphasis mb-2">
-                    Müşterilerinizle anlık iletişim
-                  </div>
-                  <v-chip color="purple" size="x-small" variant="flat">Ücretli</v-chip>
-                </v-card>
-              </v-col>
-              <v-col cols="12" sm="6" md="3">
-                <v-card variant="outlined" class="h-100 text-center pa-3">
-                  <v-icon icon="mdi-robot" size="40" color="orange" class="mb-2" />
-                  <div class="text-subtitle-2 font-weight-bold mb-1">Yapay Zeka</div>
-                  <div class="text-caption text-medium-emphasis mb-2">
-                    AI ile içerik üretimi
-                  </div>
-                  <v-chip color="orange" size="x-small" variant="flat">Ücretli</v-chip>
-                </v-card>
-              </v-col>
-            </v-row>
-            <v-alert type="info" variant="tonal" class="mt-4" density="compact">
-              <div class="d-flex align-center">
-                <v-icon icon="mdi-information" class="mr-2" />
-                <div>
-                  <strong>Bu özellikleri kullanmak için yetki alın.</strong>
-                  <div class="text-caption mt-1">Detaylı bilgi için destek ekibimizle iletişime geçin.</div>
-                </div>
-              </div>
-            </v-alert>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+
   </v-container>
 </template>
 
@@ -697,6 +570,27 @@ const stats = ref({
 });
 const loadingStats = ref(false);
 
+const getStatColor = (colorName: string): string => {
+  const colorMap: Record<string, string> = {
+    'blue': '#2196F3',
+    'green': '#4CAF50',
+    'orange': '#FF9800',
+    'red': '#F44336',
+    'purple': '#9C27B0',
+    'teal': '#009688',
+    'cyan': '#00BCD4',
+    'indigo': '#3F51B5',
+    'pink': '#E91E63',
+    'amber': '#FFC107',
+  };
+  return colorMap[colorName] || colorName || '#757575';
+};
+
+const getProgressValue = (value: number, maxValue: number): number => {
+  if (maxValue === 0) return 0;
+  return Math.min((value / maxValue) * 100, 100);
+};
+
 // İstatistikler listesi (görseldeki gibi)
 const statsList = computed(() => [
   {
@@ -704,42 +598,50 @@ const statsList = computed(() => [
     label: 'Toplam Kiralama Gün Sayısı',
     value: stats.value.totalBusinessDays,
     icon: 'mdi-calendar-month',
-    iconColor: '#3b82f6',
+    iconColor: 'blue',
+    showProgress: false,
   },
   {
     key: 'deliveredVehicles',
     label: 'Teslim Edilen Araçlar',
     value: stats.value.deliveredVehicles,
     icon: 'mdi-car-check',
-    iconColor: '#10b981',
+    iconColor: 'green',
+    showProgress: false,
   },
   {
     key: 'vehiclesDeparting24h',
     label: '24 Saat İçinde Çıkacak',
     value: stats.value.vehiclesDeparting24h,
     icon: 'mdi-timer-outline',
-    iconColor: '#f59e0b',
+    iconColor: 'orange',
+    showProgress: true,
+    maxValue: 50,
   },
   {
     key: 'notDeparted',
     label: 'Çıkışı Yapılmamışlar',
     value: stats.value.notDeparted,
     icon: 'mdi-car-outline',
-    iconColor: '#6366f1',
+    iconColor: 'indigo',
+    showProgress: false,
   },
   {
     key: 'vehiclesReturning24h',
     label: '24 Saat İçinde Dönecek',
     value: stats.value.vehiclesReturning24h,
     icon: 'mdi-timer-outline',
-    iconColor: '#f59e0b',
+    iconColor: 'orange',
+    showProgress: true,
+    maxValue: 50,
   },
   {
     key: 'notReturned',
     label: 'Dönüşü Yapılmamışlar',
     value: stats.value.notReturned,
     icon: 'mdi-car-off',
-    iconColor: '#ef4444',
+    iconColor: 'red',
+    showProgress: false,
   },
 ]);
 
@@ -1392,5 +1294,35 @@ onMounted(async () => {
 .earned-amount {
   font-weight: 700;
   letter-spacing: -0.3px;
+}
+
+/* Minimal Statistics Cards */
+.stat-card-minimal {
+  background: white;
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  height: 100%;
+}
+
+.stat-card-minimal:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.stat-value-minimal {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 4px;
+  letter-spacing: -0.5px;
+}
+
+.stat-label-minimal {
+  font-size: 0.75rem;
+  color: #6b7280;
+  font-weight: 500;
+  line-height: 1.3;
+  margin-top: 4px;
 }
 </style>
