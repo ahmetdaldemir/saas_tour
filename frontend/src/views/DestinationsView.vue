@@ -214,6 +214,33 @@
                 </div>
               </v-col>
               <v-col cols="12">
+                <v-select
+                  v-model="form.rentacarLocationId"
+                  :items="rentacarLocations"
+                  item-title="name"
+                  item-value="id"
+                  label="Lokasyon"
+                  prepend-inner-icon="mdi-map-marker"
+                  variant="outlined"
+                  density="comfortable"
+                  clearable
+                  :loading="loadingLocations"
+                  hint="Bu destinasyonu bir lokasyona bağlayabilirsiniz"
+                  persistent-hint
+                >
+                  <template #item="{ props, item }">
+                    <v-list-item v-bind="props">
+                      <template #title>
+                        {{ item.raw.name }}
+                      </template>
+                      <template #subtitle>
+                        <span class="text-caption">{{ item.raw.location?.type || '' }}</span>
+                      </template>
+                    </v-list-item>
+                  </template>
+                </v-select>
+              </v-col>
+              <v-col cols="12">
                 <v-checkbox v-model="form.isActive" label="Aktif" color="success" />
                 <v-checkbox v-model="form.isFeatured" label="Öne Çıkar" />
               </v-col>
@@ -256,7 +283,18 @@ interface Destination {
   image?: string;
   isActive: boolean;
   isFeatured: boolean;
+  rentacarLocationId?: string;
   translations?: Translation[];
+}
+
+interface RentacarLocation {
+  id: string;
+  name: string;
+  location: {
+    id: string;
+    name: string;
+    type: string;
+  };
 }
 
 interface Language {
@@ -276,6 +314,8 @@ const headers = [
 const destinations = ref<Destination[]>([]);
 const selectedDestinations = ref<Destination[]>([]);
 const availableLanguages = ref<Language[]>([]);
+const rentacarLocations = ref<RentacarLocation[]>([]);
+const loadingLocations = ref(false);
 const loading = ref(false);
 const submitting = ref(false);
 const removing = ref<string | null>(null);
@@ -293,7 +333,9 @@ const selectedLanguageTab = ref<string>('');
 const form = reactive({
   translations: {} as Record<string, TranslationForm>,
   image: '',
+  isActive: true,
   isFeatured: false,
+  rentacarLocationId: undefined as string | undefined,
 });
 
 const imageFile = ref<File | null>(null);
@@ -414,6 +456,7 @@ const resetForm = () => {
   form.image = '';
   form.isActive = true;
   form.isFeatured = false;
+  form.rentacarLocationId = undefined;
   imageFile.value = null;
   uploadingImage.value = false;
   editingId.value = null;
@@ -460,6 +503,7 @@ const handleSubmit = async () => {
       image: form.image?.trim() || undefined,
       isActive: form.isActive,
       isFeatured: form.isFeatured,
+      rentacarLocationId: form.rentacarLocationId || undefined,
       translations,
     };
 
@@ -651,6 +695,7 @@ const startEdit = (destination: Destination) => {
   form.image = destination.image || '';
   form.isActive = destination.isActive ?? true;
   form.isFeatured = destination.isFeatured || false;
+  form.rentacarLocationId = destination.rentacarLocationId;
   formError.value = '';
   dialog.value = true;
   formRef.value?.resetValidation();
@@ -772,6 +817,7 @@ const generateContent = async () => {
 onMounted(async () => {
   await features.initialize();
   await loadLanguages();
+  await loadRentacarLocations();
   // Load destinations after languages are loaded so we can find Turkish language
   await loadDestinations();
 });

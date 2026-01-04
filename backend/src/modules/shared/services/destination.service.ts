@@ -17,6 +17,7 @@ export type CreateDestinationDto = {
   image?: string;
   isFeatured?: boolean;
   isActive?: boolean;
+  rentacarLocationId?: string;
   translations: DestinationTranslationInput[];
 };
 
@@ -24,6 +25,7 @@ export type UpdateDestinationDto = {
   image?: string;
   isFeatured?: boolean;
   isActive?: boolean;
+  rentacarLocationId?: string;
   translations?: DestinationTranslationInput[];
 };
 
@@ -178,6 +180,7 @@ export class DestinationService {
       image: input.image,
       isFeatured: input.isFeatured ?? false,
       isActive: input.isActive ?? true,
+      rentacarLocationId: input.rentacarLocationId,
     });
 
     const savedDestination = await this.repo().save(destination);
@@ -226,6 +229,11 @@ export class DestinationService {
     // Update isActive if provided
     if (input.isActive !== undefined) {
       destination.isActive = input.isActive;
+    }
+
+    // Update rentacarLocationId if provided
+    if (input.rentacarLocationId !== undefined) {
+      destination.rentacarLocationId = input.rentacarLocationId;
     }
 
     await this.repo().save(destination);
