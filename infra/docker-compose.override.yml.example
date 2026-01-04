@@ -1,0 +1,14 @@
+# Local Development Override
+# Copy this file to docker-compose.override.yml for local development
+# This file is automatically loaded by docker-compose and adds port mapping
+# Production deployments should NOT have this file
+
+version: "3.9"
+
+services:
+  backend:
+    ports:
+      # Expose backend port for direct access (mobile app, local development)
+      # Host:Container port mapping - allows access from host machine and emulators
+      - "${BACKEND_PORT:-4001}:3000"
+

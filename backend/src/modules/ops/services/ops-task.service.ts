@@ -52,7 +52,7 @@ export class OpsTaskService {
   ): Promise<OpsTask[]> {
     const query = this.taskRepo()
       .createQueryBuilder('task')
-      .leftJoinAndSelect('task.reservation', 'reservation')
+      .leftJoinAndSelect(Reservation, 'reservation', 'reservation.id = task.reservationId')
       .where('task.tenantId = :tenantId', { tenantId });
 
     if (filters.type) {
@@ -64,12 +64,11 @@ export class OpsTaskService {
     }
 
     if (filters.dateFrom || filters.dateTo) {
-      query.leftJoin('reservation', 'r', 'r.id = task.reservationId');
       if (filters.dateFrom) {
-        query.andWhere('r.checkIn >= :dateFrom', { dateFrom: filters.dateFrom });
+        query.andWhere('reservation.checkIn >= :dateFrom', { dateFrom: filters.dateFrom });
       }
       if (filters.dateTo) {
-        query.andWhere('r.checkIn <= :dateTo', { dateTo: filters.dateTo });
+        query.andWhere('reservation.checkIn <= :dateTo', { dateTo: filters.dateTo });
       }
     }
 

@@ -16,6 +16,9 @@ services:
       - DB_USERNAME=${DB_USERNAME:-dev_user}
       - DB_PASSWORD=${DB_PASSWORD:-dev_pass}
       - DB_NAME=${DB_NAME:-tour_saas}
+    # Port mapping is handled by docker-compose.override.yml for local development
+    # In production, Traefik handles routing, so direct port access is not needed
+    # For local development, copy docker-compose.override.yml.example to docker-compose.override.yml
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       # Uploads klasörünü kalıcı hale getir (production'da)

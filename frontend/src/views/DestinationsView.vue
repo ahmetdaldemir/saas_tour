@@ -8,25 +8,54 @@
             Global turizm bolgelerini yonetin ve vitrine cikarmak istediklerinizi belirleyin.
           </p>
         </div>
-        <v-btn color="primary" prepend-icon="mdi-map-plus" @click="openCreate">
-          Yeni Destinasyon
-        </v-btn>
+        <div class="d-flex gap-2">
+          <v-btn
+            v-if="selectedDestinations.length > 0"
+            color="error"
+            prepend-icon="mdi-delete-multiple"
+            @click="bulkDelete"
+            :loading="bulkDeleting"
+          >
+            Seçilenleri Sil ({{ selectedDestinations.length }})
+          </v-btn>
+          <v-btn color="primary" prepend-icon="mdi-map-plus" @click="openCreate">
+            Yeni Destinasyon
+          </v-btn>
+        </div>
       </div>
 
       <v-data-table
+        v-model:selected="selectedDestinations"
         :headers="headers"
         :items="destinations.map(d => ({ ...d, displayName: getDisplayName(d) }))"
         :loading="loading"
         item-key="id"
+        show-select
         density="comfortable"
         class="elevation-0"
       >
         <template #item.displayName="{ item }">
           <span class="font-weight-medium">{{ getDisplayName(item) }}</span>
         </template>
+        <template #item.isActive="{ item }">
+          <v-switch
+            :model-value="item.isActive"
+            @update:model-value="toggleActive(item.id, $event)"
+            color="success"
+            hide-details
+            density="compact"
+            :loading="updatingActive === item.id"
+          />
+        </template>
         <template #item.isFeatured="{ item }">
-          <v-chip v-if="item.isFeatured" color="primary" size="small">Öne Çıkan</v-chip>
-          <span v-else class="text-medium-emphasis">-</span>
+          <v-switch
+            :model-value="item.isFeatured"
+            @update:model-value="toggleFeatured(item.id, $event)"
+            color="primary"
+            hide-details
+            density="compact"
+            :loading="updatingFeatured === item.id"
+          />
         </template>
         <template #item.actions="{ item }">
           <v-btn icon="mdi-pencil" variant="text" @click="startEdit(item)" />
@@ -173,6 +202,7 @@
                 </div>
               </v-col>
               <v-col cols="12">
+                <v-checkbox v-model="form.isActive" label="Aktif" color="success" />
                 <v-checkbox v-model="form.isFeatured" label="Öne Çıkar" />
               </v-col>
             </v-row>
@@ -212,6 +242,7 @@ interface TranslationForm {
 interface Destination {
   id: string;
   image?: string;
+  isActive: boolean;
   isFeatured: boolean;
   translations?: Translation[];
 }
@@ -225,15 +256,20 @@ interface Language {
 
 const headers = [
   { title: 'Ad', key: 'displayName' },
+  { title: 'Aktif', key: 'isActive' },
   { title: 'Öne Çıkan', key: 'isFeatured' },
   { title: '', key: 'actions', sortable: false, align: 'end' },
 ];
 
 const destinations = ref<Destination[]>([]);
+const selectedDestinations = ref<Destination[]>([]);
 const availableLanguages = ref<Language[]>([]);
 const loading = ref(false);
 const submitting = ref(false);
 const removing = ref<string | null>(null);
+const bulkDeleting = ref(false);
+const updatingActive = ref<string | null>(null);
+const updatingFeatured = ref<string | null>(null);
 const formError = ref('');
 const formRef = ref();
 const isValid = ref(false);
@@ -338,6 +374,7 @@ const resetForm = () => {
     };
   });
   form.image = '';
+  form.isActive = true;
   form.isFeatured = false;
   imageFile.value = null;
   uploadingImage.value = false;
@@ -383,6 +420,7 @@ const handleSubmit = async () => {
 
     const payload = {
       image: form.image?.trim() || undefined,
+      isActive: form.isActive,
       isFeatured: form.isFeatured,
       translations,
     };
@@ -410,6 +448,40 @@ const handleSubmit = async () => {
   }
 };
 
+const bulkDelete = async () => {
+  if (selectedDestinations.value.length === 0) {
+    return;
+  }
+
+  const confirmMessage = `${selectedDestinations.value.length} destinasyon silinecek. Emin misiniz?`;
+  if (!confirm(confirmMessage)) {
+    return;
+  }
+
+  bulkDeleting.value = true;
+  try {
+    // Delete all selected destinations in parallel
+    await Promise.all(
+      selectedDestinations.value.map(destination => 
+        http.delete(`/destinations/${destination.id}`)
+      )
+    );
+    
+    // Remove from local state
+    const selectedIds = selectedDestinations.value.map(d => d.id);
+    destinations.value = destinations.value.filter(d => !selectedIds.includes(d.id));
+    selectedDestinations.value = [];
+    
+    // Show success message
+    alert(`${selectedIds.length} destinasyon başarıyla silindi.`);
+  } catch (error: any) {
+    console.error('Failed to delete destinations:', error);
+    alert(error.response?.data?.error?.message || 'Destinasyonlar silinirken bir hata oluştu');
+  } finally {
+    bulkDeleting.value = false;
+  }
+};
+
 const removeDestination = async (id: string) => {
   removing.value = id;
   try {
@@ -420,6 +492,52 @@ const removeDestination = async (id: string) => {
     }
   } finally {
     removing.value = null;
+  }
+};
+
+const toggleFeatured = async (id: string, isFeatured: boolean) => {
+  updatingFeatured.value = id;
+  try {
+    await http.patch(`/destinations/${id}`, { isFeatured });
+    // Update local state immediately for better UX
+    const destination = destinations.value.find(d => d.id === id);
+    if (destination) {
+      destination.isFeatured = isFeatured;
+    }
+  } catch (error: any) {
+    console.error('Failed to update featured status:', error);
+    // Revert on error
+    const destination = destinations.value.find(d => d.id === id);
+    if (destination) {
+      destination.isFeatured = !isFeatured;
+    }
+    // Optionally show error message
+    alert(error.response?.data?.error?.message || 'Öne çıkan durumu güncellenirken bir hata oluştu');
+  } finally {
+    updatingFeatured.value = null;
+  }
+};
+
+const toggleActive = async (id: string, isActive: boolean) => {
+  updatingActive.value = id;
+  try {
+    await http.patch(`/destinations/${id}`, { isActive });
+    // Update local state immediately for better UX
+    const destination = destinations.value.find(d => d.id === id);
+    if (destination) {
+      destination.isActive = isActive;
+    }
+  } catch (error: any) {
+    console.error('Failed to update active status:', error);
+    // Revert on error
+    const destination = destinations.value.find(d => d.id === id);
+    if (destination) {
+      destination.isActive = !isActive;
+    }
+    // Optionally show error message
+    alert(error.response?.data?.error?.message || 'Aktif durumu güncellenirken bir hata oluştu');
+  } finally {
+    updatingActive.value = null;
   }
 };
 
@@ -476,6 +594,7 @@ const startEdit = (destination: Destination) => {
   }
   
   form.image = destination.image || '';
+  form.isActive = destination.isActive ?? true;
   form.isFeatured = destination.isFeatured || false;
   formError.value = '';
   dialog.value = true;

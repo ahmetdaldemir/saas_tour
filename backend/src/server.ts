@@ -72,8 +72,11 @@ const start = async () => {
     startFinanceReminderScheduler();
   }
 
-  httpServer.listen(port, () => {
-    logger.info(`API running on port ${port}`, { environment: config.nodeEnv });
+  // Listen on all network interfaces (0.0.0.0) to allow connections from emulators and other devices
+  // localhost only listens on 127.0.0.1, which doesn't work for Android emulator (10.0.2.2)
+  httpServer.listen(port, '0.0.0.0', () => {
+    logger.info(`API running on port ${port} (0.0.0.0:${port})`, { environment: config.nodeEnv });
+    logger.info(`Accessible from: localhost:${port}, 127.0.0.1:${port}, and network IPs`);
   });
 };
 

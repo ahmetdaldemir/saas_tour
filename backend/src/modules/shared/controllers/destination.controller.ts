@@ -90,7 +90,7 @@ export class DestinationController {
         });
       }
 
-      const { image, isFeatured, translations } = req.body;
+      const { image, isFeatured, isActive, translations } = req.body;
 
       if (!translations || !Array.isArray(translations) || translations.length === 0) {
         return res.status(400).json({
@@ -119,6 +119,7 @@ export class DestinationController {
         tenantId,
         image,
         isFeatured,
+        isActive,
         translations,
       });
 
@@ -140,7 +141,7 @@ export class DestinationController {
   static async update(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
-      const { image, isFeatured, translations } = req.body;
+      const { image, isFeatured, isActive, translations } = req.body;
 
       // Validate translations if provided
       if (translations !== undefined) {
@@ -170,6 +171,7 @@ export class DestinationController {
       const destination = await DestinationService.update(id, {
         image,
         isFeatured,
+        isActive,
         translations,
       });
 

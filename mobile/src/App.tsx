@@ -10,6 +10,22 @@ import HomeTabs from './navigation/HomeTabs';
 import TaskDetailScreen from './screens/TaskDetailScreen';
 import CheckoutFlowScreen from './screens/CheckoutFlowScreen';
 import ReturnFlowScreen from './screens/ReturnFlowScreen';
+import { theme } from './styles/theme';
+
+const paperTheme = {
+  colors: {
+    primary: theme.colors.primary,
+    accent: theme.colors.accent,
+    background: theme.colors.background,
+    surface: theme.colors.surface,
+    error: theme.colors.error,
+    text: theme.colors.text,
+    onSurface: theme.colors.text,
+    disabled: theme.colors.textTertiary,
+    placeholder: theme.colors.textSecondary,
+    backdrop: theme.colors.shadow,
+  },
+};
 
 const Stack = createStackNavigator();
 
@@ -25,7 +41,7 @@ export default function App() {
   }
 
   return (
-    <PaperProvider>
+    <PaperProvider theme={paperTheme}>
       <NavigationContainer>
         <StatusBar style="auto" />
         <Stack.Navigator screenOptions={{ headerShown: false }}>

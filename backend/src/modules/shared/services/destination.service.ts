@@ -15,12 +15,14 @@ export type CreateDestinationDto = {
   tenantId: string;
   image?: string;
   isFeatured?: boolean;
+  isActive?: boolean;
   translations: DestinationTranslationInput[];
 };
 
 export type UpdateDestinationDto = {
   image?: string;
   isFeatured?: boolean;
+  isActive?: boolean;
   translations?: DestinationTranslationInput[];
 };
 
@@ -146,6 +148,7 @@ export class DestinationService {
       tenantId: input.tenantId,
       image: input.image,
       isFeatured: input.isFeatured ?? false,
+      isActive: input.isActive ?? true,
     });
 
     const savedDestination = await this.repo().save(destination);
@@ -185,6 +188,11 @@ export class DestinationService {
     // Update isFeatured if provided
     if (input.isFeatured !== undefined) {
       destination.isFeatured = input.isFeatured;
+    }
+
+    // Update isActive if provided
+    if (input.isActive !== undefined) {
+      destination.isActive = input.isActive;
     }
 
     await this.repo().save(destination);

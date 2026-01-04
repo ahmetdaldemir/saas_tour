@@ -1,7 +1,8 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+// @ts-ignore - @expo/vector-icons types may not be available
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import TodayTasksScreen from '../screens/TodayTasksScreen';
 import SearchTasksScreen from '../screens/SearchTasksScreen';
 import SettingsScreen from '../screens/SettingsScreen';
@@ -31,17 +32,30 @@ export default function HomeTabs() {
           if (route.name === 'Today') {
             iconName = focused ? 'calendar-today' : 'calendar-outline';
           } else if (route.name === 'Search') {
-            iconName = focused ? 'magnify' : 'magnify';
+            iconName = 'magnify';
           } else if (route.name === 'Settings') {
             iconName = focused ? 'cog' : 'cog-outline';
           } else {
-            iconName = 'help';
+            iconName = 'help-circle';
           }
 
-          return <Icon name={iconName} size={size} color={color} />;
+          return <MaterialCommunityIcons name={iconName as any} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#6200ee',
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: '#6366f1',
+        tabBarInactiveTintColor: '#94a3b8',
+        tabBarStyle: {
+          backgroundColor: '#ffffff',
+          borderTopWidth: 1,
+          borderTopColor: '#e2e8f0',
+          paddingTop: 8,
+          paddingBottom: 8,
+          height: 64,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+          marginTop: 4,
+        },
         headerShown: false,
       })}
     >
