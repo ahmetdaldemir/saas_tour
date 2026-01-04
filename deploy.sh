@@ -484,7 +484,37 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
         
         # Container prune
         docker container prune -f 2>/dev/null || true
-        sleep 8
+        
+        # Ekstra güvenlik: Tüm saas-tour-backend container'larını ID ile zorla temizle
+        echo -e "${YELLOW}🔍 Ekstra güvenlik: Tüm backend container'ları ID ile temizleniyor...${NC}"
+        # Önce filter ile dene
+        ALL_BACKEND_IDS=$(docker ps -a --filter "name=saas-tour-backend" --format "{{.ID}}" 2>/dev/null || true)
+        # Eğer filter çalışmazsa, grep ile bul
+        if [ -z "$ALL_BACKEND_IDS" ]; then
+            ALL_BACKEND_IDS=$(docker ps -a --format "{{.ID}} {{.Names}}" 2>/dev/null | grep -i "saas-tour-backend" | awk '{print $1}' || true)
+        fi
+        if [ -n "$ALL_BACKEND_IDS" ]; then
+            echo "$ALL_BACKEND_IDS" | while IFS= read -r container_id; do
+                if [ -n "$container_id" ] && [ ${#container_id} -ge 12 ]; then
+                    echo "   - Force removing backend container ID: ${container_id:0:12}"
+                    docker stop "${container_id:0:12}" 2>/dev/null || docker stop "$container_id" 2>/dev/null || true
+                    docker rm -f "${container_id:0:12}" 2>/dev/null || docker rm -f "$container_id" 2>/dev/null || true
+                fi
+            done
+        fi
+        
+        # Tüm container'ları kontrol et ve saas-tour-backend içerenleri temizle
+        docker ps -a --format "{{.ID}} {{.Names}}" 2>/dev/null | grep -i "saas-tour-backend" | while IFS= read -r line; do
+            if [ -n "$line" ]; then
+                container_id=$(echo "$line" | awk '{print $1}')
+                container_name=$(echo "$line" | awk '{print $2}')
+                echo "   - Removing: $container_name ($container_id)"
+                docker stop "$container_id" 2>/dev/null || true
+                docker rm -f "$container_id" 2>/dev/null || true
+            fi
+        done || true
+        
+        sleep 10
         
         # Önce yeni image'ları build et
         echo -e "${YELLOW}📦 Yeni image'lar build ediliyor...${NC}"
