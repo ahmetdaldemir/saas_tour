@@ -31,6 +31,7 @@ import TripsView from '../views/TripsView.vue';
 import CrmPagesView from '../views/CrmPagesView.vue';
 import { useAuthStore } from '../stores/auth';
 import { useAdminAuthStore } from '../stores/admin-auth';
+import { useFeaturesStore } from '../stores/features';
 
 /**
  * Check if current hostname is a subdomain
@@ -337,8 +338,7 @@ export const setupRouterGuards = (pinia: Pinia) => {
 
     // Feature-based authorization check
     if (to.meta.requiresAuth === true && auth.isAuthenticated) {
-      const { useFeaturesStore } = await import('../stores/features');
-      const featuresStore = useFeaturesStore();
+      const featuresStore = useFeaturesStore(pinia);
       await featuresStore.initialize();
       
       // Check feature requirements
