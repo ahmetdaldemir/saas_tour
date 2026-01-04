@@ -385,6 +385,23 @@ const filteredDestinations = computed(() => {
     .map(d => ({ ...d, displayName: getDisplayName(d) }));
 });
 
+const loadRentacarLocations = async () => {
+  if (!auth.tenant?.id) {
+    return;
+  }
+  
+  loadingLocations.value = true;
+  try {
+    const { data } = await http.get<RentacarLocation[]>(`/rentacar/locations?tenantId=${auth.tenant.id}&isActive=true`);
+    rentacarLocations.value = Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error('Failed to load rentacar locations:', error);
+    rentacarLocations.value = [];
+  } finally {
+    loadingLocations.value = false;
+  }
+};
+
 const loadLanguages = async () => {
   try {
     const { data } = await http.get<Language[]>('/languages');
