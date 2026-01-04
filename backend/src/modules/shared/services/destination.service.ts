@@ -9,6 +9,7 @@ export type DestinationTranslationInput = {
   title: string;
   description?: string;
   shortDescription?: string;
+  slug?: string; // Optional, will be auto-generated if not provided
 };
 
 export type CreateDestinationDto = {
@@ -31,6 +32,34 @@ export type DestinationWithTranslations = Destination & {
 };
 
 const MODEL_NAME = 'Destination';
+
+// Helper function to create slug from title (with Turkish character support)
+function slugify(text: string): string {
+  if (!text) return '';
+  
+  // Turkish character mappings
+  const turkishMap: { [key: string]: string } = {
+    'ç': 'c', 'Ç': 'c',
+    'ğ': 'g', 'Ğ': 'g',
+    'ı': 'i', 'İ': 'i',
+    'ö': 'o', 'Ö': 'o',
+    'ş': 's', 'Ş': 's',
+    'ü': 'u', 'Ü': 'u',
+  };
+  
+  return text
+    .toString()
+    .split('')
+    .map(char => turkishMap[char] || char)
+    .join('')
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-') // Replace spaces with -
+    .replace(/[^\w\-]+/g, '') // Remove all non-word chars
+    .replace(/\-\-+/g, '-') // Replace multiple - with single -
+    .replace(/^-+/, '') // Trim - from start of text
+    .replace(/-+$/, ''); // Trim - from end of text
+}
 
 export class DestinationService {
   private static repo(): Repository<Destination> {
@@ -160,11 +189,15 @@ export class DestinationService {
       if (t.description) valueData.description = t.description;
       if (t.shortDescription) valueData.shortDescription = t.shortDescription;
       
+      // Generate slug from title if not provided
+      const slug = t.slug || slugify(t.title);
+      
       return this.translationRepo().create({
         model: MODEL_NAME,
         modelId: savedDestination.id,
         languageId: t.languageId,
         name: t.title,
+        slug: slug,
         value: Object.keys(valueData).length > 0 ? JSON.stringify(valueData) : undefined,
       });
     });
@@ -223,11 +256,15 @@ export class DestinationService {
         if (t.description) valueData.description = t.description;
         if (t.shortDescription) valueData.shortDescription = t.shortDescription;
         
+        // Generate slug from title if not provided
+        const slug = t.slug || slugify(t.title);
+        
         return this.translationRepo().create({
           model: MODEL_NAME,
           modelId: id,
           languageId: t.languageId,
           name: t.title,
+          slug: slug,
           value: Object.keys(valueData).length > 0 ? JSON.stringify(valueData) : undefined,
         });
       });
