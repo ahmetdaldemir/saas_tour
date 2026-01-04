@@ -33,6 +33,45 @@ export default defineConfig(({ mode }) => {
         output: {
           // Ensure TinyMCE language files are properly handled
           assetFileNames: 'assets/[name].[ext]',
+          // Manual chunks for better code splitting
+          manualChunks: (id) => {
+            // TinyMCE and its plugins - separate chunk
+            if (id.includes('tinymce')) {
+              return 'tinymce';
+            }
+            // Vue core and ecosystem
+            if (id.includes('node_modules/vue') && !id.includes('node_modules/vue-router') && !id.includes('node_modules/pinia')) {
+              return 'vue-core';
+            }
+            // Vue Router and Pinia
+            if (id.includes('node_modules/vue-router') || id.includes('node_modules/pinia')) {
+              return 'vue-vendor';
+            }
+            // Vuetify
+            if (id.includes('node_modules/vuetify')) {
+              return 'vuetify';
+            }
+            // Chart.js
+            if (id.includes('node_modules/chart.js') || id.includes('node_modules/vue-chartjs')) {
+              return 'chart-vendor';
+            }
+            // Leaflet (map library)
+            if (id.includes('node_modules/leaflet')) {
+              return 'leaflet';
+            }
+            // Socket.io
+            if (id.includes('node_modules/socket.io-client')) {
+              return 'socketio';
+            }
+            // Axios
+            if (id.includes('node_modules/axios')) {
+              return 'axios';
+            }
+            // All other node_modules
+            if (id.includes('node_modules')) {
+              return 'vendor';
+            }
+          },
         },
       },
       // Ensure TinyMCE files are properly bundled
@@ -40,6 +79,8 @@ export default defineConfig(({ mode }) => {
         include: [/node_modules/],
         transformMixedEsModules: true,
       },
+      // Increase chunk size warning limit (TinyMCE is large, but we've split it)
+      chunkSizeWarningLimit: 1500,
     },
     // Optimize TinyMCE dependencies
     optimizeDeps: {
