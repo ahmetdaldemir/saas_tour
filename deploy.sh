@@ -402,8 +402,23 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
         echo -e "${YELLOW}🧹 Çakışan container'lar temizleniyor...${NC}"
         docker-compose down --remove-orphans 2>/dev/null || true
         
+        # ÖNEMLİ: Tüm saas-tour-backend container'larını önce isim bazlı temizle
+        echo -e "${YELLOW}🔍 saas-tour-backend container'ları temizleniyor (isim bazlı)...${NC}"
+        BACKEND_CONTAINERS=$(docker ps -a --filter "name=saas-tour-backend" --format "{{.ID}} {{.Names}}" || true)
+        if [ -n "$BACKEND_CONTAINERS" ]; then
+            echo "$BACKEND_CONTAINERS" | while IFS= read -r line; do
+                if [ -n "$line" ]; then
+                    container_id=$(echo "$line" | awk '{print $1}')
+                    container_name=$(echo "$line" | awk '{print $2}')
+                    echo "   - Removing backend: $container_name ($container_id)"
+                    docker stop "$container_id" 2>/dev/null || true
+                    docker rm -f "$container_id" 2>/dev/null || true
+                fi
+            done
+        fi
+        
         # Tüm saas-tour container'larını ID bazlı temizle (isim fark etmeksizin)
-        echo -e "${YELLOW}🔍 Tüm saas-tour container'ları temizleniyor...${NC}"
+        echo -e "${YELLOW}🔍 Tüm saas-tour container'ları temizleniyor (ID bazlı)...${NC}"
         # Tüm saas-tour container ID'lerini al ve temizle
         docker ps -a --format "{{.ID}} {{.Names}}" | grep -iE "saas-tour" | while IFS= read -r line; do
             if [ -n "$line" ]; then
@@ -415,11 +430,25 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
             fi
         done || true
         
-        # Hash prefix'li container'ları temizle
+        # Hash prefix'li container'ları temizle (örn: 0706ee066bd58acb00b1ca4e1e9b1738d0cbb01aa5dfe3a774d830edf98cc5ef)
         echo -e "${YELLOW}🔍 Hash prefix'li container'lar temizleniyor...${NC}"
+        # Önce hash prefix'li container'ları ID bazlı bul ve temizle
+        docker ps -a --format "{{.ID}} {{.Names}}" | grep -E "^[a-f0-9]{12,}" | while IFS= read -r line; do
+            if [ -n "$line" ]; then
+                container_id=$(echo "$line" | awk '{print $1}')
+                container_name=$(echo "$line" | awk '{print $2}')
+                if echo "$container_name" | grep -qiE "saas-tour|infra"; then
+                    echo "   - Removing hash-prefixed by ID: $container_name ($container_id)"
+                    docker stop "$container_id" 2>/dev/null || true
+                    docker rm -f "$container_id" 2>/dev/null || true
+                fi
+            fi
+        done || true
+        
+        # Hash prefix'li container'ları isim bazlı da temizle
         docker ps -a --format "{{.Names}}" | grep -E "^[a-f0-9]{8,}_" | grep -E "saas-tour|infra" | while IFS= read -r container; do
             if [ -n "$container" ]; then
-                echo "   - Removing hash-prefixed: $container"
+                echo "   - Removing hash-prefixed by name: $container"
                 docker stop "$container" 2>/dev/null || true
                 docker rm -f "$container" 2>/dev/null || true
             fi
@@ -433,16 +462,29 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
                 container_name=$(echo "$line" | awk '{print $2}')
                 # Sadece saas-tour ile ilgili olanları temizle
                 if echo "$container_name" | grep -qiE "saas-tour"; then
-                    echo "   - Removing infra: $container_name"
+                    echo "   - Removing infra: $container_name ($container_id)"
                     docker stop "$container_id" 2>/dev/null || true
                     docker rm -f "$container_id" 2>/dev/null || true
                 fi
             fi
         done || true
         
+        # Son kontrol: Hala kalan saas-tour-backend container'ları var mı?
+        REMAINING_BACKEND=$(docker ps -a --filter "name=saas-tour-backend" --format "{{.ID}}" || true)
+        if [ -n "$REMAINING_BACKEND" ]; then
+            echo -e "${YELLOW}⚠️  Hala kalan backend container'ları zorla temizleniyor...${NC}"
+            echo "$REMAINING_BACKEND" | while IFS= read -r container_id; do
+                if [ -n "$container_id" ]; then
+                    echo "   - Force removing backend ID: $container_id"
+                    docker stop "$container_id" 2>/dev/null || true
+                    docker rm -f "$container_id" 2>/dev/null || true
+                fi
+            done
+        fi
+        
         # Container prune
         docker container prune -f 2>/dev/null || true
-        sleep 5
+        sleep 8
         
         # Önce yeni image'ları build et
         echo -e "${YELLOW}📦 Yeni image'lar build ediliyor...${NC}"
