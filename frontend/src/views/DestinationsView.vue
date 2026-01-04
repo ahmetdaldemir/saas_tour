@@ -24,10 +24,22 @@
         </div>
       </div>
 
+      <!-- Arama Input -->
+      <v-text-field
+        v-model="searchQuery"
+        prepend-inner-icon="mdi-magnify"
+        label="Destinasyon ara..."
+        variant="outlined"
+        density="compact"
+        clearable
+        class="mb-4"
+        hide-details
+      />
+
       <v-data-table
         v-model:selected="selectedDestinations"
         :headers="headers"
-        :items="destinations.map(d => ({ ...d, displayName: getDisplayName(d) }))"
+        :items="filteredDestinations"
         :loading="loading"
         item-key="id"
         show-select
@@ -271,6 +283,7 @@ const bulkDeleting = ref(false);
 const updatingActive = ref<string | null>(null);
 const updatingFeatured = ref<string | null>(null);
 const formError = ref('');
+const searchQuery = ref('');
 const formRef = ref();
 const isValid = ref(false);
 const editingId = ref<string | null>(null);
@@ -304,6 +317,31 @@ const getDisplayName = (destination: Destination): string => {
     : null;
   return translation?.name || destination.translations[0]?.name || 'İsimsiz';
 };
+
+// Filtered destinations based on search query
+const filteredDestinations = computed(() => {
+  if (!searchQuery.value || searchQuery.value.trim() === '') {
+    return destinations.value.map(d => ({ ...d, displayName: getDisplayName(d) }));
+  }
+  
+  const query = searchQuery.value.toLowerCase().trim();
+  return destinations.value
+    .filter(destination => {
+      const displayName = getDisplayName(destination).toLowerCase();
+      // Search in display name
+      if (displayName.includes(query)) {
+        return true;
+      }
+      // Also search in all translations
+      if (destination.translations) {
+        return destination.translations.some(trans => 
+          trans.name?.toLowerCase().includes(query)
+        );
+      }
+      return false;
+    })
+    .map(d => ({ ...d, displayName: getDisplayName(d) }));
+});
 
 const loadLanguages = async () => {
   try {
@@ -453,30 +491,47 @@ const bulkDelete = async () => {
     return;
   }
 
-  const confirmMessage = `${selectedDestinations.value.length} destinasyon silinecek. Emin misiniz?`;
+  const count = selectedDestinations.value.length;
+  const confirmMessage = `${count} destinasyon silinecek. Bu işlem geri alınamaz. Emin misiniz?`;
   if (!confirm(confirmMessage)) {
     return;
   }
 
   bulkDeleting.value = true;
+  const selectedIds = selectedDestinations.value.map(d => d.id);
+  const selectedNames = selectedDestinations.value.map(d => getDisplayName(d));
+  
   try {
     // Delete all selected destinations in parallel
-    await Promise.all(
-      selectedDestinations.value.map(destination => 
-        http.delete(`/destinations/${destination.id}`)
-      )
+    const deletePromises = selectedDestinations.value.map(destination => 
+      http.delete(`/destinations/${destination.id}`)
     );
     
+    await Promise.all(deletePromises);
+    
     // Remove from local state
-    const selectedIds = selectedDestinations.value.map(d => d.id);
     destinations.value = destinations.value.filter(d => !selectedIds.includes(d.id));
     selectedDestinations.value = [];
     
     // Show success message
-    alert(`${selectedIds.length} destinasyon başarıyla silindi.`);
+    alert(`✅ ${count} destinasyon başarıyla silindi:\n${selectedNames.join('\n')}`);
+    
+    // Reload destinations to ensure consistency
+    await loadDestinations();
   } catch (error: any) {
     console.error('Failed to delete destinations:', error);
-    alert(error.response?.data?.error?.message || 'Destinasyonlar silinirken bir hata oluştu');
+    
+    // Try to identify which destinations failed
+    const errorMessage = error.response?.data?.error?.message || 'Destinasyonlar silinirken bir hata oluştu';
+    
+    // If some succeeded, show partial success message
+    const remainingDestinations = destinations.value.filter(d => selectedIds.includes(d.id));
+    if (remainingDestinations.length < selectedIds.length) {
+      const deletedCount = selectedIds.length - remainingDestinations.length;
+      alert(`⚠️ ${deletedCount} destinasyon silindi, ancak bazıları silinemedi:\n${errorMessage}`);
+    } else {
+      alert(`❌ Hata: ${errorMessage}`);
+    }
   } finally {
     bulkDeleting.value = false;
   }
