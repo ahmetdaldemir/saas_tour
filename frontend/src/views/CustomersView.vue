@@ -109,6 +109,14 @@
           <template #item.actions="{ item }">
             <div class="d-flex align-center gap-1">
               <v-btn
+                icon="mdi-eye"
+                variant="text"
+                size="small"
+                color="primary"
+                @click.stop="viewCustomerDetail(item.id)"
+                title="Detayları Görüntüle"
+              />
+              <v-btn
                 icon="mdi-pencil"
                 variant="text"
                 size="small"
@@ -478,11 +486,13 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { http } from '../modules/http';
 import { useAuthStore } from '../stores/auth';
 import { COUNTRIES, type Country } from '../data/countries';
 
 const auth = useAuthStore();
+const router = useRouter();
 
 // Data
 const customers = ref<CustomerDto[]>([]);
@@ -606,49 +616,18 @@ const loadCustomers = async () => {
   if (!auth.tenant) return;
   loadingCustomers.value = true;
   try {
-    // TODO: Backend API endpoint'i eklendiğinde buraya entegre edilecek
-    // const { data } = await http.get<CustomerDto[]>('/crm/customers', {
-    //   params: { tenantId: auth.tenant.id },
-    // });
-    // customers.value = data;
-    
-    // Örnek veri (görseldeki gibi)
-    const sampleData: CustomerDto[] = [
-      {
-        id: '1',
-        fullName: 'KARL ALEXANDER KROSTİNA',
-        gender: 'male',
-        phone: '(+49) 1704630767',
-        email: 'kkroshina@googlemail.com',
-        isActive: true,
-      },
-      {
-        id: '2',
-        fullName: 'OLEG BASALAEV',
-        gender: 'male',
-        phone: '(+7) 9633689689',
-        email: 'laybol@yandex.ru',
-        isActive: true,
-      },
-    ];
-    
-    // Silinen öğeleri filtrele ve eklenen öğeleri ekle
-    const deletedIds = getDeletedCustomers();
-    const addedCustomers = getAddedCustomers();
-    const blacklistedIds = getBlacklistedCustomers();
-    const filteredSample = sampleData.filter(item => !deletedIds.includes(item.id));
-    const allCustomers = [...filteredSample, ...addedCustomers];
+    const { data } = await http.get<CustomerDto[]>('/crm/customers');
+    customers.value = data.map(customer => ({
+      ...customer,
+      phone: customer.mobilePhone || customer.homePhone || '',
+      isBlacklisted: customer.isBlacklisted || false,
+    }));
     
     // Notları yükle
     customerNotes.value = getCustomerNotes();
-    
-    // Kara liste durumunu ekle
-    customers.value = allCustomers.map(customer => ({
-      ...customer,
-      isBlacklisted: blacklistedIds.includes(customer.id),
-    }));
   } catch (error) {
     console.error('Failed to load customers:', error);
+    customers.value = [];
   } finally {
     loadingCustomers.value = false;
   }
@@ -658,19 +637,22 @@ const searchCustomers = async () => {
   if (!auth.tenant) return;
   loadingCustomers.value = true;
   try {
-    // TODO: Backend API endpoint'i eklendiğinde buraya entegre edilecek
-    // const { data } = await http.get<CustomerDto[]>('/crm/customers', {
-    //   params: {
-    //     tenantId: auth.tenant.id,
-    //     email: searchFilters.email,
-    //     name: searchFilters.name,
-    //     phone: searchFilters.phone,
-    //   },
-    // });
-    // customers.value = data;
-    
-    // Şimdilik sadece yükleme simülasyonu
+    // Backend'de arama özelliği yoksa, client-side filtreleme yap
     await loadCustomers();
+    
+    // Client-side filtreleme
+    if (searchFilters.email || searchFilters.name || searchFilters.phone) {
+      customers.value = customers.value.filter(customer => {
+        const emailMatch = !searchFilters.email || 
+          (customer.email && customer.email.toLowerCase().includes(searchFilters.email.toLowerCase()));
+        const nameMatch = !searchFilters.name || 
+          (customer.fullName && customer.fullName.toLowerCase().includes(searchFilters.name.toLowerCase()));
+        const phoneMatch = !searchFilters.phone || 
+          ((customer.mobilePhone && customer.mobilePhone.includes(searchFilters.phone)) ||
+           (customer.homePhone && customer.homePhone.includes(searchFilters.phone)));
+        return emailMatch && nameMatch && phoneMatch;
+      });
+    }
   } catch (error) {
     console.error('Failed to search customers:', error);
   } finally {
@@ -773,47 +755,13 @@ const saveCustomer = async () => {
       isActive: true,
     };
     
-    // TODO: Backend API endpoint'i eklendiğinde buraya entegre edilecek
-    // if (editingCustomer.value) {
-    //   await http.put(`/crm/customers/${editingCustomer.value.id}`, customerData);
-    // } else {
-    //   await http.post('/crm/customers', customerData);
-    // }
-    
-    // Örnek veri için local state'e ekleme
-    if (!editingCustomer.value) {
-      const newCustomer: CustomerDto = {
-        id: Date.now().toString(),
-        fullName: customerData.fullName,
-        gender: customerData.gender,
-        phone: customerData.mobilePhone,
-        email: customerData.email,
-        isActive: true,
-      };
-      customers.value.push(newCustomer);
-      
-      // localStorage'a kaydet
-      const addedCustomers = getAddedCustomers();
-      addedCustomers.push(newCustomer);
-      saveAddedCustomers(addedCustomers);
+    if (editingCustomer.value) {
+      await http.put(`/crm/customers/${editingCustomer.value.id}`, customerData);
     } else {
-      // Düzenlenen müşteriyi localStorage'da güncelle
-      const addedCustomers = getAddedCustomers();
-      const index = addedCustomers.findIndex(c => c.id === editingCustomer.value?.id);
-      if (index !== -1) {
-        addedCustomers[index] = {
-          ...addedCustomers[index],
-          fullName: customerData.fullName,
-          gender: customerData.gender,
-          phone: customerData.mobilePhone,
-          email: customerData.email,
-        };
-        saveAddedCustomers(addedCustomers);
-      }
+      await http.post('/crm/customers', customerData);
     }
     
-    // loadCustomers() çağrılmıyor çünkü zaten local state güncellendi
-    // await loadCustomers();
+    await loadCustomers();
     closeCustomerDialog();
   } catch (error: any) {
     alert(error.response?.data?.message || 'Müşteri kaydedilirken bir hata oluştu');
@@ -822,41 +770,49 @@ const saveCustomer = async () => {
   }
 };
 
-const editCustomer = (customer: CustomerDto) => {
-  // TODO: Müşteri düzenleme dialog'u eklenecek
-  alert(`Müşteri düzenleme: ${customer.fullName}`);
+const editCustomer = async (customer: CustomerDto) => {
+  try {
+    const { data } = await http.get<CustomerDto>(`/crm/customers/${customer.id}`);
+    editingCustomer.value = data;
+    
+    // Form'u doldur
+    customerForm.firstName = data.firstName || '';
+    customerForm.lastName = data.lastName || '';
+    customerForm.birthPlace = data.birthPlace || '';
+    customerForm.birthDate = data.birthDate ? new Date(data.birthDate).toISOString().split('T')[0] : '';
+    customerForm.gender = data.gender || 'male';
+    customerForm.languageId = data.languageId || '';
+    customerForm.mobilePhone = data.mobilePhone || '';
+    customerForm.homePhone = data.homePhone || '';
+    customerForm.taxOffice = data.taxOffice || '';
+    customerForm.taxNumber = data.taxNumber || '';
+    customerForm.email = data.email || '';
+    customerForm.country = data.country || 'TR';
+    customerForm.licenseNumber = data.licenseNumber || '';
+    customerForm.licenseClass = data.licenseClass || '';
+    customerForm.licenseIssuePlace = data.licenseIssuePlace || '';
+    customerForm.licenseIssueDate = data.licenseIssueDate ? new Date(data.licenseIssueDate).toISOString().split('T')[0] : '';
+    customerForm.idNumber = data.idNumber || '';
+    customerForm.idType = data.idType || 'tc';
+    customerForm.idIssuePlace = data.idIssuePlace || '';
+    customerForm.idIssueDate = data.idIssueDate ? new Date(data.idIssueDate).toISOString().split('T')[0] : '';
+    customerForm.homeAddress = data.homeAddress || '';
+    customerForm.workAddress = data.workAddress || '';
+    
+    showCustomerDialog.value = true;
+  } catch (error: any) {
+    console.error('Failed to load customer:', error);
+    alert(error.response?.data?.message || 'Müşteri yüklenirken bir hata oluştu');
+  }
 };
 
 const deleteCustomer = async (id: string) => {
   if (!confirm('Bu müşteriyi silmek istediğinizden emin misiniz?')) return;
   try {
-    // TODO: Backend API endpoint'i eklendiğinde buraya entegre edilecek
-    // await http.delete(`/crm/customers/${id}`);
-    
-    // Örnek veri için local state'ten silme
-    const index = customers.value.findIndex(c => c.id === id);
-    if (index !== -1) {
-      customers.value.splice(index, 1);
-    }
-    
-    // Silinen ID'yi localStorage'a kaydet
-    const deletedIds = getDeletedCustomers();
-    if (!deletedIds.includes(id)) {
-      deletedIds.push(id);
-      saveDeletedCustomers(deletedIds);
-    }
-    
-    // Eklenen öğelerden de sil
-    const addedCustomers = getAddedCustomers();
-    const addedIndex = addedCustomers.findIndex(c => c.id === id);
-    if (addedIndex !== -1) {
-      addedCustomers.splice(addedIndex, 1);
-      saveAddedCustomers(addedCustomers);
-    }
-    
-    // Backend API hazır olduğunda yukarıdaki satırı kaldırıp loadCustomers() kullanılacak
-    // await loadCustomers();
+    await http.delete(`/crm/customers/${id}`);
+    await loadCustomers();
   } catch (error: any) {
+    console.error('Failed to delete customer:', error);
     alert(error.response?.data?.message || 'Müşteri silinirken bir hata oluştu');
   }
 };
@@ -934,6 +890,10 @@ const saveNote = async () => {
   } finally {
     savingNote.value = false;
   }
+};
+
+const viewCustomerDetail = (id: string) => {
+  router.push({ name: 'customer-detail', params: { id } });
 };
 
 const viewReservations = (customer: CustomerDto) => {

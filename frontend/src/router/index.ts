@@ -18,6 +18,7 @@ import DestinationsView from '../views/DestinationsView.vue';
 import HotelsView from '../views/HotelsView.vue';
 import BlogsView from '../views/BlogsView.vue';
 import CustomersView from '../views/CustomersView.vue';
+import CustomerDetailView from '../views/CustomerDetailView.vue';
 import SettingsView from '../views/SettingsView.vue';
 import SurveysView from '../views/SurveysView.vue';
 import EmailTemplatesView from '../views/EmailTemplatesView.vue';
@@ -182,6 +183,12 @@ const routes: RouteRecordRaw[] = [
     path: '/app/customers',
     name: 'customers',
     component: CustomersView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/customers/:id',
+    name: 'customer-detail',
+    component: CustomerDetailView,
     meta: { requiresAuth: true, layout: 'admin' },
   },
   {

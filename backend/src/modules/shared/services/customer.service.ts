@@ -201,5 +201,35 @@ export class CustomerService {
 
     await repo.remove(customer);
   }
+
+  /**
+   * Müşteri şifresini değiştir
+   */
+  static async changePassword(id: string, tenantId: string, newPassword: string): Promise<Customer> {
+    const repo = this.repository();
+    const customer = await repo.findOne({ where: { id, tenantId } });
+
+    if (!customer) {
+      throw new Error('Customer not found');
+    }
+
+    if (!newPassword || newPassword.trim().length === 0) {
+      throw new Error('New password is required');
+    }
+
+    if (newPassword.length < 6) {
+      throw new Error('Password must be at least 6 characters long');
+    }
+
+    try {
+      const bcrypt = require('bcrypt');
+      customer.passwordHash = await bcrypt.hash(newPassword, 10);
+    } catch (error) {
+      console.warn('bcrypt not available, password not hashed');
+      throw new Error('Failed to hash password');
+    }
+
+    return repo.save(customer);
+  }
 }
 
