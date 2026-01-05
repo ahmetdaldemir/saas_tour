@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 
 // Uploads klasörünü oluştur (hem source hem dist için)
-const getUploadsDir = () => {
+export const getUploadsDir = () => {
   // Production'da __dirname: /app/dist/modules/shared/controllers
   // Development'ta __dirname: src/modules/shared/controllers
   // Her iki durumda da /app/public/uploads'a gitmek gerekir (Dockerfile'da COPY public ./public)

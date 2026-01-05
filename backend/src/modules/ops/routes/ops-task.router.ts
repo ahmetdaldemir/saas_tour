@@ -41,5 +41,22 @@ router.get('/:id/print', (req, res, next) =>
   OpsTaskController.getPrintPayload(req as AuthenticatedRequest & TenantRequest, res).catch(next)
 );
 
+// Performance tracking endpoints
+router.post('/:id/start', (req, res, next) =>
+  OpsTaskController.startTask(req as AuthenticatedRequest & TenantRequest, res).catch(next)
+);
+
+router.post('/:id/checklist', (req, res, next) =>
+  OpsTaskController.updateChecklist(req as AuthenticatedRequest & TenantRequest, res).catch(next)
+);
+
+router.post('/:id/media-counts', (req, res, next) =>
+  OpsTaskController.updateMediaCounts(req as AuthenticatedRequest & TenantRequest, res).catch(next)
+);
+
+router.post('/:id/error', (req, res, next) =>
+  OpsTaskController.recordError(req as AuthenticatedRequest & TenantRequest, res).catch(next)
+);
+
 export default router;
 

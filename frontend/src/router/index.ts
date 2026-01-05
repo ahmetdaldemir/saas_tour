@@ -32,6 +32,7 @@ import CountriesView from '../views/CountriesView.vue';
 import FinanceView from '../views/FinanceView.vue';
 import TripsView from '../views/TripsView.vue';
 import CrmPagesView from '../views/CrmPagesView.vue';
+import StaffPerformanceView from '../views/StaffPerformanceView.vue';
 import { useAuthStore } from '../stores/auth';
 import { useAdminAuthStore } from '../stores/admin-auth';
 import { useFeaturesStore } from '../stores/features';
@@ -281,6 +282,12 @@ const routes: RouteRecordRaw[] = [
     name: 'chat',
     component: ChatView,
     meta: { requiresAuth: true, layout: 'admin', requiresFeature: 'chat' },
+  },
+  {
+    path: '/app/staff-performance',
+    name: 'staff-performance',
+    component: StaffPerformanceView,
+    meta: { requiresAuth: true, layout: 'admin' },
   },
   {
     path: '/app/admin',

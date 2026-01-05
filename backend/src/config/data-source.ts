@@ -26,6 +26,11 @@ import { VehicleCategory } from '../modules/rentacar/entities/vehicle-category.e
 import { VehicleBrand } from '../modules/rentacar/entities/vehicle-brand.entity';
 import { VehicleModel } from '../modules/rentacar/entities/vehicle-model.entity';
 import { VehicleImage } from '../modules/rentacar/entities/vehicle-image.entity';
+import { VehicleDamage } from '../modules/rentacar/entities/vehicle-damage.entity';
+import { VehicleMaintenance } from '../modules/rentacar/entities/vehicle-maintenance.entity';
+import { VehiclePenalty } from '../modules/rentacar/entities/vehicle-penalty.entity';
+import { VehicleTimelineMedia } from '../modules/rentacar/entities/vehicle-timeline-media.entity';
+import { VehicleDamageDetection } from '../modules/rentacar/entities/vehicle-damage-detection.entity';
 import { Location } from '../modules/rentacar/entities/location.entity';
 import { MasterLocation } from '../modules/shared/entities/master-location.entity';
 import { LocationVehiclePricing } from '../modules/rentacar/entities/location-vehicle-pricing.entity';
@@ -110,6 +115,11 @@ export const AppDataSource = new DataSource({
           LocationDeliveryPricing,
           Extra,
           VehicleImage,
+          VehicleDamage,
+          VehicleMaintenance,
+          VehiclePenalty,
+          VehicleTimelineMedia,
+          VehicleDamageDetection,
           TenantUser,
           Currency,
           TenantSettings,
