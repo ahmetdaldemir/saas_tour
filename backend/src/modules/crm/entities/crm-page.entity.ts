@@ -24,10 +24,10 @@ export class CrmPage extends BaseEntity {
   @Column({ name: 'category_id', type: 'uuid' })
   categoryId!: string;
 
-  @Column({ length: 200 })
+  @Column({ type: 'varchar', length: 200 })
   slug!: string; // URL-friendly identifier
 
-  @Column({ length: 500, nullable: true })
+  @Column({ type: 'varchar', length: 500, nullable: true })
   image?: string; // Image URL
 
   @Column({ name: 'is_active', default: true })

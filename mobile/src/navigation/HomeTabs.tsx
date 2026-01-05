@@ -6,6 +6,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import TodayTasksScreen from '../screens/TodayTasksScreen';
 import SearchTasksScreen from '../screens/SearchTasksScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import OperationsHomeScreen from '../screens/OperationsHomeScreen';
+import UploadCenterScreen from '../screens/UploadCenterScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -33,6 +35,8 @@ export default function HomeTabs() {
             iconName = focused ? 'calendar-today' : 'calendar-outline';
           } else if (route.name === 'Search') {
             iconName = 'magnify';
+          } else if (route.name === 'Operations') {
+            iconName = focused ? 'car-multiple' : 'car-multiple-outline';
           } else if (route.name === 'Settings') {
             iconName = focused ? 'cog' : 'cog-outline';
           } else {
@@ -61,6 +65,7 @@ export default function HomeTabs() {
     >
       <Tab.Screen name="Today" component={TodayTasksStack} options={{ title: 'Bugün' }} />
       <Tab.Screen name="Search" component={SearchTasksScreen} options={{ title: 'Ara' }} />
+      <Tab.Screen name="Operations" component={OperationsHomeScreen} options={{ title: 'Operasyonlar' }} />
       <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: 'Ayarlar' }} />
     </Tab.Navigator>
   );

@@ -44,7 +44,7 @@ export class TenantServiceAgreement extends BaseEntity {
   listingId!: string;
 
   // Agreement terms (can override listing defaults)
-  @Column({ name: 'commission_type', length: 20, default: 'percentage' })
+  @Column({ name: 'commission_type', type: 'varchar', length: 20, default: 'percentage' })
   commissionType!: string;
 
   @Column({ name: 'commission_rate', type: 'decimal', precision: 5, scale: 2, nullable: true })

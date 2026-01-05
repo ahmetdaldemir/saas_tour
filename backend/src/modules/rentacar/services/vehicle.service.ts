@@ -1098,8 +1098,35 @@ export class VehicleService {
         targetCurrency.id
       );
 
-      // Total price includes: vehicle rental price + delivery fee (pickup location) + drop fee (dropoff location)
-      const finalTotalPrice = convertedTotalPrice + convertedDeliveryFee + convertedDropFee;
+      // Apply campaign discount (if applicable)
+      let campaignDiscount = null;
+      let vehiclePriceAfterDiscount = convertedTotalPrice;
+      
+      try {
+        const { CampaignService } = await import('./campaign.service');
+        const campaignDiscountResult = await CampaignService.getCampaignDiscount(
+          {
+            tenantId,
+            pickupLocationId: pickupLocation.id,
+            vehicleId: vehicle.id,
+            vehicleCategoryId: vehicle.categoryId || null,
+            rentalDays,
+            pickupDate: new Date(pickupDate),
+          },
+          convertedTotalPrice
+        );
+
+        if (campaignDiscountResult) {
+          campaignDiscount = campaignDiscountResult;
+          vehiclePriceAfterDiscount = campaignDiscountResult.finalPrice;
+        }
+      } catch (error) {
+        // If campaign service fails, continue without discount
+        console.error('Error applying campaign discount:', error);
+      }
+
+      // Total price includes: vehicle rental price (after discount) + delivery fee (pickup location) + drop fee (dropoff location)
+      const finalTotalPrice = vehiclePriceAfterDiscount + convertedDeliveryFee + convertedDropFee;
       
       // Calculate average daily price (excluding fees) for response
       const averageDailyPrice = rentalDays > 0 ? convertedTotalPrice / rentalDays : 0;

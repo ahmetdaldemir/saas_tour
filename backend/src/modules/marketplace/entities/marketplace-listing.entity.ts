@@ -38,7 +38,7 @@ export class MarketplaceListing extends BaseEntity {
   @Column({ name: 'tenant_id' })
   tenantId!: string;
 
-  @Column({ length: 200 })
+  @Column({ type: 'varchar', length: 200 })
   title!: string;
 
   @Column({ type: 'text', nullable: true })
@@ -67,7 +67,7 @@ export class MarketplaceListing extends BaseEntity {
   @Column({ name: 'base_price', type: 'decimal', precision: 10, scale: 2, nullable: true })
   basePrice?: number | null;
 
-  @Column({ name: 'currency_code', length: 3, default: 'TRY' })
+  @Column({ name: 'currency_code', type: 'varchar', length: 3, default: 'TRY' })
   currencyCode!: string;
 
   // Service configuration (JSON)
@@ -96,10 +96,10 @@ export class MarketplaceListing extends BaseEntity {
   approvedByUserId?: string | null;
 
   // Metadata
-  @Column({ name: 'contact_email', length: 200, nullable: true })
+  @Column({ name: 'contact_email', type: 'varchar', length: 200, nullable: true })
   contactEmail?: string;
 
-  @Column({ name: 'contact_phone', length: 50, nullable: true })
+  @Column({ name: 'contact_phone', type: 'varchar', length: 50, nullable: true })
   contactPhone?: string;
 
   @Column({ name: 'terms_and_conditions', type: 'text', nullable: true })

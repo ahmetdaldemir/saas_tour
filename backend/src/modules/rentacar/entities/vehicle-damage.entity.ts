@@ -47,7 +47,7 @@ export class VehicleDamage extends BaseEntity {
   @Column({ type: 'date' })
   date!: Date;
 
-  @Column({ length: 200 })
+  @Column({ type: 'varchar', length: 200 })
   title!: string;
 
   @Column({ type: 'text', nullable: true })
@@ -62,10 +62,10 @@ export class VehicleDamage extends BaseEntity {
   @Column({ name: 'repair_cost', type: 'decimal', precision: 10, scale: 2, nullable: true })
   repairCost?: number;
 
-  @Column({ name: 'currency_code', length: 3, default: 'EUR' })
+  @Column({ name: 'currency_code', type: 'varchar', length: 3, default: 'EUR' })
   currencyCode!: string;
 
-  @Column({ name: 'reported_by', length: 120, nullable: true })
+  @Column({ name: 'reported_by', type: 'varchar', length: 120, nullable: true })
   reportedBy?: string;
 
   @Column({ name: 'repaired_at', type: 'timestamp', nullable: true })

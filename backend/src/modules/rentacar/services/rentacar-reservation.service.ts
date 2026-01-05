@@ -32,6 +32,7 @@ export type CreateRentacarReservationInput = {
   extrasPrice: number;
   totalPrice: number;
   currencyCode: string;
+  couponCode?: string; // Optional coupon code
   personalInfo: {
     firstName: string;
     lastName: string;
@@ -288,6 +289,76 @@ export class RentacarReservationService {
     const dropoffDate = new Date(input.dropoffDate);
     dropoffDate.setHours(dropoffHours, dropoffMinutes, 0, 0);
 
+    // Apply campaign discount if applicable
+    let campaignDiscount = null;
+    let finalVehiclePrice = input.vehiclePrice;
+    
+    try {
+      const { CampaignService } = await import('./campaign.service');
+      const campaignDiscountResult = await CampaignService.getCampaignDiscount(
+        {
+          tenantId: input.tenantId,
+          pickupLocationId: pickupLocation.id,
+          vehicleId: input.vehicleId,
+          vehicleCategoryId: vehicle.categoryId || null,
+          rentalDays: input.rentalDays,
+          pickupDate: pickupDate,
+        },
+        input.vehiclePrice
+      );
+
+      if (campaignDiscountResult) {
+        campaignDiscount = {
+          campaignId: campaignDiscountResult.campaignId,
+          campaignName: campaignDiscountResult.campaignName,
+          discountType: campaignDiscountResult.discountType,
+          discountPercent: campaignDiscountResult.discountPercent,
+          discountAmount: campaignDiscountResult.discountAmount,
+        };
+        finalVehiclePrice = campaignDiscountResult.finalPrice;
+      }
+    } catch (error) {
+      // If campaign service fails, continue without discount
+      console.error('Error applying campaign discount:', error);
+    }
+
+    // Calculate total price after campaign discount
+    const totalAfterCampaign = input.totalPrice - (input.vehiclePrice - finalVehiclePrice);
+
+    // Apply coupon discount if provided (validate but don't redeem yet)
+    let couponDiscount = null;
+    let finalTotalPrice = totalAfterCampaign;
+    
+    if (input.couponCode) {
+      try {
+        const { CouponService } = await import('../../shared/services/coupon.service');
+        const validation = await CouponService.validateCoupon({
+          tenantId: input.tenantId,
+          code: input.couponCode,
+          customerId: customer?.id || undefined,
+          reservationTotal: totalAfterCampaign,
+        });
+
+        if (validation.valid && validation.discountAmount) {
+          couponDiscount = {
+            couponCode: input.couponCode,
+            couponId: validation.coupon?.id,
+            discountAmount: validation.discountAmount,
+          };
+          finalTotalPrice = totalAfterCampaign - validation.discountAmount;
+          // Ensure price doesn't go negative
+          if (finalTotalPrice < 0) {
+            finalTotalPrice = 0;
+          }
+        } else {
+          throw new Error(validation.error || 'Invalid coupon code');
+        }
+      } catch (error) {
+        // If coupon validation fails, throw error (don't create reservation)
+        throw new Error(`Coupon validation failed: ${(error as Error).message}`);
+      }
+    }
+
     // Create reservation metadata
     const metadata = {
       vehicleId: input.vehicleId,
@@ -306,10 +377,14 @@ export class RentacarReservationService {
           price: extraData?.price || 0,
         };
       }),
-      vehiclePrice: input.vehiclePrice,
+      vehiclePrice: finalVehiclePrice, // Use price after campaign discount
+      baseVehiclePrice: input.vehiclePrice, // Store original price before discount
       extrasPrice: input.extrasPrice,
-      totalPrice: input.totalPrice,
+      totalPrice: finalTotalPrice, // Final price after campaign and coupon discounts
+      baseTotalPrice: input.totalPrice, // Original total before discounts
       currencyCode: input.currencyCode,
+      campaignDiscount: campaignDiscount, // Store campaign info for auditability
+      couponDiscount: couponDiscount, // Store coupon info for auditability
       paymentMethod: input.paymentMethod,
       personalInfo: input.personalInfo,
       driverLicenseInfo: input.driverLicenseInfo,
@@ -335,6 +410,24 @@ export class RentacarReservationService {
     });
 
     const savedReservation = await this.reservationRepo().save(reservation);
+
+    // Redeem coupon after reservation is created (if coupon was used)
+    if (couponDiscount && couponDiscount.couponId) {
+      try {
+        const { CouponService } = await import('../../shared/services/coupon.service');
+        await CouponService.redeemCoupon({
+          tenantId: input.tenantId,
+          code: input.couponCode!,
+          reservationId: savedReservation.id,
+          reservationTotal: totalAfterCampaign,
+          customerId: customer?.id || undefined,
+        });
+      } catch (error) {
+        console.error('Error redeeming coupon after reservation creation:', error);
+        // Don't fail reservation creation if redemption update fails
+        // The coupon was already validated, so this is just marking it as used
+      }
+    }
 
     // Send confirmation email (async, don't wait)
     sendReservationEmail(savedReservation, EmailTemplateType.RESERVATION_CONFIRMATION).catch(
@@ -401,6 +494,9 @@ export class RentacarReservationService {
         throw new Error('Vehicle not found or not available for the selected dates');
       }
 
+      // Extract campaign discount from search result (campaignDiscount is added in VehicleService.searchVehicles)
+      const campaignDiscount = (vehicle as any).campaignDiscount || null;
+
       // Calculate rental days
       const pickup = new Date(pickupDate);
       const dropoff = new Date(dropoffDate);
@@ -466,7 +562,9 @@ export class RentacarReservationService {
       }
 
       // Calculate total price
+      // Note: vehicle.totalPrice already includes campaign discount (from searchVehicles)
       const vehiclePrice = vehicle.totalPrice;
+      const baseVehiclePrice = vehiclePrice + (campaignDiscount ? campaignDiscount.discountAmount : 0);
       const totalPrice = vehiclePrice + extrasPrice + deliveryFee + dropFee;
 
       // Update metadata with new prices
@@ -489,7 +587,8 @@ export class RentacarReservationService {
             price: extra.price,
           };
         }),
-        vehiclePrice,
+        vehiclePrice, // Price after campaign discount
+        baseVehiclePrice: baseVehiclePrice, // Original price before discount
         extrasPrice,
         totalPrice,
         currencyCode,
@@ -497,6 +596,13 @@ export class RentacarReservationService {
         dropFee,
         dailyPrice: vehicle.dailyPrice,
         source: (input as any).source || currentMetadata?.source,
+        campaignDiscount: campaignDiscount ? {
+          campaignId: campaignDiscount.campaignId,
+          campaignName: campaignDiscount.campaignName,
+          discountType: 'percentage', // From campaignDiscount.discountType if available
+          discountPercent: campaignDiscount.discountPercent,
+          discountAmount: campaignDiscount.discountAmount,
+        } : null,
       };
 
       // Update checkIn and checkOut dates

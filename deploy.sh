@@ -536,6 +536,21 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
         echo -e "${YELLOW}📦 Yeni image'lar build ediliyor...${NC}"
         docker-compose build --no-cache
         
+        # Son bir kez daha: docker-compose up'dan önce container'ı zorla kaldır
+        echo -e "${YELLOW}🔍 docker-compose up öncesi son kontrol...${NC}"
+        docker-compose down --remove-orphans 2>/dev/null || true
+        # Container ID ile de kaldırmayı dene
+        CONFLICT_ID=$(docker ps -a --format "{{.ID}} {{.Names}}" | grep -i "saas-tour-backend" | head -1 | awk '{print $1}' || true)
+        if [ -n "$CONFLICT_ID" ]; then
+            echo "   - Conflict container ID bulundu: $CONFLICT_ID"
+            docker stop "$CONFLICT_ID" 2>/dev/null || true
+            docker rm -f "$CONFLICT_ID" 2>/dev/null || true
+        fi
+        # İsim bazlı da kaldır
+        docker stop saas-tour-backend 2>/dev/null || true
+        docker rm -f saas-tour-backend 2>/dev/null || true
+        sleep 3
+        
         # Graceful restart: Force recreate ile başlat
         echo -e "${YELLOW}🔄 Container'lar graceful restart ile güncelleniyor...${NC}"
         docker-compose up -d --force-recreate --remove-orphans
@@ -685,6 +700,29 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
         docker rm -f saas-tour-backend 2>/dev/null || true
         
         # Biraz bekle (container'ın tamamen kaldırılması için)
+        sleep 5
+        
+        # Son bir kez daha: docker-compose up'dan önce container'ı zorla kaldır
+        echo -e "${YELLOW}🔍 docker-compose up öncesi son kontrol (full mode)...${NC}"
+        docker-compose down --remove-orphans 2>/dev/null || true
+        # Tüm saas-tour-backend container'larını bul ve kaldır (ID ve isim bazlı)
+        ALL_CONFLICT_CONTAINERS=$(docker ps -a --format "{{.ID}} {{.Names}}" 2>/dev/null | grep -i "saas-tour-backend" || true)
+        if [ -n "$ALL_CONFLICT_CONTAINERS" ]; then
+            echo "$ALL_CONFLICT_CONTAINERS" | while IFS= read -r line; do
+                if [ -n "$line" ]; then
+                    container_id=$(echo "$line" | awk '{print $1}')
+                    container_name=$(echo "$line" | awk '{print $2}')
+                    echo "   - Force removing conflict container: $container_name ($container_id)"
+                    docker stop "$container_id" 2>/dev/null || true
+                    docker rm -f "$container_id" 2>/dev/null || true
+                fi
+            done
+        fi
+        # İsim bazlı da kaldır (tüm varyasyonlar)
+        docker stop saas-tour-backend 2>/dev/null || true
+        docker rm -f saas-tour-backend 2>/dev/null || true
+        # Docker Compose'un oluşturduğu container'ı da kaldır
+        docker-compose rm -f backend 2>/dev/null || true
         sleep 5
         
         # Force recreate ile container'ları yeniden oluştur

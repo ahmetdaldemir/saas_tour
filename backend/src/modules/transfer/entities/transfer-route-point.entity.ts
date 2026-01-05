@@ -19,19 +19,19 @@ export class TransferRoutePoint extends BaseEntity {
   @Column({ name: 'route_id' })
   routeId!: string;
 
-  @Column({ length: 200 })
+  @Column({ type: 'varchar', length: 200 })
   name!: string; // "IST Havalimanı", "Marmaris Otel", vb.
 
   @Column({ type: 'enum', enum: RoutePointType })
   type!: RoutePointType;
 
-  @Column({ length: 300, nullable: true })
+  @Column({ type: 'varchar', length: 300, nullable: true })
   address?: string;
 
-  @Column({ length: 50, nullable: true })
+  @Column({ type: 'varchar', length: 50, nullable: true })
   latitude?: string;
 
-  @Column({ length: 50, nullable: true })
+  @Column({ type: 'varchar', length: 50, nullable: true })
   longitude?: string;
 
   @Column({ name: 'is_pickup', default: true })

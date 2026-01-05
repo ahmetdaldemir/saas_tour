@@ -39,13 +39,13 @@ export class VehicleTimelineMedia extends BaseEntity {
   @Column({ type: 'enum', enum: MediaType, default: MediaType.IMAGE })
   type!: MediaType;
 
-  @Column({ length: 500 })
+  @Column({ type: 'varchar', length: 500 })
   url!: string;
 
-  @Column({ length: 200, nullable: true })
+  @Column({ type: 'varchar', length: 200, nullable: true })
   filename?: string;
 
-  @Column({ name: 'mime_type', length: 100, nullable: true })
+  @Column({ name: 'mime_type', type: 'varchar', length: 100, nullable: true })
   mimeType?: string;
 
   @Column({ type: 'int', nullable: true })

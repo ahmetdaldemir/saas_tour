@@ -72,11 +72,11 @@ export class CommissionTransaction extends BaseEntity {
   @Column({ name: 'commission_amount', type: 'decimal', precision: 10, scale: 2 })
   commissionAmount!: number; // Commission calculated
 
-  @Column({ name: 'currency_code', length: 3, default: 'TRY' })
+  @Column({ name: 'currency_code', type: 'varchar', length: 3, default: 'TRY' })
   currencyCode!: string;
 
   // Commission calculation details
-  @Column({ name: 'commission_type', length: 20 })
+  @Column({ name: 'commission_type', type: 'varchar', length: 20 })
   commissionType!: string;
 
   @Column({ name: 'commission_rate', type: 'decimal', precision: 5, scale: 2, nullable: true })
@@ -97,10 +97,10 @@ export class CommissionTransaction extends BaseEntity {
   description?: string;
 
   // Reference numbers
-  @Column({ name: 'reference_number', length: 100, nullable: true })
+  @Column({ name: 'reference_number', type: 'varchar', length: 100, nullable: true })
   referenceNumber?: string;
 
-  @Column({ name: 'external_reference', length: 200, nullable: true })
+  @Column({ name: 'external_reference', type: 'varchar', length: 200, nullable: true })
   externalReference?: string;
 
   // Metadata

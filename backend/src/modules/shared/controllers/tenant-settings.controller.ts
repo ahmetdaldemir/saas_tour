@@ -225,6 +225,63 @@ export class TenantSettingsController {
     }
   }
 
+  static async getInvoice(req: Request, res: Response) {
+    try {
+      const tenantId = req.query.tenantId as string | undefined;
+      
+      if (!tenantId) {
+        return res.status(400).json({ message: 'tenantId is required' });
+      }
+
+      const settings = await TenantSettingsService.getInvoiceSettings(tenantId);
+      
+      // Return default values if not set
+      if (!settings || !settings.metadata) {
+        return res.json({
+          depositAmount: 0,
+          vatRate: 0,
+          eInvoiceIntegrator: 'none',
+        });
+      }
+
+      const metadata = settings.metadata as Record<string, unknown>;
+      res.json({
+        depositAmount: metadata.depositAmount ?? 0,
+        vatRate: metadata.vatRate ?? 0,
+        eInvoiceIntegrator: metadata.eInvoiceIntegrator || 'none',
+      });
+    } catch (error) {
+      res.status(500).json({ message: (error as Error).message });
+    }
+  }
+
+  static async updateInvoice(req: AuthenticatedRequest, res: Response) {
+    try {
+      if (!req.auth) {
+        return res.status(401).json({ message: 'Unauthorized' });
+      }
+
+      const tenantId = req.auth.tenantId;
+      const { depositAmount, vatRate, eInvoiceIntegrator } = req.body;
+
+      const settings = await TenantSettingsService.updateInvoiceSettings(tenantId, {
+        depositAmount,
+        vatRate,
+        eInvoiceIntegrator,
+      });
+
+      // Return formatted response
+      const metadata = settings.metadata as Record<string, unknown>;
+      res.json({
+        depositAmount: metadata.depositAmount ?? 0,
+        vatRate: metadata.vatRate ?? 0,
+        eInvoiceIntegrator: metadata.eInvoiceIntegrator || 'none',
+      });
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  }
+
   static async getFeatures(req: TenantRequest, res: Response) {
     try {
       if (!req.tenant) {

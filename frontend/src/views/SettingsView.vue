@@ -20,6 +20,10 @@
           <v-icon start icon="mdi-credit-card" />
           Ödeme Ayarları
         </v-tab>
+        <v-tab value="invoice">
+          <v-icon start icon="mdi-file-document-edit" />
+          Fatura Ayarları
+        </v-tab>
       </v-tabs>
       
       <v-divider />

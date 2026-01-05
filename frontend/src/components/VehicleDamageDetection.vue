@@ -41,7 +41,7 @@
               />
             </v-col>
             <v-col cols="12" md="6">
-              <div class="text-subtitle-2 mb-2">Check-out Fotoğrafları</div>
+              <div class="text-subtitle-2 mb-2">Check-out Fotoğrafları (Opsiyonel - Manuel)</div>
               <div v-if="checkoutPhotos.length > 0" class="d-flex flex-wrap gap-2 mb-2">
                 <v-chip
                   v-for="(photo, index) in checkoutPhotos"
@@ -69,7 +69,6 @@
         <v-btn
           color="primary"
           :loading="processing"
-          :disabled="checkinPhotos.length === 0 || checkoutPhotos.length === 0"
           @click="processDetection"
         >
           Hasar Tespiti Başlat
@@ -376,16 +375,76 @@ const removeCheckoutPhoto = (index: number) => {
 };
 
 const processDetection = async () => {
-  if (checkinPhotos.value.length === 0 || checkoutPhotos.value.length === 0) {
-    showSnackbar('Lütfen hem check-in hem check-out fotoğraflarını seçin', 'warning');
-    return;
-  }
-
   try {
     processing.value = true;
     
-    // First, upload photos if they're local files
-    const checkinUrls: string[] = [];
+    let checkinUrls: string[] = [];
+    let checkoutUrls: string[] = [];
+    
+    // First, try to load photos from operations system
+    try {
+      const damageCompareResponse = await http.get(
+        `/api/rentacar/operations/damage-compare/${props.reservationId}`
+      );
+      const damageCompare = damageCompareResponse.data;
+      
+      if (damageCompare.pickupPhotos && damageCompare.pickupPhotos.length > 0) {
+        checkinUrls = damageCompare.pickupPhotos.map((p: any) => p.url);
+      }
+      if (damageCompare.returnPhotos && damageCompare.returnPhotos.length > 0) {
+        checkoutUrls = damageCompare.returnPhotos.map((p: any) => p.url);
+      }
+    } catch (opsError) {
+      console.warn('Could not load photos from operations:', opsError);
+      // Fall back to manual uploads
+    }
+    
+    // If no photos from operations, use manually uploaded photos
+    if (checkinUrls.length === 0 && checkinPhotos.value.length > 0) {
+      // Upload local files if needed
+      for (const photo of checkinPhotos.value) {
+        if (photo.url.startsWith('blob:')) {
+          // This is a local file, needs to be uploaded
+          // For now, skip - user should upload files first
+          continue;
+        }
+        checkinUrls.push(photo.url);
+      }
+    }
+    
+    if (checkoutUrls.length === 0 && checkoutPhotos.value.length > 0) {
+      for (const photo of checkoutPhotos.value) {
+        if (photo.url.startsWith('blob:')) {
+          continue;
+        }
+        checkoutUrls.push(photo.url);
+      }
+    }
+    
+    // If still no photos, check if we have manually uploaded files
+    if (checkinUrls.length === 0 || checkoutUrls.length === 0) {
+      if (checkinPhotos.value.length === 0 || checkoutPhotos.value.length === 0) {
+        showSnackbar('Lütfen hem check-in hem check-out fotoğraflarını seçin veya operasyon sisteminden fotoğraflar yüklenmiş olmalı', 'warning');
+        processing.value = false;
+        return;
+      }
+    }
+    
+    // Get vehicleId from reservation if not provided
+    let vehicleId = props.vehicleId;
+    if (!vehicleId) {
+      try {
+        const reservationResponse = await http.get(`/api/reservations/${props.reservationId}`);
+        vehicleId = reservationResponse.data.metadata?.vehicleId;
+        if (!vehicleId) {
+          throw new Error('Vehicle ID not found in reservation');
+        }
+      } catch (error) {
+        showSnackbar('Araç bilgisi bulunamadı', 'error');
+        processing.value = false;
+        return;
+      }
+    }
     const checkoutUrls: string[] = [];
 
     // TODO: Upload files to server and get URLs

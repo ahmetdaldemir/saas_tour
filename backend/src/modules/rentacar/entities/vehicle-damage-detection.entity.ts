@@ -69,7 +69,7 @@ export class VehicleDamageDetection extends BaseEntity {
   }>;
 
   // Difference image URL (overlay showing differences)
-  @Column({ name: 'difference_image_url', length: 500, nullable: true })
+  @Column({ name: 'difference_image_url', type: 'varchar', length: 500, nullable: true })
   differenceImageUrl?: string;
 
   // Processing metadata

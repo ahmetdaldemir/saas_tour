@@ -22,7 +22,7 @@ export class TransferReservation extends BaseEntity {
   @Column({ name: 'tenant_id' })
   tenantId!: string;
 
-  @Column({ length: 40, unique: true })
+  @Column({ type: 'varchar', length: 40, unique: true })
   reference!: string; // Rezervasyon kodu (örn: TRF-2024-001)
 
   @ManyToOne(() => TransferRoute, { nullable: false })
@@ -50,13 +50,13 @@ export class TransferReservation extends BaseEntity {
   status!: TransferReservationStatus;
 
   // Yolcu bilgileri
-  @Column({ name: 'passenger_name', length: 120 })
+  @Column({ name: 'passenger_name', type: 'varchar', length: 120 })
   passengerName!: string;
 
-  @Column({ name: 'passenger_email', length: 160 })
+  @Column({ name: 'passenger_email', type: 'varchar', length: 160 })
   passengerEmail!: string;
 
-  @Column({ name: 'passenger_phone', length: 32 })
+  @Column({ name: 'passenger_phone', type: 'varchar', length: 32 })
   passengerPhone!: string;
 
   @Column({ name: 'passenger_count', type: 'int' })
@@ -72,14 +72,14 @@ export class TransferReservation extends BaseEntity {
   @Column({ name: 'transfer_time', type: 'time' })
   transferTime!: string; // HH:mm format
 
-  @Column({ name: 'pickup_address', length: 300, nullable: true })
+  @Column({ name: 'pickup_address', type: 'varchar', length: 300, nullable: true })
   pickupAddress?: string;
 
-  @Column({ name: 'dropoff_address', length: 300, nullable: true })
+  @Column({ name: 'dropoff_address', type: 'varchar', length: 300, nullable: true })
   dropoffAddress?: string;
 
   // Uçuş bilgileri (opsiyonel)
-  @Column({ name: 'flight_number', length: 20, nullable: true })
+  @Column({ name: 'flight_number', type: 'varchar', length: 20, nullable: true })
   flightNumber?: string;
 
   @Column({ name: 'flight_arrival_time', type: 'timestamp', nullable: true })
@@ -98,7 +98,7 @@ export class TransferReservation extends BaseEntity {
   @Column({ name: 'total_price', type: 'decimal', precision: 10, scale: 2 })
   totalPrice!: number;
 
-  @Column({ name: 'currency_code', length: 3, default: 'EUR' })
+  @Column({ name: 'currency_code', type: 'varchar', length: 3, default: 'EUR' })
   currencyCode!: string;
 
   @Column({ name: 'is_round_trip', default: false })
@@ -112,10 +112,10 @@ export class TransferReservation extends BaseEntity {
   extraServices?: Record<string, any>; // { "baby_seat": true, "waiting_time": 30 }
 
   // Ödeme durumu
-  @Column({ name: 'payment_status', length: 20, default: 'pending' })
+  @Column({ name: 'payment_status', type: 'varchar', length: 20, default: 'pending' })
   paymentStatus!: string; // pending, paid, refunded
 
-  @Column({ name: 'payment_method', length: 50, nullable: true })
+  @Column({ name: 'payment_method', type: 'varchar', length: 50, nullable: true })
   paymentMethod?: string;
 
   // Notlar

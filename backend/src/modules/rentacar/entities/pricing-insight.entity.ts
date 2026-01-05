@@ -67,7 +67,7 @@ export class PricingInsight extends BaseEntity {
   @Column({ type: 'enum', enum: InsightStatus, default: InsightStatus.ACTIVE })
   status!: InsightStatus;
 
-  @Column({ length: 200 })
+  @Column({ type: 'varchar', length: 200 })
   title!: string; // Short title (e.g., "Vehicle Underpriced")
 
   @Column({ type: 'text' })

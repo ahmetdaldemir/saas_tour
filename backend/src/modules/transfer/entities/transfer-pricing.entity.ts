@@ -41,7 +41,7 @@ export class TransferPricing extends BaseEntity {
   @Column({ name: 'base_price', type: 'decimal', precision: 10, scale: 2 })
   basePrice!: number;
 
-  @Column({ name: 'currency_code', length: 3, default: 'EUR' })
+  @Column({ name: 'currency_code', type: 'varchar', length: 3, default: 'EUR' })
   currencyCode!: string;
 
   @Column({ name: 'is_round_trip', default: false })

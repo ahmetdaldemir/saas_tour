@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import operationsRouter from './operations.router';
 import { RentacarController } from '../controllers/rentacar.controller';
 import { AuthenticatedRequest } from '../../auth/middleware/auth.middleware';
 import { authenticate } from '../../auth/middleware/auth.middleware';
@@ -11,6 +12,7 @@ import { VehicleTimelineController } from '../controllers/vehicle-timeline.contr
 import { VehicleDamageDetectionController } from '../controllers/vehicle-damage-detection.controller';
 import { ContractController } from '../controllers/contract.controller';
 import { PricingIntelligenceController } from '../controllers/pricing-intelligence.controller';
+import { CampaignController } from '../controllers/campaign.controller';
 
 const router = Router();
 
@@ -52,6 +54,9 @@ router.post('/vehicles/:vehicleId/images/reorder', authenticate, authorize(Permi
 // Trips routes
 router.use('/trips', tripsRouter);
 
+// Operations routes
+router.use('/operations', operationsRouter);
+
 // Vehicle tracking routes
 router.get('/tracking/providers', authenticate, VehicleTrackingController.listProviders);
 router.get('/tracking/:plate', authenticate, authorize(Permission.VEHICLE_VIEW), VehicleTrackingController.getVehicleLocation);
@@ -89,5 +94,14 @@ router.get('/pricing-intelligence/insights', authenticate, authorize(Permission.
 router.post('/pricing-intelligence/insights/:id/acknowledge', authenticate, authorize(Permission.VEHICLE_UPDATE), (req, res, next) => PricingIntelligenceController.acknowledgeInsight(req as AuthenticatedRequest, res).catch(next));
 router.post('/pricing-intelligence/insights/:id/dismiss', authenticate, authorize(Permission.VEHICLE_UPDATE), (req, res, next) => PricingIntelligenceController.dismissInsight(req as AuthenticatedRequest, res).catch(next));
 router.get('/pricing-intelligence/rules/default', authenticate, authorize(Permission.VEHICLE_VIEW), (req, res, next) => PricingIntelligenceController.getDefaultRule(req as AuthenticatedRequest, res).catch(next));
+
+// Campaign routes
+router.get('/campaigns', authenticate, authorize(Permission.VEHICLE_VIEW), (req, res, next) => CampaignController.list(req as AuthenticatedRequest, res).catch(next));
+router.get('/campaigns/:id', authenticate, authorize(Permission.VEHICLE_VIEW), (req, res, next) => CampaignController.getById(req as AuthenticatedRequest, res).catch(next));
+router.post('/campaigns', authenticate, authorize(Permission.VEHICLE_UPDATE), (req, res, next) => CampaignController.create(req as AuthenticatedRequest, res).catch(next));
+router.put('/campaigns/:id', authenticate, authorize(Permission.VEHICLE_UPDATE), (req, res, next) => CampaignController.update(req as AuthenticatedRequest, res).catch(next));
+router.delete('/campaigns/:id', authenticate, authorize(Permission.VEHICLE_UPDATE), (req, res, next) => CampaignController.delete(req as AuthenticatedRequest, res).catch(next));
+router.post('/campaigns/check-applicable', authenticate, authorize(Permission.VEHICLE_VIEW), (req, res, next) => CampaignController.checkApplicable(req as AuthenticatedRequest, res).catch(next));
+router.post('/campaigns/quote', authenticate, authorize(Permission.VEHICLE_VIEW), (req, res, next) => CampaignController.getQuote(req as AuthenticatedRequest, res).catch(next));
 
 export default router;

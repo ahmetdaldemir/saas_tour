@@ -45,6 +45,9 @@ import crmPageCategoryRouter from '../modules/crm/routes/crm-page-category.route
 import crmPageRouter from '../modules/crm/routes/crm-page.router';
 import adminAuthRouter from '../modules/admin/routes/admin-auth.router';
 import marketplaceRouter from '../modules/marketplace/routes/marketplace.router';
+import walletRouter from '../modules/shared/routes/wallet.router';
+import couponRouter from '../modules/shared/routes/coupon.router';
+import invoiceRouter from '../modules/shared/routes/invoice.router';
 
 export const registerRoutes = (app: Express) => {
   app.get('/health', (_req, res) => {
@@ -107,4 +110,7 @@ export const registerRoutes = (app: Express) => {
   app.use('/api/admin', tenantMonitoringRouter);
   app.use('/api/admin/auth', adminAuthRouter);
   app.use('/api/marketplace', marketplaceRouter);
+  app.use('/api/wallet', walletRouter);
+  app.use('/api/coupons', couponRouter);
+  app.use('/api/invoices', invoiceRouter);
 };

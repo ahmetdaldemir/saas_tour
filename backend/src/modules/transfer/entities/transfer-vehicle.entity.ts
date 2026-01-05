@@ -30,7 +30,7 @@ export class TransferVehicle extends BaseEntity {
   @Column({ name: 'tenant_id' })
   tenantId!: string;
 
-  @Column({ length: 120 })
+  @Column({ type: 'varchar', length: 120 })
   name!: string;
 
   @Column({ type: 'enum', enum: TransferVehicleType, default: TransferVehicleType.VIP })
@@ -48,7 +48,7 @@ export class TransferVehicle extends BaseEntity {
   @Column({ type: 'simple-array', nullable: true })
   features?: TransferVehicleFeature[]; // Wi-Fi, Bebek Koltuğu, İçecek, vb.
 
-  @Column({ name: 'image_url', length: 500, nullable: true })
+  @Column({ name: 'image_url', type: 'varchar', length: 500, nullable: true })
   imageUrl?: string;
 
   @Column({ type: 'text', nullable: true })

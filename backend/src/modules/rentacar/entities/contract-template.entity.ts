@@ -30,23 +30,23 @@ export class ContractTemplate extends BaseEntity {
   @Column({ name: 'tenant_id' })
   tenantId!: string;
 
-  @Column({ length: 200 })
+  @Column({ type: 'varchar', length: 200 })
   name!: string;
 
   @Column({ type: 'text', nullable: true })
   description?: string;
 
   // Tenant customization
-  @Column({ name: 'logo_url', length: 500, nullable: true })
+  @Column({ name: 'logo_url', type: 'varchar', length: 500, nullable: true })
   logoUrl?: string;
 
-  @Column({ name: 'primary_color', length: 7, default: '#1976D2' })
+  @Column({ name: 'primary_color', type: 'varchar', length: 7, default: '#1976D2' })
   primaryColor!: string; // Hex color
 
-  @Column({ name: 'secondary_color', length: 7, nullable: true })
+  @Column({ name: 'secondary_color', type: 'varchar', length: 7, nullable: true })
   secondaryColor?: string;
 
-  @Column({ name: 'text_color', length: 7, default: '#000000' })
+  @Column({ name: 'text_color', type: 'varchar', length: 7, default: '#000000' })
   textColor!: string;
 
   // Contract sections (JSON array)

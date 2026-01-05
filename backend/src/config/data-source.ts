@@ -9,6 +9,12 @@ import { PhoneCountry } from '../modules/shared/entities/phone-country.entity';
 import { Country } from '../modules/shared/entities/country.entity';
 import { PaymentMethod } from '../modules/shared/entities/payment-method.entity';
 import { Reservation } from '../modules/shared/entities/reservation.entity';
+import { ReservationInvoice } from '../modules/shared/entities/reservation-invoice.entity';
+import { ReservationInvoiceConfig } from '../modules/shared/entities/reservation-invoice-config.entity';
+import { RentalPickup } from '../modules/rentacar/entities/rental-pickup.entity';
+import { RentalReturn } from '../modules/rentacar/entities/rental-return.entity';
+import { RentalInspectionMedia } from '../modules/rentacar/entities/rental-inspection-media.entity';
+import { RentalWarning } from '../modules/rentacar/entities/rental-warning.entity';
 import { Operation } from '../modules/shared/entities/operation.entity';
 import { Language } from '../modules/shared/entities/language.entity';
 import { Tour } from '../modules/tour/entities/tour.entity';
@@ -31,6 +37,7 @@ import { VehicleMaintenance } from '../modules/rentacar/entities/vehicle-mainten
 import { VehiclePenalty } from '../modules/rentacar/entities/vehicle-penalty.entity';
 import { VehicleTimelineMedia } from '../modules/rentacar/entities/vehicle-timeline-media.entity';
 import { VehicleDamageDetection } from '../modules/rentacar/entities/vehicle-damage-detection.entity';
+import { Campaign } from '../modules/rentacar/entities/campaign.entity';
 import { ContractTemplate } from '../modules/rentacar/entities/contract-template.entity';
 import { Contract } from '../modules/rentacar/entities/contract.entity';
 import { PricingInsightRule } from '../modules/rentacar/entities/pricing-insight-rule.entity';
@@ -63,6 +70,10 @@ import { ChatParticipant } from '../modules/chat/entities/chat-participant.entit
 import { ChatWidgetToken } from '../modules/chat/entities/chat-widget-token.entity';
 import { Customer } from '../modules/shared/entities/customer.entity';
 import { CustomerEmail } from '../modules/shared/entities/customer-email.entity';
+import { CustomerWallet } from '../modules/shared/entities/customer-wallet.entity';
+import { WalletTransaction } from '../modules/shared/entities/wallet-transaction.entity';
+import { Coupon } from '../modules/shared/entities/coupon.entity';
+import { CouponRedemption } from '../modules/shared/entities/coupon-redemption.entity';
 import { ReservationLog } from '../modules/shared/entities/reservation-log.entity';
 import { Page } from '../modules/shared/entities/page.entity';
 import { FinanceCategory } from '../modules/finance/entities/finance-category.entity';
@@ -101,6 +112,12 @@ export const AppDataSource = new DataSource({
     Country,
     PaymentMethod,
     Reservation,
+    ReservationInvoice,
+    ReservationInvoiceConfig,
+    RentalPickup,
+    RentalReturn,
+    RentalInspectionMedia,
+    RentalWarning,
     Operation,
     Language,
     MasterLocation,
@@ -128,6 +145,7 @@ export const AppDataSource = new DataSource({
           VehiclePenalty,
           VehicleTimelineMedia,
           VehicleDamageDetection,
+          Campaign,
           ContractTemplate,
           Contract,
           PricingInsightRule,
@@ -141,6 +159,10 @@ export const AppDataSource = new DataSource({
           TenantSettings,
           Customer,
           CustomerEmail,
+          CustomerWallet,
+          WalletTransaction,
+          Coupon,
+          CouponRedemption,
           ReservationLog,
           Survey,
           SurveyQuestion,

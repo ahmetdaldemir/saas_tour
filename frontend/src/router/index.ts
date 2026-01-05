@@ -35,6 +35,11 @@ import CrmPagesView from '../views/CrmPagesView.vue';
 import StaffPerformanceView from '../views/StaffPerformanceView.vue';
 import ContractsView from '../views/ContractsView.vue';
 import MarketplaceView from '../views/MarketplaceView.vue';
+import CampaignsView from '../views/CampaignsView.vue';
+import CouponsView from '../views/CouponsView.vue';
+import OperationsView from '../views/OperationsView.vue';
+import PickupCompleteView from '../views/PickupCompleteView.vue';
+import ReturnCompleteView from '../views/ReturnCompleteView.vue';
 import { useAuthStore } from '../stores/auth';
 import { useAdminAuthStore } from '../stores/admin-auth';
 import { useFeaturesStore } from '../stores/features';
@@ -301,6 +306,36 @@ const routes: RouteRecordRaw[] = [
     path: '/app/marketplace',
     name: 'marketplace',
     component: MarketplaceView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/campaigns',
+    name: 'campaigns',
+    component: CampaignsView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/coupons',
+    name: 'coupons',
+    component: CouponsView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/operations',
+    name: 'operations',
+    component: OperationsView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/operations/pickup/:reservationId',
+    name: 'pickup-complete',
+    component: PickupCompleteView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/operations/return/:reservationId',
+    name: 'return-complete',
+    component: ReturnCompleteView,
     meta: { requiresAuth: true, layout: 'admin' },
   },
   {

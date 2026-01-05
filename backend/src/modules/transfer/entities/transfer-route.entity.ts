@@ -22,7 +22,7 @@ export class TransferRoute extends BaseEntity {
   @Column({ name: 'tenant_id' })
   tenantId!: string;
 
-  @Column({ length: 200 })
+  @Column({ type: 'varchar', length: 200 })
   name!: string; // "IST → Marmaris", "Antalya → Alanya", vb.
 
   @Column({ type: 'enum', enum: TransferRouteType })
