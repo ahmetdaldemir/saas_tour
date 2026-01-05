@@ -23,6 +23,7 @@ import tenantSettingsRouter from '../modules/shared/routes/tenant-settings.route
 import customerRouter from '../modules/shared/routes/customer.router';
 import surveyRouter from '../modules/shared/routes/survey.router';
 import reservationRouter from '../modules/shared/routes/reservation.router';
+import reservationLogRouter from '../modules/shared/routes/reservation-log.router';
 import monitoringRouter from '../modules/admin/routes/monitoring.router';
 import tenantMonitoringRouter from '../modules/admin/routes/tenant-monitoring.router';
 import emailTemplateRouter from '../modules/shared/routes/email-template.router';
@@ -89,6 +90,7 @@ export const registerRoutes = (app: Express) => {
   app.use('/api/crm/pages', crmPageRouter);
   app.use('/api/surveys', surveyRouter);
   app.use('/api/reservations', reservationRouter);
+  app.use('/api/reservation-logs', reservationLogRouter);
   app.use('/api/email-templates', emailTemplateRouter);
   app.use('/api/mail', mailRouter);
   app.use('/api/transfer/vehicles', transferVehicleRouter);

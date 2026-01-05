@@ -449,14 +449,54 @@ export class RentacarController {
    * Create rentacar reservation (public endpoint)
    */
   static createReservation = asyncHandler(async (req: Request, res: Response) => {
+    const { ReservationLogService } = await import('../../shared/services/reservation-log.service');
+    const { ReservationLogStatus } = await import('../../shared/entities/reservation-log.entity');
+    
+    // Get IP address and user agent
+    const ipAddress = req.ip || req.socket.remoteAddress || undefined;
+    const userAgent = req.get('user-agent') || undefined;
+
+    // Create log entry before attempting reservation creation
+    let log;
+    try {
+      log = await ReservationLogService.create({
+        tenantId: req.body.tenantId,
+        requestData: req.body,
+        ipAddress,
+        userAgent,
+      });
+    } catch (logError) {
+      console.error('Failed to create reservation log:', logError);
+      // Continue even if log creation fails
+    }
+
     try {
       const reservation = await RentacarReservationService.create(req.body);
+      
+      // Mark log as success if it was created
+      if (log) {
+        try {
+          await ReservationLogService.markSuccess(log.id, req.body.tenantId, reservation.id);
+        } catch (logError) {
+          console.error('Failed to update reservation log:', logError);
+        }
+      }
+
       res.status(201).json({
         success: true,
         message: 'Reservation created successfully',
         data: reservation,
       });
     } catch (error) {
+      // Mark log as failed if it was created
+      if (log) {
+        try {
+          await ReservationLogService.markFailed(log.id, req.body.tenantId, (error as Error).message);
+        } catch (logError) {
+          console.error('Failed to update reservation log:', logError);
+        }
+      }
+
       res.status(400).json({
         success: false,
         message: (error as Error).message,

@@ -221,6 +221,13 @@ export const API_ROUTES = {
     delete: (id: string) => `/reservations/${id}`,
   },
 
+  // Reservation Logs
+  reservationLogs: {
+    list: '/reservation-logs',
+    getById: (id: string) => `/reservation-logs/${id}`,
+    convertToReservation: (id: string) => `/reservation-logs/${id}/convert`,
+  },
+
   // Mail
   mail: {
     send: '/mail/send',

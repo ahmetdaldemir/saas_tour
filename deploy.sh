@@ -516,6 +516,22 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
         
         sleep 10
         
+        # Son bir kez daha kontrol et ve zorla temizle
+        echo -e "${YELLOW}🔍 Son kontrol: saas-tour-backend container'ı zorla temizleniyor...${NC}"
+        # Container ID'yi al (eğer varsa)
+        EXISTING_BACKEND_ID=$(docker ps -a --filter "name=^saas-tour-backend$" --format "{{.ID}}" | head -1 || true)
+        if [ -n "$EXISTING_BACKEND_ID" ]; then
+            echo "   - Zorla kaldırılıyor: $EXISTING_BACKEND_ID"
+            docker stop "$EXISTING_BACKEND_ID" 2>/dev/null || true
+            docker rm -f "$EXISTING_BACKEND_ID" 2>/dev/null || true
+        fi
+        # İsim bazlı da dene
+        docker stop saas-tour-backend 2>/dev/null || true
+        docker rm -f saas-tour-backend 2>/dev/null || true
+        
+        # Biraz bekle (container'ın tamamen kaldırılması için)
+        sleep 5
+        
         # Önce yeni image'ları build et
         echo -e "${YELLOW}📦 Yeni image'lar build ediliyor...${NC}"
         docker-compose build --no-cache
@@ -653,6 +669,22 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
         fi
         
         # Kısa bir bekleme (container'ların tamamen kaldırılması için)
+        sleep 5
+        
+        # Son bir kez daha kontrol et ve zorla temizle
+        echo -e "${YELLOW}🔍 Son kontrol: saas-tour-backend container'ı zorla temizleniyor...${NC}"
+        # Container ID'yi al (eğer varsa)
+        EXISTING_BACKEND_ID=$(docker ps -a --filter "name=^saas-tour-backend$" --format "{{.ID}}" | head -1 || true)
+        if [ -n "$EXISTING_BACKEND_ID" ]; then
+            echo "   - Zorla kaldırılıyor: $EXISTING_BACKEND_ID"
+            docker stop "$EXISTING_BACKEND_ID" 2>/dev/null || true
+            docker rm -f "$EXISTING_BACKEND_ID" 2>/dev/null || true
+        fi
+        # İsim bazlı da dene
+        docker stop saas-tour-backend 2>/dev/null || true
+        docker rm -f saas-tour-backend 2>/dev/null || true
+        
+        # Biraz bekle (container'ın tamamen kaldırılması için)
         sleep 5
         
         # Force recreate ile container'ları yeniden oluştur
