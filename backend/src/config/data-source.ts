@@ -50,6 +50,7 @@ import { ChatParticipant } from '../modules/chat/entities/chat-participant.entit
 import { ChatWidgetToken } from '../modules/chat/entities/chat-widget-token.entity';
 import { Customer } from '../modules/shared/entities/customer.entity';
 import { CustomerEmail } from '../modules/shared/entities/customer-email.entity';
+import { ReservationLog } from '../modules/shared/entities/reservation-log.entity';
 import { Page } from '../modules/shared/entities/page.entity';
 import { FinanceCategory } from '../modules/finance/entities/finance-category.entity';
 import { FinanceCari } from '../modules/finance/entities/finance-cari.entity';
@@ -114,6 +115,7 @@ export const AppDataSource = new DataSource({
           TenantSettings,
           Customer,
           CustomerEmail,
+          ReservationLog,
           Survey,
           SurveyQuestion,
           SurveyResponse,

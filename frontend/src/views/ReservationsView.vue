@@ -31,22 +31,39 @@
                   <span class="font-weight-medium">{{ item.customerName || '-' }}</span>
                 </template>
                 <template #item.pickupLocation="{ item }">
-                  <span>{{ item.pickupLocation || '-' }}</span>
+                  <span>{{ getPickupLocationName(item) }}</span>
                 </template>
                 <template #item.returnLocation="{ item }">
-                  <span>{{ item.returnLocation || '-' }}</span>
+                  <span>{{ getReturnLocationName(item) }}</span>
                 </template>
-                <template #item.pickupDate="{ item }">
-                  <span>{{ formatDate(item.pickupDate) }}</span>
+                <template #item.pickupDateTime="{ item }">
+                  <span>{{ formatDateTime(item.checkIn || item.metadata?.pickupLocationId ? getPickupDateTime(item) : null) }}</span>
                 </template>
-                <template #item.returnDate="{ item }">
-                  <span>{{ formatDate(item.returnDate) }}</span>
+                <template #item.returnDateTime="{ item }">
+                  <span>{{ formatDateTime(item.checkOut || item.metadata?.dropoffLocationId ? getReturnDateTime(item) : null) }}</span>
                 </template>
-                <template #item.vehicleName="{ item }">
-                  <span>{{ item.vehicleName || '-' }}</span>
+                <template #item.source="{ item }">
+                  <v-chip size="small" color="info" variant="tonal">
+                    {{ getSourceLabel(item.metadata?.source) }}
+                  </v-chip>
+                </template>
+                <template #item.dailyPrice="{ item }">
+                  <span>{{ formatPrice(getDailyPrice(item), getCurrencyCode(item)) }}</span>
+                </template>
+                <template #item.rentalDays="{ item }">
+                  <span>{{ getRentalDays(item) }} gün</span>
+                </template>
+                <template #item.extrasPrice="{ item }">
+                  <span>{{ formatPrice(getExtrasPrice(item), getCurrencyCode(item)) }}</span>
+                </template>
+                <template #item.deliveryFee="{ item }">
+                  <span>{{ formatPrice(getDeliveryFeeFromItem(item), getCurrencyCode(item)) }}</span>
+                </template>
+                <template #item.dropFee="{ item }">
+                  <span>{{ formatPrice(getDropFeeFromItem(item), getCurrencyCode(item)) }}</span>
                 </template>
                 <template #item.totalPrice="{ item }">
-                  <span>{{ formatPrice(item.totalPrice, item.currencyCode) }}</span>
+                  <span class="font-weight-bold">{{ formatPrice(getTotalPrice(item), getCurrencyCode(item)) }}</span>
                 </template>
                 <template #item.status="{ item }">
                   <v-chip
@@ -54,7 +71,7 @@
                     :color="getStatusColor(item.status)"
                     variant="flat"
                   >
-                    {{ item.status || '-' }}
+                    {{ getStatusLabel(item.status) }}
                   </v-chip>
                 </template>
                 <template #item.actions="{ item }">
@@ -1529,17 +1546,40 @@ interface AvailableVehicleDto {
 
 interface ReservationDto {
   id: string;
+  reference: string;
   customerName: string;
-  pickupLocation: string;
-  returnLocation: string;
-  pickupDate: string;
-  returnDate: string;
-  vehicleName: string;
-  totalPrice: number;
-  currencyCode: string;
+  pickupLocation?: string;
+  returnLocation?: string;
+  pickupDate?: string;
+  returnDate?: string;
+  vehicleName?: string;
+  totalPrice?: number;
+  currencyCode?: string;
   status: string;
   vehicleId?: string;
   plateId?: string;
+  type?: string;
+  checkIn?: string | null;
+  checkOut?: string | null;
+  metadata?: {
+    vehicleId?: string;
+    vehicleName?: string;
+    pickupLocationId?: string;
+    pickupLocationName?: string;
+    dropoffLocationId?: string;
+    dropoffLocationName?: string;
+    rentalDays?: number;
+    extras?: Array<{ id: string; name: string; quantity: number; price: number }>;
+    vehiclePrice?: number;
+    extrasPrice?: number;
+    totalPrice?: number;
+    currencyCode?: string;
+    paymentMethod?: string;
+    deliveryFee?: number;
+    dropFee?: number;
+    dailyPrice?: number;
+    source?: string;
+  };
 }
 
 interface ExtraDto {
@@ -1885,15 +1925,20 @@ const canSaveReservation = computed(() => {
 // Table headers
 const reservationTableHeaders = [
   { title: '#', key: 'index', sortable: false, width: '50px' },
-  { title: 'Müşteri', key: 'customerName', width: '200px' },
+  { title: 'Müşteri', key: 'customerName', width: '150px' },
   { title: 'Alış Lokasyon', key: 'pickupLocation', width: '150px' },
   { title: 'Dönüş Lokasyon', key: 'returnLocation', width: '150px' },
-  { title: 'Alış Tarihi', key: 'pickupDate', width: '120px' },
-  { title: 'Dönüş Tarihi', key: 'returnDate', width: '120px' },
-  { title: 'Araç', key: 'vehicleName', width: '150px' },
-  { title: 'Toplam Fiyat', key: 'totalPrice', width: '120px' },
+  { title: 'Alış Tarih/Saat', key: 'pickupDateTime', width: '150px' },
+  { title: 'Dönüş Tarih/Saat', key: 'returnDateTime', width: '150px' },
+  { title: 'Alış Tipi', key: 'source', width: '100px' },
+  { title: 'Günlük Fiyat', key: 'dailyPrice', width: '100px' },
+  { title: 'Gün Sayısı', key: 'rentalDays', width: '80px' },
+  { title: 'Ekstra Ücret', key: 'extrasPrice', width: '100px' },
+  { title: 'Pickup Fee', key: 'deliveryFee', width: '100px' },
+  { title: 'Drop Fee', key: 'dropFee', width: '100px' },
+  { title: 'Toplam Ücret', key: 'totalPrice', width: '120px' },
   { title: 'Durum', key: 'status', sortable: false, width: '100px' },
-  { title: 'İşlemler', key: 'actions', sortable: false, width: '120px' },
+  { title: 'İşlemler', key: 'actions', sortable: false, width: '150px' },
 ];
 
 const vehicleTableHeaders = [
@@ -1952,6 +1997,113 @@ const formatDate = (date: string): string => {
   } catch {
     return date;
   }
+};
+
+const formatDateTime = (date: string | null | undefined): string => {
+  if (!date) return '-';
+  try {
+    return new Date(date).toLocaleString('tr-TR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return date;
+  }
+};
+
+const formatPrice = (price: number | undefined, currency: string | undefined): string => {
+  if (price === undefined || price === null) return '-';
+  const currencyCode = currency || 'TRY';
+  return new Intl.NumberFormat('tr-TR', {
+    style: 'currency',
+    currency: currencyCode,
+  }).format(price);
+};
+
+// Helper functions for reservation data
+const getPickupLocationName = (item: ReservationDto): string => {
+  if (item.metadata?.pickupLocationName) return item.metadata.pickupLocationName;
+  if (item.pickupLocation) return item.pickupLocation;
+  return '-';
+};
+
+const getReturnLocationName = (item: ReservationDto): string => {
+  if (item.metadata?.dropoffLocationName) return item.metadata.dropoffLocationName;
+  if (item.returnLocation) return item.returnLocation;
+  return '-';
+};
+
+const getPickupDateTime = (item: ReservationDto): string | null => {
+  if (item.checkIn) return item.checkIn;
+  // Try to construct from metadata if available
+  return null;
+};
+
+const getReturnDateTime = (item: ReservationDto): string | null => {
+  if (item.checkOut) return item.checkOut;
+  // Try to construct from metadata if available
+  return null;
+};
+
+const getSourceLabel = (source?: string): string => {
+  const labels: Record<string, string> = {
+    office: 'Ofis',
+    phone: 'Telefon',
+    whatsapp: 'WhatsApp',
+    facebook: 'Facebook',
+    instagram: 'Instagram',
+    google: 'Google',
+    recommendation: 'Öneri',
+  };
+  return labels[source || ''] || source || '-';
+};
+
+const getDailyPrice = (item: ReservationDto): number => {
+  if (item.metadata?.dailyPrice) return item.metadata.dailyPrice;
+  if (item.metadata?.vehiclePrice && item.metadata?.rentalDays) {
+    return item.metadata.vehiclePrice / item.metadata.rentalDays;
+  }
+  return 0;
+};
+
+const getRentalDays = (item: ReservationDto): number => {
+  return item.metadata?.rentalDays || 0;
+};
+
+const getExtrasPrice = (item: ReservationDto): number => {
+  return item.metadata?.extrasPrice || 0;
+};
+
+const getDeliveryFeeFromItem = (item: ReservationDto): number => {
+  return item.metadata?.deliveryFee || 0;
+};
+
+const getDropFeeFromItem = (item: ReservationDto): number => {
+  return item.metadata?.dropFee || 0;
+};
+
+const getTotalPrice = (item: ReservationDto): number => {
+  if (item.metadata?.totalPrice) return item.metadata.totalPrice;
+  if (item.totalPrice) return item.totalPrice;
+  return 0;
+};
+
+const getCurrencyCode = (item: ReservationDto): string => {
+  return item.metadata?.currencyCode || item.currencyCode || 'TRY';
+};
+
+const getStatusLabel = (status?: string): string => {
+  const labels: Record<string, string> = {
+    pending: 'Beklemede',
+    confirmed: 'Onaylandı',
+    rejected: 'Reddedildi',
+    cancelled: 'İptal Edildi',
+    completed: 'Tamamlandı',
+  };
+  return labels[status || ''] || status || '-';
 };
 
 // Currency conversion: Converts price from default currency to target currency
@@ -2207,10 +2359,19 @@ const loadReservations = async () => {
   if (!auth.tenant) return;
   loadingReservations.value = true;
   try {
-    const { data } = await http.get<ReservationDto[]>('/reservations', {
-      params: { tenantId: auth.tenant.id },
+    const { data } = await http.get<ReservationDto[]>('/reservations');
+    // Sadece rentacar rezervasyonlarını göster
+    reservations.value = (data || []).filter(r => r.type === 'rentacar').map(reservation => {
+      const meta = reservation.metadata || {};
+      return {
+        ...reservation,
+        pickupLocation: meta.pickupLocationName || '-',
+        returnLocation: meta.dropoffLocationName || '-',
+        vehicleName: meta.vehicleName || '-',
+        totalPrice: meta.totalPrice || 0,
+        currencyCode: meta.currencyCode || 'TRY',
+      };
     });
-    reservations.value = data || [];
   } catch (error) {
     console.error('Failed to load reservations:', error);
     reservations.value = [];
@@ -2902,10 +3063,32 @@ const saveReservation = async () => {
       },
     };
     
-    await http.post('/reservations', reservationData);
+    if (editingReservation.value) {
+      // Güncelleme - fiyat hesaplama ile
+      const updateData = {
+        vehicleId: reservationData.vehicleId,
+        pickupLocationId: reservationData.pickupLocationId,
+        dropoffLocationId: reservationData.returnLocationId,
+        pickupDate: reservationData.pickupDate,
+        dropoffDate: reservationData.returnDate,
+        pickupTime: reservationData.pickupTime,
+        dropoffTime: reservationData.returnTime,
+        extras: selectedExtras.value.map(id => ({ id, quantity: 1 })),
+        currencyCode: reservationData.currencyCode,
+        source: reservationData.source,
+        paymentMethod: reservationData.paymentMethod,
+        recalculatePrice: true, // Backend'e fiyat yeniden hesaplama sinyali
+      };
+      await http.put(`/reservations/${editingReservation.value.id}`, updateData);
+      alert('Rezervasyon başarıyla güncellendi');
+    } else {
+      // Yeni rezervasyon
+      await http.post('/reservations', reservationData);
+      alert('Rezervasyon başarıyla kaydedildi');
+    }
     
-    alert('Rezervasyon başarıyla kaydedildi');
     resetReservationForm();
+    editingReservation.value = null;
     mainTab.value = 'list';
     await loadReservations();
   } catch (error: any) {
@@ -2995,6 +3178,7 @@ const resetReservationForm = () => {
   reservationForm.returnLocationId = '';
   reservationForm.returnDate = getTomorrowDate();
   reservationForm.returnTime = '09:00';
+  reservationForm.sameReturnLocation = true;
   reservationForm.customerId = '';
   reservationForm.vehicleId = '';
   reservationForm.nonRentalFee = 0;
@@ -3005,6 +3189,7 @@ const resetReservationForm = () => {
   selectedVehicle.value = null;
   availableVehicles.value = [];
   selectedExtras.value = [];
+  editingReservation.value = null;
   resetCustomerInfo();
 };
 
@@ -3012,9 +3197,79 @@ const viewReservationDetail = (id: string) => {
   router.push({ name: 'reservation-detail', params: { id } });
 };
 
-const editReservation = (reservation: ReservationDto) => {
-  // TODO: Rezervasyon düzenleme özelliği eklenecek
-  alert(`Rezervasyon düzenleme: ${reservation.id}`);
+const editingReservation = ref<ReservationDto | null>(null);
+
+const editReservation = async (reservation: ReservationDto) => {
+  try {
+    // Rezervasyon detaylarını yükle
+    const { data } = await http.get<ReservationDto>(`/reservations/${reservation.id}`);
+    editingReservation.value = data;
+    
+    // Form'u doldur
+    if (data.metadata) {
+      const meta = data.metadata;
+      reservationForm.currencyCode = meta.currencyCode || 'TRY';
+      reservationForm.source = meta.source || 'office';
+      reservationForm.pickupLocationId = meta.pickupLocationId || '';
+      reservationForm.returnLocationId = meta.dropoffLocationId || '';
+      reservationForm.sameReturnLocation = meta.pickupLocationId === meta.dropoffLocationId;
+      
+      // Tarih ve saat bilgileri
+      if (data.checkIn) {
+        const checkInDate = new Date(data.checkIn);
+        reservationForm.pickupDate = checkInDate.toISOString().split('T')[0];
+        reservationForm.pickupTime = `${String(checkInDate.getHours()).padStart(2, '0')}:${String(checkInDate.getMinutes()).padStart(2, '0')}`;
+      }
+      if (data.checkOut) {
+        const checkOutDate = new Date(data.checkOut);
+        reservationForm.returnDate = checkOutDate.toISOString().split('T')[0];
+        reservationForm.returnTime = `${String(checkOutDate.getHours()).padStart(2, '0')}:${String(checkOutDate.getMinutes()).padStart(2, '0')}`;
+      }
+      
+      reservationForm.vehicleId = meta.vehicleId || '';
+      reservationForm.paymentMethod = meta.paymentMethod || 'credit_card';
+      
+      // Ekstraları yükle
+      if (meta.extras && Array.isArray(meta.extras)) {
+        selectedExtras.value = meta.extras.map((e: any) => e.id);
+      }
+      
+      // Müşteri bilgilerini yükle (metadata'dan)
+      if (meta.personalInfo) {
+        // Customer ID'yi bul veya oluştur
+        const customerEmail = (meta.personalInfo as any).email;
+        if (customerEmail) {
+          const existingCustomer = customers.value.find(c => c.email === customerEmail);
+          if (existingCustomer) {
+            reservationForm.customerId = existingCustomer.id;
+            await onCustomerSelect(existingCustomer.id);
+          }
+        }
+      }
+    }
+    
+    // Araçları yükle ve seç
+    if (reservationForm.pickupLocationId && (reservationForm.returnLocationId || reservationForm.sameReturnLocation)) {
+      await loadAvailableVehicles();
+      // Araç seçimini yap
+      if (reservationForm.vehicleId) {
+        const vehicle = availableVehicles.value.find(v => v.id === reservationForm.vehicleId);
+        if (vehicle) {
+          selectedVehicle.value = vehicle;
+          currentStep.value = 3; // Ekstralar adımına geç
+        }
+      }
+    }
+    
+    // Düzenleme moduna geç
+    mainTab.value = 'new';
+    if (currentStep.value === 1) {
+      currentStep.value = 1; // Lokasyon/Tarih adımından başla
+    }
+  } catch (error: any) {
+    console.error('Failed to load reservation:', error);
+    alert(error.response?.data?.message || 'Rezervasyon yüklenirken bir hata oluştu');
+  }
 };
 
 const deleteReservation = async (id: string) => {

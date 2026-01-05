@@ -7,6 +7,8 @@ import { Extra } from '../entities/extra.entity';
 import { Tenant } from '../../tenants/entities/tenant.entity';
 import { TenantUser, TenantUserRole } from '../../tenants/entities/tenant-user.entity';
 import { TenantUserService } from '../../tenants/services/tenant-user.service';
+import { Customer, CustomerIdType } from '../../shared/entities/customer.entity';
+import { CustomerService } from '../../shared/services/customer.service';
 import { sendReservationEmail } from '../../../services/reservation-email.service';
 import { EmailTemplateType } from '../../shared/entities/email-template.entity';
 import { sendMail } from '../../../services/mail.service';
@@ -101,76 +103,52 @@ export class RentacarReservationService {
   }
 
   /**
-   * Find or create user by email
+   * Find or create customer by email
    */
-  private static async findOrCreateUser(
+  private static async findOrCreateCustomer(
     tenantId: string,
     email: string,
     firstName: string,
-    lastName: string
-  ): Promise<{ user: TenantUser | null; password: string | null }> {
-    // Check if user exists
-    const existingUser = await this.tenantUserRepo().findOne({
-      where: { email },
+    lastName: string,
+    personalInfo: CreateRentacarReservationInput['personalInfo'],
+    driverLicenseInfo?: CreateRentacarReservationInput['driverLicenseInfo'],
+    addressInfo?: CreateRentacarReservationInput['addressInfo']
+  ): Promise<{ customer: Customer | null }> {
+    // Check if customer exists by email
+    const customerRepo = AppDataSource.getRepository(Customer);
+    const existingCustomer = await customerRepo.findOne({
+      where: { email, tenantId },
     });
 
-    if (existingUser) {
-      return { user: existingUser, password: null };
+    if (existingCustomer) {
+      return { customer: existingCustomer };
     }
 
-    // Create new user with random password
-    const randomPassword = this.generateRandomPassword();
-    
+    // Create new customer
     try {
-      const newUser = await TenantUserService.create({
+      const newCustomer = await CustomerService.create({
         tenantId,
-        name: `${firstName} ${lastName}`,
+        firstName,
+        lastName,
+        fullName: `${firstName} ${lastName}`,
         email,
-        password: randomPassword,
-        role: TenantUserRole.VIEWER, // Customer role
+        mobilePhone: personalInfo.phoneNumber ? `${personalInfo.phoneCountryCode}${personalInfo.phoneNumber}` : undefined,
+        birthDate: personalInfo.dateOfBirth ? new Date(personalInfo.dateOfBirth) : undefined,
+        country: personalInfo.nationality,
+        idNumber: personalInfo.identityNumber,
+        idType: personalInfo.identityNumber ? (personalInfo.identityNumber.length === 11 ? CustomerIdType.TC : CustomerIdType.PASSPORT) : undefined,
+        licenseNumber: driverLicenseInfo?.licenseNumber,
+        licenseIssueDate: driverLicenseInfo?.licenseIssueDate ? new Date(driverLicenseInfo.licenseIssueDate) : undefined,
+        homeAddress: addressInfo?.address,
+        isActive: true,
+        isBlacklisted: false,
       });
 
-      // Send password email
-      try {
-        const passwordEmailHtml = `
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Your Account Created</title>
-          </head>
-          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="background-color: #f4f4f4; padding: 20px; border-radius: 5px;">
-              <h2 style="color: #2c3e50;">Welcome ${firstName} ${lastName}!</h2>
-              <p>Your account has been created. Here are your login credentials:</p>
-              <div style="background-color: white; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <p><strong>Email:</strong> ${email}</p>
-                <p><strong>Password:</strong> <code style="background-color: #f4f4f4; padding: 5px 10px; border-radius: 3px; font-size: 14px;">${randomPassword}</code></p>
-              </div>
-              <p style="color: #e74c3c;"><strong>Important:</strong> Please change your password after first login for security.</p>
-              <p>Thank you for your reservation!</p>
-            </div>
-          </body>
-          </html>
-        `;
-
-        await sendMail({
-          tenantId,
-          to: email,
-          subject: 'Your Account Credentials',
-          html: passwordEmailHtml,
-        });
-      } catch (error) {
-        console.error('Failed to send password email:', error);
-        // Continue even if email fails
-      }
-
-      return { user: newUser, password: randomPassword };
+      return { customer: newCustomer };
     } catch (error) {
-      console.error('Failed to create user:', error);
-      // Continue without user creation if it fails
-      return { user: null, password: null };
+      console.error('Failed to create customer:', error);
+      // Continue without customer creation if it fails
+      return { customer: null };
     }
   }
 
@@ -286,12 +264,15 @@ export class RentacarReservationService {
       throw new Error(`Some extras not found. Requested: ${extraIds.length}, Found: ${extras.length}`);
     }
 
-    // Find or create user
-    const { user } = await this.findOrCreateUser(
+    // Find or create customer by email
+    const { customer } = await this.findOrCreateCustomer(
       input.tenantId,
       input.personalInfo.email,
       input.personalInfo.firstName,
-      input.personalInfo.lastName
+      input.personalInfo.lastName,
+      input.personalInfo,
+      input.driverLicenseInfo,
+      input.addressInfo
     );
 
     // Generate reference
@@ -336,7 +317,7 @@ export class RentacarReservationService {
       personalDataConsent: input.personalDataConsent,
       commercialElectronicConsent: input.commercialElectronicConsent,
       rentalConditionsConsent: input.rentalConditionsConsent,
-      customerUserId: user?.id || null,
+      customerId: customer?.id || null,
     };
 
     // Create reservation
@@ -363,6 +344,199 @@ export class RentacarReservationService {
     );
 
     return savedReservation;
+  }
+
+  /**
+   * Update rentacar reservation with price recalculation
+   */
+  static async updateReservation(
+    id: string,
+    tenantId: string,
+    input: Partial<CreateRentacarReservationInput> & { recalculatePrice?: boolean }
+  ): Promise<Reservation> {
+    const reservation = await this.reservationRepo().findOne({
+      where: { id, tenantId },
+      relations: ['customerLanguage'],
+    });
+
+    if (!reservation) {
+      throw new Error('Reservation not found');
+    }
+
+    if (reservation.type !== ReservationType.RENTACAR) {
+      throw new Error('Reservation is not a rentacar reservation');
+    }
+
+    // If recalculatePrice is true, recalculate all prices
+    if (input.recalculatePrice) {
+      // Get current metadata or use input data
+      const currentMetadata = reservation.metadata as any;
+      const vehicleId = input.vehicleId || currentMetadata?.vehicleId;
+      const pickupLocationId = input.pickupLocationId || currentMetadata?.pickupLocationId;
+      const dropoffLocationId = input.dropoffLocationId || currentMetadata?.dropoffLocationId;
+      const pickupDate = input.pickupDate || (reservation.checkIn ? new Date(reservation.checkIn).toISOString().split('T')[0] : '');
+      const dropoffDate = input.dropoffDate || (reservation.checkOut ? new Date(reservation.checkOut).toISOString().split('T')[0] : '');
+      const pickupTime = input.pickupTime || (reservation.checkIn ? `${String(new Date(reservation.checkIn).getHours()).padStart(2, '0')}:${String(new Date(reservation.checkIn).getMinutes()).padStart(2, '0')}` : '09:00');
+      const dropoffTime = input.dropoffTime || (reservation.checkOut ? `${String(new Date(reservation.checkOut).getHours()).padStart(2, '0')}:${String(new Date(reservation.checkOut).getMinutes()).padStart(2, '0')}` : '09:00');
+      const currencyCode = input.currencyCode || currentMetadata?.currencyCode || 'TRY';
+
+      if (!vehicleId || !pickupLocationId || !dropoffLocationId || !pickupDate || !dropoffDate) {
+        throw new Error('Missing required fields for price recalculation');
+      }
+
+      // Use VehicleService to search and get pricing
+      const { VehicleService } = await import('./vehicle.service');
+      const searchResult = await VehicleService.searchVehicles({
+        tenantId,
+        pickupLocationId,
+        dropoffLocationId,
+        pickupDate,
+        dropoffDate,
+        pickupTime,
+        dropoffTime,
+      });
+
+      const vehicle = searchResult.vehicles.find(v => v.id === vehicleId);
+      if (!vehicle) {
+        throw new Error('Vehicle not found or not available for the selected dates');
+      }
+
+      // Calculate rental days
+      const pickup = new Date(pickupDate);
+      const dropoff = new Date(dropoffDate);
+      const rentalDays = Math.ceil((dropoff.getTime() - pickup.getTime()) / (1000 * 60 * 60 * 24));
+
+      // Calculate extras price
+      const extraIds = input.extras?.map(e => e.id) || currentMetadata?.extras?.map((e: any) => e.id) || [];
+      const extras = await this.extraRepo().find({
+        where: { id: In(extraIds), tenantId },
+      });
+
+      let extrasPrice = 0;
+      extras.forEach(extra => {
+        const quantity = input.extras?.find(e => e.id === extra.id)?.quantity || 
+                        currentMetadata?.extras?.find((e: any) => e.id === extra.id)?.quantity || 1;
+        const salesType = extra.salesType?.toLowerCase() || 'per_rental';
+        if (salesType === 'daily') {
+          extrasPrice += Number(extra.price) * rentalDays * quantity;
+        } else {
+          extrasPrice += Number(extra.price) * quantity;
+        }
+      });
+
+      // Get delivery and drop fees from locations
+      const pickupLocation = await this.locationRepo().findOne({
+        where: { id: pickupLocationId, tenantId },
+        relations: ['location'],
+      });
+      const dropoffLocation = await this.locationRepo().findOne({
+        where: { id: dropoffLocationId, tenantId },
+        relations: ['location'],
+      });
+
+      let deliveryFee = 0;
+      let dropFee = 0;
+
+      if (pickupLocation) {
+        // Check if master location has a parent
+        if (pickupLocation.location?.parentId) {
+          // Find rentacar location by master location parent ID
+          const parentRentacarLocation = await this.locationRepo().findOne({
+            where: { locationId: pickupLocation.location.parentId, tenantId },
+            relations: ['location'],
+          });
+          deliveryFee = Number(parentRentacarLocation?.deliveryFee || 0);
+        } else {
+          deliveryFee = Number(pickupLocation.deliveryFee || 0);
+        }
+      }
+
+      if (dropoffLocation && pickupLocationId !== dropoffLocationId) {
+        // Check if master location has a parent
+        if (dropoffLocation.location?.parentId) {
+          // Find rentacar location by master location parent ID
+          const parentRentacarLocation = await this.locationRepo().findOne({
+            where: { locationId: dropoffLocation.location.parentId, tenantId },
+            relations: ['location'],
+          });
+          dropFee = Number(parentRentacarLocation?.dropFee || 0);
+        } else {
+          dropFee = Number(dropoffLocation.dropFee || 0);
+        }
+      }
+
+      // Calculate total price
+      const vehiclePrice = vehicle.totalPrice;
+      const totalPrice = vehiclePrice + extrasPrice + deliveryFee + dropFee;
+
+      // Update metadata with new prices
+      const updatedMetadata = {
+        ...currentMetadata,
+        vehicleId,
+        vehicleName: vehicle.name,
+        pickupLocationId,
+        pickupLocationName: pickupLocation?.location?.name || currentMetadata?.pickupLocationName,
+        dropoffLocationId,
+        dropoffLocationName: dropoffLocation?.location?.name || currentMetadata?.dropoffLocationName,
+        rentalDays,
+        extras: extras.map(extra => {
+          const quantity = input.extras?.find(e => e.id === extra.id)?.quantity || 
+                          currentMetadata?.extras?.find((e: any) => e.id === extra.id)?.quantity || 1;
+          return {
+            id: extra.id,
+            name: extra.name,
+            quantity,
+            price: extra.price,
+          };
+        }),
+        vehiclePrice,
+        extrasPrice,
+        totalPrice,
+        currencyCode,
+        deliveryFee,
+        dropFee,
+        dailyPrice: vehicle.dailyPrice,
+        source: input.source || currentMetadata?.source,
+      };
+
+      // Update checkIn and checkOut dates
+      const [pickupHours, pickupMinutes] = pickupTime.split(':').map(Number);
+      const [dropoffHours, dropoffMinutes] = dropoffTime.split(':').map(Number);
+      
+      const pickupDateTime = new Date(pickupDate);
+      pickupDateTime.setHours(pickupHours, pickupMinutes, 0, 0);
+      
+      const dropoffDateTime = new Date(dropoffDate);
+      dropoffDateTime.setHours(dropoffHours, dropoffMinutes, 0, 0);
+
+      reservation.metadata = updatedMetadata;
+      reservation.checkIn = pickupDateTime;
+      reservation.checkOut = dropoffDateTime;
+
+      // Update other fields if provided
+      if (input.paymentMethod) {
+        (updatedMetadata as any).paymentMethod = input.paymentMethod;
+      }
+    } else {
+      // Normal update without price recalculation
+      if (input.pickupDate && input.pickupTime) {
+        const [hours, minutes] = input.pickupTime.split(':').map(Number);
+        const pickupDate = new Date(input.pickupDate);
+        pickupDate.setHours(hours, minutes, 0, 0);
+        reservation.checkIn = pickupDate;
+      }
+      if (input.dropoffDate && input.dropoffTime) {
+        const [hours, minutes] = input.dropoffTime.split(':').map(Number);
+        const dropoffDate = new Date(input.dropoffDate);
+        dropoffDate.setHours(hours, minutes, 0, 0);
+        reservation.checkOut = dropoffDate;
+      }
+      if (input.metadata) {
+        reservation.metadata = { ...(reservation.metadata as any), ...input.metadata };
+      }
+    }
+
+    return this.reservationRepo().save(reservation);
   }
 }
 

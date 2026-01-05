@@ -72,7 +72,7 @@ export class ReservationService {
     return updatedReservation;
   }
 
-  static async update(id: string, data: Partial<Reservation>): Promise<Reservation> {
+  static async update(id: string, data: Partial<Reservation> & { recalculatePrice?: boolean }): Promise<Reservation> {
     const repo = this.repository();
     const reservation = await repo.findOne({ where: { id }, relations: ['customerLanguage'] });
 
@@ -81,7 +81,15 @@ export class ReservationService {
     }
 
     const previousStatus = reservation.status;
+    const shouldRecalculatePrice = data.recalculatePrice && reservation.type === 'rentacar';
 
+    // Eğer fiyat yeniden hesaplanacaksa, rentacar reservation service'i kullan
+    if (shouldRecalculatePrice) {
+      const { RentacarReservationService } = await import('../../rentacar/services/rentacar-reservation.service');
+      return RentacarReservationService.updateReservation(id, reservation.tenantId, data);
+    }
+
+    // Normal güncelleme
     Object.assign(reservation, data);
     const updatedReservation = await repo.save(reservation);
 

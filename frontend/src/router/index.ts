@@ -13,6 +13,7 @@ import RentacarView from '../views/RentacarView.vue';
 import CrmView from '../views/CrmView.vue';
 import ReservationsView from '../views/ReservationsView.vue';
 import ReservationDetailView from '../views/ReservationDetailView.vue';
+import ReservationLogsView from '../views/ReservationLogsView.vue';
 import LanguagesView from '../views/LanguagesView.vue';
 import DestinationsView from '../views/DestinationsView.vue';
 import HotelsView from '../views/HotelsView.vue';
@@ -213,6 +214,12 @@ const routes: RouteRecordRaw[] = [
     path: '/app/reservations/:id',
     name: 'reservation-detail',
     component: ReservationDetailView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/reservation-logs',
+    name: 'reservation-logs',
+    component: ReservationLogsView,
     meta: { requiresAuth: true, layout: 'admin' },
   },
   {
