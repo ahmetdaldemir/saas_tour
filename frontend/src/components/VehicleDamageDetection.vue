@@ -445,30 +445,9 @@ const processDetection = async () => {
         return;
       }
     }
-    const checkoutUrls: string[] = [];
-
-    // TODO: Upload files to server and get URLs
-    // For now, use the URLs directly if they're already server URLs
-    for (const photo of checkinPhotos.value) {
-      if (photo.url.startsWith('http') || photo.url.startsWith('/uploads')) {
-        checkinUrls.push(photo.url);
-      } else {
-        // Upload file first
-        // checkinUrls.push(await uploadFile(photo));
-      }
-    }
-
-    for (const photo of checkoutPhotos.value) {
-      if (photo.url.startsWith('http') || photo.url.startsWith('/uploads')) {
-        checkoutUrls.push(photo.url);
-      } else {
-        // Upload file first
-        // checkoutUrls.push(await uploadFile(photo));
-      }
-    }
 
     const response = await http.post(
-      `/rentacar/vehicles/${props.vehicleId}/reservations/${props.reservationId}/damage-detection`,
+      `/api/rentacar/vehicles/${vehicleId}/reservations/${props.reservationId}/damage-detection`,
       {
         checkinPhotoUrls: checkinUrls,
         checkoutPhotoUrls: checkoutUrls,
