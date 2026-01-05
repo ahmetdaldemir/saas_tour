@@ -12,16 +12,16 @@ export class TransferDriver extends BaseEntity {
   @Column({ name: 'tenant_id' })
   tenantId!: string;
 
-  @Column({ length: 120 })
+  @Column({ type: 'varchar', length: 120 })
   name!: string;
 
-  @Column({ length: 32 })
+  @Column({ type: 'varchar', length: 32 })
   phone!: string;
 
-  @Column({ length: 160, nullable: true })
+  @Column({ type: 'varchar', length: 160, nullable: true })
   email?: string;
 
-  @Column({ name: 'license_number', length: 50 })
+  @Column({ name: 'license_number', type: 'varchar', length: 50 })
   licenseNumber!: string;
 
   @Column({ name: 'license_expiry', type: 'date', nullable: true })

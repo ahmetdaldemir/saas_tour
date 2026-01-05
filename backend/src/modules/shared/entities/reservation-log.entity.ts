@@ -40,7 +40,7 @@ export class ReservationLog extends BaseEntity {
   reservationId?: string | null;
 
   // IP adresi (opsiyonel)
-  @Column({ name: 'ip_address', length: 45, nullable: true })
+  @Column({ name: 'ip_address', type: 'varchar', length: 45, nullable: true })
   ipAddress?: string;
 
   // User agent (opsiyonel)

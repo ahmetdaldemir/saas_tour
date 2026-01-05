@@ -26,7 +26,7 @@ export class StaffPerformanceScore extends BaseEntity {
   userId!: string;
 
   // Period tracking (YYYY-MM format for monthly, YYYY-WW for weekly)
-  @Column({ length: 10 })
+  @Column({ type: 'varchar', length: 10 })
   period!: string; // e.g., "2024-01" for January 2024, "2024-W01" for week 1
 
   @Column({ type: 'enum', enum: ['monthly', 'weekly', 'daily'], default: 'monthly' })

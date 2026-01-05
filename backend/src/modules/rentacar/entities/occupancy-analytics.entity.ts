@@ -38,7 +38,7 @@ export class OccupancyAnalytics extends BaseEntity {
   @Column({ type: 'date' })
   date!: Date; // Date of the period
 
-  @Column({ name: 'period_type', length: 20, default: 'daily' })
+  @Column({ name: 'period_type', type: 'varchar', length: 20, default: 'daily' })
   periodType!: string; // 'daily', 'weekly', 'monthly'
 
   // Occupancy metrics

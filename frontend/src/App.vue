@@ -237,10 +237,12 @@ const navigationItems = computed(() => {
         children: rentacarChildren,
       });
       
-      // Add Contracts and Marketplace to Rent A Car section
+      // Add Contracts, Marketplace, Campaigns, and Coupons to Rent A Car section
       items.push(
         { title: 'Sözleşmeler', to: '/app/contracts', icon: 'mdi-file-document-edit-outline' },
-        { title: 'Marketplace', to: '/app/marketplace', icon: 'mdi-store-outline' }
+        { title: 'Marketplace', to: '/app/marketplace', icon: 'mdi-store-outline' },
+        { title: 'Kampanyalar', to: '/app/campaigns', icon: 'mdi-tag' },
+        { title: 'Kuponlar', to: '/app/coupons', icon: 'mdi-ticket-percent' }
       );
 
     items.push({

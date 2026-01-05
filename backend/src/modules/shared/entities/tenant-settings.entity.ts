@@ -8,6 +8,7 @@ export enum SettingsCategory {
   PAYMENT = 'payment',
   GENERAL = 'general',
   AI = 'ai',
+  INVOICE = 'invoice',
 }
 
 @Entity({ name: 'tenant_settings' })
@@ -24,7 +25,7 @@ export class TenantSettings extends BaseEntity {
   category!: SettingsCategory;
 
   // Site Settings
-  @Column({ name: 'site_name', length: 200, nullable: true })
+  @Column({ name: 'site_name', type: 'varchar', length: 200, nullable: true })
   siteName?: string;
 
   @Column({ name: 'site_description', type: 'text', nullable: true })
@@ -37,25 +38,25 @@ export class TenantSettings extends BaseEntity {
   faviconUrl?: string;
 
   // Mail Settings
-  @Column({ name: 'smtp_host', length: 200, nullable: true })
+  @Column({ name: 'smtp_host', type: 'varchar', length: 200, nullable: true })
   smtpHost?: string;
 
   @Column({ name: 'smtp_port', type: 'int', nullable: true })
   smtpPort?: number;
 
-  @Column({ name: 'smtp_user', length: 200, nullable: true })
+  @Column({ name: 'smtp_user', type: 'varchar', length: 200, nullable: true })
   smtpUser?: string;
 
-  @Column({ name: 'smtp_password', length: 500, nullable: true })
+  @Column({ name: 'smtp_password', type: 'varchar', length: 500, nullable: true })
   smtpPassword?: string;
 
   @Column({ name: 'smtp_secure', default: true })
   smtpSecure!: boolean; // TLS/SSL
 
-  @Column({ name: 'from_email', length: 200, nullable: true })
+  @Column({ name: 'from_email', type: 'varchar', length: 200, nullable: true })
   fromEmail?: string;
 
-  @Column({ name: 'from_name', length: 200, nullable: true })
+  @Column({ name: 'from_name', type: 'varchar', length: 200, nullable: true })
   fromName?: string;
 
   // Payment Settings
@@ -63,22 +64,22 @@ export class TenantSettings extends BaseEntity {
   paymentDefaultMethodId?: string | null;
 
   // Company/Address Information (for email templates)
-  @Column({ name: 'company_name', length: 200, nullable: true })
+  @Column({ name: 'company_name', type: 'varchar', length: 200, nullable: true })
   companyName?: string;
 
   @Column({ name: 'company_address', type: 'text', nullable: true })
   companyAddress?: string;
 
-  @Column({ name: 'company_phone', length: 50, nullable: true })
+  @Column({ name: 'company_phone', type: 'varchar', length: 50, nullable: true })
   companyPhone?: string;
 
-  @Column({ name: 'company_email', length: 160, nullable: true })
+  @Column({ name: 'company_email', type: 'varchar', length: 160, nullable: true })
   companyEmail?: string;
 
-  @Column({ name: 'company_website', length: 255, nullable: true })
+  @Column({ name: 'company_website', type: 'varchar', length: 255, nullable: true })
   companyWebsite?: string;
 
-  @Column({ name: 'company_tax_number', length: 50, nullable: true })
+  @Column({ name: 'company_tax_number', type: 'varchar', length: 50, nullable: true })
   companyTaxNumber?: string;
 
   // Additional settings as JSONB for flexibility

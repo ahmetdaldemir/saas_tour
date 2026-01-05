@@ -29,7 +29,7 @@ export class Reservation extends BaseEntity {
   @Column({ name: 'tenant_id' })
   tenantId!: string;
 
-  @Column({ length: 40 })
+  @Column({ type: 'varchar', length: 40 })
   reference!: string;
 
   @Column({ type: 'enum', enum: ReservationType })
@@ -38,13 +38,13 @@ export class Reservation extends BaseEntity {
   @Column({ type: 'enum', enum: ReservationStatus, default: ReservationStatus.PENDING })
   status!: ReservationStatus;
 
-  @Column({ name: 'customer_name', length: 120 })
+  @Column({ name: 'customer_name', type: 'varchar', length: 120 })
   customerName!: string;
 
-  @Column({ name: 'customer_email', length: 160 })
+  @Column({ name: 'customer_email', type: 'varchar', length: 160 })
   customerEmail!: string;
 
-  @Column({ name: 'customer_phone', length: 32, nullable: true })
+  @Column({ name: 'customer_phone', type: 'varchar', length: 32, nullable: true })
   customerPhone?: string;
 
   @ManyToOne(() => PhoneCountry, { nullable: true })

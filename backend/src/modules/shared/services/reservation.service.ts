@@ -47,6 +47,48 @@ export class ReservationService {
 
     const updatedReservation = await repo.save(reservation);
 
+    // Credit ParaPuan on reservation completion (idempotent)
+    if (status === ReservationStatus.COMPLETED || status === ReservationStatus.CONFIRMED) {
+      try {
+        const { WalletService } = await import('./wallet.service');
+        const { ParaPuanCalculatorService } = await import('./parapuan-calculator.service');
+        const { WalletTransactionSource } = await import('../entities/wallet-transaction.entity');
+
+        // Get reservation metadata for total price
+        const metadata = reservation.metadata as any;
+        const totalPrice = metadata?.totalPrice || 0;
+
+        if (totalPrice > 0) {
+          // Calculate points
+          const points = await ParaPuanCalculatorService.calculatePoints(
+            reservation.tenantId,
+            totalPrice
+          );
+
+          if (points > 0) {
+            // Get customer ID from metadata or reservation
+            const customerId = metadata?.customerId || null;
+            if (customerId) {
+              // Credit points (idempotent via transactionId)
+              const transactionId = `reservation_${reservation.id}_${status}`;
+              await WalletService.creditPoints({
+                tenantId: reservation.tenantId,
+                customerId,
+                amount: points,
+                source: WalletTransactionSource.RESERVATION_COMPLETION,
+                description: `Points earned from reservation ${reservation.reference}`,
+                reservationId: reservation.id,
+                transactionId, // Ensures idempotency
+              });
+            }
+          }
+        }
+      } catch (error) {
+        // Log error but don't fail the reservation update
+        console.error('Error crediting ParaPuan:', error);
+      }
+    }
+
     // Status değişikliğine göre e-posta gönder (asenkron, ana işlemi bloklama)
     if (previousStatus !== status) {
       if (status === ReservationStatus.CONFIRMED) {

@@ -195,6 +195,106 @@
               </v-col>
             </v-row>
 
+            <!-- ParaPuan Cüzdan -->
+            <v-row>
+              <v-col cols="12">
+                <v-card variant="outlined" class="mb-4">
+                  <v-card-title class="bg-grey-lighten-4 d-flex align-center justify-space-between">
+                    <div class="d-flex align-center">
+                      <v-icon icon="mdi-wallet" class="mr-2" />
+                      ParaPuan Cüzdan
+                    </div>
+                    <v-btn
+                      color="primary"
+                      size="small"
+                      prepend-icon="mdi-plus"
+                      @click="showWalletAdjustDialog = true"
+                    >
+                      Puan Ekle/Çıkar
+                    </v-btn>
+                  </v-card-title>
+                  <v-card-text>
+                    <div v-if="loadingWallet" class="text-center py-4">
+                      <v-progress-circular indeterminate color="primary" size="32" />
+                    </div>
+                    <div v-else-if="wallet">
+                      <v-row>
+                        <v-col cols="12" md="4">
+                          <v-card variant="flat" color="success" class="text-white">
+                            <v-card-text>
+                              <div class="text-caption">Mevcut Bakiye</div>
+                              <div class="text-h4 font-weight-bold">{{ formatPrice(wallet.balance) }} PP</div>
+                            </v-card-text>
+                          </v-card>
+                        </v-col>
+                        <v-col cols="12" md="4">
+                          <v-card variant="flat" color="info" class="text-white">
+                            <v-card-text>
+                              <div class="text-caption">Toplam Kazanılan</div>
+                              <div class="text-h4 font-weight-bold">{{ formatPrice(wallet.totalEarned) }} PP</div>
+                            </v-card-text>
+                          </v-card>
+                        </v-col>
+                        <v-col cols="12" md="4">
+                          <v-card variant="flat" color="warning" class="text-white">
+                            <v-card-text>
+                              <div class="text-caption">Toplam Harcanan</div>
+                              <div class="text-h4 font-weight-bold">{{ formatPrice(wallet.totalSpent) }} PP</div>
+                            </v-card-text>
+                          </v-card>
+                        </v-col>
+                      </v-row>
+
+                      <v-divider class="my-4" />
+
+                      <div class="d-flex align-center justify-space-between mb-2">
+                        <span class="text-subtitle-1 font-weight-bold">İşlem Geçmişi</span>
+                        <v-btn
+                          size="small"
+                          variant="text"
+                          icon="mdi-refresh"
+                          @click="loadWalletTransactions"
+                        />
+                      </div>
+                      <v-data-table
+                        :headers="transactionHeaders"
+                        :items="transactions"
+                        :loading="loadingTransactions"
+                        item-value="id"
+                        class="elevation-0"
+                      >
+                        <template #item.type="{ item }">
+                          <v-chip
+                            :color="item.type === 'credit' ? 'success' : 'error'"
+                            size="small"
+                            variant="flat"
+                          >
+                            {{ item.type === 'credit' ? 'Kazanç' : 'Harcama' }}
+                          </v-chip>
+                        </template>
+                        <template #item.amount="{ item }">
+                          <span :class="item.type === 'credit' ? 'text-success' : 'text-error'">
+                            {{ item.type === 'credit' ? '+' : '-' }}{{ formatPrice(item.amount) }} PP
+                          </span>
+                        </template>
+                        <template #item.source="{ item }">
+                          <v-chip size="small" color="info" variant="tonal">
+                            {{ getSourceLabel(item.source) }}
+                          </v-chip>
+                        </template>
+                        <template #item.createdAt="{ item }">
+                          {{ formatDateTime(item.createdAt) }}
+                        </template>
+                      </v-data-table>
+                    </div>
+                    <div v-else class="text-center py-4 text-grey">
+                      Cüzdan bulunamadı
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+            </v-row>
+
             <!-- İşlemler -->
             <v-row>
               <v-col cols="12">
@@ -272,6 +372,63 @@
       </v-card>
     </v-dialog>
 
+    <!-- Wallet Adjust Dialog -->
+    <v-dialog v-model="showWalletAdjustDialog" max-width="500">
+      <v-card>
+        <v-card-title class="bg-primary text-white">
+          <v-icon icon="mdi-wallet" class="mr-2" />
+          ParaPuan Ekle/Çıkar
+        </v-card-title>
+        <v-card-text class="pt-4">
+          <v-form ref="walletAdjustFormRef" v-model="walletAdjustFormValid">
+            <v-radio-group v-model="walletAdjustForm.type" class="mb-4">
+              <v-radio label="Puan Ekle" value="credit" color="success" />
+              <v-radio label="Puan Çıkar" value="debit" color="error" />
+            </v-radio-group>
+
+            <v-text-field
+              v-model.number="walletAdjustForm.amount"
+              label="Tutar"
+              type="number"
+              min="0"
+              step="0.01"
+              required
+              :rules="[v => v !== null && v > 0 || 'Tutar 0\'dan büyük olmalıdır']"
+              prepend-icon="mdi-cash"
+              class="mb-4"
+            />
+
+            <v-textarea
+              v-model="walletAdjustForm.reason"
+              label="Sebep *"
+              required
+              :rules="[v => !!v || 'Sebep gereklidir']"
+              rows="3"
+              class="mb-4"
+            />
+
+            <v-textarea
+              v-model="walletAdjustForm.description"
+              label="Açıklama"
+              rows="2"
+            />
+          </v-form>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showWalletAdjustDialog = false">İptal</v-btn>
+          <v-btn
+            color="primary"
+            @click="adjustWallet"
+            :loading="adjustingWallet"
+            :disabled="!walletAdjustFormValid"
+          >
+            {{ walletAdjustForm.type === 'credit' ? 'Ekle' : 'Çıkar' }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
     <!-- Snackbar -->
     <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000">
       {{ snackbar.message }}
@@ -334,6 +491,31 @@ const snackbar = ref({
   color: 'success',
 });
 
+// Wallet state
+const wallet = ref<any>(null);
+const loadingWallet = ref(false);
+const loadingTransactions = ref(false);
+const transactions = ref<any[]>([]);
+const showWalletAdjustDialog = ref(false);
+const adjustingWallet = ref(false);
+const walletAdjustForm = ref({
+  type: 'credit' as 'credit' | 'debit',
+  amount: null as number | null,
+  reason: '',
+  description: '',
+});
+const walletAdjustFormValid = ref(false);
+const walletAdjustFormRef = ref<any>(null);
+
+const transactionHeaders = [
+  { title: 'Tarih', key: 'createdAt', sortable: true },
+  { title: 'Tür', key: 'type', sortable: false },
+  { title: 'Tutar', key: 'amount', sortable: false },
+  { title: 'Kaynak', key: 'source', sortable: false },
+  { title: 'Açıklama', key: 'description', sortable: false },
+  { title: 'Bakiye (Sonra)', key: 'balanceAfter', sortable: false },
+];
+
 const passwordRules = [
   (v: string) => !!v || 'Şifre gereklidir',
   (v: string) => (v && v.length >= 6) || 'Şifre en az 6 karakter olmalıdır',
@@ -350,6 +532,10 @@ const isPasswordValid = computed(() => {
 
 onMounted(() => {
   loadCustomer();
+  if (route.params.id) {
+    loadWallet();
+    loadWalletTransactions();
+  }
 });
 
 const loadCustomer = async () => {
@@ -446,6 +632,92 @@ const getIdTypeLabel = (idType?: string): string => {
     passport: 'Pasaport',
   };
   return labels[idType || ''] || idType || '-';
+};
+
+// Wallet functions
+const loadWallet = async () => {
+  if (!customer.value?.id) return;
+  
+  loadingWallet.value = true;
+  try {
+    const { data } = await http.get(`/wallet/customers/${customer.value.id}`);
+    wallet.value = data;
+  } catch (error: any) {
+    console.error('Failed to load wallet:', error);
+    if (error.response?.status !== 404) {
+      showSnackbar(error.response?.data?.message || 'Cüzdan yüklenirken bir hata oluştu', 'error');
+    }
+  } finally {
+    loadingWallet.value = false;
+  }
+};
+
+const loadWalletTransactions = async () => {
+  if (!customer.value?.id) return;
+  
+  loadingTransactions.value = true;
+  try {
+    const { data } = await http.get(`/wallet/customers/${customer.value.id}/transactions`);
+    transactions.value = data || [];
+  } catch (error: any) {
+    console.error('Failed to load transactions:', error);
+    showSnackbar(error.response?.data?.message || 'İşlem geçmişi yüklenirken bir hata oluştu', 'error');
+  } finally {
+    loadingTransactions.value = false;
+  }
+};
+
+const adjustWallet = async () => {
+  if (!customer.value?.id || !walletAdjustForm.value.amount || walletAdjustForm.value.amount <= 0) return;
+  
+  adjustingWallet.value = true;
+  try {
+    await http.post(`/wallet/customers/${customer.value.id}/adjust`, {
+      type: walletAdjustForm.value.type,
+      amount: walletAdjustForm.value.amount,
+      reason: walletAdjustForm.value.reason,
+      description: walletAdjustForm.value.description || undefined,
+    });
+    
+    showWalletAdjustDialog.value = false;
+    walletAdjustForm.value = {
+      type: 'credit',
+      amount: null,
+      reason: '',
+      description: '',
+    };
+    walletAdjustFormValid.value = false;
+    
+    await loadWallet();
+    await loadWalletTransactions();
+    showSnackbar('ParaPuan başarıyla güncellendi', 'success');
+  } catch (error: any) {
+    console.error('Failed to adjust wallet:', error);
+    showSnackbar(error.response?.data?.message || 'ParaPuan güncellenirken bir hata oluştu', 'error');
+  } finally {
+    adjustingWallet.value = false;
+  }
+};
+
+const formatPrice = (price: number | string | null | undefined): string => {
+  const numPrice = typeof price === 'string' ? parseFloat(price) || 0 : (price || 0);
+  return Number(numPrice).toFixed(2);
+};
+
+const formatDateTime = (date?: string | null): string => {
+  if (!date) return '-';
+  return new Date(date).toLocaleString('tr-TR');
+};
+
+const getSourceLabel = (source?: string): string => {
+  const labels: Record<string, string> = {
+    reservation: 'Rezervasyon',
+    manual: 'Manuel',
+    coupon_generation: 'Kupon Üretimi',
+    coupon_redemption: 'Kupon Kullanımı',
+    admin_adjustment: 'Admin Düzenleme',
+  };
+  return labels[source || ''] || source || '-';
 };
 </script>
 

@@ -10,6 +10,11 @@ import HomeTabs from './navigation/HomeTabs';
 import TaskDetailScreen from './screens/TaskDetailScreen';
 import CheckoutFlowScreen from './screens/CheckoutFlowScreen';
 import ReturnFlowScreen from './screens/ReturnFlowScreen';
+import OperationsHomeScreen from './screens/OperationsHomeScreen';
+import OperationDetailScreen from './screens/OperationDetailScreen';
+import UploadCenterScreen from './screens/UploadCenterScreen';
+import { initDatabase } from './storage/database';
+import { startQueueProcessor } from './queue/upload-queue';
 import { theme } from './styles/theme';
 
 const paperTheme = {
@@ -33,6 +38,13 @@ export default function App() {
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
 
   useEffect(() => {
+    // Initialize database
+    initDatabase().catch(console.error);
+    
+    // Start upload queue processor
+    startQueueProcessor();
+    
+    // Check auth
     checkAuth();
   }, []);
 
@@ -53,6 +65,9 @@ export default function App() {
               <Stack.Screen name="TaskDetail" component={TaskDetailScreen} />
               <Stack.Screen name="CheckoutFlow" component={CheckoutFlowScreen} />
               <Stack.Screen name="ReturnFlow" component={ReturnFlowScreen} />
+              <Stack.Screen name="OperationsHome" component={OperationsHomeScreen} />
+              <Stack.Screen name="OperationDetail" component={OperationDetailScreen} />
+              <Stack.Screen name="UploadCenter" component={UploadCenterScreen} />
             </>
           )}
         </Stack.Navigator>

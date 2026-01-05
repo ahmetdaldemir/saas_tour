@@ -16,10 +16,10 @@ export class PricingInsightRule extends BaseEntity {
   @Column({ name: 'tenant_id' })
   tenantId!: string;
 
-  @Column({ length: 100 })
+  @Column({ type: 'varchar', length: 100 })
   name!: string; // Rule name (e.g., "Underpriced Vehicle Detection")
 
-  @Column({ length: 200, nullable: true })
+  @Column({ type: 'varchar', length: 200, nullable: true })
   description?: string;
 
   // Occupancy thresholds

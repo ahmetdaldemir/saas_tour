@@ -1,11 +1,14 @@
 import { Response } from 'express';
 import { VehicleDamageDetectionService } from '../services/vehicle-damage-detection.service';
+import { OperationsService } from '../services/operations.service';
 import { AuthenticatedRequest } from '../../auth/middleware/auth.middleware';
 
 export class VehicleDamageDetectionController {
   /**
    * Process damage detection
    * POST /rentacar/vehicles/:vehicleId/reservations/:reservationId/damage-detection
+   * 
+   * If checkinPhotoUrls and checkoutPhotoUrls are not provided, automatically fetch from operations system
    */
   static async processDetection(req: AuthenticatedRequest, res: Response) {
     try {
@@ -15,14 +18,39 @@ export class VehicleDamageDetectionController {
       }
 
       const { vehicleId, reservationId } = req.params;
-      const { checkinPhotoUrls, checkoutPhotoUrls } = req.body;
+      let { checkinPhotoUrls, checkoutPhotoUrls } = req.body;
+
+      // If photos not provided, try to fetch from operations system
+      if (!checkinPhotoUrls || !Array.isArray(checkinPhotoUrls) || checkinPhotoUrls.length === 0 ||
+          !checkoutPhotoUrls || !Array.isArray(checkoutPhotoUrls) || checkoutPhotoUrls.length === 0) {
+        try {
+          const damageCompare = await OperationsService.getDamageCompare(tenantId, reservationId);
+          
+          // Use pickup photos as checkin (pickup = check-in)
+          if (damageCompare.pickupPhotos && damageCompare.pickupPhotos.length > 0) {
+            checkinPhotoUrls = damageCompare.pickupPhotos.map(p => p.url);
+          }
+          
+          // Use return photos as checkout (return = check-out)
+          if (damageCompare.returnPhotos && damageCompare.returnPhotos.length > 0) {
+            checkoutPhotoUrls = damageCompare.returnPhotos.map(p => p.url);
+          }
+        } catch (opsError) {
+          console.warn('Could not fetch photos from operations system:', opsError);
+          // Continue with validation below
+        }
+      }
 
       if (!checkinPhotoUrls || !Array.isArray(checkinPhotoUrls) || checkinPhotoUrls.length === 0) {
-        return res.status(400).json({ message: 'checkinPhotoUrls is required and must be a non-empty array' });
+        return res.status(400).json({ 
+          message: 'checkinPhotoUrls is required and must be a non-empty array. Please complete pickup operation first or provide photos manually.' 
+        });
       }
 
       if (!checkoutPhotoUrls || !Array.isArray(checkoutPhotoUrls) || checkoutPhotoUrls.length === 0) {
-        return res.status(400).json({ message: 'checkoutPhotoUrls is required and must be a non-empty array' });
+        return res.status(400).json({ 
+          message: 'checkoutPhotoUrls is required and must be a non-empty array. Please complete return operation first or provide photos manually.' 
+        });
       }
 
       const detection = await VehicleDamageDetectionService.processDetection(

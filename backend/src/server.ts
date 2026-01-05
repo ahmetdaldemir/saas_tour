@@ -10,6 +10,9 @@ import { logger } from './utils/logger';
 import { getRedisClient } from './config/redis.config';
 // Initialize vehicle tracking providers
 import './modules/rentacar/services/vehicle-tracking.service';
+// Register invoice integrators
+import { IntegratorRegistry } from './modules/shared/services/invoice/integrator-registry';
+import { MockIntegrator } from './modules/shared/services/invoice/mock-integrator';
 
 const start = async () => {
   const config = loadEnv();
@@ -17,6 +20,10 @@ const start = async () => {
   // Initialize database connection
   await AppDataSource.initialize();
   logger.info('Database connection initialized');
+
+  // Register invoice integrators
+  IntegratorRegistry.register(new MockIntegrator());
+  logger.info('Invoice integrators registered');
 
   // Initialize Redis connection
   try {

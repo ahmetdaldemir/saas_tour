@@ -207,6 +207,27 @@ export default function SettingsScreen() {
       <Card style={styles.card} mode="elevated">
         <Card.Content style={styles.cardContent}>
           <View style={styles.sectionHeader}>
+            <MaterialCommunityIcons name="cloud-upload" size={24} color={theme.colors.primary} />
+            <Text variant="titleLarge" style={styles.sectionTitle}>
+              Yükleme Merkezi
+            </Text>
+          </View>
+          <Divider style={styles.divider} />
+          <Button
+            mode="outlined"
+            onPress={() => navigation.navigate('UploadCenter' as never)}
+            style={styles.button}
+            contentStyle={styles.buttonContent}
+            icon="cloud-upload"
+          >
+            Yükleme Kuyruğunu Görüntüle
+          </Button>
+        </Card.Content>
+      </Card>
+
+      <Card style={styles.card} mode="elevated">
+        <Card.Content style={styles.cardContent}>
+          <View style={styles.sectionHeader}>
             <MaterialCommunityIcons name="logout" size={24} color={theme.colors.error} />
             <Text variant="titleLarge" style={[styles.sectionTitle, { color: theme.colors.error }]}>
               Çıkış

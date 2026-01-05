@@ -17,7 +17,7 @@ export class CrmPageCategory extends BaseEntity {
   @Column({ name: 'tenant_id', type: 'uuid' })
   tenantId!: string;
 
-  @Column({ length: 100 })
+  @Column({ type: 'varchar', length: 100 })
   slug!: string; // URL-friendly identifier (e.g., "policies", "help")
 
   @Column({ name: 'is_active', default: true })

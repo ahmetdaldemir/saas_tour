@@ -48,7 +48,7 @@ export class VehiclePenalty extends BaseEntity {
   @Column({ type: 'date' })
   date!: Date;
 
-  @Column({ length: 200 })
+  @Column({ type: 'varchar', length: 200 })
   title!: string;
 
   @Column({ type: 'text', nullable: true })
@@ -63,19 +63,19 @@ export class VehiclePenalty extends BaseEntity {
   @Column({ name: 'amount', type: 'decimal', precision: 10, scale: 2 })
   amount!: number;
 
-  @Column({ name: 'currency_code', length: 3, default: 'EUR' })
+  @Column({ name: 'currency_code', type: 'varchar', length: 3, default: 'EUR' })
   currencyCode!: string;
 
-  @Column({ name: 'fine_number', length: 100, nullable: true })
+  @Column({ name: 'fine_number', type: 'varchar', length: 100, nullable: true })
   fineNumber?: string;
 
-  @Column({ name: 'location', length: 200, nullable: true })
+  @Column({ name: 'location', type: 'varchar', length: 200, nullable: true })
   location?: string;
 
   @Column({ name: 'paid_at', type: 'timestamp', nullable: true })
   paidAt?: Date | null;
 
-  @Column({ name: 'paid_by', length: 120, nullable: true })
+  @Column({ name: 'paid_by', type: 'varchar', length: 120, nullable: true })
   paidBy?: string;
 
   @OneToMany(() => VehicleTimelineMedia, (media) => media.penalty, { cascade: true })

@@ -34,6 +34,12 @@ export type AiSettingsInput = {
   openaiApiKey?: string;
 };
 
+export type InvoiceSettingsInput = {
+  depositAmount?: number; // TRY, stored as 0 if not set
+  vatRate?: number; // Percentage (0-100)
+  eInvoiceIntegrator?: string; // 'none', 'parasut', 'entegrator_x', etc.
+};
+
 export type UpdateTenantSettingsInput = Partial<
   SiteSettingsInput & MailSettingsInput & PaymentSettingsInput & AiSettingsInput
 >;
@@ -73,6 +79,10 @@ export class TenantSettingsService {
 
   static async getAiSettings(tenantId: string): Promise<TenantSettings | null> {
     return this.getByCategory(tenantId, SettingsCategory.AI);
+  }
+
+  static async getInvoiceSettings(tenantId: string): Promise<TenantSettings | null> {
+    return this.getByCategory(tenantId, SettingsCategory.INVOICE);
   }
 
   static async updateSiteSettings(
@@ -161,6 +171,46 @@ export class TenantSettingsService {
       settings = repo.create({
         tenantId,
         category: SettingsCategory.AI,
+        metadata,
+      });
+    } else {
+      settings.metadata = {
+        ...(settings.metadata || {}),
+        ...metadata,
+      };
+    }
+
+    return repo.save(settings);
+  }
+
+  static async updateInvoiceSettings(
+    tenantId: string,
+    input: InvoiceSettingsInput
+  ): Promise<TenantSettings> {
+    const repo = this.repository();
+    let settings = await repo.findOne({
+      where: { tenantId, category: SettingsCategory.INVOICE },
+    });
+
+    // Validate input
+    if (input.depositAmount !== undefined && input.depositAmount < 0) {
+      throw new Error('Deposit amount must be >= 0');
+    }
+    if (input.vatRate !== undefined && (input.vatRate < 0 || input.vatRate > 100)) {
+      throw new Error('VAT rate must be between 0 and 100');
+    }
+
+    // Store invoice settings in metadata JSONB
+    const metadata: Record<string, unknown> = {
+      depositAmount: input.depositAmount ?? 0, // Default to 0 if not set
+      vatRate: input.vatRate ?? 0, // Default to 0 if not set
+      eInvoiceIntegrator: input.eInvoiceIntegrator || 'none',
+    };
+
+    if (!settings) {
+      settings = repo.create({
+        tenantId,
+        category: SettingsCategory.INVOICE,
         metadata,
       });
     } else {

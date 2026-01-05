@@ -56,7 +56,7 @@ export class Contract extends BaseEntity {
   @Column({ name: 'reservation_id', nullable: true })
   reservationId?: string | null;
 
-  @Column({ length: 100, unique: true })
+  @Column({ type: 'varchar', length: 100, unique: true })
   contractNumber!: string; // Unique contract number (e.g., CNT-2024-001)
 
   @Column({ type: 'enum', enum: ContractStatus, default: ContractStatus.DRAFT })
@@ -92,7 +92,7 @@ export class Contract extends BaseEntity {
   signedAt?: Date | null;
 
   // PDF storage
-  @Column({ name: 'pdf_url', length: 500, nullable: true })
+  @Column({ name: 'pdf_url', type: 'varchar', length: 500, nullable: true })
   pdfUrl?: string;
 
   @Column({ name: 'pdf_generated_at', type: 'timestamp', nullable: true })
@@ -112,16 +112,16 @@ export class Contract extends BaseEntity {
   whatsappSentAt?: Date | null;
 
   // Customer information (snapshot at contract creation)
-  @Column({ name: 'customer_name', length: 200 })
+  @Column({ name: 'customer_name', type: 'varchar', length: 200 })
   customerName!: string;
 
-  @Column({ name: 'customer_email', length: 200, nullable: true })
+  @Column({ name: 'customer_email', type: 'varchar', length: 200, nullable: true })
   customerEmail?: string;
 
-  @Column({ name: 'customer_phone', length: 50, nullable: true })
+  @Column({ name: 'customer_phone', type: 'varchar', length: 50, nullable: true })
   customerPhone?: string;
 
-  @Column({ name: 'customer_id_number', length: 50, nullable: true })
+  @Column({ name: 'customer_id_number', type: 'varchar', length: 50, nullable: true })
   customerIdNumber?: string;
 
   // Created by

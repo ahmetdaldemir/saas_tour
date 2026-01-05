@@ -45,7 +45,7 @@ export class VehicleMaintenance extends BaseEntity {
   @Column({ type: 'date' })
   date!: Date;
 
-  @Column({ length: 200 })
+  @Column({ type: 'varchar', length: 200 })
   title!: string;
 
   @Column({ type: 'text', nullable: true })
@@ -60,10 +60,10 @@ export class VehicleMaintenance extends BaseEntity {
   @Column({ name: 'cost', type: 'decimal', precision: 10, scale: 2, nullable: true })
   cost?: number;
 
-  @Column({ name: 'currency_code', length: 3, default: 'EUR' })
+  @Column({ name: 'currency_code', type: 'varchar', length: 3, default: 'EUR' })
   currencyCode!: string;
 
-  @Column({ name: 'service_provider', length: 200, nullable: true })
+  @Column({ name: 'service_provider', type: 'varchar', length: 200, nullable: true })
   serviceProvider?: string;
 
   @Column({ name: 'odometer_reading', type: 'int', nullable: true })
@@ -75,7 +75,7 @@ export class VehicleMaintenance extends BaseEntity {
   @Column({ name: 'next_service_odometer', type: 'int', nullable: true })
   nextServiceOdometer?: number;
 
-  @Column({ name: 'performed_by', length: 120, nullable: true })
+  @Column({ name: 'performed_by', type: 'varchar', length: 120, nullable: true })
   performedBy?: string;
 
   @OneToMany(() => VehicleTimelineMedia, (media) => media.maintenance, { cascade: true })

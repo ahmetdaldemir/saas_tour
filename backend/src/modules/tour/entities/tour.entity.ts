@@ -32,10 +32,10 @@ export class Tour extends BaseEntity {
   @Column({ name: 'destination_id' })
   destinationId!: string;
 
-  @Column({ length: 200 })
+  @Column({ type: 'varchar', length: 200 })
   title!: string;
 
-  @Column({ length: 200 })
+  @Column({ type: 'varchar', length: 200 })
   slug!: string;
 
   @Column({ type: 'text', nullable: true })
@@ -47,7 +47,7 @@ export class Tour extends BaseEntity {
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   basePrice!: number;
 
-  @Column({ name: 'currency_code', length: 3, default: 'EUR' })
+  @Column({ name: 'currency_code', type: 'varchar', length: 3, default: 'EUR' })
   currencyCode!: string;
 
   @Column({ name: 'duration_hours', type: 'int', default: 24 })
@@ -65,7 +65,7 @@ export class Tour extends BaseEntity {
   @Column({ type: 'simple-array', nullable: true })
   days?: string[]; // ['monday', 'tuesday', etc.]
 
-  @Column({ length: 500, nullable: true })
+  @Column({ type: 'varchar', length: 500, nullable: true })
   video?: string;
 
   @Column({ type: 'simple-array', nullable: true })

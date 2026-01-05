@@ -15,6 +15,7 @@ router.get('/site', TenantSettingsController.getSite);
 router.get('/mail', TenantSettingsController.getMail);
 router.get('/payment', TenantSettingsController.getPayment);
 router.get('/ai', TenantSettingsController.getAi);
+router.get('/invoice', TenantSettingsController.getInvoice);
 router.get('/features', TenantSettingsController.getFeatures);
 
 // Protected PUT endpoints - authentication and authorization required
@@ -23,6 +24,7 @@ router.put('/site', authorize(Permission.SETTINGS_UPDATE), TenantSettingsControl
 router.put('/mail', authorize(Permission.SETTINGS_UPDATE), TenantSettingsController.updateMail);
 router.put('/payment', authorize(Permission.SETTINGS_UPDATE), TenantSettingsController.updatePayment);
 router.put('/ai', authorize(Permission.SETTINGS_UPDATE), TenantSettingsController.updateAi);
+router.put('/invoice', authorize(Permission.SETTINGS_UPDATE), TenantSettingsController.updateInvoice);
 
 export default router;
 

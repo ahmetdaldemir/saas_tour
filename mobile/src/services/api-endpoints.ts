@@ -36,6 +36,17 @@ export const API_ENDPOINTS = {
       updateMediaCounts: (id: string) => `/ops/tasks/${id}/media-counts`,
       recordError: (id: string) => `/ops/tasks/${id}/error`,
     },
+    operations: {
+      list: '/operations',
+      getPickup: (rentalId: string) => `/operations/pickup/${rentalId}`,
+      savePickupDraft: (rentalId: string) => `/operations/pickup/${rentalId}/draft`,
+      completePickup: (rentalId: string) => `/operations/pickup/${rentalId}/complete`,
+      getReturn: (rentalId: string) => `/operations/return/${rentalId}`,
+      saveReturnDraft: (rentalId: string) => `/operations/return/${rentalId}/draft`,
+      completeReturn: (rentalId: string) => `/operations/return/${rentalId}/complete`,
+      getDamageCompare: (rentalId: string) => `/operations/damage-compare/${rentalId}`,
+      uploadMedia: '/operations/media/upload',
+    },
     performance: {
       myScores: '/ops/performance/my-scores',
       tenantScores: '/ops/performance/tenant-scores',
