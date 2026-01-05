@@ -8,6 +8,7 @@ import { upload } from '../../shared/controllers/file-upload.controller';
 import tripsRouter from './trips.router';
 import { VehicleTrackingController } from '../controllers/vehicle-tracking.controller';
 import { VehicleTimelineController } from '../controllers/vehicle-timeline.controller';
+import { VehicleDamageDetectionController } from '../controllers/vehicle-damage-detection.controller';
 
 const router = Router();
 
@@ -54,5 +55,12 @@ router.get('/tracking/providers', authenticate, VehicleTrackingController.listPr
 router.get('/tracking/:plate', authenticate, authorize(Permission.VEHICLE_VIEW), VehicleTrackingController.getVehicleLocation);
 router.get('/tracking/:plate/info', authenticate, authorize(Permission.VEHICLE_VIEW), VehicleTrackingController.getVehicleTrackingInfo);
 router.post('/tracking/batch', authenticate, authorize(Permission.VEHICLE_VIEW), VehicleTrackingController.getMultipleVehicleLocations);
+
+// Vehicle damage detection routes
+router.post('/vehicles/:vehicleId/reservations/:reservationId/damage-detection', authenticate, authorize(Permission.VEHICLE_VIEW), (req, res, next) => VehicleDamageDetectionController.processDetection(req as AuthenticatedRequest, res).catch(next));
+router.get('/damage-detections/:id', authenticate, authorize(Permission.VEHICLE_VIEW), (req, res, next) => VehicleDamageDetectionController.getById(req as AuthenticatedRequest, res).catch(next));
+router.get('/vehicles/:vehicleId/damage-detections', authenticate, authorize(Permission.VEHICLE_VIEW), (req, res, next) => VehicleDamageDetectionController.getByVehicle(req as AuthenticatedRequest, res).catch(next));
+router.get('/reservations/:reservationId/damage-detection', authenticate, authorize(Permission.VEHICLE_VIEW), (req, res, next) => VehicleDamageDetectionController.getByReservation(req as AuthenticatedRequest, res).catch(next));
+router.post('/damage-detections/:id/verify', authenticate, authorize(Permission.VEHICLE_UPDATE), (req, res, next) => VehicleDamageDetectionController.verifyDetection(req as AuthenticatedRequest, res).catch(next));
 
 export default router;

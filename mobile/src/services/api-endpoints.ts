@@ -31,6 +31,15 @@ export const API_ENDPOINTS = {
       finalize: (id: string) => `/ops/tasks/${id}/finalize`,
       finalizeReturn: (id: string) => `/ops/tasks/${id}/return/finalize`,
       print: (id: string) => `/ops/tasks/${id}/print`,
+      start: (id: string) => `/ops/tasks/${id}/start`,
+      updateChecklist: (id: string) => `/ops/tasks/${id}/checklist`,
+      updateMediaCounts: (id: string) => `/ops/tasks/${id}/media-counts`,
+      recordError: (id: string) => `/ops/tasks/${id}/error`,
+    },
+    performance: {
+      myScores: '/ops/performance/my-scores',
+      tenantScores: '/ops/performance/tenant-scores',
+      userScoreDetails: (userId: string) => `/ops/performance/user/${userId}/score`,
     },
   },
 

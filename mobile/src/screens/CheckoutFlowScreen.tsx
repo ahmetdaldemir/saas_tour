@@ -26,6 +26,26 @@ export default function CheckoutFlowScreen() {
   const [passportVerified, setPassportVerified] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [checklistItems, setChecklistItems] = useState<{ [key: string]: boolean }>({});
+
+  // Performance tracking: Start task when component mounts
+  useEffect(() => {
+    const startTask = async () => {
+      try {
+        await opsService.startTask(taskId);
+        // Update media counts
+        await opsService.updateMediaCounts(taskId, {
+          requiredPhotos: REQUIRED_PHOTOS,
+          uploadedPhotos: 0,
+          requiredVideos: 0,
+          uploadedVideos: 0,
+        });
+      } catch (error) {
+        console.error('Failed to start task tracking:', error);
+      }
+    };
+    startTask();
+  }, [taskId]);
 
   const handleCapturePhoto = async () => {
     const { status } = await Camera.requestCameraPermissionsAsync();
@@ -42,7 +62,12 @@ export default function CheckoutFlowScreen() {
 
     if (!result.canceled && result.assets[0]) {
       if (photos.length < REQUIRED_PHOTOS) {
-        setPhotos([...photos, result.assets[0].uri]);
+        const newPhotos = [...photos, result.assets[0].uri];
+        setPhotos(newPhotos);
+        // Update media counts
+        opsService.updateMediaCounts(taskId, {
+          uploadedPhotos: newPhotos.length,
+        }).catch(console.error);
       } else {
         Alert.alert('Limit', `${REQUIRED_PHOTOS} fotoğraf yeterlidir`);
       }
@@ -166,6 +191,18 @@ export default function CheckoutFlowScreen() {
 
       // Update task media
       await opsService.updateMedia(taskId, { mediaIds: uploadedMediaIds });
+
+      // Update final media counts
+      await opsService.updateMediaCounts(taskId, {
+        requiredPhotos: REQUIRED_PHOTOS,
+        uploadedPhotos: uploadedMediaIds.length,
+        requiredVideos: 0,
+        uploadedVideos: video ? 1 : 0,
+      });
+
+      // Update checklist (assume all items completed if finalizing)
+      const checklistTotal = 10; // Standard checkout checklist items
+      await opsService.updateChecklist(taskId, checklistTotal, checklistTotal);
 
       // Verify documents
       await opsService.verifyDocs(taskId, {

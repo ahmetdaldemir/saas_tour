@@ -143,6 +143,42 @@ class OpsService {
     );
     return response.data;
   }
+
+  // Performance tracking methods
+  async startTask(taskId: string): Promise<void> {
+    await apiClient.instance.post(
+      buildEndpoint(API_ENDPOINTS.ops.tasks.start, taskId)
+    );
+  }
+
+  async updateChecklist(taskId: string, itemsTotal: number, itemsCompleted: number): Promise<void> {
+    await apiClient.instance.post(
+      buildEndpoint(API_ENDPOINTS.ops.tasks.updateChecklist, taskId),
+      { itemsTotal, itemsCompleted }
+    );
+  }
+
+  async updateMediaCounts(
+    taskId: string,
+    counts: {
+      requiredPhotos?: number;
+      uploadedPhotos?: number;
+      requiredVideos?: number;
+      uploadedVideos?: number;
+    }
+  ): Promise<void> {
+    await apiClient.instance.post(
+      buildEndpoint(API_ENDPOINTS.ops.tasks.updateMediaCounts, taskId),
+      counts
+    );
+  }
+
+  async recordError(taskId: string, errorType: 'dataEntry' | 'verification' | 'other', description?: string): Promise<void> {
+    await apiClient.instance.post(
+      buildEndpoint(API_ENDPOINTS.ops.tasks.recordError, taskId),
+      { errorType, description }
+    );
+  }
 }
 
 export const opsService = new OpsService();

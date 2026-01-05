@@ -30,6 +30,7 @@ import { VehicleDamage } from '../modules/rentacar/entities/vehicle-damage.entit
 import { VehicleMaintenance } from '../modules/rentacar/entities/vehicle-maintenance.entity';
 import { VehiclePenalty } from '../modules/rentacar/entities/vehicle-penalty.entity';
 import { VehicleTimelineMedia } from '../modules/rentacar/entities/vehicle-timeline-media.entity';
+import { VehicleDamageDetection } from '../modules/rentacar/entities/vehicle-damage-detection.entity';
 import { Location } from '../modules/rentacar/entities/location.entity';
 import { MasterLocation } from '../modules/shared/entities/master-location.entity';
 import { LocationVehiclePricing } from '../modules/rentacar/entities/location-vehicle-pricing.entity';
@@ -118,6 +119,7 @@ export const AppDataSource = new DataSource({
           VehicleMaintenance,
           VehiclePenalty,
           VehicleTimelineMedia,
+          VehicleDamageDetection,
           TenantUser,
           Currency,
           TenantSettings,

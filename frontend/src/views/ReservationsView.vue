@@ -2014,14 +2014,7 @@ const formatDateTime = (date: string | null | undefined): string => {
   }
 };
 
-const formatPrice = (price: number | undefined, currency: string | undefined): string => {
-  if (price === undefined || price === null) return '-';
-  const currencyCode = currency || 'TRY';
-  return new Intl.NumberFormat('tr-TR', {
-    style: 'currency',
-    currency: currencyCode,
-  }).format(price);
-};
+// formatPrice function is defined below (line 2137) to handle more types
 
 // Helper functions for reservation data
 const getPickupLocationName = (item: ReservationDto): string => {

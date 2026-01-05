@@ -295,5 +295,99 @@ export class OpsTaskController {
       res.status(400).json({ message: (error as Error).message });
     }
   }
+
+  /**
+   * Start task (track start time)
+   */
+  static async startTask(req: AuthenticatedRequest & TenantRequest, res: Response) {
+    try {
+      const tenantId = req.auth?.tenantId || req.tenant?.id;
+      const userId = req.auth?.sub;
+      if (!tenantId || !userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      const { id } = req.params;
+      const task = await OpsTaskService.startTask(id, tenantId, userId);
+
+      res.json({ success: true, task });
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  }
+
+  /**
+   * Update checklist progress
+   */
+  static async updateChecklist(req: AuthenticatedRequest & TenantRequest, res: Response) {
+    try {
+      const tenantId = req.auth?.tenantId || req.tenant?.id;
+      if (!tenantId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      const { id } = req.params;
+      const { itemsTotal, itemsCompleted } = req.body;
+
+      const task = await OpsTaskService.updateChecklist(id, tenantId, {
+        itemsTotal: parseInt(itemsTotal),
+        itemsCompleted: parseInt(itemsCompleted),
+      });
+
+      res.json({ success: true, task });
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  }
+
+  /**
+   * Update media counts
+   */
+  static async updateMediaCounts(req: AuthenticatedRequest & TenantRequest, res: Response) {
+    try {
+      const tenantId = req.auth?.tenantId || req.tenant?.id;
+      if (!tenantId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      const { id } = req.params;
+      const { requiredPhotos, uploadedPhotos, requiredVideos, uploadedVideos } = req.body;
+
+      const task = await OpsTaskService.updateMediaCounts(id, tenantId, {
+        requiredPhotos: requiredPhotos ? parseInt(requiredPhotos) : undefined,
+        uploadedPhotos: uploadedPhotos ? parseInt(uploadedPhotos) : undefined,
+        requiredVideos: requiredVideos ? parseInt(requiredVideos) : undefined,
+        uploadedVideos: uploadedVideos ? parseInt(uploadedVideos) : undefined,
+      });
+
+      res.json({ success: true, task });
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  }
+
+  /**
+   * Record task error
+   */
+  static async recordError(req: AuthenticatedRequest & TenantRequest, res: Response) {
+    try {
+      const tenantId = req.auth?.tenantId || req.tenant?.id;
+      if (!tenantId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      const { id } = req.params;
+      const { errorType, description } = req.body;
+
+      const task = await OpsTaskService.recordError(id, tenantId, {
+        errorType: errorType as 'dataEntry' | 'verification' | 'other',
+        description,
+      });
+
+      res.json({ success: true, task });
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  }
 }
 
