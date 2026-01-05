@@ -5,6 +5,7 @@ import { Reservation, ReservationType, ReservationStatus } from '../../shared/en
 import { VehicleReservationAssignment } from '../../rentacar/entities/vehicle-reservation-assignment.entity';
 import { VehiclePlate } from '../../rentacar/entities/vehicle-plate.entity';
 import { Vehicle } from '../../rentacar/entities/vehicle.entity';
+import { StaffPerformanceService } from './staff-performance.service';
 
 export type CreateOpsTaskInput = {
   reservationId: string;
@@ -179,16 +180,39 @@ export class OpsTaskService {
       throw new Error('Driver license must be verified');
     }
 
+    // Calculate performance metrics before completion
+    const reservation = await this.reservationRepo().findOne({
+      where: { id: task.reservationId },
+    });
+
+    // Calculate timeliness
+    if (reservation && reservation.checkIn) {
+      const scheduledTime = new Date(reservation.checkIn);
+      const completedTime = new Date();
+      const delayMinutes = Math.round((completedTime.getTime() - scheduledTime.getTime()) / (1000 * 60));
+      task.completionDelayMinutes = delayMinutes;
+      task.scheduledStartTime = scheduledTime;
+    }
+
+    // Calculate completeness metrics
+    task.requiredPhotos = 8; // Minimum required
+    task.uploadedPhotos = task.mediaIds?.length || 0;
+    task.requiredVideos = 0; // Optional for checkout
+    task.uploadedVideos = 0;
+
+    // Checklist tracking (if provided)
+    if (!task.checklistCompleted) {
+      task.checklistCompleted = true; // Assume completed if finalizing
+      task.checklistItemsTotal = 10; // Default checklist items
+      task.checklistItemsCompleted = 10;
+    }
+
     // Update task status
     task.status = OpsTaskStatus.COMPLETED;
     task.completedByUserId = userId;
     task.completedAt = new Date();
 
     // Update reservation check-in
-    const reservation = await this.reservationRepo().findOne({
-      where: { id: task.reservationId },
-    });
-
     if (reservation) {
       reservation.checkIn = new Date();
       reservation.status = ReservationStatus.CONFIRMED;
@@ -196,6 +220,9 @@ export class OpsTaskService {
     }
 
     await this.taskRepo().save(task);
+
+    // Trigger score calculation (async, don't wait)
+    this.updatePerformanceScore(userId, tenantId).catch(console.error);
 
     // Generate print payload
     const printPayload = await this.generatePrintPayload(task);
@@ -227,16 +254,39 @@ export class OpsTaskService {
     task.returnDamageNotes = input.damageNotes;
     task.returnDamageMediaIds = input.damageMediaIds || [];
 
+    // Calculate performance metrics
+    const reservation = await this.reservationRepo().findOne({
+      where: { id: task.reservationId },
+    });
+
+    // Calculate timeliness
+    if (reservation && reservation.checkOut) {
+      const scheduledTime = new Date(reservation.checkOut);
+      const completedTime = new Date();
+      const delayMinutes = Math.round((completedTime.getTime() - scheduledTime.getTime()) / (1000 * 60));
+      task.completionDelayMinutes = delayMinutes;
+      task.scheduledStartTime = scheduledTime;
+    }
+
+    // Calculate completeness metrics
+    task.requiredPhotos = 4; // Minimum for return
+    task.uploadedPhotos = (task.returnDamageMediaIds?.length || 0) + (task.mediaIds?.length || 0);
+    task.requiredVideos = 0;
+    task.uploadedVideos = 0;
+
+    // Checklist tracking
+    if (!task.checklistCompleted) {
+      task.checklistCompleted = true;
+      task.checklistItemsTotal = 8; // Return checklist items
+      task.checklistItemsCompleted = 8;
+    }
+
     // Update task status
     task.status = OpsTaskStatus.COMPLETED;
     task.completedByUserId = userId;
     task.completedAt = new Date();
 
     // Update reservation check-out
-    const reservation = await this.reservationRepo().findOne({
-      where: { id: task.reservationId },
-    });
-
     if (reservation) {
       reservation.checkOut = new Date();
       reservation.status = ReservationStatus.COMPLETED;
@@ -244,6 +294,9 @@ export class OpsTaskService {
     }
 
     await this.taskRepo().save(task);
+
+    // Trigger score calculation (async, don't wait)
+    this.updatePerformanceScore(userId, tenantId).catch(console.error);
   }
 
   /**
@@ -319,6 +372,140 @@ export class OpsTaskService {
       reservationId: reservation.id,
       reference: reservation.reference,
     };
+  }
+
+  /**
+   * Start task (track start time for timeliness)
+   */
+  static async startTask(id: string, tenantId: string, userId: string): Promise<OpsTask> {
+    const task = await this.getTaskById(id, tenantId);
+    if (!task) {
+      throw new Error('Task not found');
+    }
+
+    if (task.status !== OpsTaskStatus.PENDING) {
+      throw new Error('Task is not in pending status');
+    }
+
+    task.status = OpsTaskStatus.IN_PROGRESS;
+    task.actualStartTime = new Date();
+
+    // Set scheduled time if not set
+    if (!task.scheduledStartTime) {
+      const reservation = await this.reservationRepo().findOne({
+        where: { id: task.reservationId },
+      });
+      if (reservation) {
+        task.scheduledStartTime = task.type === OpsTaskType.CHECKOUT
+          ? (reservation.checkIn ? new Date(reservation.checkIn) : new Date())
+          : (reservation.checkOut ? new Date(reservation.checkOut) : new Date());
+      }
+    }
+
+    return this.taskRepo().save(task);
+  }
+
+  /**
+   * Update task checklist progress
+   */
+  static async updateChecklist(
+    id: string,
+    tenantId: string,
+    input: { itemsTotal: number; itemsCompleted: number }
+  ): Promise<OpsTask> {
+    const task = await this.getTaskById(id, tenantId);
+    if (!task) {
+      throw new Error('Task not found');
+    }
+
+    task.checklistItemsTotal = input.itemsTotal;
+    task.checklistItemsCompleted = input.itemsCompleted;
+    task.checklistCompleted = input.itemsCompleted >= input.itemsTotal;
+
+    return this.taskRepo().save(task);
+  }
+
+  /**
+   * Update task media counts
+   */
+  static async updateMediaCounts(
+    id: string,
+    tenantId: string,
+    input: {
+      requiredPhotos?: number;
+      uploadedPhotos?: number;
+      requiredVideos?: number;
+      uploadedVideos?: number;
+    }
+  ): Promise<OpsTask> {
+    const task = await this.getTaskById(id, tenantId);
+    if (!task) {
+      throw new Error('Task not found');
+    }
+
+    if (input.requiredPhotos !== undefined) task.requiredPhotos = input.requiredPhotos;
+    if (input.uploadedPhotos !== undefined) task.uploadedPhotos = input.uploadedPhotos;
+    if (input.requiredVideos !== undefined) task.requiredVideos = input.requiredVideos;
+    if (input.uploadedVideos !== undefined) task.uploadedVideos = input.uploadedVideos;
+
+    return this.taskRepo().save(task);
+  }
+
+  /**
+   * Record task error
+   */
+  static async recordError(
+    id: string,
+    tenantId: string,
+    input: {
+      errorType: 'dataEntry' | 'verification' | 'other';
+      description?: string;
+    }
+  ): Promise<OpsTask> {
+    const task = await this.getTaskById(id, tenantId);
+    if (!task) {
+      throw new Error('Task not found');
+    }
+
+    task.hasErrors = true;
+    task.errorCount = (task.errorCount || 0) + 1;
+
+    if (!task.errorDetails) {
+      task.errorDetails = {
+        dataEntryErrors: 0,
+        verificationErrors: 0,
+        otherErrors: 0,
+        descriptions: [],
+      };
+    }
+
+    if (input.errorType === 'dataEntry') {
+      task.errorDetails.dataEntryErrors = (task.errorDetails.dataEntryErrors || 0) + 1;
+    } else if (input.errorType === 'verification') {
+      task.errorDetails.verificationErrors = (task.errorDetails.verificationErrors || 0) + 1;
+    } else {
+      task.errorDetails.otherErrors = (task.errorDetails.otherErrors || 0) + 1;
+    }
+
+    if (input.description) {
+      task.errorDetails.descriptions = task.errorDetails.descriptions || [];
+      task.errorDetails.descriptions.push(input.description);
+    }
+
+    return this.taskRepo().save(task);
+  }
+
+  /**
+   * Update performance score for user (async helper)
+   */
+  private static async updatePerformanceScore(userId: string, tenantId: string): Promise<void> {
+    try {
+      const now = new Date();
+      const period = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      await StaffPerformanceService.calculateScore(userId, tenantId, period, 'monthly');
+    } catch (error) {
+      console.error('Failed to update performance score:', error);
+    }
   }
 }
 

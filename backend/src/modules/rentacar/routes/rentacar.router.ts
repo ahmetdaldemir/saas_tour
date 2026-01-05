@@ -7,6 +7,7 @@ import { Permission } from '../../auth/permissions';
 import { upload } from '../../shared/controllers/file-upload.controller';
 import tripsRouter from './trips.router';
 import { VehicleTrackingController } from '../controllers/vehicle-tracking.controller';
+import { VehicleTimelineController } from '../controllers/vehicle-timeline.controller';
 
 const router = Router();
 
@@ -23,6 +24,8 @@ router.post('/reservations', RentacarController.createReservation);
 router.use(authenticate);
 // List vehicle plates (requires authentication)
 router.get('/plates', RentacarController.listPlates);
+// Vehicle timeline (must be before /vehicles/:id to avoid route conflict)
+router.get('/vehicles/:id/timeline', authorize(Permission.VEHICLE_VIEW), (req, res, next) => VehicleTimelineController.getTimeline(req as AuthenticatedRequest, res).catch(next));
 // Get single vehicle (requires authentication)
 router.get('/vehicles/:id', (req, res, next) => RentacarController.getVehicle(req as AuthenticatedRequest, res).catch(next));
 router.post('/vehicles', authorize(Permission.VEHICLE_CREATE), RentacarController.createVehicle);
