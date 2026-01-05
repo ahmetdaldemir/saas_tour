@@ -33,6 +33,7 @@ import FinanceView from '../views/FinanceView.vue';
 import TripsView from '../views/TripsView.vue';
 import CrmPagesView from '../views/CrmPagesView.vue';
 import StaffPerformanceView from '../views/StaffPerformanceView.vue';
+import ContractsView from '../views/ContractsView.vue';
 import { useAuthStore } from '../stores/auth';
 import { useAdminAuthStore } from '../stores/admin-auth';
 import { useFeaturesStore } from '../stores/features';
@@ -287,6 +288,12 @@ const routes: RouteRecordRaw[] = [
     path: '/app/staff-performance',
     name: 'staff-performance',
     component: StaffPerformanceView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/contracts',
+    name: 'contracts',
+    component: ContractsView,
     meta: { requiresAuth: true, layout: 'admin' },
   },
   {
