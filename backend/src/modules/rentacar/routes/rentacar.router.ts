@@ -9,6 +9,7 @@ import tripsRouter from './trips.router';
 import { VehicleTrackingController } from '../controllers/vehicle-tracking.controller';
 import { VehicleTimelineController } from '../controllers/vehicle-timeline.controller';
 import { VehicleDamageDetectionController } from '../controllers/vehicle-damage-detection.controller';
+import { ContractController } from '../controllers/contract.controller';
 
 const router = Router();
 
@@ -62,5 +63,22 @@ router.get('/damage-detections/:id', authenticate, authorize(Permission.VEHICLE_
 router.get('/vehicles/:vehicleId/damage-detections', authenticate, authorize(Permission.VEHICLE_VIEW), (req, res, next) => VehicleDamageDetectionController.getByVehicle(req as AuthenticatedRequest, res).catch(next));
 router.get('/reservations/:reservationId/damage-detection', authenticate, authorize(Permission.VEHICLE_VIEW), (req, res, next) => VehicleDamageDetectionController.getByReservation(req as AuthenticatedRequest, res).catch(next));
 router.post('/damage-detections/:id/verify', authenticate, authorize(Permission.VEHICLE_UPDATE), (req, res, next) => VehicleDamageDetectionController.verifyDetection(req as AuthenticatedRequest, res).catch(next));
+
+// Contract routes
+router.get('/contracts/templates/default', authenticate, authorize(Permission.RESERVATION_VIEW), (req, res, next) => ContractController.getDefaultTemplate(req as AuthenticatedRequest, res).catch(next));
+router.get('/contracts/templates', authenticate, authorize(Permission.RESERVATION_VIEW), (req, res, next) => ContractController.listTemplates(req as AuthenticatedRequest, res).catch(next));
+router.get('/contracts/templates/:id', authenticate, authorize(Permission.RESERVATION_VIEW), (req, res, next) => ContractController.getTemplate(req as AuthenticatedRequest, res).catch(next));
+router.post('/contracts/templates', authenticate, authorize(Permission.RESERVATION_UPDATE), (req, res, next) => ContractController.createTemplate(req as AuthenticatedRequest, res).catch(next));
+router.put('/contracts/templates/:id', authenticate, authorize(Permission.RESERVATION_UPDATE), (req, res, next) => ContractController.updateTemplate(req as AuthenticatedRequest, res).catch(next));
+router.delete('/contracts/templates/:id', authenticate, authorize(Permission.RESERVATION_UPDATE), (req, res, next) => ContractController.deleteTemplate(req as AuthenticatedRequest, res).catch(next));
+router.post('/contracts/preview', authenticate, authorize(Permission.RESERVATION_VIEW), (req, res, next) => ContractController.previewContract(req as AuthenticatedRequest, res).catch(next));
+router.get('/contracts', authenticate, authorize(Permission.RESERVATION_VIEW), (req, res, next) => ContractController.listContracts(req as AuthenticatedRequest, res).catch(next));
+router.get('/contracts/:id', authenticate, authorize(Permission.RESERVATION_VIEW), (req, res, next) => ContractController.getContract(req as AuthenticatedRequest, res).catch(next));
+router.post('/contracts', authenticate, authorize(Permission.RESERVATION_UPDATE), (req, res, next) => ContractController.createContract(req as AuthenticatedRequest, res).catch(next));
+router.put('/contracts/:id', authenticate, authorize(Permission.RESERVATION_UPDATE), (req, res, next) => ContractController.updateContract(req as AuthenticatedRequest, res).catch(next));
+router.post('/contracts/:id/sign', authenticate, authorize(Permission.RESERVATION_UPDATE), (req, res, next) => ContractController.signContract(req as AuthenticatedRequest, res).catch(next));
+router.post('/contracts/:id/generate-pdf', authenticate, authorize(Permission.RESERVATION_VIEW), (req, res, next) => ContractController.generatePDF(req as AuthenticatedRequest, res).catch(next));
+router.post('/contracts/:id/generate-thermal-pdf', authenticate, authorize(Permission.RESERVATION_VIEW), (req, res, next) => ContractController.generateThermalPDF(req as AuthenticatedRequest, res).catch(next));
+router.delete('/contracts/:id', authenticate, authorize(Permission.RESERVATION_UPDATE), (req, res, next) => ContractController.deleteContract(req as AuthenticatedRequest, res).catch(next));
 
 export default router;

@@ -294,7 +294,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import { http } from '@/plugins/axios';
+import { http } from '../services/api.service';
 
 interface StaffPerformanceScore {
   id: string;
