@@ -233,7 +233,7 @@
                     Hasar Tespiti
                   </v-card-title>
                   <v-card-text>
-                    <VehicleDamageDetection :reservation-id="reservation.id" />
+                    <VehicleDamageDetection :reservation-id="reservation.id" :vehicle-id="reservation.metadata?.vehicleId" />
                   </v-card-text>
                 </v-card>
               </v-col>
