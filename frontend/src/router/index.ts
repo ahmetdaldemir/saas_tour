@@ -12,6 +12,7 @@ import TourDetailView from '../views/TourDetailView.vue';
 import RentacarView from '../views/RentacarView.vue';
 import CrmView from '../views/CrmView.vue';
 import ReservationsView from '../views/ReservationsView.vue';
+import ReservationDetailView from '../views/ReservationDetailView.vue';
 import LanguagesView from '../views/LanguagesView.vue';
 import DestinationsView from '../views/DestinationsView.vue';
 import HotelsView from '../views/HotelsView.vue';
@@ -199,6 +200,12 @@ const routes: RouteRecordRaw[] = [
     path: '/app/reservations',
     name: 'reservations',
     component: ReservationsView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/reservations/:id',
+    name: 'reservation-detail',
+    component: ReservationDetailView,
     meta: { requiresAuth: true, layout: 'admin' },
   },
   {

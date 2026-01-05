@@ -60,6 +60,14 @@
                 <template #item.actions="{ item }">
                   <div class="d-flex align-center gap-1" @click.stop>
                     <v-btn
+                      icon="mdi-eye"
+                      variant="text"
+                      size="small"
+                      color="primary"
+                      @click.stop="viewReservationDetail(item.id)"
+                      title="Detayları Görüntüle"
+                    />
+                    <v-btn
                       icon="mdi-pencil"
                       variant="text"
                       size="small"
@@ -1326,11 +1334,13 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, onMounted, watch, nextTick } from 'vue';
+import { useRouter } from 'vue-router';
 import { http } from '../modules/http';
 import { useAuthStore } from '../stores/auth';
 import { COUNTRIES, type Country } from '../data/countries';
 
 const auth = useAuthStore();
+const router = useRouter();
 
 // Data
 const reservations = ref<ReservationDto[]>([]);
@@ -2996,6 +3006,10 @@ const resetReservationForm = () => {
   availableVehicles.value = [];
   selectedExtras.value = [];
   resetCustomerInfo();
+};
+
+const viewReservationDetail = (id: string) => {
+  router.push({ name: 'reservation-detail', params: { id } });
 };
 
 const editReservation = (reservation: ReservationDto) => {

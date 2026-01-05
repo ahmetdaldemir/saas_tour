@@ -83,4 +83,7 @@ export class Reservation extends BaseEntity {
 
   @Column({ name: 'tour_session_id', nullable: true })
   tourSessionId?: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  notes?: string | null;
 }
