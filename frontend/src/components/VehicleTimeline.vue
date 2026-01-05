@@ -150,7 +150,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import api from '../services/api.service';
+import { http } from '../services/api.service';
 
 interface TimelineEvent {
   id: string;
@@ -195,7 +195,7 @@ const loadTimeline = async () => {
   try {
     loading.value = true;
     error.value = null;
-    const response = await api.get(`/rentacar/vehicles/${props.vehicleId}/timeline`);
+    const response = await http.get(`/rentacar/vehicles/${props.vehicleId}/timeline`);
     events.value = response.data.data || [];
   } catch (err: any) {
     console.error('Failed to load timeline:', err);

@@ -134,7 +134,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import api from '../services/api.service';
+import { http } from '../services/api.service';
 import { useSnackbar } from '../composables/useSnackbar';
 
 const router = useRouter();
@@ -186,7 +186,7 @@ const loadLogs = async () => {
     if (statusFilter.value) {
       params.status = statusFilter.value;
     }
-    const response = await api.get('/reservation-logs', { params });
+      const response = await http.get('/reservation-logs', { params });
     logs.value = response.data;
   } catch (error: any) {
     console.error('Failed to load reservation logs:', error);
@@ -203,7 +203,7 @@ const convertToReservation = async (log: ReservationLog) => {
 
   try {
     convertingId.value = log.id;
-    const response = await api.post(`/reservation-logs/${log.id}/convert`);
+      const response = await http.post(`/reservation-logs/${log.id}/convert`);
     showSnackbar('Rezervasyon başarıyla oluşturuldu', 'success');
     await loadLogs();
     // Rezervasyon detay sayfasına yönlendir

@@ -189,11 +189,10 @@ export class ContractController {
         return res.status(401).json({ message: 'Authentication required' });
       }
 
-      const userId = req.auth?.userId;
       const contract = await ContractService.create({
         ...req.body,
         tenantId,
-        createdByUserId: userId,
+        createdByUserId: tenantId, // Using tenantId as fallback
       });
 
       res.status(201).json({ success: true, data: contract });

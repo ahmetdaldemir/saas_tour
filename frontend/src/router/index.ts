@@ -34,6 +34,7 @@ import TripsView from '../views/TripsView.vue';
 import CrmPagesView from '../views/CrmPagesView.vue';
 import StaffPerformanceView from '../views/StaffPerformanceView.vue';
 import ContractsView from '../views/ContractsView.vue';
+import MarketplaceView from '../views/MarketplaceView.vue';
 import { useAuthStore } from '../stores/auth';
 import { useAdminAuthStore } from '../stores/admin-auth';
 import { useFeaturesStore } from '../stores/features';
@@ -294,6 +295,12 @@ const routes: RouteRecordRaw[] = [
     path: '/app/contracts',
     name: 'contracts',
     component: ContractsView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/marketplace',
+    name: 'marketplace',
+    component: MarketplaceView,
     meta: { requiresAuth: true, layout: 'admin' },
   },
   {

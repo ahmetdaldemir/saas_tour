@@ -85,7 +85,7 @@ export class VehicleDamageDetection extends BaseEntity {
   };
 
   // Human verification
-  @Column({ name: 'verified_by_user_id', nullable: true })
+  @Column({ name: 'verified_by_user_id', type: 'uuid', nullable: true })
   verifiedByUserId?: string;
 
   @Column({ name: 'verified_at', type: 'timestamp', nullable: true })

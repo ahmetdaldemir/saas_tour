@@ -220,13 +220,14 @@ const navigationItems = computed(() => {
       const rentacarChildren = [
         { title: 'Araçlar', to: '/app/rentacar', icon: 'mdi-car-sports' },
         { title: 'Rezervasyonlar', to: '/app/reservations', icon: 'mdi-calendar-check' },
+        { title: 'Rezervasyon Logları', to: '/app/reservation-logs', icon: 'mdi-file-document-alert-outline' },
         { title: 'VIP Transfer', to: '/app/transfer', icon: 'mdi-car-limousine' },
       ];
       
       // Add vehicle tracking only if feature is enabled
       // Check if features is initialized to avoid errors
       if (features.initialized && features.hasFeature('vehicleTracking')) {
-        rentacarChildren.splice(2, 0, { title: 'Araç Takip', to: '/app/trips', icon: 'mdi-map-marker-path' });
+        rentacarChildren.splice(3, 0, { title: 'Araç Takip', to: '/app/trips', icon: 'mdi-map-marker-path' });
       }
       
       items.push({
@@ -235,6 +236,12 @@ const navigationItems = computed(() => {
         value: 'rentacar',
         children: rentacarChildren,
       });
+      
+      // Add Contracts and Marketplace to Rent A Car section
+      items.push(
+        { title: 'Sözleşmeler', to: '/app/contracts', icon: 'mdi-file-document-edit-outline' },
+        { title: 'Marketplace', to: '/app/marketplace', icon: 'mdi-store-outline' }
+      );
 
     items.push({
       title: 'CRM',

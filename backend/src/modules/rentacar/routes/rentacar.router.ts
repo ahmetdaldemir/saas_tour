@@ -10,6 +10,7 @@ import { VehicleTrackingController } from '../controllers/vehicle-tracking.contr
 import { VehicleTimelineController } from '../controllers/vehicle-timeline.controller';
 import { VehicleDamageDetectionController } from '../controllers/vehicle-damage-detection.controller';
 import { ContractController } from '../controllers/contract.controller';
+import { PricingIntelligenceController } from '../controllers/pricing-intelligence.controller';
 
 const router = Router();
 
@@ -80,5 +81,13 @@ router.post('/contracts/:id/sign', authenticate, authorize(Permission.RESERVATIO
 router.post('/contracts/:id/generate-pdf', authenticate, authorize(Permission.RESERVATION_VIEW), (req, res, next) => ContractController.generatePDF(req as AuthenticatedRequest, res).catch(next));
 router.post('/contracts/:id/generate-thermal-pdf', authenticate, authorize(Permission.RESERVATION_VIEW), (req, res, next) => ContractController.generateThermalPDF(req as AuthenticatedRequest, res).catch(next));
 router.delete('/contracts/:id', authenticate, authorize(Permission.RESERVATION_UPDATE), (req, res, next) => ContractController.deleteContract(req as AuthenticatedRequest, res).catch(next));
+
+// Pricing Intelligence routes
+router.post('/pricing-intelligence/analyze', authenticate, authorize(Permission.VEHICLE_VIEW), (req, res, next) => PricingIntelligenceController.analyze(req as AuthenticatedRequest, res).catch(next));
+router.get('/pricing-intelligence/dashboard', authenticate, authorize(Permission.VEHICLE_VIEW), (req, res, next) => PricingIntelligenceController.getDashboard(req as AuthenticatedRequest, res).catch(next));
+router.get('/pricing-intelligence/insights', authenticate, authorize(Permission.VEHICLE_VIEW), (req, res, next) => PricingIntelligenceController.listInsights(req as AuthenticatedRequest, res).catch(next));
+router.post('/pricing-intelligence/insights/:id/acknowledge', authenticate, authorize(Permission.VEHICLE_UPDATE), (req, res, next) => PricingIntelligenceController.acknowledgeInsight(req as AuthenticatedRequest, res).catch(next));
+router.post('/pricing-intelligence/insights/:id/dismiss', authenticate, authorize(Permission.VEHICLE_UPDATE), (req, res, next) => PricingIntelligenceController.dismissInsight(req as AuthenticatedRequest, res).catch(next));
+router.get('/pricing-intelligence/rules/default', authenticate, authorize(Permission.VEHICLE_VIEW), (req, res, next) => PricingIntelligenceController.getDefaultRule(req as AuthenticatedRequest, res).catch(next));
 
 export default router;

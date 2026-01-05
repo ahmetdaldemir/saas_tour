@@ -224,6 +224,21 @@
               </v-col>
             </v-row>
 
+            <!-- Vehicle Damage Detection (Rentacar only) -->
+            <v-row v-if="reservation.type === 'rentacar' && reservation.id">
+              <v-col cols="12">
+                <v-card variant="outlined" class="mb-4">
+                  <v-card-title class="bg-grey-lighten-4">
+                    <v-icon icon="mdi-car-brake-alert" class="mr-2" />
+                    Hasar Tespiti
+                  </v-card-title>
+                  <v-card-text>
+                    <VehicleDamageDetection :reservation-id="reservation.id" />
+                  </v-card-text>
+                </v-card>
+              </v-col>
+            </v-row>
+
             <!-- İşlemler -->
             <v-row>
               <v-col cols="12">
@@ -324,6 +339,7 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { http } from '../modules/http';
+import VehicleDamageDetection from '../components/VehicleDamageDetection.vue';
 
 interface Reservation {
   id: string;

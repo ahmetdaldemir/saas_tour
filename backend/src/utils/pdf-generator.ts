@@ -71,7 +71,7 @@ export async function generatePDF(options: GeneratePDFOptions): Promise<{ buffer
     }
 
     return {
-      buffer: pdfBuffer,
+      buffer: Buffer.from(pdfBuffer),
       path: savedPath,
     };
   } catch (error) {

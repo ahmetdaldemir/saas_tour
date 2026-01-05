@@ -271,7 +271,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import api from '../services/api.service';
+import { http } from '../services/api.service';
 import { useSnackbar } from '../composables/useSnackbar';
 
 interface DamageDetectionResult {
@@ -408,7 +408,7 @@ const processDetection = async () => {
       }
     }
 
-    const response = await api.post(
+    const response = await http.post(
       `/rentacar/vehicles/${props.vehicleId}/reservations/${props.reservationId}/damage-detection`,
       {
         checkinPhotoUrls: checkinUrls,
@@ -431,7 +431,7 @@ const verifyDetection = async (isDamage: boolean) => {
 
   try {
     verifying.value = true;
-    const response = await api.post(`/rentacar/damage-detections/${detectionResult.value.id}/verify`, {
+    const response = await http.post(`/rentacar/damage-detections/${detectionResult.value.id}/verify`, {
       isDamage,
       notes: verificationNotes.value,
     });
@@ -479,7 +479,7 @@ const getAreaTypeLabel = (type?: string): string => {
 // Load existing detection if available
 const loadExistingDetection = async () => {
   try {
-    const response = await api.get(`/rentacar/reservations/${props.reservationId}/damage-detection`);
+    const response = await http.get(`/rentacar/reservations/${props.reservationId}/damage-detection`);
     if (response.data.data) {
       detectionResult.value = response.data.data;
     }

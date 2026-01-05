@@ -252,6 +252,16 @@
                         </v-row>
                       </div>
                       <div v-else class="text-grey text-caption">Plaka bilgisi bulunmamaktadır.</div>
+                      
+                      <!-- Vehicle Timeline -->
+                      <v-divider class="my-4" />
+                      <div>
+                        <h5 class="text-subtitle-2 font-weight-bold mb-3">
+                          <v-icon icon="mdi-timeline" size="20" color="primary" class="mr-2" />
+                          Araç Geçmişi (Timeline)
+                        </h5>
+                        <VehicleTimeline :vehicle-id="item.vehicle.id" />
+                      </div>
                     </div>
                   </v-card>
                 </td>
@@ -2061,6 +2071,8 @@ import { computed, reactive, ref, onMounted, watch } from 'vue';
 import { http } from '../modules/http';
 import { useAuthStore } from '../stores/auth';
 import { translateText } from '../services/deepl';
+import { usePricingInsights } from '../composables/usePricingInsights';
+import VehicleTimeline from '../components/VehicleTimeline.vue';
 
 // Interfaces
 interface LanguageDto {
@@ -2204,6 +2216,7 @@ interface LocationDto {
 }
 
 const auth = useAuthStore();
+const pricingInsights = usePricingInsights();
 const isRentacarTenant = computed(() => auth.tenant?.category === 'rentacar');
 
 // Data
@@ -2492,6 +2505,7 @@ const tableHeaders = [
   { title: 'Yıl', key: 'year' },
   { title: 'Son Lokasyon', key: 'lastReturnLocation', sortable: false, width: '200px' },
   { title: 'Durum', key: 'status', sortable: false, width: '120px' },
+  { title: 'İçgörüler', key: 'insights', sortable: false, width: '100px' },
   { title: 'İşlemler', key: 'actions', sortable: false },
 ];
 
@@ -2929,6 +2943,8 @@ const loadVehicles = async () => {
     vehicles.value = data;
     // Rezervasyon bilgilerini de yükle
     await loadVehicleReservations();
+    // Load pricing insights
+    await pricingInsights.loadAllInsights();
   } catch (error) {
     console.error('Failed to load vehicles:', error);
   } finally {

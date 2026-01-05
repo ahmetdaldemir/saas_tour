@@ -1,5 +1,6 @@
 import { Response } from 'express';
-import { AuthenticatedRequest, TenantRequest } from '../../../middleware/auth.middleware';
+import { AuthenticatedRequest } from '../../auth/middleware/auth.middleware';
+import { TenantRequest } from '../../../middleware/tenant.middleware';
 import { StaffPerformanceService } from '../services/staff-performance.service';
 
 export class StaffPerformanceController {
@@ -8,7 +9,7 @@ export class StaffPerformanceController {
    */
   static async getMyScores(req: AuthenticatedRequest & TenantRequest, res: Response) {
     try {
-      const tenantId = req.auth?.tenantId || req.tenant?.id;
+      const tenantId = req.auth?.tenantId || (req as TenantRequest).tenant?.id;
       const userId = req.auth?.sub;
 
       if (!tenantId || !userId) {
@@ -31,7 +32,7 @@ export class StaffPerformanceController {
    */
   static async getTenantScores(req: AuthenticatedRequest & TenantRequest, res: Response) {
     try {
-      const tenantId = req.auth?.tenantId || req.tenant?.id;
+      const tenantId = req.auth?.tenantId || (req as TenantRequest).tenant?.id;
       if (!tenantId) {
         return res.status(401).json({ message: 'Authentication required' });
       }
@@ -59,7 +60,7 @@ export class StaffPerformanceController {
    */
   static async recalculateScores(req: AuthenticatedRequest & TenantRequest, res: Response) {
     try {
-      const tenantId = req.auth?.tenantId || req.tenant?.id;
+      const tenantId = req.auth?.tenantId || (req as TenantRequest).tenant?.id;
       if (!tenantId) {
         return res.status(401).json({ message: 'Authentication required' });
       }
@@ -87,7 +88,7 @@ export class StaffPerformanceController {
    */
   static async getUserScoreDetails(req: AuthenticatedRequest & TenantRequest, res: Response) {
     try {
-      const tenantId = req.auth?.tenantId || req.tenant?.id;
+      const tenantId = req.auth?.tenantId || (req as TenantRequest).tenant?.id;
       if (!tenantId) {
         return res.status(401).json({ message: 'Authentication required' });
       }
