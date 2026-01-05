@@ -12,11 +12,13 @@ import TourDetailView from '../views/TourDetailView.vue';
 import RentacarView from '../views/RentacarView.vue';
 import CrmView from '../views/CrmView.vue';
 import ReservationsView from '../views/ReservationsView.vue';
+import ReservationDetailView from '../views/ReservationDetailView.vue';
 import LanguagesView from '../views/LanguagesView.vue';
 import DestinationsView from '../views/DestinationsView.vue';
 import HotelsView from '../views/HotelsView.vue';
 import BlogsView from '../views/BlogsView.vue';
 import CustomersView from '../views/CustomersView.vue';
+import CustomerDetailView from '../views/CustomerDetailView.vue';
 import SettingsView from '../views/SettingsView.vue';
 import SurveysView from '../views/SurveysView.vue';
 import EmailTemplatesView from '../views/EmailTemplatesView.vue';
@@ -184,6 +186,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true, layout: 'admin' },
   },
   {
+    path: '/app/customers/:id',
+    name: 'customer-detail',
+    component: CustomerDetailView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
     path: '/app/crm',
     name: 'crm',
     component: CrmView,
@@ -199,6 +207,12 @@ const routes: RouteRecordRaw[] = [
     path: '/app/reservations',
     name: 'reservations',
     component: ReservationsView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/reservations/:id',
+    name: 'reservation-detail',
+    component: ReservationDetailView,
     meta: { requiresAuth: true, layout: 'admin' },
   },
   {

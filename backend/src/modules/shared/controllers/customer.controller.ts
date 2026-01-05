@@ -69,5 +69,23 @@ export class CustomerController {
     await CustomerService.remove(id, tenantId);
     res.status(204).send();
   });
+
+  static changePassword = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const { id } = req.params;
+    const { newPassword } = req.body as { newPassword: string };
+    
+    // Get tenantId from authenticated user's token (security)
+    const tenantId = req.auth?.tenantId;
+    if (!tenantId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    if (!newPassword) {
+      return res.status(400).json({ message: 'New password is required' });
+    }
+
+    const customer = await CustomerService.changePassword(id, tenantId, newPassword);
+    res.json({ message: 'Password changed successfully', customer });
+  });
 }
 
