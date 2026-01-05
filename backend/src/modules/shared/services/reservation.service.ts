@@ -235,7 +235,6 @@ export class ReservationService {
       throw new Error('Cannot cancel a completed reservation');
     }
 
-    const previousStatus = reservation.status;
     reservation.status = ReservationStatus.CANCELLED;
 
     // İptal nedeni varsa notlara ekle
@@ -247,12 +246,10 @@ export class ReservationService {
 
     const updatedReservation = await repo.save(reservation);
 
-    // İptal emaili gönder (asenkron)
-    if (previousStatus !== ReservationStatus.CANCELLED) {
-      sendReservationCancelledEmail(updatedReservation).catch((error) => {
-        console.error(`Error sending cancellation email for reservation ${updatedReservation.id}:`, error);
-      });
-    }
+    // İptal emaili gönder (asenkron) - Yukarıdaki kontrollerden dolayı status zaten CANCELLED değil
+    sendReservationCancelledEmail(updatedReservation).catch((error) => {
+      console.error(`Error sending cancellation email for reservation ${updatedReservation.id}:`, error);
+    });
 
     return updatedReservation;
   }
