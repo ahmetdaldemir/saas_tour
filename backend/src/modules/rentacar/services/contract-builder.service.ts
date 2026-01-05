@@ -1,4 +1,4 @@
-import { ContractTemplate } from '../entities/contract-template.entity';
+import { ContractTemplate, ContractSectionType } from '../entities/contract-template.entity';
 
 export interface RenderContractInput {
   template: ContractTemplate;
@@ -76,7 +76,7 @@ export class ContractBuilderService {
 
         processedSections.push({
           id: block.id,
-          type: 'custom',
+          type: ContractSectionType.CUSTOM,
           title: block.title,
           content,
           order: block.order + 1000, // Append after main sections

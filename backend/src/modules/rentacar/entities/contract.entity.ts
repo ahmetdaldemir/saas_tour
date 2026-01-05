@@ -129,7 +129,7 @@ export class Contract extends BaseEntity {
   @JoinColumn({ name: 'created_by_user_id' })
   createdBy?: TenantUser | null;
 
-  @Column({ name: 'created_by_user_id', nullable: true })
+  @Column({ name: 'created_by_user_id', type: 'uuid', nullable: true })
   createdByUserId?: string | null;
 }
 

@@ -496,7 +496,7 @@ export class RentacarReservationService {
         deliveryFee,
         dropFee,
         dailyPrice: vehicle.dailyPrice,
-        source: input.source || currentMetadata?.source,
+        source: (input as any).source || currentMetadata?.source,
       };
 
       // Update checkIn and checkOut dates
@@ -531,8 +531,8 @@ export class RentacarReservationService {
         dropoffDate.setHours(hours, minutes, 0, 0);
         reservation.checkOut = dropoffDate;
       }
-      if (input.metadata) {
-        reservation.metadata = { ...(reservation.metadata as any), ...input.metadata };
+      if ((input as any).metadata) {
+        reservation.metadata = { ...(reservation.metadata as any), ...(input as any).metadata };
       }
     }
 

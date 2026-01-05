@@ -187,7 +187,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import api from '../services/api.service';
+import { http } from '../services/api.service';
 import { useSnackbar } from '../composables/useSnackbar';
 
 interface ContractTemplate {
@@ -235,15 +235,16 @@ interface Contract {
   customerIdNumber?: string;
 }
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   reservationId?: string;
   vehicleId?: string;
-}>();
+  templateId?: string;
+}>(), {});
 
 const { showSnackbar } = useSnackbar();
 
 const templates = ref<ContractTemplate[]>([]);
-const selectedTemplateId = ref<string | null>(null);
+const selectedTemplateId = ref<string | null>(props.templateId || null);
 const template = ref<ContractTemplate | null>(null);
 const contractVariables = ref<Record<string, string>>({});
 const contractData = ref({
@@ -281,7 +282,7 @@ const canSave = computed(() => {
 
 const loadTemplates = async () => {
   try {
-    const response = await api.get('/rentacar/contracts/templates');
+    const response = await http.get('/rentacar/contracts/templates');
     templates.value = response.data.data || [];
     
     // Select default template
@@ -300,7 +301,7 @@ const loadTemplate = async () => {
   if (!selectedTemplateId.value) return;
 
   try {
-    const response = await api.get(`/rentacar/contracts/templates/${selectedTemplateId.value}`);
+    const response = await http.get(`/rentacar/contracts/templates/${selectedTemplateId.value}`);
     template.value = response.data.data;
     
     // Initialize variables
@@ -331,7 +332,7 @@ const updatePreview = async () => {
   if (!selectedTemplateId.value) return;
 
   try {
-    const response = await api.post('/rentacar/contracts/preview', {
+    const response = await http.post('/rentacar/contracts/preview', {
       templateId: selectedTemplateId.value,
       variables: {
         ...contractVariables.value,
@@ -354,7 +355,7 @@ const saveContract = async () => {
 
   try {
     saving.value = true;
-    const response = await api.post('/rentacar/contracts', {
+    const response = await http.post('/rentacar/contracts', {
       templateId: selectedTemplateId.value,
       vehicleId: props.vehicleId,
       reservationId: props.reservationId,
@@ -388,7 +389,7 @@ const signContract = async () => {
 
   try {
     signing.value = true;
-    const response = await api.post(`/rentacar/contracts/${contractId.value}/sign`, {
+    const response = await http.post(`/rentacar/contracts/${contractId.value}/sign`, {
       customerSignature: {
         signerName: signatureData.value.customerName,
         signatureImage: signatureData.value.signatureImage,
@@ -420,7 +421,7 @@ const downloadPDF = async () => {
 
   try {
     generatingPDF.value = true;
-    const response = await api.post(`/rentacar/contracts/${contractId.value}/generate-pdf`, {}, {
+    const response = await http.post(`/rentacar/contracts/${contractId.value}/generate-pdf`, {}, {
       responseType: 'blob',
     });
     
@@ -445,7 +446,7 @@ const downloadThermalPDF = async () => {
 
   try {
     generatingThermalPDF.value = true;
-    const response = await api.post(`/rentacar/contracts/${contractId.value}/generate-thermal-pdf`, {}, {
+    const response = await http.post(`/rentacar/contracts/${contractId.value}/generate-thermal-pdf`, {}, {
       responseType: 'blob',
     });
     
@@ -470,8 +471,21 @@ watch([contractVariables, contractData, optionalBlocks], () => {
   updatePreview();
 }, { deep: true });
 
-onMounted(() => {
-  loadTemplates();
+// Watch for templateId prop changes
+watch(() => props.templateId, (newTemplateId) => {
+  if (newTemplateId && newTemplateId !== selectedTemplateId.value) {
+    selectedTemplateId.value = newTemplateId;
+    loadTemplate();
+  }
+}, { immediate: false });
+
+onMounted(async () => {
+  await loadTemplates();
+  // If templateId prop is provided, use it instead of default
+  if (props.templateId) {
+    selectedTemplateId.value = props.templateId;
+    await loadTemplate();
+  }
 });
 </script>
 

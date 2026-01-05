@@ -145,11 +145,6 @@ export class VehicleDamageDetectionController {
         return res.status(401).json({ message: 'Authentication required' });
       }
 
-      const userId = req.auth?.userId;
-      if (!userId) {
-        return res.status(401).json({ message: 'User ID required' });
-      }
-
       const { id } = req.params;
       const { isDamage, notes } = req.body;
 
@@ -160,7 +155,7 @@ export class VehicleDamageDetectionController {
       const detection = await VehicleDamageDetectionService.verifyDetection(
         id,
         tenantId,
-        userId,
+        req.auth?.sub || tenantId,
         isDamage,
         notes
       );

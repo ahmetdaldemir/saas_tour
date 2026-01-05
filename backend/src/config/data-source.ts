@@ -33,6 +33,12 @@ import { VehicleTimelineMedia } from '../modules/rentacar/entities/vehicle-timel
 import { VehicleDamageDetection } from '../modules/rentacar/entities/vehicle-damage-detection.entity';
 import { ContractTemplate } from '../modules/rentacar/entities/contract-template.entity';
 import { Contract } from '../modules/rentacar/entities/contract.entity';
+import { PricingInsightRule } from '../modules/rentacar/entities/pricing-insight-rule.entity';
+import { PricingInsight } from '../modules/rentacar/entities/pricing-insight.entity';
+import { OccupancyAnalytics } from '../modules/rentacar/entities/occupancy-analytics.entity';
+import { MarketplaceListing } from '../modules/marketplace/entities/marketplace-listing.entity';
+import { TenantServiceAgreement } from '../modules/marketplace/entities/tenant-service-agreement.entity';
+import { CommissionTransaction } from '../modules/marketplace/entities/commission-transaction.entity';
 import { Location } from '../modules/rentacar/entities/location.entity';
 import { MasterLocation } from '../modules/shared/entities/master-location.entity';
 import { LocationVehiclePricing } from '../modules/rentacar/entities/location-vehicle-pricing.entity';
@@ -124,6 +130,12 @@ export const AppDataSource = new DataSource({
           VehicleDamageDetection,
           ContractTemplate,
           Contract,
+          PricingInsightRule,
+          PricingInsight,
+          OccupancyAnalytics,
+          MarketplaceListing,
+          TenantServiceAgreement,
+          CommissionTransaction,
           TenantUser,
           Currency,
           TenantSettings,

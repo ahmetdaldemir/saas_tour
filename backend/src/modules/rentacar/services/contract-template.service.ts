@@ -35,7 +35,9 @@ export type CreateContractTemplateInput = {
   isDefault?: boolean;
 };
 
-export type UpdateContractTemplateInput = Partial<Omit<CreateContractTemplateInput, 'tenantId'>>;
+export type UpdateContractTemplateInput = Partial<Omit<CreateContractTemplateInput, 'tenantId'>> & {
+  isActive?: boolean;
+};
 
 export class ContractTemplateService {
   private static templateRepo(): Repository<ContractTemplate> {

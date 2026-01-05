@@ -68,7 +68,7 @@ export class OpsTask extends BaseEntity {
   returnDamageMediaIds?: string[];
 
   // Completed by user
-  @Column({ name: 'completed_by_user_id', nullable: true })
+  @Column({ name: 'completed_by_user_id', type: 'uuid', nullable: true })
   completedByUserId?: string;
 
   @Column({ name: 'completed_at', type: 'timestamp', nullable: true })

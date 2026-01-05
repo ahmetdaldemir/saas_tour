@@ -118,7 +118,7 @@ export class ReservationLogService {
 
     // Try to create reservation from log data
     try {
-      const reservation = await RentacarReservationService.create(log.requestData);
+      const reservation = await RentacarReservationService.create(log.requestData as any);
 
       // Update log status
       log.status = ReservationLogStatus.CONVERTED;
