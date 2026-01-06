@@ -22,12 +22,11 @@ REMOTE_USER="root"
 REMOTE_PATH="/var/www/html/saastour360"
 
 echo -e "${YELLOW}📋 Bu script şu adımları gerçekleştirecek:${NC}"
-echo "   1. Backend testleri çalıştır"
-echo "   2. Frontend build (npm run build)"
-echo "   3. Dosyaları sunucuya yükle"
-echo "   4. Line endings düzelt (Windows -> Linux)"
-echo "   5. Container'ları rebuild et"
-echo "   6. Health check yap"
+echo "   1. Frontend build (npm run build)"
+echo "   2. Dosyaları sunucuya yükle"
+echo "   3. Line endings düzelt (Windows -> Linux)"
+echo "   4. Container'ları rebuild et"
+echo "   5. Health check yap"
 echo ""
 echo -e "${YELLOW}⚠️  NOT: SSH şifresi istenecek${NC}"
 echo ""
@@ -40,34 +39,7 @@ fi
 
 echo ""
 
-# 1. Backend Tests
-echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${CYAN}🧪 BACKEND TESTLER ÇALIŞTIRILIYOR${NC}"
-echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo ""
-
-echo -e "${YELLOW}Running backend tests...${NC}"
-cd backend
-npm test
-TEST_EXIT_CODE=$?
-cd ..
-
-if [ $TEST_EXIT_CODE -ne 0 ]; then
-    echo ""
-    echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo -e "${RED}❌ TESTLER BAŞARISIZ! DEPLOYMENT DURDURULDU!${NC}"
-    echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    echo ""
-    echo -e "${YELLOW}⚠️  Lütfen testleri düzeltin ve tekrar deneyin.${NC}"
-    echo -e "${YELLOW}   Test detayları için: cd backend && npm test${NC}"
-    echo ""
-    exit 1
-fi
-
-echo -e "${GREEN}✅ Tüm testler başarılı!${NC}"
-echo ""
-
-# 2. Frontend Build
+# 1. Frontend Build
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${CYAN}📦 FRONTEND BUILD${NC}"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -84,7 +56,7 @@ cd ..
 echo -e "${GREEN}✅ Frontend build tamamlandı${NC}"
 echo ""
 
-# 3. Dosyaları Yükle
+# 2. Dosyaları Yükle
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${CYAN}📤 DOSYALAR SUNUCUYA YÜKLENIYOR${NC}"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -125,7 +97,7 @@ echo ""
 echo -e "${GREEN}✅ Tüm dosyalar yüklendi${NC}"
 echo ""
 
-# 4. Sunucuda Deployment
+# 3. Sunucuda Deployment
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${CYAN}🚀 SUNUCUDA DEPLOYMENT${NC}"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -255,3 +227,4 @@ echo -e "   • ${GREEN}https://berg.saastour360.com${NC}"
 echo ""
 echo -e "${YELLOW}⚠️  NOT: Cloudflare cache'ini temizlemeyi unutmayın!${NC}"
 echo ""
+

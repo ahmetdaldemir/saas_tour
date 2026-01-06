@@ -1,0 +1,18 @@
+# Production Dockerfile - Önceden build edilmiş dist klasörünü kullanır
+FROM nginx:1.27-alpine
+
+# Önceden build edilmiş dist klasörünü nginx'e kopyala
+COPY dist /usr/share/nginx/html
+
+# Dosya izinlerini düzelt (nginx kullanıcısı okuyabilsin)
+RUN chmod -R 755 /usr/share/nginx/html && \
+    find /usr/share/nginx/html -type f -exec chmod 644 {} \;
+
+# Nginx konfigürasyonunu kopyala
+COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+# Nginx'i başlat
+CMD ["nginx", "-g", "daemon off;"]
+

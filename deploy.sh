@@ -519,6 +519,17 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
     export DB_USERNAME=${DB_USERNAME:-dev_user}
     export DB_PASSWORD=${DB_PASSWORD:-dev_pass}
     export DB_NAME=${DB_NAME:-tour_saas}
+    
+    # Production Dockerfile'ları kullan (infra ve build modunda)
+    if [ "$MODE" = "infra" ] || [ "$MODE" = "build" ]; then
+        echo -e "${YELLOW}📦 Production Dockerfile'ları kullanılacak (src klasörü gereksiz)${NC}"
+        export BACKEND_DOCKERFILE=Dockerfile.production
+        export FRONTEND_DOCKERFILE=Dockerfile.production
+    else
+        # Full modda normal Dockerfile (src ile build yapar)
+        export BACKEND_DOCKERFILE=Dockerfile
+        export FRONTEND_DOCKERFILE=Dockerfile
+    fi
 
     if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ]; then
         # Sadece build modunda - container'ları durdurma, sadece rebuild
@@ -1176,6 +1187,8 @@ ENDSSH
             --exclude='scripts' \
             --exclude='backend/public/uploads/*' \
             --exclude='backend/dist/public/uploads/*' \
+            --include='backend/Dockerfile.production' \
+            --include='frontend/Dockerfile.production' \
             ./ ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/ 2>&1 | grep -v "failed: No such file or directory" || {
                 echo -e "${YELLOW}⚠️  Bazı dosyalar yüklenemedi (normal olabilir)${NC}"
             }

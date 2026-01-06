@@ -4,7 +4,7 @@ services:
   backend:
     build:
       context: ../backend
-      dockerfile: Dockerfile
+      dockerfile: ${BACKEND_DOCKERFILE:-Dockerfile}
     container_name: saas-tour-backend
     env_file:
       - ../backend/.env
@@ -113,7 +113,7 @@ services:
   worker:
     build:
       context: ../backend
-      dockerfile: Dockerfile
+      dockerfile: ${BACKEND_DOCKERFILE:-Dockerfile}
     container_name: saas-tour-worker
     env_file:
       - ../backend/.env
@@ -139,7 +139,7 @@ services:
   frontend:
     build:
       context: ../frontend
-      dockerfile: Dockerfile
+      dockerfile: ${FRONTEND_DOCKERFILE:-Dockerfile}
     container_name: saas-tour-frontend
     depends_on:
       - backend
