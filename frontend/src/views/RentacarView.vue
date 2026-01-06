@@ -420,8 +420,8 @@
           <v-window-item value="locations">
             <!-- Lokasyon Listesi -->
             <v-card elevation="0" class="mb-4">
-              <v-card-title class="d-flex align-center justify-space-between px-4 py-3">
-                <span class="text-h6 font-weight-bold">Lokasyonlar</span>
+              <v-card-title class="d-flex align-center bg-primary justify-space-between px-4 py-3">
+                <span class="text-h6 font-weight-bold text-white">Lokasyonlar</span>
                 <div class="d-flex align-center gap-2">
                   <v-btn icon="mdi-refresh" variant="text" @click="loadLocations" :loading="loadingLocations" />
                   <v-btn color="primary" prepend-icon="mdi-plus" @click="openLocationDialog">
@@ -490,7 +490,7 @@
                   <template #item.pricing="{ item }">
                     <v-btn 
                       color="primary" 
-                      variant="outlined" 
+                       
                       size="small"
                       @click="openPricingDialog(item)"
                       class="text-uppercase"
@@ -507,7 +507,7 @@
                       type="number"
                       density="compact"
                       hide-details
-                      variant="outlined"
+                      
                       style="max-width: 100px;"
                       @blur="updateLocationField(item, 'minDayCount', item.minDayCount)"
                       @keyup.enter="updateLocationField(item, 'minDayCount', item.minDayCount)"
@@ -524,7 +524,7 @@
                       type="number"
                       density="compact"
                       hide-details
-                      variant="outlined"
+                      
                       style="max-width: 100px;"
                       @blur="updateLocationField(item, 'sort', item.sort)"
                       @keyup.enter="updateLocationField(item, 'sort', item.sort)"
@@ -535,7 +535,7 @@
                     <v-btn 
                       v-if="!item.location?.parentId"
                       color="success" 
-                      variant="outlined" 
+                       
                       size="small"
                       prepend-icon="mdi-map-marker-multiple"
                       @click="openDeliveryPricingDialog(item)"
@@ -591,7 +591,7 @@
                           prepend-inner-icon="mdi-tag"
                           :rules="[rules.required]"
                           clearable
-                          variant="outlined"
+                          
                           density="comfortable"
                           hide-details="auto"
                         >
@@ -619,7 +619,7 @@
                           prepend-inner-icon="mdi-alpha-b-box"
                           :rules="[rules.required]"
                           clearable
-                          variant="outlined"
+                          
                           density="comfortable"
                           hide-details="auto"
                           @update:model-value="handleBrandChange"
@@ -649,7 +649,7 @@
                           :rules="[rules.required]"
                           :disabled="!form.brandId"
                           clearable
-                          variant="outlined"
+                          
                           density="comfortable"
                           hide-details="auto"
                           :hint="!form.brandId ? 'Önce marka seçiniz' : ''"
@@ -676,7 +676,7 @@
                           prepend-inner-icon="mdi-car"
                           required
                           hide-details="auto"
-                          variant="outlined"
+                          
                           density="comfortable"
                         />
                       </v-col>
@@ -688,7 +688,7 @@
                           placeholder="Yıl girin"
                           prepend-inner-icon="mdi-calendar"
                           hide-details="auto"
-                          variant="outlined"
+                          
                           density="comfortable"
                         />
                       </v-col>
@@ -702,7 +702,7 @@
                           placeholder="Vites tipi seçin"
                           prepend-inner-icon="mdi-cog"
                           hide-details="auto"
-                          variant="outlined"
+                          
                           density="comfortable"
                         />
                       </v-col>
@@ -716,7 +716,7 @@
                           placeholder="Yakıt tipi seçin"
                           prepend-inner-icon="mdi-fuel"
                           hide-details="auto"
-                          variant="outlined"
+                          
                           density="comfortable"
                         />
                       </v-col>
@@ -728,7 +728,7 @@
                           placeholder="Yolcu sayısı girin"
                           prepend-inner-icon="mdi-account"
                           hide-details="auto"
-                          variant="outlined"
+                          
                           density="comfortable"
                         />
                       </v-col>
@@ -740,7 +740,7 @@
                           placeholder="Büyük bagaj adedi girin"
                           prepend-inner-icon="mdi-luggage"
                           hide-details="auto"
-                          variant="outlined"
+                          
                           density="comfortable"
                         />
                       </v-col>
@@ -752,7 +752,7 @@
                           placeholder="Küçük bagaj adedi girin"
                           prepend-inner-icon="mdi-luggage"
                           hide-details="auto"
-                          variant="outlined"
+                          
                           density="comfortable"
                         />
                       </v-col>
@@ -764,7 +764,7 @@
                           placeholder="Kapı sayısı girin"
                           prepend-inner-icon="mdi-door"
                           hide-details="auto"
-                          variant="outlined"
+                          
                           density="comfortable"
                         />
                       </v-col>
@@ -776,7 +776,7 @@
                           placeholder="Motor seçin"
                           prepend-inner-icon="mdi-engine"
                           hide-details="auto"
-                          variant="outlined"
+                          
                           density="comfortable"
                         />
                       </v-col>
@@ -788,7 +788,7 @@
                           placeholder="Kasa tipi seçin"
                           prepend-inner-icon="mdi-car-side"
                           hide-details="auto"
-                          variant="outlined"
+                          
                           density="comfortable"
                         />
                       </v-col>
@@ -800,7 +800,7 @@
                           placeholder="Beygir gücü seçin"
                           prepend-inner-icon="mdi-lightning-bolt"
                           hide-details="auto"
-                          variant="outlined"
+                          
                           density="comfortable"
                         />
                       </v-col>
@@ -814,7 +814,7 @@
                           placeholder="Seçin"
                           prepend-inner-icon="mdi-steering"
                           hide-details="auto"
-                          variant="outlined"
+                          
                           density="comfortable"
                         />
                       </v-col>
@@ -828,7 +828,7 @@
                           placeholder="Seçin"
                           prepend-inner-icon="mdi-car-multiple"
                           hide-details="auto"
-                          variant="outlined"
+                          
                           density="comfortable"
                         />
                       </v-col>
@@ -842,7 +842,7 @@
                           placeholder="Seçin"
                           prepend-inner-icon="mdi-snowflake"
                           hide-details="auto"
-                          variant="outlined"
+                          
                           density="comfortable"
                         />
                       </v-col>
@@ -856,7 +856,7 @@
                           placeholder="Seçin"
                           prepend-inner-icon="mdi-alert-circle"
                           hide-details="auto"
-                          variant="outlined"
+                          
                           density="comfortable"
                         />
                       </v-col>
@@ -870,7 +870,7 @@
                           placeholder="Seçin"
                           prepend-inner-icon="mdi-radio"
                           hide-details="auto"
-                          variant="outlined"
+                          
                           density="comfortable"
                         />
                       </v-col>
@@ -884,7 +884,7 @@
                           placeholder="Seçin"
                           prepend-inner-icon="mdi-disc"
                           hide-details="auto"
-                          variant="outlined"
+                          
                           density="comfortable"
                         />
                       </v-col>
@@ -898,7 +898,7 @@
                           placeholder="Seçin"
                           prepend-inner-icon="mdi-car-convertible"
                           hide-details="auto"
-                          variant="outlined"
+                          
                           density="comfortable"
                         />
                       </v-col>
@@ -909,7 +909,7 @@
                           placeholder="Resim URL'i girin"
                           prepend-inner-icon="mdi-image"
                           hide-details="auto"
-                          variant="outlined"
+                          
                           density="comfortable"
                         />
                       </v-col>
@@ -921,7 +921,7 @@
                           prepend-inner-icon="mdi-text"
                           rows="3"
                           hide-details="auto"
-                          variant="outlined"
+                          
                           density="comfortable"
                         />
                       </v-col>
@@ -948,10 +948,9 @@
             </div>
             <v-btn icon="mdi-close" variant="text" @click="closeCategoryDialog" />
           </v-card-title>
-          <v-card-text>
-            <div class="admin-form-scope">
-              <v-form ref="categoryFormRef" v-model="categoryFormValid">
-                <v-tabs v-model="categoryLanguageTab" density="compact" class="mb-4">
+          <v-card-text class="admin-form-scope">
+            <v-form ref="categoryFormRef" v-model="categoryFormValid">
+              <v-tabs v-model="categoryLanguageTab" density="compact" class="mb-4">
                 <v-tab
                   v-for="lang in availableLanguages"
                   :key="lang.id"
@@ -966,16 +965,17 @@
                   :key="lang.id"
                   :value="lang.id"
                 >
+                  <label class="form-label">Kategori Adı ({{ lang.name }}) <span class="required">*</span></label>
                   <v-text-field
                     v-model="categoryForm.translations[lang.id]"
-                    :label="`Kategori Adı (${lang.name})`"
-                    prepend-inner-icon="mdi-tag"
-                    required
+                    :placeholder="`${lang.name} için kategori adı giriniz`"
+                    hide-details="auto"
+                    
+                    density="comfortable"
                   />
                 </v-window-item>
               </v-window>
-              </v-form>
-            </div>
+            </v-form>
           </v-card-text>
           <v-card-actions>
             <v-btn variant="text" @click="closeCategoryDialog">İptal</v-btn>
@@ -996,17 +996,17 @@
             </div>
             <v-btn icon="mdi-close" variant="text" @click="closeBrandDialog" />
           </v-card-title>
-          <v-card-text>
-            <div class="admin-form-scope">
-              <v-form ref="brandFormRef" v-model="brandFormValid">
-                <v-text-field
-                  v-model="brandForm.name"
-                  label="Marka Adı"
-                  prepend-inner-icon="mdi-alpha-b-box"
-                  required
-                />
-              </v-form>
-            </div>
+          <v-card-text class="admin-form-scope">
+            <v-form ref="brandFormRef" v-model="brandFormValid">
+              <label class="form-label">Marka Adı <span class="required">*</span></label>
+              <v-text-field
+                v-model="brandForm.name"
+                placeholder="Marka adını giriniz"
+                hide-details="auto"
+                
+                density="comfortable"
+              />
+            </v-form>
           </v-card-text>
           <v-card-actions>
             <v-btn variant="text" @click="closeBrandDialog">İptal</v-btn>
@@ -1027,31 +1027,35 @@
             </div>
             <v-btn icon="mdi-close" variant="text" @click="closeModelDialog" />
           </v-card-title>
-          <v-card-text>
+          <v-card-text class="admin-form-scope">
             <v-alert v-if="!form.brandId && !editingModel" type="warning" variant="tonal" class="mb-4">
               Önce bir marka seçmelisiniz.
             </v-alert>
-            <div class="admin-form-scope">
-              <v-form v-if="form.brandId || editingModel" ref="modelFormRef" v-model="modelFormValid">
-              <v-select
-                v-if="editingModel"
-                v-model="form.brandId"
-                :items="vehicleBrands"
-                item-title="name"
-                item-value="id"
-                label="Marka"
-                prepend-inner-icon="mdi-alpha-b-box"
-                required
-                class="mb-4"
-              />
-              <v-text-field
-                v-model="modelForm.name"
-                label="Model Adı"
-                prepend-inner-icon="mdi-shape"
-                required
-              />
-              </v-form>
-            </div>
+            <v-form v-if="form.brandId || editingModel" ref="modelFormRef" v-model="modelFormValid">
+              <div v-if="editingModel" class="mb-4">
+                <label class="form-label">Marka <span class="required">*</span></label>
+                <v-select
+                  v-model="form.brandId"
+                  :items="vehicleBrands"
+                  item-title="name"
+                  item-value="id"
+                  placeholder="Marka seçiniz"
+                  hide-details="auto"
+                  
+                  density="comfortable"
+                />
+              </div>
+              <div>
+                <label class="form-label">Model Adı <span class="required">*</span></label>
+                <v-text-field
+                  v-model="modelForm.name"
+                  placeholder="Model adını giriniz"
+                  hide-details="auto"
+                  
+                  density="comfortable"
+                />
+              </div>
+            </v-form>
           </v-card-text>
           <v-card-actions>
             <v-btn variant="text" @click="closeModelDialog">İptal</v-btn>
@@ -1779,7 +1783,7 @@
                     item-value="value"
                     density="compact"
                     hide-details
-                    variant="outlined"
+                    
                     style="max-width: 120px;"
                     @update:model-value="updatePricingStatus(item, $event)"
                   />
@@ -1837,7 +1841,7 @@
                   type="number"
                   density="compact"
                   hide-details
-                  variant="outlined"
+                  
                   style="max-width: 120px;"
                   @update:model-value="updateDeliveryPricingDistance(item, $event)"
                 />
@@ -1849,7 +1853,7 @@
                   type="number"
                   density="compact"
                   hide-details
-                  variant="outlined"
+                  
                   style="max-width: 120px;"
                   :suffix="getCurrencySymbol(defaultCurrency?.code || '₺')"
                   @update:model-value="updateDeliveryPricingFee(item, $event)"
@@ -1864,7 +1868,7 @@
                   item-value="value"
                   density="compact"
                   hide-details
-                  variant="outlined"
+                  
                   style="max-width: 120px;"
                   @update:model-value="updateDeliveryPricingStatus(item, $event)"
                 />
@@ -1883,28 +1887,28 @@
       </v-dialog>
 
       <!-- Lokasyon Ekleme/Düzenleme Dialog -->
-      <v-dialog v-model="showLocationDialog" max-width="560" scrollable @keydown.esc="closeLocationDialog">
+      <v-dialog v-model="showLocationDialog" max-width="1024" scrollable @keydown.esc="closeLocationDialog">
         <v-card>
-          <v-card-title>
+          <v-card-title class="bg-primary text-white">
             <div>
               <div class="text-h6">{{ editingLocation ? 'Lokasyon Düzenle' : 'Lokasyon Ekle' }}</div>
               <div class="text-subtitle-1">Lokasyon bilgilerini girin ve ayarlarını yapın</div>
             </div>
             <v-btn icon="mdi-close" variant="text" @click="closeLocationDialog" />
           </v-card-title>
-          <v-card-text>
-            <div class="admin-form-scope">
-              <v-form ref="locationFormRef" v-model="locationFormValid">
-                <v-row>
-                  <v-col cols="12">
+          <v-card-text class="admin-form-scope">
+            <v-form ref="locationFormRef" v-model="locationFormValid">
+              <v-row>
+                <v-col cols="12">
+                  <label class="form-label">Lokasyon Seçin <span class="required">*</span></label>
                   <v-select
                     v-model="locationForm.locationId"
                     :items="availableMasterLocations"
                     item-title="displayName"
                     item-value="id"
-                    label="Lokasyon Seçin"
-                    prepend-inner-icon="mdi-map-marker"
-                    required
+                    placeholder="Lokasyon seçiniz"
+                    hide-details="auto"
+                    density="comfortable"
                     :loading="loadingMasterLocations"
                     :disabled="!!editingLocation"
                   >
@@ -1930,44 +1934,63 @@
                   </v-alert>
                 </v-col>
                 <v-col cols="12">
+                  <label class="form-label">Meta Title</label>
                   <v-text-field
                     v-model="locationForm.metaTitle"
-                    label="Meta Title"
-                    prepend-inner-icon="mdi-tag"
+                    placeholder="Meta başlık giriniz"
+                    hide-details="auto"
+                    density="comfortable"
                   />
                 </v-col>
                 <v-col cols="12" md="6">
+                  <label class="form-label">Sıralama</label>
                   <v-text-field
                     v-model.number="locationForm.sort"
-                    label="Sıralama"
                     type="number"
-                    prepend-inner-icon="mdi-sort-numeric"
+                    placeholder="0"
+                    hide-details="auto"
+                    
+                    density="comfortable"
                   />
                 </v-col>
                 <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model.number="locationForm.deliveryFee"
-                    label="Teslim Ücreti"
-                    type="number"
-                    :prepend-inner-icon="getCurrencyIcon(defaultCurrency?.code || 'TRY')"
-                    :suffix="getCurrencySymbol(defaultCurrency?.code || 'TRY')"
-                  />
+                  <label class="form-label">Teslim Ücreti</label>
+                    <v-text-field
+                    v-model="locationForm.deliveryFee"
+                    type="text"
+                    inputmode="decimal"
+                    placeholder="0"
+                    class="currency-field"
+                  >
+                    <template #append-inner>{{ getCurrencySymbol(defaultCurrency?.code || 'TRY') }}</template>
+                  </v-text-field>
+
+
                 </v-col>
                 <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model.number="locationForm.dropFee"
-                    label="Drop Ücreti"
-                    type="number"
-                    :prepend-inner-icon="getCurrencyIcon(defaultCurrency?.code || 'TRY')"
-                    :suffix="getCurrencySymbol(defaultCurrency?.code || 'TRY')"
-                  />
+                  <label class="form-label">Drop Ücreti</label>
+                    <v-text-field
+                    v-model="locationForm.dropFeeText"
+                    type="text"
+                    inputmode="decimal"
+                    placeholder="0"
+                    class="currency-field"
+                  >
+                    <template #append-inner>{{ getCurrencySymbol(defaultCurrency?.code || 'TRY') }}</template>
+                  </v-text-field>
                 </v-col>
+
+             
+
                 <v-col cols="12" md="6">
+                  <label class="form-label">Min Gün Sayısı</label>
                   <v-text-field
                     v-model.number="locationForm.minDayCount"
-                    label="Min Gün Sayısı"
                     type="number"
-                    prepend-inner-icon="mdi-calendar"
+                    placeholder="0"
+                    hide-details="auto"
+                    
+                    density="comfortable"
                   />
                 </v-col>
                 <v-col cols="12" md="6">
@@ -1979,8 +2002,7 @@
                   />
                 </v-col>
               </v-row>
-              </v-form>
-            </div>
+            </v-form>
           </v-card-text>
           <v-card-actions>
             <v-btn variant="text" @click="closeLocationDialog">İptal</v-btn>
@@ -2005,14 +2027,14 @@
             </div>
             <div v-else>
               <!-- Image Upload Section -->
-              <v-card variant="outlined" class="mb-4">
+              <v-card  class="mb-4">
                 <v-card-title class="text-subtitle-1">Yeni Resim Ekle (Maksimum 8 resim)</v-card-title>
                 <v-card-text>
                   <v-file-input
                     v-model="imageFile"
                     label="Resim Seç"
                     prepend-inner-icon="mdi-image"
-                    variant="outlined"
+                    
                     accept="image/*"
                     :disabled="vehicleImages.length >= 8 || uploadingImage"
                     :rules="[
@@ -2067,7 +2089,7 @@
                     md="4"
                   >
                     <v-card
-                      variant="outlined"
+                      
                       :class="{ 'drag-over': draggedOverIndex === index, 'dragging': draggedImageId === image.id }"
                       class="image-card"
                       draggable="true"

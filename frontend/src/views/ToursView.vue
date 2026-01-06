@@ -17,7 +17,7 @@
 
           <v-row v-if="tourFeatures.length > 0">
             <v-col cols="12" sm="6" md="4" lg="3" v-for="feature in tourFeatures" :key="feature.id">
-              <v-card variant="outlined" class="pa-4">
+              <v-card  class="pa-4">
                 <div class="d-flex align-center justify-space-between mb-2">
                   <div class="d-flex align-center gap-2">
                     <v-icon :icon="feature.icon" size="24" />
@@ -66,7 +66,7 @@
           <v-form ref="featureFormRef" v-model="featureFormValid">
             <div class="mb-4">
               <label class="text-body-2 font-weight-medium mb-2 d-block">İkon Seçimi *</label>
-              <v-card variant="outlined" class="pa-4">
+              <v-card  class="pa-4">
                 <div class="d-flex align-center justify-space-between mb-3">
                   <div class="d-flex align-center gap-2">
                     <v-icon :icon="featureForm.icon || 'mdi-help-circle'" size="32" color="primary" />
@@ -128,7 +128,7 @@
             v-model="iconSearchQuery"
             label="İkon Ara"
             prepend-inner-icon="mdi-magnify"
-            variant="outlined"
+            
             density="compact"
             clearable
             class="mb-4"
@@ -235,7 +235,7 @@
                     v-for="feature in item.features"
                     :key="feature.id"
                     size="x-small"
-                    variant="outlined"
+                    
                   >
                     <v-icon :icon="feature.icon" size="14" class="mr-1" />
                     {{ getFeatureName(feature) }}
@@ -326,7 +326,7 @@
                       label="Destinasyon *"
                       prepend-inner-icon="mdi-map-marker"
                       required
-                      variant="outlined"
+                      
                       density="comfortable"
                       :loading="loadingDestinations"
                       :disabled="destinations.length === 0"
@@ -368,7 +368,7 @@
                               label="Tur Adı *"
                               prepend-inner-icon="mdi-format-title"
                               required
-                              variant="outlined"
+                              
                               density="comfortable"
                               :hint="lang.id === form.defaultLanguageId ? 'Varsayılan dil - diğer diller otomatik çevrilecek' : 'Bu dil için tur adı'"
                               persistent-hint
@@ -382,7 +382,7 @@
                               @update:model-value="(val) => updateTranslationField(lang.id, 'slug', val)"
                               label="Slug"
                               prepend-inner-icon="mdi-link-variant"
-                              variant="outlined"
+                              
                               density="comfortable"
                               hint="Tur adından otomatik oluşturulur (değiştirilebilir)"
                               persistent-hint
@@ -397,7 +397,7 @@
                               label="Tur Açıklaması"
                               prepend-inner-icon="mdi-text"
                               rows="6"
-                              variant="outlined"
+                              
                               density="comfortable"
                               :hint="lang.id === form.defaultLanguageId ? 'Varsayılan dil - diğer diller otomatik çevrilecek' : 'Bu dil için tur açıklaması'"
                               persistent-hint
@@ -437,7 +437,7 @@
                       multiple
                       chips
                       prepend-inner-icon="mdi-star"
-                      variant="outlined"
+                      
                       density="comfortable"
                     >
                       <template #item="{ item, props }">
@@ -486,7 +486,7 @@
                             <v-text-field
                               v-model="form.translations[lang.id].includedServices[index]"
                               density="compact"
-                              variant="outlined"
+                              
                               hide-details
                               class="flex-grow-1"
                             />
@@ -500,7 +500,7 @@
                             />
                             <v-btn icon="mdi-delete" variant="text" size="small" @click="form.translations[lang.id].includedServices.splice(index, 1)" />
                           </div>
-                          <v-btn prepend-icon="mdi-plus" variant="outlined" size="small" @click="addIncludedService(lang.id)">
+                          <v-btn prepend-icon="mdi-plus"  size="small" @click="addIncludedService(lang.id)">
                             Hizmet Ekle
                           </v-btn>
                         </v-window-item>
@@ -533,7 +533,7 @@
                             <v-text-field
                               v-model="form.translations[lang.id].excludedServices[index]"
                               density="compact"
-                              variant="outlined"
+                              
                               hide-details
                               class="flex-grow-1"
                             />
@@ -547,7 +547,7 @@
                             />
                             <v-btn icon="mdi-delete" variant="text" size="small" @click="form.translations[lang.id].excludedServices.splice(index, 1)" />
                           </div>
-                          <v-btn prepend-icon="mdi-plus" variant="outlined" size="small" @click="addExcludedService(lang.id)">
+                          <v-btn prepend-icon="mdi-plus"  size="small" @click="addExcludedService(lang.id)">
                             Hizmet Ekle
                           </v-btn>
                         </v-window-item>
@@ -580,7 +580,7 @@
                             <v-text-field
                               v-model="form.translations[lang.id].infoItems[index]"
                               density="compact"
-                              variant="outlined"
+                              
                               hide-details
                               class="flex-grow-1"
                             />
@@ -594,7 +594,7 @@
                             />
                             <v-btn icon="mdi-delete" variant="text" size="small" @click="form.translations[lang.id].infoItems.splice(index, 1)" />
                           </div>
-                          <v-btn prepend-icon="mdi-plus" variant="outlined" size="small" @click="addInfoItem(lang.id)">
+                          <v-btn prepend-icon="mdi-plus"  size="small" @click="addInfoItem(lang.id)">
                             Madde Ekle
                           </v-btn>
                         </v-window-item>
@@ -630,7 +630,7 @@
                             v-model="form.images[index].url"
                             label="Resim URL"
                             prepend-inner-icon="mdi-link"
-                            variant="outlined"
+                            
                             density="comfortable"
                             class="mb-2"
                           />
@@ -640,7 +640,7 @@
                             v-model="form.images[index].file"
                             label="Resim Dosyası"
                             prepend-inner-icon="mdi-upload"
-                            variant="outlined"
+                            
                             density="comfortable"
                             accept="image/*"
                             @change="handleImageUpload(index, $event)"
@@ -658,7 +658,7 @@
                         v-model="form.images[index].alt"
                         label="Alt Text"
                         prepend-inner-icon="mdi-text"
-                        variant="outlined"
+                        
                         density="comfortable"
                         class="mb-2"
                       />
@@ -668,7 +668,7 @@
                         density="compact"
                       />
                     </div>
-                    <v-btn prepend-icon="mdi-plus" variant="outlined" @click="addImageField">
+                    <v-btn prepend-icon="mdi-plus"  @click="addImageField">
                       Resim Ekle
                     </v-btn>
                   </v-col>
@@ -689,7 +689,7 @@
                           v-model="form.video"
                           label="Video URL"
                           prepend-inner-icon="mdi-link"
-                          variant="outlined"
+                          
                           density="comfortable"
                           hint="YouTube, Vimeo vb. video URL'i"
                           persistent-hint
@@ -700,7 +700,7 @@
                           v-model="videoFile"
                           label="Video Dosyası"
                           prepend-inner-icon="mdi-upload"
-                          variant="outlined"
+                          
                           density="comfortable"
                           accept="video/*"
                           @change="handleVideoUpload"
@@ -731,7 +731,7 @@
                       label="Kişi Sayısı (0 = Sınırsız)"
                       type="number"
                       prepend-inner-icon="mdi-account-group"
-                      variant="outlined"
+                      
                       density="comfortable"
                       hint="0 girilirse sınırsız olur. 0'dan farklı ise gelen rezervasyona göre gün/tarih baz alınarak tur satışa kapatılacak."
                       persistent-hint
@@ -751,7 +751,7 @@
                           label="Tur Süresi"
                           type="number"
                           prepend-inner-icon="mdi-clock-outline"
-                          variant="outlined"
+                          
                           density="comfortable"
                         />
                       </v-col>
@@ -764,7 +764,7 @@
                             { value: 'day', title: 'Gün' }
                           ]"
                           label="Süre Birimi"
-                          variant="outlined"
+                          
                           density="comfortable"
                         />
                       </v-col>
@@ -792,7 +792,7 @@
                       multiple
                       chips
                       prepend-inner-icon="mdi-calendar"
-                      variant="outlined"
+                      
                       density="comfortable"
                     />
                   </v-col>
@@ -812,7 +812,7 @@
                         label="Başlangıç"
                         type="time"
                         density="compact"
-                        variant="outlined"
+                        
                         hide-details
                       />
                       <v-text-field
@@ -820,12 +820,12 @@
                         label="Bitiş"
                         type="time"
                         density="compact"
-                        variant="outlined"
+                        
                         hide-details
                       />
                       <v-btn icon="mdi-delete" variant="text" size="small" @click="form.timeSlots.splice(index, 1)" />
           </div>
-                    <v-btn prepend-icon="mdi-plus" variant="outlined" @click="form.timeSlots.push({ startTime: '09:00', endTime: '17:00' })">
+                    <v-btn prepend-icon="mdi-plus"  @click="form.timeSlots.push({ startTime: '09:00', endTime: '17:00' })">
                       Saat Dilimi Ekle
                     </v-btn>
                   </v-col>
@@ -855,7 +855,7 @@
                               v-model.number="price.price"
                               label="Fiyat *"
                               type="number"
-                              variant="outlined"
+                              
                               density="comfortable"
                               required
                             />
@@ -864,7 +864,7 @@
                             <v-text-field
                               v-model="price.currencyCode"
                               label="Para Birimi *"
-                              variant="outlined"
+                              
                               density="comfortable"
                               required
                             />
@@ -873,13 +873,13 @@
                             <v-text-field
                               v-model="price.description"
                               label="Açıklama (Opsiyonel)"
-                              variant="outlined"
+                              
                               density="comfortable"
                             />
       </v-col>
     </v-row>
                       </div>
-                      <v-btn prepend-icon="mdi-plus" variant="outlined" size="small" @click="addAdultPricing">
+                      <v-btn prepend-icon="mdi-plus"  size="small" @click="addAdultPricing">
                         Yetişkin Fiyatı Ekle
                       </v-btn>
                     </div>
@@ -898,7 +898,7 @@
                               v-model.number="price.price"
                               label="Fiyat *"
                               type="number"
-                              variant="outlined"
+                              
                               density="comfortable"
                               required
                             />
@@ -907,7 +907,7 @@
                             <v-text-field
                               v-model="price.currencyCode"
                               label="Para Birimi *"
-                              variant="outlined"
+                              
                               density="comfortable"
                               required
                             />
@@ -916,13 +916,13 @@
                             <v-text-field
                               v-model="price.description"
                               label="Açıklama (Opsiyonel)"
-                              variant="outlined"
+                              
                               density="comfortable"
                             />
                           </v-col>
                         </v-row>
                       </div>
-                      <v-btn prepend-icon="mdi-plus" variant="outlined" size="small" @click="addChildPricing">
+                      <v-btn prepend-icon="mdi-plus"  size="small" @click="addChildPricing">
                         Çocuk Fiyatı Ekle
                       </v-btn>
                     </div>
@@ -941,7 +941,7 @@
                               v-model.number="price.price"
                               label="Fiyat *"
                               type="number"
-                              variant="outlined"
+                              
                               density="comfortable"
                               required
                             />
@@ -950,7 +950,7 @@
                             <v-text-field
                               v-model="price.currencyCode"
                               label="Para Birimi *"
-                              variant="outlined"
+                              
                               density="comfortable"
                               required
                             />
@@ -959,13 +959,13 @@
                             <v-text-field
                               v-model="price.description"
                               label="Açıklama (Opsiyonel)"
-                              variant="outlined"
+                              
                               density="comfortable"
                             />
                           </v-col>
                         </v-row>
                       </div>
-                      <v-btn prepend-icon="mdi-plus" variant="outlined" size="small" @click="addInfantPricing">
+                      <v-btn prepend-icon="mdi-plus"  size="small" @click="addInfantPricing">
                         Bebek Fiyatı Ekle
                       </v-btn>
                     </div>
@@ -982,7 +982,7 @@
                               { value: 'one_plus_one', title: '1+1 Tur' }
                             ]"
                             label="Fiyat Tipi"
-                            variant="outlined"
+                            
                             density="comfortable"
                             class="flex-grow-1 mr-2"
                           />
@@ -994,7 +994,7 @@
                               v-model.number="price.price"
                               label="Fiyat *"
                               type="number"
-                              variant="outlined"
+                              
                               density="comfortable"
                               required
                             />
@@ -1003,7 +1003,7 @@
                             <v-text-field
                               v-model="price.currencyCode"
                               label="Para Birimi *"
-                              variant="outlined"
+                              
                               density="comfortable"
                               required
                             />
@@ -1012,13 +1012,13 @@
                             <v-text-field
                               v-model="price.description"
                               label="Açıklama (Opsiyonel)"
-                              variant="outlined"
+                              
                               density="comfortable"
                             />
                           </v-col>
                         </v-row>
                       </div>
-                      <v-btn prepend-icon="mdi-plus" variant="outlined" size="small" @click="addOtherPricing">
+                      <v-btn prepend-icon="mdi-plus"  size="small" @click="addOtherPricing">
                         Fiyatlandırma Ekle
                       </v-btn>
                     </div>
@@ -1042,7 +1042,7 @@
                       item-value="value"
                       label="Varsayılan Para Birimi"
                       prepend-inner-icon="mdi-wallet"
-                      variant="outlined"
+                      
                       density="comfortable"
                       hint="Tur için varsayılan para birimini seçin"
                       persistent-hint
@@ -1075,7 +1075,7 @@
                       label="Etiketler (virgülle ayırın)"
                       rows="3"
                       prepend-inner-icon="mdi-tag-multiple"
-                      variant="outlined"
+                      
                       density="comfortable"
                       hint="Örn: kültür, tarih, doğa"
                       persistent-hint

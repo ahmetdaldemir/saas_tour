@@ -115,7 +115,7 @@
                 <v-card-text>
                   <h3 class="mb-4">Review Agreement</h3>
                   
-                  <v-card variant="outlined" class="mb-4">
+                  <v-card  class="mb-4">
                     <v-card-text>
                       <div class="mb-2"><strong>Provider:</strong> {{ listing.tenant?.name }}</div>
                       <div class="mb-2"><strong>Service:</strong> {{ listing.title }}</div>

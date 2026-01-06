@@ -25,7 +25,7 @@
             <!-- Araç Bilgileri -->
             <v-row>
               <v-col cols="12" md="6">
-                <v-card variant="outlined" class="mb-4">
+                <v-card  class="mb-4">
                   <v-card-title class="bg-grey-lighten-4">
                     <v-icon icon="mdi-car" class="mr-2" />
                     Araç Bilgileri
@@ -73,7 +73,7 @@
               </v-col>
 
               <v-col cols="12" md="6">
-                <v-card variant="outlined" class="mb-4">
+                <v-card  class="mb-4">
                   <v-card-title class="bg-grey-lighten-4">
                     <v-icon icon="mdi-information" class="mr-2" />
                     Durum Bilgileri
@@ -105,7 +105,7 @@
             <!-- Vehicle Timeline -->
             <v-row>
               <v-col cols="12">
-                <v-card variant="outlined" class="mb-4">
+                <v-card  class="mb-4">
                   <v-card-title class="bg-grey-lighten-4">
                     <v-icon icon="mdi-timeline" class="mr-2" />
                     Araç Geçmişi (Timeline)

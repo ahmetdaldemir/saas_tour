@@ -81,7 +81,7 @@
               <v-card
                 v-for="media in event.media"
                 :key="media.id"
-                variant="outlined"
+                
                 class="media-item"
                 style="max-width: 200px;"
               >

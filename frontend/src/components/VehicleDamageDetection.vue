@@ -92,7 +92,7 @@
       <v-card-text>
         <v-row>
           <v-col cols="12" md="4">
-            <v-card variant="outlined">
+            <v-card >
               <v-card-title class="text-subtitle-1">Güven Skoru</v-card-title>
               <v-card-text>
                 <div class="text-h4 text-center">{{ detectionResult.confidenceScore }}%</div>
@@ -106,7 +106,7 @@
             </v-card>
           </v-col>
           <v-col cols="12" md="4">
-            <v-card variant="outlined">
+            <v-card >
               <v-card-title class="text-subtitle-1">Piksel Farkı</v-card-title>
               <v-card-text>
                 <div class="text-h4 text-center">{{ detectionResult.processingMetadata?.pixelDifference }}%</div>
@@ -114,7 +114,7 @@
             </v-card>
           </v-col>
           <v-col cols="12" md="4">
-            <v-card variant="outlined">
+            <v-card >
               <v-card-title class="text-subtitle-1">Kenar Farkı</v-card-title>
               <v-card-text>
                 <div class="text-h4 text-center">{{ detectionResult.processingMetadata?.edgeDifference }}%</div>
@@ -126,7 +126,7 @@
         <!-- Photo Comparison -->
         <v-row class="mt-4">
           <v-col cols="12" md="6">
-            <v-card variant="outlined">
+            <v-card >
               <v-card-title class="text-subtitle-1">Check-in Fotoğrafı</v-card-title>
               <v-card-text class="pa-0">
                 <v-img
@@ -143,7 +143,7 @@
             </v-card>
           </v-col>
           <v-col cols="12" md="6">
-            <v-card variant="outlined">
+            <v-card >
               <v-card-title class="text-subtitle-1">Check-out Fotoğrafı</v-card-title>
               <v-card-text class="pa-0">
                 <v-img
@@ -164,7 +164,7 @@
         <!-- Difference Overlay -->
         <v-row v-if="detectionResult.differenceImageUrl" class="mt-4">
           <v-col cols="12">
-            <v-card variant="outlined">
+            <v-card >
               <v-card-title class="text-subtitle-1">Fark Görüntüsü (Overlay)</v-card-title>
               <v-card-text class="pa-0">
                 <v-img
@@ -181,7 +181,7 @@
         <!-- Detected Damage Areas -->
         <v-row v-if="detectionResult.damagedAreas && detectionResult.damagedAreas.length > 0" class="mt-4">
           <v-col cols="12">
-            <v-card variant="outlined">
+            <v-card >
               <v-card-title class="text-subtitle-1">
                 Tespit Edilen Hasar Bölgeleri ({{ detectionResult.damagedAreas.length }})
               </v-card-title>
@@ -214,7 +214,7 @@
         <!-- Verification Actions -->
         <v-row v-if="detectionResult.status === 'completed'" class="mt-4">
           <v-col cols="12">
-            <v-card variant="outlined" color="warning">
+            <v-card  color="warning">
               <v-card-title class="text-subtitle-1">İnsan Doğrulaması Gerekli</v-card-title>
               <v-card-text>
                 <v-textarea

@@ -109,7 +109,7 @@
         <v-window-item value="new">
           <div class="reservation-new-page">
             <!-- Wizard Steps Indicator -->
-            <v-card variant="outlined" class="mb-4">
+            <v-card  class="mb-4">
               <v-card-text class="pa-4">
                 <v-stepper v-model="currentStep" alt-labels>
                   <v-stepper-header>
@@ -130,7 +130,7 @@
             </v-card>
 
             <!-- Step 1: Lokasyon & Tarih -->
-            <v-card variant="outlined" class="mb-4" v-if="currentStep === 1">
+            <v-card  class="mb-4" v-if="currentStep === 1">
               <v-card-title class="pa-4 bg-primary text-white">
                 <v-icon icon="mdi-calendar-marker" class="mr-2" />
                 Lokasyon & Tarih Bilgileri
@@ -147,7 +147,7 @@
                       item-value="value"
                       label="Para Birimi"
                       density="comfortable"
-                      variant="outlined"
+                      
                       hide-details
                     >
                       <template #prepend-inner>
@@ -163,7 +163,7 @@
                       item-value="value"
                       label="Rezervasyon Kaynağı"
                       density="comfortable"
-                      variant="outlined"
+                      
                       hide-details
                     >
                       <template #prepend-inner>
@@ -187,7 +187,7 @@
                     label="Alış Yeri Seçiniz"
                     placeholder="Alış Yeri Seçiniz"
                     density="comfortable"
-                    variant="outlined"
+                    
                     prepend-inner-icon="mdi-map-marker"
                     hide-details
                     class="mb-3"
@@ -249,7 +249,7 @@
                         type="date"
                         label="Tarih"
                         density="comfortable"
-                        variant="outlined"
+                        
                         prepend-inner-icon="mdi-calendar"
                         hide-details
                       />
@@ -260,7 +260,7 @@
                         type="time"
                         label="Saat"
                         density="comfortable"
-                        variant="outlined"
+                        
                         prepend-inner-icon="mdi-clock-outline"
                         hide-details
                       />
@@ -281,7 +281,7 @@
                         type="date"
                         label="Dönüş Tarihi"
                         density="comfortable"
-                        variant="outlined"
+                        
                         prepend-inner-icon="mdi-calendar"
                         hide-details
                       />
@@ -292,7 +292,7 @@
                         type="time"
                         label="Dönüş Saati"
                         density="comfortable"
-                        variant="outlined"
+                        
                         prepend-inner-icon="mdi-clock-outline"
                         hide-details
                       />
@@ -325,7 +325,7 @@
                     label="Dönüş Yeri Seçiniz"
                     placeholder="Dönüş Yeri Seçiniz"
                     density="comfortable"
-                    variant="outlined"
+                    
                     prepend-inner-icon="mdi-map-marker-check"
                     hide-details
                     :search="locationSearchQuery"
@@ -397,7 +397,7 @@
             </v-card>
 
             <!-- Step 2: Araç Seçimi -->
-            <v-card variant="outlined" class="mb-4" v-if="currentStep === 2">
+            <v-card  class="mb-4" v-if="currentStep === 2">
               <v-card-title class="pa-4 bg-primary text-white d-flex align-center justify-space-between">
                 <div class="d-flex align-center">
                   <v-icon icon="mdi-car" class="mr-2" />
@@ -432,7 +432,7 @@
                     </div>
                   </template>
                   <template #item.plate="{ item }">
-                    <v-chip size="small" variant="outlined" color="primary">
+                    <v-chip size="small"  color="primary">
                       {{ item.plate || '-' }}
                     </v-chip>
                   </template>
@@ -464,7 +464,7 @@
             </v-card>
 
             <!-- Step 3: Ekstra Hizmetler -->
-            <v-card variant="outlined" class="mb-4" v-if="currentStep === 3">
+            <v-card  class="mb-4" v-if="currentStep === 3">
               <v-card-title class="pa-4 bg-primary text-white d-flex align-center justify-space-between">
                 <div class="d-flex align-center">
                   <v-icon icon="mdi-star-plus" class="mr-2" />
@@ -484,7 +484,7 @@
                     :key="extra.id"
                   >
                     <v-card
-                      variant="outlined"
+                      
                       :class="{ 'border-primary': isExtraSelected(extra.id) }"
                       class="extra-card"
                       @click="toggleExtra(extra)"
@@ -546,7 +546,7 @@
             </v-card>
 
             <!-- Step 4: Rezervasyon Özeti -->
-            <v-card variant="outlined" class="mb-4" v-if="currentStep === 4">
+            <v-card  class="mb-4" v-if="currentStep === 4">
               <v-card-title class="pa-4 bg-primary text-white d-flex align-center justify-space-between">
                 <div class="d-flex align-center">
                   <v-icon icon="mdi-file-document-outline" class="mr-2" />
@@ -559,7 +559,7 @@
                 <v-row>
                   <!-- Sol Kolon: Rezervasyon Detayları -->
                   <v-col cols="12" md="6">
-                    <v-card variant="outlined" class="mb-4">
+                    <v-card  class="mb-4">
                       <v-card-title class="pa-3 bg-grey-lighten-4">
                         <h3 class="text-subtitle-1 font-weight-bold">Rezervasyon Detayları</h3>
                         <v-spacer />
@@ -592,7 +592,7 @@
                       </v-card-text>
                     </v-card>
 
-                    <v-card variant="outlined" class="mb-4">
+                    <v-card  class="mb-4">
                       <v-card-title class="pa-3 bg-grey-lighten-4">
                         <h3 class="text-subtitle-1 font-weight-bold">Seçilen Araç</h3>
                         <v-spacer />
@@ -609,7 +609,7 @@
                             <div class="text-body-2 text-medium-emphasis">
                               {{ selectedVehicle.brandName }} | {{ selectedVehicle.modelName }}
                             </div>
-                            <v-chip size="small" variant="outlined" color="primary" class="mt-1">
+                            <v-chip size="small"  color="primary" class="mt-1">
                               {{ selectedVehicle.plate || '-' }}
                             </v-chip>
                           </div>
@@ -617,7 +617,7 @@
                       </v-card-text>
                     </v-card>
 
-                    <v-card variant="outlined" v-if="selectedExtras.length > 0">
+                    <v-card  v-if="selectedExtras.length > 0">
                       <v-card-title class="pa-3 bg-grey-lighten-4">
                         <h3 class="text-subtitle-1 font-weight-bold">Ekstra Hizmetler</h3>
                         <v-spacer />
@@ -640,7 +640,7 @@
 
                   <!-- Sağ Kolon: Fiyat Detayları -->
                   <v-col cols="12" md="6">
-                    <v-card variant="outlined">
+                    <v-card >
                       <v-card-title class="pa-3 bg-grey-lighten-4">
                         <h3 class="text-subtitle-1 font-weight-bold">Fiyat Detayları</h3>
                       </v-card-title>
@@ -737,7 +737,7 @@
 
                 <div class="mt-4 d-flex justify-end gap-2">
                   <v-btn
-                    variant="outlined"
+                    
                     size="large"
                     prepend-icon="mdi-arrow-left"
                     @click="currentStep = 3"
@@ -757,7 +757,7 @@
             </v-card>
 
             <!-- Step 5: Müşteri Bilgileri -->
-            <v-card variant="outlined" class="mb-4" v-if="currentStep === 5">
+            <v-card  class="mb-4" v-if="currentStep === 5">
               <v-card-title class="pa-4 bg-primary text-white d-flex align-center justify-space-between">
                 <div class="d-flex align-center">
                   <v-icon icon="mdi-account" class="mr-2" />
@@ -775,7 +775,7 @@
                     item-value="id"
                     label="Müşteri Seçimi"
                     density="comfortable"
-                    variant="outlined"
+                    
                     prepend-inner-icon="mdi-account-search"
                     hide-details
                     class="flex-grow-1"
@@ -833,7 +833,7 @@
 
                 <!-- Müşteri Bilgileri Düzenleme Formu -->
                 <v-expand-transition>
-                  <v-card variant="outlined" v-if="reservationForm.customerId" class="mb-4">
+                  <v-card  v-if="reservationForm.customerId" class="mb-4">
                     <v-card-title class="pa-3 bg-grey-lighten-4">
                       <h3 class="text-subtitle-1 font-weight-bold">Müşteri Bilgileri</h3>
                     </v-card-title>
@@ -845,7 +845,7 @@
                             v-model="customerInfo.country"
                             label="Ülke"
                             density="compact"
-                            variant="outlined"
+                            
                             hide-details
                           />
                         </v-col>
@@ -854,7 +854,7 @@
                             v-model="customerInfo.fullName"
                             label="Müşteri Adı"
                             density="compact"
-                            variant="outlined"
+                            
                             hide-details
                           />
                         </v-col>
@@ -863,7 +863,7 @@
                             v-model="customerInfo.email"
                             label="Email"
                             density="compact"
-                            variant="outlined"
+                            
                             hide-details
                           />
                         </v-col>
@@ -872,7 +872,7 @@
                             v-model="customerInfo.mobile"
                             label="Mobil"
                             density="compact"
-                            variant="outlined"
+                            
                             hide-details
                           />
                         </v-col>
@@ -881,7 +881,7 @@
                             v-model="customerInfo.phone"
                             label="Tel"
                             density="compact"
-                            variant="outlined"
+                            
                             hide-details
                           />
                         </v-col>
@@ -890,7 +890,7 @@
                             v-model="customerInfo.birthDate"
                             label="Doğum Tarihi"
                             density="compact"
-                            variant="outlined"
+                            
                             hide-details
                           />
                         </v-col>
@@ -906,7 +906,7 @@
                             item-value="value"
                             label="Cinsiyet"
                             density="compact"
-                            variant="outlined"
+                            
                             hide-details
                           />
                         </v-col>
@@ -917,7 +917,7 @@
 
                 <div class="mt-4 d-flex justify-end gap-2">
                   <v-btn
-                    variant="outlined"
+                    
                     size="large"
                     prepend-icon="mdi-arrow-left"
                     @click="currentStep = 4"
@@ -938,7 +938,7 @@
             </v-card>
 
             <!-- Step 6: Ödeme -->
-            <v-card variant="outlined" class="mb-4" v-if="currentStep === 6">
+            <v-card  class="mb-4" v-if="currentStep === 6">
               <v-card-title class="pa-4 bg-primary text-white d-flex align-center justify-space-between">
                 <div class="d-flex align-center">
                   <v-icon icon="mdi-credit-card" class="mr-2" />
@@ -950,7 +950,7 @@
               <v-card-text class="pa-6">
                 <v-row>
                   <v-col cols="12" md="6">
-                    <v-card variant="outlined" class="mb-4">
+                    <v-card  class="mb-4">
                       <v-card-title class="pa-3 bg-grey-lighten-4">
                         <h3 class="text-subtitle-1 font-weight-bold">Ödeme Yöntemi</h3>
                       </v-card-title>
@@ -975,7 +975,7 @@
                       </v-card-text>
                     </v-card>
 
-                    <v-card variant="outlined">
+                    <v-card >
                       <v-card-title class="pa-3 bg-grey-lighten-4">
                         <h3 class="text-subtitle-1 font-weight-bold">Fiyat Özeti</h3>
                       </v-card-title>
@@ -995,7 +995,7 @@
                                 v-model="reservationForm.discountedAmount"
                                 type="number"
                                 density="compact"
-                                variant="outlined"
+                                
                                 hide-details
                                 :suffix="getCurrencySymbol(reservationForm.currencyCode)"
                                 style="max-width: 150px;"
@@ -1014,7 +1014,7 @@
                     </v-card>
                   </v-col>
                   <v-col cols="12" md="6">
-                    <v-card variant="outlined">
+                    <v-card >
                       <v-card-title class="pa-3 bg-grey-lighten-4">
                         <h3 class="text-subtitle-1 font-weight-bold">Rezervasyon Özeti</h3>
                       </v-card-title>
@@ -1046,7 +1046,7 @@
 
                 <div class="mt-4 d-flex justify-end gap-2">
                   <v-btn
-                    variant="outlined"
+                    
                     size="large"
                     prepend-icon="mdi-arrow-left"
                     @click="currentStep = 5"

@@ -2,18 +2,19 @@
 
 Monorepo tasarımında Node.js (TypeORM) backend ve Vue.js frontend içeren çok kiracılı (multi-tenant) tur ve araç kiralama SaaS projesi.
 
-> 📚 **Kapsamlı Dokümantasyon:** Detaylı kurulum, modül dokümantasyonu, API referansı ve deployment kılavuzu için [DOCUMENTATION.md](./DOCUMENTATION.md) dosyasına bakın.
+## 📋 İçindekiler
 
-> 🚀 **Yeni Bilgisayarda Kurulum:** Projeyi başka bir bilgisayarda kurmak için [SETUP.md](./SETUP.md) dosyasına bakın.
+1. [Hızlı Başlangıç](#-hızlı-başlangıç)
+2. [Proje Yapısı](#-proje-yapısı)
+3. [Kurulum ve Yapılandırma](#-kurulum-ve-yapılandırma)
+4. [Modüller](#-modüller)
+5. [API Dokümantasyonu](#-api-dokümantasyonu)
+6. [Deployment](#-deployment)
+7. [Geliştirme Kılavuzu](#-geliştirme-kılavuzu)
+8. [Sorun Giderme](#-sorun-giderme)
+9. [Özellik Dokümantasyonları](#-özellik-dokümantasyonları)
 
-## 📁 Proje Yapısı
-
-```
-├── backend/          # Express + TypeORM tabanlı API
-├── frontend/         # Vue 3 + Vite yönetim paneli (Nginx ile servis edilir)
-├── infra/            # Docker Compose konfigürasyonu
-└── docker-datatabse-stack/  # Merkezi database servisleri (PostgreSQL, Redis, MongoDB, Elasticsearch)
-```
+---
 
 ## 🚀 Hızlı Başlangıç
 
@@ -70,7 +71,7 @@ cp ../backend/.env.example ../backend/.env
 docker-compose up -d --build
 ```
 
-### 4. Local Domain Yapılandırması (Manuel kurulum için)
+#### 4. Local Domain Yapılandırması
 
 Local development için `/etc/hosts` dosyasına tenant subdomain'lerini ekleyin:
 
@@ -86,7 +87,7 @@ Aşağıdaki satırları ekleyin:
 127.0.0.1 traefik.local.saastour360.test
 ```
 
-### 5. Uygulamaya Erişim
+#### 5. Uygulamaya Erişim
 
 **Multi-Tenant Subdomain ile (Traefik üzerinden):**
 - **Sunset Tenant**: http://sunset.local.saastour360.test:5001
@@ -103,7 +104,49 @@ Aşağıdaki satırları ekleyin:
 
 > **Not**: Local development için Traefik kullanıyorsanız, port mapping'ler (BACKEND_PORT, FRONTEND_PORT) artık kullanılmaz. Tüm trafik Traefik üzerinden yönlendirilir.
 
-## 🔧 Yapılandırma
+---
+
+## 📁 Proje Yapısı
+
+```
+saas_tour/
+├── backend/                    # Express + TypeORM tabanlı API
+│   ├── src/
+│   │   ├── modules/           # Modüler yapı
+│   │   │   ├── chat/          # Chat modülü
+│   │   │   ├── transfer/      # Transfer modülü
+│   │   │   ├── rentacar/      # Araç kiralama modülü
+│   │   │   ├── tenants/       # Tenant yönetimi
+│   │   │   └── shared/        # Paylaşılan modüller
+│   │   ├── config/            # Yapılandırma dosyaları
+│   │   ├── middleware/        # Express middleware'leri
+│   │   ├── routes/            # Route tanımlamaları
+│   │   ├── services/          # Business logic servisleri
+│   │   └── utils/             # Yardımcı fonksiyonlar
+│   ├── public/                # Static dosyalar (widget.js)
+│   └── .env                   # Environment variables
+├── frontend/                   # Vue 3 + Vite yönetim paneli
+│   ├── src/
+│   │   ├── views/             # Sayfa componentleri
+│   │   ├── components/        # Reusable componentler
+│   │   ├── stores/            # Pinia state management
+│   │   └── modules/           # Utility modülleri
+│   └── nginx/                 # Nginx konfigürasyonu
+├── mobile/                     # React Native mobile app (Operations)
+├── infra/                      # Docker Compose konfigürasyonu
+│   ├── docker-compose.yml     # Ana compose dosyası
+│   └── traefik/               # Traefik reverse proxy
+├── docker-datatabse-stack/     # Merkezi database servisleri
+│   └── docker-compose.yml     # PostgreSQL, Redis, MongoDB, Elasticsearch
+├── scripts/                    # Utility scripts
+│   ├── sh/                    # Shell scripts (deploy.sh hariç)
+│   └── sql/                   # SQL scripts
+└── deploy.sh                   # Ana deployment script
+```
+
+---
+
+## ⚙️ Kurulum ve Yapılandırma
 
 ### Backend Environment Variables
 
@@ -141,13 +184,83 @@ export NODE_ENV=production      # Default: development
 export DB_USERNAME=tour_admin
 export DB_PASSWORD=tour_admin
 export DB_NAME=tour_saas
-
-# Nginx Proxy (production için)
-export VIRTUAL_HOST=saas.local
-export LETSENCRYPT_HOST=saas.local
-export LETSENCRYPT_EMAIL=admin@example.com
-export PROXY_NETWORK_NAME=nginx-proxy-cloudflare-full_default
 ```
+
+### Database Schema
+
+Production'da otomatik migration çalıştırılır. İlk kurulum için:
+
+```bash
+# backend/.env dosyasına ekleyin:
+DB_SYNC=true
+```
+
+Şema oluşturulduktan sonra `DB_SYNC` satırını kaldırın veya false yapın.
+
+---
+
+## 📦 Modüller
+
+### Backend Modülleri
+
+- **Tenants**: Çok kiracılı yapı yönetimi
+- **Destinations**: Turizm bölgeleri
+- **Hotels**: Otel yönetimi
+- **Blogs**: Blog yönetimi
+- **Reservations**: Rezervasyon yönetimi
+- **Tours**: Tur paketleri ve yönetimi
+- **Rentacar**: Araç kiralama ve yönetimi
+- **Operations**: Operasyon yönetimi
+- **Chat**: Live chat modülü
+- **Transfer**: VIP transfer modülü
+- **Marketplace**: Tenant marketplace sistemi
+
+### Frontend Sayfaları
+
+- **Dashboard**: Ana panel
+- **Tours**: Tur yönetimi
+- **Rentacar**: Araç kiralama yönetimi
+- **Reservations**: Rezervasyon yönetimi
+- **CRM**: Müşteri yönetimi
+- **Blogs**: Blog yönetimi
+- **Operations**: Operasyon yönetimi (çıkış/dönüş)
+- **Settings**: Ayarlar
+
+---
+
+## 📡 API Dokümantasyonu
+
+### Base URL
+
+Tüm API istekleri şu base URL üzerinden yapılır:
+```
+https://api.saastour360.com/api
+```
+
+### Authentication
+
+Tüm authenticated endpoint'ler için JWT token kullanılır:
+```
+Authorization: Bearer <token>
+```
+
+### Ana Endpoint Kategorileri
+
+- **Authentication**: `/api/auth/*`
+- **Tours**: `/api/tours/*`
+- **Rentacar**: `/api/rentacar/*`
+- **Reservations**: `/api/reservations/*`
+- **Customers**: `/api/customers/*`
+- **Operations**: `/api/ops/*`
+- **Settings**: `/api/settings/*`
+
+Detaylı API dokümantasyonu için Swagger UI'yi kullanın:
+- **Local**: http://localhost:4001/api/docs/ui
+- **Production**: https://api.saastour360.com/api/docs/ui
+
+Postman Collection: `postman/SaaS-Tour-API.postman_collection.json`
+
+---
 
 ## 🐳 Docker Compose Kullanımı
 
@@ -164,61 +277,6 @@ Bu proje **multi-tenant wildcard subdomain** mimarisi kullanmaktadır:
 - `sunset.saastour360.com` → Sunset tenant (Production)
 - `berg.saastour360.com` → Berg tenant (Production)
 - `sunset.local.saastour360.test` → Sunset tenant (Local Development)
-
-### Local Development
-
-**1. Traefik'i başlat:**
-```bash
-# Docker web network'ünü oluştur (eğer yoksa)
-docker network create web
-
-# Traefik'i başlat
-cd infra/traefik
-docker-compose up -d
-```
-
-**2. Backend ve Frontend'i başlat:**
-```bash
-cd infra
-docker-compose up -d --build
-```
-
-**3. /etc/hosts dosyasını yapılandır:**
-```bash
-sudo nano /etc/hosts
-# Aşağıdaki satırları ekleyin:
-127.0.0.1 sunset.local.saastour360.test
-127.0.0.1 berg.local.saastour360.test
-127.0.0.1 traefik.local.saastour360.test
-```
-
-**4. Tarayıcıda test edin:**
-- http://sunset.local.saastour360.test:5001 (Traefik üzerinden)
-- http://berg.local.saastour360.test:5001 (Traefik üzerinden)
-- http://localhost:9001 (Frontend - direkt erişim)
-- http://localhost:4001/api (Backend API - direkt erişim)
-- http://localhost:8080 (Traefik Dashboard)
-
-### Production
-
-**1. Traefik'i başlat:**
-```bash
-cd infra/traefik
-docker-compose up -d
-```
-
-**2. Backend ve Frontend'i başlat:**
-```bash
-cd infra
-export NODE_ENV=production
-docker-compose up -d --build
-```
-
-**3. DNS yapılandırması:**
-- Wildcard DNS kaydı: `*.saastour360.com` → Server IP
-- Production'da Traefik 80/443 portlarında çalışır (standart HTTP/HTTPS)
-- Local'de Traefik 5001/5443 portlarında çalışır (çakışma önleme)
-- Traefik otomatik olarak Let's Encrypt SSL sertifikası alacaktır
 
 ### Yeni Tenant Ekleme
 
@@ -254,135 +312,7 @@ Yeni bir tenant eklemek için:
 
 > **Önemli:** Tenant slug'ı sadece küçük harf, rakam ve tire (-) içerebilir. Regex pattern: `^[a-z0-9-]+$`
 
-### Komutlar
-
-```bash
-# Container'ları başlat
-docker-compose up -d
-
-# Container'ları durdur
-docker-compose down
-
-# Logları görüntüle
-docker-compose logs -f
-
-# Container durumunu kontrol et
-docker-compose ps
-
-# Belirli bir service'i yeniden başlat
-docker-compose restart backend
-docker-compose restart frontend
-```
-
-## 📦 Backend
-
-### Modüller
-
-- **Tenants**: Çok kiracılı yapı yönetimi
-- **Destinations**: Turizm bölgeleri
-- **Hotels**: Otel yönetimi
-- **Blogs**: Blog yönetimi
-- **Reservations**: Rezervasyon yönetimi
-- **Tours**: Tur paketleri ve yönetimi
-- **Rentacar**: Araç kiralama ve yönetimi
-- **Operations**: Operasyon yönetimi
-
-### Geliştirme
-
-```bash
-cd backend
-npm install
-npm run dev        # Development mode (ts-node-dev)
-npm run build      # Build
-npm start          # Production mode
-```
-
-### Database Schema
-
-Production'da otomatik migration çalıştırılır. İlk kurulum için:
-
-```bash
-# backend/.env dosyasına ekleyin:
-DB_SYNC=true
-```
-
-Şema oluşturulduktan sonra `DB_SYNC` satırını kaldırın veya false yapın.
-
-### Import Scripts
-
-#### Destinasyon Import
-
-```bash
-cd backend
-npm run import:destinations
-```
-
-Tüm Türkiye'deki turizm bölgelerini (Istanbul, Antalya, Bodrum, vb.) RapidAPI'den import eder.
-
-#### Otel Import
-
-```bash
-cd backend
-npm run import:hotels -- --city Antalya --limit 100 --radius 5
-```
-
-Parametreler:
-- `--city`: Şehir adı (Antalya, Side, Kemer, vb.)
-- `--limit`: Maksimum sonuç sayısı (default: 50)
-- `--radius`: Yarıçap (km) (default: 5)
-
-## 🎨 Frontend
-
-### Teknoloji Stack
-
-- Vue 3 (Composition API)
-- Vite
-- Vuetify 3
-- Vue Router
-- Axios
-
-### Geliştirme
-
-```bash
-cd frontend
-npm install
-npm run dev        # Development server
-npm run build      # Production build
-```
-
-### Yapı
-
-- **Dashboard**: Ana panel
-- **Tours**: Tur yönetimi
-- **Rentacar**: Araç kiralama yönetimi
-- **Reservations**: Rezervasyon yönetimi
-- **CRM**: Müşteri yönetimi
-- **Blogs**: Blog yönetimi
-
-## 🔐 Güvenlik
-
-- JWT tabanlı authentication
-- Multi-tenant data isolation
-- Environment variable'lar ile hassas bilgilerin korunması
-- Production'da `synchronize: false` (migration'lar kullanılır)
-
-## 📡 API Endpoints
-
-### Authentication
-- `POST /api/auth/login` - Giriş
-- `POST /api/auth/register` - Kayıt
-
-### Tours
-- `GET /api/tours` - Tur listesi
-- `POST /api/tours` - Yeni tur oluştur
-- `GET /api/tours/:id` - Tur detayı
-- `PUT /api/tours/:id` - Tur güncelle
-- `DELETE /api/tours/:id` - Tur sil
-
-### Rentacar
-- `GET /api/rentacar/vehicles` - Araç listesi
-- `GET /api/rentacar/locations` - Lokasyon listesi
-- `POST /api/rentacar/reservations` - Rezervasyon oluştur
+---
 
 ## 🌐 Production Deployment
 
@@ -431,6 +361,8 @@ docker-compose logs -f backend
 docker-compose logs -f frontend
 ```
 
+---
+
 ## 🔧 Sorun Giderme
 
 ### Database Bağlantı Hatası
@@ -467,6 +399,55 @@ export FRONTEND_PORT=9002
 docker-compose up -d
 ```
 
+### WebSocket Bağlantı Sorunları
+
+WebSocket bağlantı sorunları için:
+- Cloudflare DNS ayarlarını kontrol edin (Proxy status: Proxied)
+- Socket.io otomatik olarak polling'e düşer (WebSocket başarısız olsa bile çalışır)
+- Detaylı bilgi için: `WEBSOCKET_TROUBLESHOOTING.md` (scripts klasöründe)
+
+---
+
+## 📚 Özellik Dokümantasyonları
+
+### Kampanya Sistemi
+Rentacar kampanya/discount sistemi. Detaylar: `CAMPAIGN_SYSTEM_IMPLEMENTATION.md` (scripts klasöründe)
+
+### ParaPuan & Kupon Sistemi
+Loyalty points ve coupon code sistemi. Detaylar: `PARAPUAN_COUPON_SYSTEM_IMPLEMENTATION.md` (scripts klasöründe)
+
+### E-Fatura Sistemi
+Tenant-based invoicing sistemi. Detaylar: `INVOICE_SYSTEM_IMPLEMENTATION.md` (scripts klasöründe)
+
+### Contract Builder
+Live contract generation sistemi. Detaylar: `CONTRACT_BUILDER_IMPLEMENTATION.md` (scripts klasöründe)
+
+### Pricing Intelligence
+Smart pricing & occupancy insight sistemi. Detaylar: `PRICING_INTELLIGENCE_IMPLEMENTATION.md` (scripts klasöründe)
+
+### Tenant Marketplace
+Internal tenant marketplace sistemi. Detaylar: `TENANT_MARKETPLACE_IMPLEMENTATION.md` (scripts klasöründe)
+
+### Staff Performance
+Staff performance scoring sistemi. Detaylar: `STAFF_PERFORMANCE_IMPLEMENTATION.md` (scripts klasöründe)
+
+### Mobile App
+React Native operations app. Detaylar: `mobile/README.md`
+
+---
+
+## 🔐 Güvenlik
+
+- JWT tabanlı authentication
+- Multi-tenant data isolation
+- Environment variable'lar ile hassas bilgilerin korunması
+- Production'da `synchronize: false` (migration'lar kullanılır)
+- SQL injection koruması (TypeORM)
+- XSS koruması
+- CORS yapılandırması
+
+---
+
 ## 📝 Notlar
 
 - Database schema production'da otomatik migration ile yönetilir
@@ -474,6 +455,11 @@ docker-compose up -d
 - Local ve production aynı `docker-compose.yml` dosyasını kullanır
 - Environment variable'lar ile farklı ortamlar yapılandırılabilir
 - Frontend Nginx ile servis edilir ve backend'e reverse proxy yapar
+- Tüm dokümantasyon dosyaları `scripts/` klasöründe organize edilmiştir
+- SQL script'leri `scripts/sql/` klasöründe
+- Shell script'leri (deploy.sh hariç) `scripts/sh/` klasöründe
+
+---
 
 ## 📄 Lisans
 

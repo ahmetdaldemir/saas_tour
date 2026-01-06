@@ -61,7 +61,7 @@
                   prepend-inner-icon="mdi-account"
                   :rules="[(v: string) => !!v || 'Ad soyad gereklidir']"
                   required
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details="auto"
                 />
@@ -74,7 +74,7 @@
                   prepend-inner-icon="mdi-phone"
                   :rules="[(v: string) => !!v || 'Telefon gereklidir']"
                   required
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details="auto"
                 />
@@ -86,7 +86,7 @@
                   placeholder="E-posta adresi giriniz"
                   type="email"
                   prepend-inner-icon="mdi-email"
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details
                 />
@@ -99,7 +99,7 @@
                   prepend-inner-icon="mdi-card-account-details"
                   :rules="[(v: string) => !!v || 'Lisans no gereklidir']"
                   required
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details="auto"
                 />
@@ -111,7 +111,7 @@
                   type="date"
                   placeholder="Tarih seçiniz"
                   prepend-inner-icon="mdi-calendar"
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details
                 />
@@ -125,7 +125,7 @@
                   multiple
                   chips
                   prepend-inner-icon="mdi-translate"
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details
                 />
@@ -158,7 +158,7 @@
                   v-model="form.notes"
                   placeholder="Notlar giriniz..."
                   rows="3"
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details
                 />

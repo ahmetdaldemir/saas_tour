@@ -116,7 +116,7 @@
                 label="Durum"
                 item-title="label"
                 item-value="value"
-                variant="outlined"
+                
                 density="comfortable"
               />
             </v-col>
@@ -142,7 +142,7 @@
                 label="Kaç Gün Sonra Gönderilsin?"
                 type="number"
                 min="0"
-                variant="outlined"
+                
                 density="comfortable"
               />
             </v-col>
@@ -186,7 +186,7 @@
                       label="Anket Başlığı"
                       :rules="[(v: string) => !!v || 'Başlık gereklidir']"
                       required
-                      variant="outlined"
+                      
                       density="comfortable"
                     />
                   </v-col>
@@ -195,7 +195,7 @@
                       v-model="formByLanguage[lang.id].description"
                       label="Açıklama"
                       rows="3"
-                      variant="outlined"
+                      
                       density="comfortable"
                     />
                   </v-col>
@@ -203,7 +203,7 @@
                     <v-text-field
                       v-model="formByLanguage[lang.id].emailSubject"
                       label="E-posta Konusu"
-                      variant="outlined"
+                      
                       density="comfortable"
                     />
                   </v-col>
@@ -212,7 +212,7 @@
                       v-model="formByLanguage[lang.id].emailTemplate"
                       label="E-posta Şablonu (HTML)"
                       rows="8"
-                      variant="outlined"
+                      
                       density="comfortable"
                     />
                   </v-col>

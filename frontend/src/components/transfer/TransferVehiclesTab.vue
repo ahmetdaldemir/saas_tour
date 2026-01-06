@@ -62,7 +62,7 @@
                   prepend-inner-icon="mdi-car"
                   :rules="[(v: string) => !!v || 'Araç adı gereklidir']"
                   required
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details="auto"
                 />
@@ -78,7 +78,7 @@
                   prepend-inner-icon="mdi-shape"
                   :rules="[(v: string) => !!v || 'Araç tipi gereklidir']"
                   required
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details="auto"
                 />
@@ -92,7 +92,7 @@
                   prepend-inner-icon="mdi-account"
                   :rules="[(v: number) => (v && v > 0) || 'Yolcu kapasitesi gereklidir']"
                   required
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details="auto"
                 />
@@ -106,7 +106,7 @@
                   prepend-inner-icon="mdi-bag-suitcase"
                   :rules="[(v: number) => (v && v >= 0) || 'Bagaj kapasitesi gereklidir']"
                   required
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details="auto"
                 />
@@ -133,7 +133,7 @@
                   multiple
                   chips
                   prepend-inner-icon="mdi-star"
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details
                 />
@@ -144,7 +144,7 @@
                   v-model="form.imageUrl"
                   placeholder="https://..."
                   prepend-inner-icon="mdi-image"
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details
                 />
@@ -166,7 +166,7 @@
                   v-model="form.description"
                   placeholder="Açıklama giriniz..."
                   rows="3"
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details
                 />

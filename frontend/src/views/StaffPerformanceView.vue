@@ -206,7 +206,7 @@
 
           <v-row>
             <v-col cols="12" md="4">
-              <v-card variant="outlined">
+              <v-card >
                 <v-card-text>
                   <div class="text-caption text-grey">Timeliness Score</div>
                   <div class="text-h4">{{ selectedScore.timelinessScore.toFixed(1) }}</div>
@@ -220,7 +220,7 @@
               </v-card>
             </v-col>
             <v-col cols="12" md="4">
-              <v-card variant="outlined">
+              <v-card >
                 <v-card-text>
                   <div class="text-caption text-grey">Completeness Score</div>
                   <div class="text-h4">{{ selectedScore.completenessScore.toFixed(1) }}</div>
@@ -234,7 +234,7 @@
               </v-card>
             </v-col>
             <v-col cols="12" md="4">
-              <v-card variant="outlined">
+              <v-card >
                 <v-card-text>
                   <div class="text-caption text-grey">Accuracy Score</div>
                   <div class="text-h4">{{ selectedScore.accuracyScore.toFixed(1) }}</div>
@@ -251,7 +251,7 @@
 
           <v-row class="mt-4">
             <v-col cols="12">
-              <v-card variant="outlined">
+              <v-card >
                 <v-card-title class="text-subtitle-1">Task Metrics</v-card-title>
                 <v-card-text>
                   <v-simple-table>

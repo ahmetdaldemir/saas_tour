@@ -2,47 +2,60 @@
   <div>
     <v-row>
       <v-col cols="12" md="5">
-        <v-card elevation="2" class="pa-6 mb-4">
+        <v-card elevation="2" class="pa-6 mb-4 admin-form-scope">
           <h2 class="text-h6 font-weight-bold mb-4">{{ editingCountry ? 'Ülke Düzenle' : 'Yeni Ülke Ekle' }}</h2>
           <v-form @submit.prevent="handleSave" ref="formRef" v-model="isValid">
-            <v-text-field 
-              v-model="form.name" 
-              label="Ülke Adı" 
-              placeholder="Türkiye" 
-              prepend-inner-icon="mdi-earth" 
-              required 
-              :rules="[v => !!v || 'Ülke adı gereklidir']"
-            />
-            <v-text-field 
-              v-model="form.code" 
-              label="Ülke Kodu" 
-              placeholder="TR" 
-              prepend-inner-icon="mdi-flag" 
-              required 
-              :rules="[v => !!v || 'Ülke kodu gereklidir', v => v.length === 2 || 'Ülke kodu 2 karakter olmalıdır']"
-              maxlength="2"
-              @input="form.code = form.code.toUpperCase()"
-            />
-            <v-text-field 
-              v-model="form.phoneCode" 
-              label="Telefon Kodu" 
-              placeholder="+90" 
-              prepend-inner-icon="mdi-phone" 
-              required 
-              :rules="[v => !!v || 'Telefon kodu gereklidir']"
-            />
-            <v-text-field 
-              v-model="form.flag" 
-              label="Bayrak (Emoji veya URL)" 
-              placeholder="🇹🇷" 
-              prepend-inner-icon="mdi-flag-variant" 
-            />
+            <div class="mb-4">
+              <label class="form-label">Ülke Adı <span class="required">*</span></label>
+              <v-text-field 
+                v-model="form.name" 
+                placeholder="Türkiye" 
+                hide-details="auto"
+                
+                density="comfortable"
+                :rules="[v => !!v || 'Ülke adı gereklidir']"
+              />
+            </div>
+            <div class="mb-4">
+              <label class="form-label">Ülke Kodu <span class="required">*</span></label>
+              <v-text-field 
+                v-model="form.code" 
+                placeholder="TR" 
+                hide-details="auto"
+                
+                density="comfortable"
+                :rules="[v => !!v || 'Ülke kodu gereklidir', v => v.length === 2 || 'Ülke kodu 2 karakter olmalıdır']"
+                maxlength="2"
+                @input="form.code = form.code.toUpperCase()"
+              />
+            </div>
+            <div class="mb-4">
+              <label class="form-label">Telefon Kodu <span class="required">*</span></label>
+              <v-text-field 
+                v-model="form.phoneCode" 
+                placeholder="+90" 
+                hide-details="auto"
+                
+                density="comfortable"
+                :rules="[v => !!v || 'Telefon kodu gereklidir']"
+              />
+            </div>
+            <div class="mb-4">
+              <label class="form-label">Bayrak (Emoji veya URL)</label>
+              <v-text-field 
+                v-model="form.flag" 
+                placeholder="🇹🇷" 
+                hide-details="auto"
+                
+                density="comfortable"
+              />
+            </div>
             <v-switch v-model="form.isActive" color="primary" label="Aktif" inset />
             <div class="d-flex gap-2 mt-4">
               <v-btn color="primary" :loading="saving" type="submit">
                 {{ editingCountry ? 'Güncelle' : 'Kaydet' }}
               </v-btn>
-              <v-btn v-if="editingCountry" variant="outlined" @click="cancelEdit">İptal</v-btn>
+              <v-btn v-if="editingCountry"  @click="cancelEdit">İptal</v-btn>
             </div>
           </v-form>
           <v-alert v-if="error" type="error" variant="tonal" class="mt-4">{{ error }}</v-alert>
@@ -65,7 +78,7 @@
               <v-btn 
                 color="primary" 
                 prepend-icon="mdi-sync" 
-                variant="outlined"
+                
                 @click="syncCountries" 
                 :loading="syncing"
               >

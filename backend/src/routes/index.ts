@@ -31,6 +31,7 @@ import mailRouter from '../modules/shared/routes/mail.router';
 import countryRouter from '../modules/shared/routes/country.router';
 import financeRouter from '../modules/finance/routes/finance.router';
 import tenantUserRouter from '../modules/tenants/routes/tenant-user.router';
+import tenantMessageRouter from '../modules/tenants/routes/tenant-message.router';
 import { transferVehicleRouter } from '../modules/transfer/routes/transfer-vehicle.router';
 import { transferRouteRouter } from '../modules/transfer/routes/transfer-route.router';
 import { transferPricingRouter } from '../modules/transfer/routes/transfer-pricing.router';
@@ -68,6 +69,7 @@ export const registerRoutes = (app: Express) => {
   app.use('/api/pages', pageRouter);
   app.use('/api/tenants', tenantRouter);
   app.use('/api/tenant-users', tenantUserRouter);
+  app.use('/api/tenant-messages', tenantMessageRouter);
   app.use('/api/tours', tourRouter);
   app.use('/api/tour-features', tourFeatureRouter);
   // Register more specific routes FIRST to avoid route matching conflicts

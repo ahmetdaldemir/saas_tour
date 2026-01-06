@@ -137,4 +137,15 @@ export class AuthController {
       return res.status(400).json({ message: (error as Error).message });
     }
   }
+
+  static async logout(req: AuthenticatedRequest, res: Response) {
+    try {
+      // Logout is handled client-side by removing the token
+      // This endpoint can be used for server-side session invalidation if needed in the future
+      // For now, just return success
+      return res.json({ success: true, message: 'Logged out successfully' });
+    } catch (error) {
+      return res.status(400).json({ message: (error as Error).message });
+    }
+  }
 }

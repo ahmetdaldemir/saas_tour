@@ -151,7 +151,7 @@
                     </v-chip>
                   </template>
                   <template #item.category="{ item }">
-                    <v-chip size="small" variant="outlined">
+                    <v-chip size="small" >
                       {{ item.category }}
                     </v-chip>
                   </template>
@@ -241,7 +241,7 @@
                     md="6"
                     lg="6"
                   >
-                    <v-card variant="outlined" class="service-stats-card">
+                    <v-card  class="service-stats-card">
                       <v-card-title class="d-flex align-center justify-space-between">
                         <div class="d-flex align-center">
                           <v-chip
@@ -370,7 +370,7 @@
             <!-- Email Test Tab -->
             <v-window-item value="email-test">
               <v-card-text>
-                <v-card variant="outlined">
+                <v-card >
                   <v-card-title>
                     <v-icon icon="mdi-email-send" class="mr-2" />
                     Email Test Gönder
@@ -505,7 +505,7 @@
         <v-card-text>
           <v-row>
             <v-col cols="12" md="6">
-              <v-card variant="outlined">
+              <v-card >
                 <v-card-title>Bilgiler</v-card-title>
                 <v-card-text>
                   <div><strong>Slug:</strong> {{ selectedTenant.tenant.slug }}</div>
@@ -519,7 +519,7 @@
               </v-card>
             </v-col>
             <v-col cols="12" md="6">
-              <v-card variant="outlined">
+              <v-card >
                 <v-card-title>İstatistikler</v-card-title>
                 <v-card-text>
                   <div><strong>Rezervasyonlar:</strong> {{ selectedTenant.stats.reservations }}</div>
@@ -528,7 +528,7 @@
               </v-card>
             </v-col>
           </v-row>
-          <v-card class="mt-4" variant="outlined">
+          <v-card class="mt-4" >
             <v-card-title>Son Rezervasyonlar</v-card-title>
             <v-card-text>
               <v-list>

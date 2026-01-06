@@ -5,7 +5,7 @@
         <v-col cols="6" class="pr-1">
           <v-btn
             color="grey"
-            variant="outlined"
+            
             block
             size="large"
             :disabled="loading"

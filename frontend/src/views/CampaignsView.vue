@@ -151,9 +151,10 @@
               class="mb-4"
             />
 
+            <label class="form-label">Açıklama</label>
             <v-textarea
               v-model="form.description"
-              label="Açıklama"
+              placeholder="Açıklama giriniz"
               rows="3"
               class="mb-4"
             />

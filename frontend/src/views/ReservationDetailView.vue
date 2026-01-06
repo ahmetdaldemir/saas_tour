@@ -614,10 +614,12 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { http } from '../modules/http';
-import Swal from 'sweetalert2';
+import { useSnackbar } from '../composables/useSnackbar';
 import { useAuthStore } from '../stores/auth';
+import Swal from 'sweetalert2';
 
 const auth = useAuthStore();
+const { showSnackbar } = useSnackbar();
 
 interface Reservation {
   id: string;
@@ -968,25 +970,13 @@ const savePickup = async () => {
       // Sözleşme hatası alış kaydını engellemez, sadece log'la
     }
     
-    await Swal.fire({
-      icon: 'success',
-      title: 'Başarılı',
-      text: 'Alış işlemi başarıyla kaydedildi. Sözleşme yazdırılıyor...',
-      confirmButtonText: 'Tamam',
-      confirmButtonColor: '#2563eb',
-    });
+    showSnackbar('Alış işlemi başarıyla kaydedildi. Sözleşme yazdırılıyor...', 'success');
     
     // Rezervasyonu yeniden yükle
     await loadReservation();
   } catch (error: any) {
     console.error('Failed to save pickup:', error);
-    await Swal.fire({
-      icon: 'error',
-      title: 'Hata',
-      text: `Alış işlemi kaydedilemedi: ${error.response?.data?.message || error.message}`,
-      confirmButtonText: 'Tamam',
-      confirmButtonColor: '#dc2626',
-    });
+    showSnackbar(`Alış işlemi kaydedilemedi: ${error.response?.data?.message || error.message}`, 'error');
   }
 };
 
@@ -1105,25 +1095,13 @@ const saveReturn = async () => {
       // Hasar tespit hatası iade kaydını engellemez, sadece log'la
     }
     
-    await Swal.fire({
-      icon: 'success',
-      title: 'Başarılı',
-      text: 'İade işlemi başarıyla kaydedildi. Hasar tespit analizi tamamlandı.',
-      confirmButtonText: 'Tamam',
-      confirmButtonColor: '#2563eb',
-    });
+    showSnackbar('İade işlemi başarıyla kaydedildi. Hasar tespit analizi tamamlandı.', 'success');
     
     // Rezervasyonu yeniden yükle
     await loadReservation();
   } catch (error: any) {
     console.error('Failed to save return:', error);
-    await Swal.fire({
-      icon: 'error',
-      title: 'Hata',
-      text: `İade işlemi kaydedilemedi: ${error.response?.data?.message || error.message}`,
-      confirmButtonText: 'Tamam',
-      confirmButtonColor: '#dc2626',
-    });
+    showSnackbar(`İade işlemi kaydedilemedi: ${error.response?.data?.message || error.message}`, 'error');
   }
 };
 
@@ -1136,17 +1114,7 @@ const saveNote = async (type: 'internal' | 'customer') => {
     // Sessizce kaydet, kullanıcıya bildirim gösterme (blur event'inde)
   } catch (error: any) {
     console.error('Failed to save note:', error);
-    await Swal.fire({
-      icon: 'error',
-      title: 'Hata',
-      text: `Not kaydedilemedi: ${error.response?.data?.message || error.message}`,
-      confirmButtonText: 'Tamam',
-      confirmButtonColor: '#dc2626',
-      toast: true,
-      position: 'top-end',
-      showConfirmButton: false,
-      timer: 3000,
-    });
+    showSnackbar(`Not kaydedilemedi: ${error.response?.data?.message || error.message}`, 'error');
   }
 };
 
@@ -1250,25 +1218,13 @@ const addExtraCharge = async () => {
         recalculatePrice: false, // Manuel eklediğimiz için recalculate yapma
       });
       
-      await Swal.fire({
-        icon: 'success',
-        title: 'Başarılı',
-        text: 'Ekstra ücret başarıyla eklendi',
-        confirmButtonText: 'Tamam',
-        confirmButtonColor: '#2563eb',
-      });
+      showSnackbar('Ekstra ücret başarıyla eklendi', 'success');
       
       // Rezervasyonu yeniden yükle
       await loadReservation();
     } catch (error: any) {
       console.error('Failed to add extra charge:', error);
-      await Swal.fire({
-        icon: 'error',
-        title: 'Hata',
-        text: `Ekstra ücret eklenemedi: ${error.response?.data?.message || error.message}`,
-        confirmButtonText: 'Tamam',
-        confirmButtonColor: '#dc2626',
-      });
+      showSnackbar(`Ekstra ücret eklenemedi: ${error.response?.data?.message || error.message}`, 'error');
     }
   }
 };
@@ -1444,13 +1400,7 @@ const exportPDF = async () => {
     const url = `/api/reservations/${reservation.value.id}/pdf`;
     window.open(url, '_blank');
   } catch (error: any) {
-    await Swal.fire({
-      icon: 'error',
-      title: 'Hata',
-      text: `PDF indirilemedi: ${error.message}`,
-      confirmButtonText: 'Tamam',
-      confirmButtonColor: '#dc2626',
-    });
+    showSnackbar(`PDF indirilemedi: ${error.message}`, 'error');
   }
 };
 
@@ -1462,24 +1412,12 @@ const sendConfirmationEmail = async () => {
   
   try {
     await http.post(`/reservations/${reservation.value.id}/send-confirmation-email`);
-    await Swal.fire({
-      icon: 'success',
-      title: 'Başarılı',
-      text: 'Onay maili başarıyla gönderildi',
-      confirmButtonText: 'Tamam',
-      confirmButtonColor: '#2563eb',
-    });
+    showSnackbar('Onay maili başarıyla gönderildi', 'success');
     // Rezervasyonu yeniden yükle
     await loadReservation();
   } catch (error: any) {
     console.error('Failed to send confirmation email:', error);
-    await Swal.fire({
-      icon: 'error',
-      title: 'Hata',
-      text: `Onay maili gönderilemedi: ${error.response?.data?.message || error.message}`,
-      confirmButtonText: 'Tamam',
-      confirmButtonColor: '#dc2626',
-    });
+    showSnackbar(`Onay maili gönderilemedi: ${error.response?.data?.message || error.message}`, 'error');
   } finally {
     sendingEmail.value = false;
   }
@@ -1508,24 +1446,12 @@ const sendCancellationEmail = async () => {
   
   try {
     await http.post(`/reservations/${reservation.value.id}/send-cancellation-email`);
-    await Swal.fire({
-      icon: 'success',
-      title: 'Başarılı',
-      text: 'İptal maili başarıyla gönderildi',
-      confirmButtonText: 'Tamam',
-      confirmButtonColor: '#2563eb',
-    });
+    showSnackbar('İptal maili başarıyla gönderildi', 'success');
     // Rezervasyonu yeniden yükle
     await loadReservation();
   } catch (error: any) {
     console.error('Failed to send cancellation email:', error);
-    await Swal.fire({
-      icon: 'error',
-      title: 'Hata',
-      text: `İptal maili gönderilemedi: ${error.response?.data?.message || error.message}`,
-      confirmButtonText: 'Tamam',
-      confirmButtonColor: '#dc2626',
-    });
+    showSnackbar(`İptal maili gönderilemedi: ${error.response?.data?.message || error.message}`, 'error');
   } finally {
     sendingEmail.value = false;
   }
@@ -1557,13 +1483,7 @@ const changeVehicle = async () => {
   const dropoffLocationId = metadata?.dropoffLocationId;
   
   if (!checkIn || !checkOut || !pickupLocationId || !dropoffLocationId) {
-    await Swal.fire({
-      icon: 'warning',
-      title: 'Eksik Bilgi',
-      text: 'Rezervasyon tarihleri ve lokasyonları eksik. Önce bunları güncelleyin.',
-      confirmButtonText: 'Tamam',
-      confirmButtonColor: '#2563eb',
-    });
+    showSnackbar('Rezervasyon tarihleri ve lokasyonları eksik. Önce bunları güncelleyin.', 'warning');
     return;
   }
   
@@ -1679,23 +1599,11 @@ const changeVehicle = async () => {
         recalculatePrice: true,
       });
       
-      await Swal.fire({
-        icon: 'success',
-        title: 'Başarılı',
-        text: 'Araç başarıyla değiştirildi',
-        confirmButtonText: 'Tamam',
-        confirmButtonColor: '#2563eb',
-      });
+      showSnackbar('Araç başarıyla değiştirildi', 'success');
       
       await loadReservation();
     } catch (error: any) {
-      await Swal.fire({
-        icon: 'error',
-        title: 'Hata',
-        text: `Araç değiştirilemedi: ${error.response?.data?.message || error.message}`,
-        confirmButtonText: 'Tamam',
-        confirmButtonColor: '#dc2626',
-      });
+      showSnackbar(`Araç değiştirilemedi: ${error.response?.data?.message || error.message}`, 'error');
     }
   }
 };
@@ -1746,13 +1654,7 @@ const changeDate = async () => {
         recalculatePrice: reservation.value.type === 'rentacar',
       });
       
-      await Swal.fire({
-        icon: 'success',
-        title: 'Başarılı',
-        text: 'Tarihler başarıyla değiştirildi',
-        confirmButtonText: 'Tamam',
-        confirmButtonColor: '#2563eb',
-      });
+      showSnackbar('Tarihler başarıyla değiştirildi', 'success');
       
       await loadReservation();
     } catch (error: any) {
@@ -1829,24 +1731,12 @@ const changeLocation = async () => {
         },
       });
       
-      await Swal.fire({
-        icon: 'success',
-        title: 'Başarılı',
-        text: 'Lokasyonlar başarıyla değiştirildi',
-        confirmButtonText: 'Tamam',
-        confirmButtonColor: '#2563eb',
-      });
+      showSnackbar('Lokasyonlar başarıyla değiştirildi', 'success');
       
       await loadReservation();
     }
   } catch (error: any) {
-    await Swal.fire({
-      icon: 'error',
-      title: 'Hata',
-      text: `Lokasyonlar değiştirilemedi: ${error.response?.data?.message || error.message}`,
-      confirmButtonText: 'Tamam',
-      confirmButtonColor: '#dc2626',
-    });
+    showSnackbar(`Lokasyonlar değiştirilemedi: ${error.response?.data?.message || error.message}`, 'error');
   }
 };
 
@@ -1893,23 +1783,11 @@ const updateStatus = async () => {
         status: newStatus,
       });
       
-      await Swal.fire({
-        icon: 'success',
-        title: 'Başarılı',
-        text: 'Durum başarıyla güncellendi',
-        confirmButtonText: 'Tamam',
-        confirmButtonColor: '#2563eb',
-      });
+      showSnackbar('Durum başarıyla güncellendi', 'success');
       
       await loadReservation();
     } catch (error: any) {
-      await Swal.fire({
-        icon: 'error',
-        title: 'Hata',
-        text: `Durum güncellenemedi: ${error.response?.data?.message || error.message}`,
-        confirmButtonText: 'Tamam',
-        confirmButtonColor: '#dc2626',
-      });
+      showSnackbar(`Durum güncellenemedi: ${error.response?.data?.message || error.message}`, 'error');
     }
   }
 };

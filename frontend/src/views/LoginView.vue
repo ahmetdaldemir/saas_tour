@@ -11,7 +11,7 @@
               v-model="email"
               label="E-posta"
               type="email"
-              variant="outlined"
+              
               prepend-inner-icon="mdi-email"
               :rules="emailRules"
               required
@@ -21,7 +21,7 @@
               v-model="password"
               label="Şifre"
               :type="showPassword ? 'text' : 'password'"
-              variant="outlined"
+              
               prepend-inner-icon="mdi-lock"
               :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
               @click:append-inner="showPassword = !showPassword"

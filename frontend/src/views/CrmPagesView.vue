@@ -18,7 +18,7 @@
           <v-chip
             :value="null"
             filter
-            variant="outlined"
+            
           >
             Tümü
           </v-chip>
@@ -27,7 +27,7 @@
             :key="category.id"
             :value="category.id"
             filter
-            variant="outlined"
+            
           >
             {{ getCategoryName(category) }}
           </v-chip>

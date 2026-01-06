@@ -15,7 +15,7 @@
             prepend-icon="mdi-eye-off"
             @click="bulkDeactivate"
             :loading="bulkDeactivating"
-            variant="outlined"
+            
           >
             Pasif Yap ({{ selectedDestinations.length }})
           </v-btn>
@@ -25,7 +25,7 @@
             prepend-icon="mdi-eye"
             @click="bulkActivate"
             :loading="bulkActivating"
-            variant="outlined"
+            
           >
             Aktif Yap ({{ selectedDestinations.length }})
           </v-btn>
@@ -49,7 +49,7 @@
         v-model="searchQuery"
         prepend-inner-icon="mdi-magnify"
         label="Destinasyon ara..."
-        variant="outlined"
+        
         density="compact"
         clearable
         class="mb-4"
@@ -111,7 +111,7 @@
           <span class="text-h6">{{ dialogTitle }}</span>
           <v-btn icon="mdi-close" variant="text" @click="closeDialog" />
         </v-card-title>
-        <v-card-text>
+        <v-card-text class="admin-form-scope">
           <v-alert v-if="formError" type="error" variant="tonal" class="mb-4">{{ formError }}</v-alert>
           <v-form ref="formRef" v-model="isValid" @submit.prevent="handleSubmit">
             <!-- Language Tabs -->
@@ -198,7 +198,7 @@
                     v-model="imageFile"
                     label="Görsel Yükle"
                     prepend-inner-icon="mdi-image"
-                    variant="outlined"
+                    
                     density="comfortable"
                     accept="image/*"
                     :rules="[(v: any) => {
@@ -240,7 +240,7 @@
                   item-value="id"
                   label="Lokasyon"
                   prepend-inner-icon="mdi-map-marker"
-                  variant="outlined"
+                  
                   density="comfortable"
                   clearable
                   :loading="loadingLocations"

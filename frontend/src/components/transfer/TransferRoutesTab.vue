@@ -55,7 +55,7 @@
                   prepend-inner-icon="mdi-map-marker"
                   :rules="[(v: string) => !!v || 'Rota adı gereklidir']"
                   required
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details="auto"
                 />
@@ -71,7 +71,7 @@
                   prepend-inner-icon="mdi-routes"
                   :rules="[(v: string) => !!v || 'Rota tipi gereklidir']"
                   required
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details="auto"
                 />
@@ -83,7 +83,7 @@
                   type="number"
                   placeholder="Örn: 50"
                   prepend-inner-icon="mdi-road"
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details
                 />
@@ -95,7 +95,7 @@
                   type="number"
                   placeholder="Örn: 60"
                   prepend-inner-icon="mdi-clock"
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details
                 />
@@ -117,7 +117,7 @@
                   v-model="form.description"
                   placeholder="Açıklama giriniz..."
                   rows="3"
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details
                 />
@@ -136,7 +136,7 @@
                   prepend-inner-icon="mdi-map-marker"
                   :rules="[(v: string) => !!v || 'Çıkış noktası adı gereklidir']"
                   required
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details="auto"
                 />
@@ -150,7 +150,7 @@
                   item-value="value"
                   placeholder="Tip seçiniz"
                   prepend-inner-icon="mdi-shape"
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details
                 />
@@ -161,7 +161,7 @@
                   v-model="form.originAddress"
                   placeholder="Adres giriniz"
                   prepend-inner-icon="mdi-map"
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details
                 />
@@ -180,7 +180,7 @@
                   prepend-inner-icon="mdi-map-marker"
                   :rules="[(v: string) => !!v || 'Varış noktası adı gereklidir']"
                   required
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details="auto"
                 />
@@ -194,7 +194,7 @@
                   item-value="value"
                   placeholder="Tip seçiniz"
                   prepend-inner-icon="mdi-shape"
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details
                 />
@@ -205,7 +205,7 @@
                   v-model="form.destinationAddress"
                   placeholder="Adres giriniz"
                   prepend-inner-icon="mdi-map"
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details
                 />

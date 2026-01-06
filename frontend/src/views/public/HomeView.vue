@@ -202,7 +202,7 @@
                     item-title="label"
                     item-value="value"
                     label="Marka Seçiniz"
-                    variant="outlined"
+                    
                     density="compact"
                     clearable
                     hide-details
@@ -254,7 +254,7 @@
                 <!-- Reset Button -->
                 <v-btn
                   block
-                  variant="outlined"
+                  
                   color="primary"
                   prepend-icon="mdi-refresh"
                   @click="resetFilters"
@@ -283,7 +283,7 @@
                 item-title="label"
                 item-value="value"
                 label="Sırala"
-                variant="outlined"
+                
                 density="compact"
                 prepend-inner-icon="mdi-sort"
                 style="max-width: 200px;"

@@ -62,66 +62,79 @@
           {{ editingUser ? 'Kullanıcı Düzenle' : 'Yeni Kullanıcı Ekle' }}
         </v-card-title>
         <v-divider />
-        <v-card-text>
+        <v-card-text class="admin-form-scope">
           <v-form ref="formRef" v-model="formValid">
-            <v-text-field
-              v-model="form.name"
-              label="Ad Soyad"
-              :rules="[v => !!v || 'Ad soyad gereklidir']"
-              required
-              variant="outlined"
-              density="comfortable"
-              prepend-inner-icon="mdi-account"
-            />
-            <v-text-field
-              v-model="form.email"
-              label="E-posta"
-              type="email"
-              :rules="[
-                v => !!v || 'E-posta gereklidir',
-                v => /.+@.+\..+/.test(v) || 'Geçerli bir e-posta adresi giriniz'
-              ]"
-              required
-              variant="outlined"
-              density="comfortable"
-              prepend-inner-icon="mdi-email"
-            />
-            <v-text-field
-              v-model="form.password"
-              :label="editingUser ? 'Yeni Şifre (Değiştirmek istemiyorsanız boş bırakın)' : 'Şifre'"
-              type="password"
-              :rules="editingUser ? [] : [v => !!v || 'Şifre gereklidir', v => (v && v.length >= 6) || 'Şifre en az 6 karakter olmalıdır']"
-              :required="!editingUser"
-              variant="outlined"
-              density="comfortable"
-              prepend-inner-icon="mdi-lock"
-              :hint="editingUser ? 'Boş bırakılırsa şifre değiştirilmez' : ''"
-              :persistent-hint="editingUser"
-            />
-            <v-select
-              v-model="form.role"
-              :items="roleOptions"
-              item-title="label"
-              item-value="value"
-              label="Rol"
-              :rules="[v => !!v || 'Rol gereklidir']"
-              required
-              variant="outlined"
-              density="comfortable"
-              prepend-inner-icon="mdi-account-key"
-            >
-              <template #item="{ props, item }">
-                <v-list-item v-bind="props">
-                  <template #prepend>
-                    <v-icon
-                      :icon="getRoleIcon(item.raw.value)"
-                      :color="getRoleColor(item.raw.value)"
-                      class="mr-2"
-                    />
-                  </template>
-                </v-list-item>
-              </template>
-            </v-select>
+            <div class="mb-4">
+              <label class="form-label">Ad Soyad <span class="required">*</span></label>
+              <v-text-field
+                v-model="form.name"
+                placeholder="Ad ve soyad giriniz"
+                :rules="[v => !!v || 'Ad soyad gereklidir']"
+                hide-details="auto"
+                
+                density="comfortable"
+              />
+            </div>
+            
+            <div class="mb-4">
+              <label class="form-label">E-posta <span class="required">*</span></label>
+              <v-text-field
+                v-model="form.email"
+                type="email"
+                placeholder="ornek@email.com"
+                :rules="[
+                  v => !!v || 'E-posta gereklidir',
+                  v => /.+@.+\..+/.test(v) || 'Geçerli bir e-posta adresi giriniz'
+                ]"
+                hide-details="auto"
+                
+                density="comfortable"
+              />
+            </div>
+            
+            <div class="mb-4">
+              <label class="form-label">
+                {{ editingUser ? 'Yeni Şifre (Değiştirmek istemiyorsanız boş bırakın)' : 'Şifre' }}
+                <span v-if="!editingUser" class="required">*</span>
+              </label>
+              <v-text-field
+                v-model="form.password"
+                type="password"
+                placeholder="••••••••"
+                :rules="editingUser ? [] : [v => !!v || 'Şifre gereklidir', v => (v && v.length >= 6) || 'Şifre en az 6 karakter olmalıdır']"
+                :hint="editingUser ? 'Boş bırakılırsa şifre değiştirilmez' : ''"
+                :persistent-hint="editingUser"
+                
+                density="comfortable"
+              />
+            </div>
+            
+            <div>
+              <label class="form-label">Rol <span class="required">*</span></label>
+              <v-select
+                v-model="form.role"
+                :items="roleOptions"
+                item-title="label"
+                item-value="value"
+                placeholder="Rol seçiniz"
+                :rules="[v => !!v || 'Rol gereklidir']"
+                hide-details="auto"
+                
+                density="comfortable"
+              >
+                <template #item="{ props, item }">
+                  <v-list-item v-bind="props">
+                    <template #prepend>
+                      <v-icon
+                        :icon="getRoleIcon(item.raw.value)"
+                        :color="getRoleColor(item.raw.value)"
+                        class="mr-2"
+                      />
+                    </template>
+                  </v-list-item>
+                </template>
+              </v-select>
+            </div>
           </v-form>
         </v-card-text>
         <v-divider />

@@ -28,7 +28,7 @@
             <!-- Müşteri Bilgileri -->
             <v-row>
               <v-col cols="12" md="6">
-                <v-card variant="outlined" class="mb-4">
+                <v-card  class="mb-4">
                   <v-card-title class="bg-grey-lighten-4">
                     <v-icon icon="mdi-account" class="mr-2" />
                     Kişisel Bilgiler
@@ -77,7 +77,7 @@
               </v-col>
 
               <v-col cols="12" md="6">
-                <v-card variant="outlined" class="mb-4">
+                <v-card  class="mb-4">
                   <v-card-title class="bg-grey-lighten-4">
                     <v-icon icon="mdi-phone" class="mr-2" />
                     İletişim Bilgileri
@@ -113,7 +113,7 @@
             <!-- Kimlik / Pasaport Bilgileri -->
             <v-row v-if="customer.idType || customer.idNumber">
               <v-col cols="12" md="6">
-                <v-card variant="outlined" class="mb-4">
+                <v-card  class="mb-4">
                   <v-card-title class="bg-grey-lighten-4">
                     <v-icon icon="mdi-card-account-details" class="mr-2" />
                     Kimlik / Pasaport Bilgileri
@@ -142,7 +142,7 @@
               </v-col>
 
               <v-col cols="12" md="6">
-                <v-card variant="outlined" class="mb-4">
+                <v-card  class="mb-4">
                   <v-card-title class="bg-grey-lighten-4">
                     <v-icon icon="mdi-license" class="mr-2" />
                     Ehliyet Bilgileri
@@ -174,7 +174,7 @@
             <!-- Vergi Bilgileri -->
             <v-row v-if="customer.taxNumber || customer.taxOffice">
               <v-col cols="12">
-                <v-card variant="outlined" class="mb-4">
+                <v-card  class="mb-4">
                   <v-card-title class="bg-grey-lighten-4">
                     <v-icon icon="mdi-cash-register" class="mr-2" />
                     Vergi Bilgileri
@@ -198,7 +198,7 @@
             <!-- ParaPuan Cüzdan -->
             <v-row>
               <v-col cols="12">
-                <v-card variant="outlined" class="mb-4">
+                <v-card  class="mb-4">
                   <v-card-title class="bg-grey-lighten-4 d-flex align-center justify-space-between">
                     <div class="d-flex align-center">
                       <v-icon icon="mdi-wallet" class="mr-2" />
@@ -298,7 +298,7 @@
             <!-- İşlemler -->
             <v-row>
               <v-col cols="12">
-                <v-card variant="outlined">
+                <v-card >
                   <v-card-title class="bg-grey-lighten-4">
                     <v-icon icon="mdi-cog" class="mr-2" />
                     İşlemler
@@ -348,7 +348,7 @@
             v-model="newPassword"
             label="Yeni Şifre"
             type="password"
-            variant="outlined"
+            
             prepend-inner-icon="mdi-lock"
             :rules="passwordRules"
             class="mb-2"
@@ -357,7 +357,7 @@
             v-model="confirmPassword"
             label="Yeni Şifre (Tekrar)"
             type="password"
-            variant="outlined"
+            
             prepend-inner-icon="mdi-lock-check"
             :rules="confirmPasswordRules"
           />

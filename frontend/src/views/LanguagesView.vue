@@ -2,11 +2,31 @@
   <div>
     <v-row>
       <v-col cols="12" md="5">
-        <v-card elevation="2" class="pa-6 mb-4">
+        <v-card elevation="2" class="pa-6 mb-4 admin-form-scope">
           <h2 class="text-h6 font-weight-bold mb-4">Yeni Dil Ekle</h2>
           <v-form @submit.prevent="handleCreate" ref="formRef" v-model="isValid">
-            <v-text-field v-model="form.code" label="Dil Kodu" placeholder="en" prepend-inner-icon="mdi-translate" required />
-            <v-text-field v-model="form.name" label="Dil Adi" prepend-inner-icon="mdi-alphabetical" required />
+            <div class="mb-4">
+              <label class="form-label">Dil Kodu <span class="required">*</span></label>
+              <v-text-field 
+                v-model="form.code" 
+                placeholder="en" 
+                hide-details="auto"
+                
+                density="comfortable"
+                required 
+              />
+            </div>
+            <div class="mb-4">
+              <label class="form-label">Dil Adı <span class="required">*</span></label>
+              <v-text-field 
+                v-model="form.name" 
+                placeholder="English"
+                hide-details="auto"
+                
+                density="comfortable"
+                required 
+              />
+            </div>
             <v-switch v-model="form.isActive" color="primary" label="Aktif" inset />
             <v-switch 
               v-model="form.isDefault" 
