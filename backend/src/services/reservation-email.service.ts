@@ -133,6 +133,12 @@ export const sendReservationEmailDirect = async (
 
   // Rezervasyon değişkenlerini hazırla
   const metadata = reservation.metadata || {};
+  
+  // Onaylama butonu URL'i oluştur (sadece pending durumunda)
+  const baseUrl = process.env.FRONTEND_URL || process.env.PUBLIC_URL || 'https://saastour360.com';
+  const approvalUrl = `${baseUrl}/public/reservation/${reservation.id}/approve?token=${encodeURIComponent(reservation.id)}`;
+  const cancellationUrl = `${baseUrl}/public/reservation/${reservation.id}/cancel?token=${encodeURIComponent(reservation.id)}`;
+  
   const variables: Record<string, string | number> = {
     customerName: reservation.customerName || '',
     customerEmail: reservation.customerEmail || '',
@@ -142,7 +148,37 @@ export const sendReservationEmailDirect = async (
     checkOut: reservation.checkOut ? formatDate(reservation.checkOut) : '',
     reservationType: getReservationTypeLabel(reservation.type),
     reservationStatus: getReservationStatusLabel(reservation.status),
+    approvalUrl,
+    cancellationUrl,
   };
+  
+  // Onaylama butonu HTML'i (sadece pending durumunda ve confirmation email'inde)
+  if (reservation.status === ReservationStatus.PENDING && templateType === EmailTemplateType.RESERVATION_CONFIRMATION) {
+    variables.approvalButton = `
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${approvalUrl}" 
+           style="display: inline-block; padding: 14px 28px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">
+          Rezervasyonu Onayla
+        </a>
+      </div>
+    `;
+  } else {
+    variables.approvalButton = '';
+  }
+  
+  // İptal butonu HTML'i (confirmed veya pending durumunda ve cancellation email'inde)
+  if ((reservation.status === ReservationStatus.CONFIRMED || reservation.status === ReservationStatus.PENDING) && templateType === EmailTemplateType.RESERVATION_CANCELLED) {
+    variables.cancellationButton = `
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${cancellationUrl}" 
+           style="display: inline-block; padding: 14px 28px; background-color: #dc2626; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">
+          Rezervasyonu İptal Et
+        </a>
+      </div>
+    `;
+  } else {
+    variables.cancellationButton = '';
+  }
 
   // Rentacar-specific variables
   if (reservation.type === 'rentacar' && metadata) {

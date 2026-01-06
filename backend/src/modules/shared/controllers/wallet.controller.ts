@@ -141,5 +141,63 @@ export class WalletController {
       });
     }
   }
+
+  /**
+   * Adjust wallet (credit or debit) - unified endpoint
+   * POST /wallet/customers/:customerId/adjust
+   */
+  static async adjustWallet(req: AuthenticatedRequest, res: Response) {
+    try {
+      const tenantId = req.auth?.tenantId;
+      const userId = req.auth?.sub;
+      if (!tenantId || !userId) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      const { customerId } = req.params;
+      const { type, amount, reason, description } = req.body;
+
+      if (!type || !['credit', 'debit'].includes(type)) {
+        return res.status(400).json({ message: 'Invalid type. Must be "credit" or "debit"' });
+      }
+
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ message: 'Invalid amount' });
+      }
+
+      if (!reason) {
+        return res.status(400).json({ message: 'Reason is required' });
+      }
+
+      let transaction;
+      if (type === 'credit') {
+        const input: CreditPointsInput = {
+          tenantId,
+          customerId,
+          amount: parseFloat(amount),
+          source: WalletTransactionSource.ADMIN_ADJUSTMENT,
+          description,
+          adminUserId: userId,
+        };
+        transaction = await WalletService.creditPoints(input);
+      } else {
+        const input: DebitPointsInput = {
+          tenantId,
+          customerId,
+          amount: parseFloat(amount),
+          reason,
+          adminUserId: userId,
+        };
+        transaction = await WalletService.debitPoints(input);
+      }
+
+      res.json({ success: true, data: transaction });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        message: (error as Error).message,
+      });
+    }
+  }
 }
 

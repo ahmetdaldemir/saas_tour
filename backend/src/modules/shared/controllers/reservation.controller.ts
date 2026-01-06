@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { ReservationService } from '../services/reservation.service';
 import { ReservationStatus } from '../entities/reservation.entity';
 import { AuthenticatedRequest } from '../../auth/middleware/auth.middleware';
@@ -133,6 +133,63 @@ export class ReservationController {
       const { id } = req.params;
       await ReservationService.sendConfirmationEmail(id);
       res.json({ message: 'Confirmation email sent successfully' });
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  }
+
+  static async sendCancellationEmail(req: AuthenticatedRequest, res: Response) {
+    try {
+      const { id } = req.params;
+      const reason = req.body?.reason as string | undefined;
+      await ReservationService.sendCancellationEmail(id, reason);
+      res.json({ message: 'Cancellation email sent successfully' });
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  }
+
+  /**
+   * Müşteri tarafından rezervasyon onaylama (public endpoint)
+   */
+  static async approveByCustomer(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { token } = req.query;
+      
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ message: 'Token is required' });
+      }
+
+      const reservation = await ReservationService.approveByCustomer(id, token);
+      res.json({ 
+        success: true, 
+        message: 'Reservation approved successfully',
+        reservation 
+      });
+    } catch (error) {
+      res.status(400).json({ message: (error as Error).message });
+    }
+  }
+
+  /**
+   * Müşteri tarafından rezervasyon iptal etme (public endpoint)
+   */
+  static async cancelByCustomer(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const { token, reason } = req.query;
+      
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ message: 'Token is required' });
+      }
+
+      const reservation = await ReservationService.cancelByCustomer(id, token, reason as string | undefined);
+      res.json({ 
+        success: true, 
+        message: 'Reservation cancelled successfully',
+        reservation 
+      });
     } catch (error) {
       res.status(400).json({ message: (error as Error).message });
     }

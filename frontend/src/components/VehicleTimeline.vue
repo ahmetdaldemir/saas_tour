@@ -88,7 +88,7 @@
                 <v-img
                   v-if="media.type === 'image'"
                   :src="media.url"
-                  :alt="media.filename || 'Image'"
+                  :alt="media.filename || 'Resim'"
                   cover
                   height="120"
                   @click="openMediaViewer(media)"
@@ -96,7 +96,7 @@
                 />
                 <v-card-text v-else class="text-center pa-4">
                   <v-icon :icon="media.type === 'video' ? 'mdi-video' : 'mdi-file-document'" size="large" />
-                  <div class="text-caption mt-2">{{ media.filename || 'File' }}</div>
+                  <div class="text-caption mt-2">{{ media.filename || 'Dosya' }}</div>
                 </v-card-text>
                 <v-card-actions v-if="media.description" class="pa-2">
                   <div class="text-caption text-truncate" style="max-width: 180px;">
@@ -114,7 +114,7 @@
     <v-dialog v-model="showMediaViewer" max-width="900">
       <v-card v-if="selectedMedia">
         <v-card-title class="d-flex align-center justify-space-between">
-          <span>{{ selectedMedia.filename || 'Media' }}</span>
+          <span>{{ selectedMedia.filename || 'Medya' }}</span>
           <v-btn icon="mdi-close" variant="text" @click="showMediaViewer = false" />
         </v-card-title>
         <v-divider />
@@ -128,7 +128,7 @@
           />
           <div v-else class="text-center pa-8">
             <v-icon size="64" color="grey">{{ selectedMedia.type === 'video' ? 'mdi-video' : 'mdi-file-document' }}</v-icon>
-            <div class="mt-4">{{ selectedMedia.filename || 'File' }}</div>
+            <div class="mt-4">{{ selectedMedia.filename || 'Dosya' }}</div>
             <v-btn
               class="mt-4"
               color="primary"

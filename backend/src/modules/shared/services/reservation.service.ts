@@ -305,10 +305,11 @@ export class ReservationService {
   }
 
   /**
-   * Onay emaili gönder
+   * Onay emaili gönder (rezervasyon durumunu değiştirme - müşteri onaylayınca CONFIRMED olacak)
    */
   static async sendConfirmationEmail(id: string): Promise<void> {
-    const reservation = await this.repository().findOne({ 
+    const repo = this.repository();
+    const reservation = await repo.findOne({ 
       where: { id }, 
       relations: ['customerLanguage'] 
     });
@@ -321,8 +322,133 @@ export class ReservationService {
       throw new Error('Reservation has no customer email');
     }
 
-    // Müşterinin diline göre onay emaili gönder
+    // Sadece pending durumundaki rezervasyonlar için onay maili gönderilebilir
+    if (reservation.status !== ReservationStatus.PENDING) {
+      throw new Error(`Confirmation email can only be sent for pending reservations. Current status: ${reservation.status}`);
+    }
+
+    // Müşterinin diline göre onay emaili gönder (durum hala PENDING, müşteri onaylayınca CONFIRMED olacak)
     await sendReservationEmail(reservation, EmailTemplateType.RESERVATION_CONFIRMATION);
+  }
+
+  /**
+   * İptal emaili gönder ve rezervasyon durumunu CANCELLED yap
+   */
+  static async sendCancellationEmail(id: string, reason?: string): Promise<void> {
+    const repo = this.repository();
+    const reservation = await repo.findOne({ 
+      where: { id }, 
+      relations: ['customerLanguage'] 
+    });
+
+    if (!reservation) {
+      throw new Error('Reservation not found');
+    }
+
+    if (!reservation.customerEmail) {
+      throw new Error('Reservation has no customer email');
+    }
+
+    if (reservation.status === ReservationStatus.COMPLETED) {
+      throw new Error('Cannot cancel a completed reservation');
+    }
+
+    // Rezervasyon durumunu CANCELLED yap
+    if (reservation.status !== ReservationStatus.CANCELLED) {
+      reservation.status = ReservationStatus.CANCELLED;
+      
+      // İptal nedeni varsa notlara ekle
+      if (reason) {
+        const timestamp = new Date().toISOString();
+        const cancelNote = `[${timestamp}] İptal nedeni: ${reason}\n`;
+        reservation.notes = (reservation.notes || '') + cancelNote;
+      }
+      
+      await repo.save(reservation);
+    }
+
+    // Müşterinin diline göre iptal emaili gönder
+    await sendReservationEmail(reservation, EmailTemplateType.RESERVATION_CANCELLED);
+  }
+
+  /**
+   * Müşteri tarafından rezervasyon onaylama (public endpoint)
+   */
+  static async approveByCustomer(id: string, token: string): Promise<Reservation> {
+    const repo = this.repository();
+    const reservation = await repo.findOne({ 
+      where: { id }, 
+      relations: ['customerLanguage'] 
+    });
+
+    if (!reservation) {
+      throw new Error('Reservation not found');
+    }
+
+    // Token doğrulama (basit: id ile token eşleşmeli)
+    if (token !== id) {
+      throw new Error('Invalid token');
+    }
+
+    // Sadece pending durumundaki rezervasyonlar onaylanabilir
+    if (reservation.status !== ReservationStatus.PENDING) {
+      throw new Error(`Reservation cannot be approved. Current status: ${reservation.status}`);
+    }
+
+    // Rezervasyon durumunu CONFIRMED yap
+    reservation.status = ReservationStatus.CONFIRMED;
+    const updatedReservation = await repo.save(reservation);
+
+    // Onay emaili gönder (asenkron)
+    sendReservationConfirmationEmail(updatedReservation).catch((error) => {
+      console.error(`Error sending confirmation email for reservation ${updatedReservation.id}:`, error);
+    });
+
+    return updatedReservation;
+  }
+
+  /**
+   * Müşteri tarafından rezervasyon iptal etme (public endpoint)
+   */
+  static async cancelByCustomer(id: string, token: string, reason?: string): Promise<Reservation> {
+    const repo = this.repository();
+    const reservation = await repo.findOne({ 
+      where: { id }, 
+      relations: ['customerLanguage'] 
+    });
+
+    if (!reservation) {
+      throw new Error('Reservation not found');
+    }
+
+    // Token doğrulama
+    if (token !== id) {
+      throw new Error('Invalid token');
+    }
+
+    // Sadece pending veya confirmed durumundaki rezervasyonlar iptal edilebilir
+    if (reservation.status !== ReservationStatus.PENDING && reservation.status !== ReservationStatus.CONFIRMED) {
+      throw new Error(`Reservation cannot be cancelled. Current status: ${reservation.status}`);
+    }
+
+    // Rezervasyon durumunu CANCELLED yap
+    reservation.status = ReservationStatus.CANCELLED;
+    
+    // İptal nedeni varsa notlara ekle
+    if (reason) {
+      const timestamp = new Date().toISOString();
+      const cancelNote = `[${timestamp}] Müşteri tarafından iptal nedeni: ${reason}\n`;
+      reservation.notes = (reservation.notes || '') + cancelNote;
+    }
+    
+    const updatedReservation = await repo.save(reservation);
+
+    // İptal emaili gönder (asenkron)
+    sendReservationCancelledEmail(updatedReservation).catch((error) => {
+      console.error(`Error sending cancellation email for reservation ${updatedReservation.id}:`, error);
+    });
+
+    return updatedReservation;
   }
 }
 

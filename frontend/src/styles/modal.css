@@ -1,0 +1,512 @@
+/* Minimalist Modal Styles - Global */
+
+/* Modal Overlay */
+.v-overlay__scrim {
+  background: rgba(0, 0, 0, 0.4) !important;
+  backdrop-filter: blur(2px);
+}
+
+/* Modal Container */
+.v-dialog > .v-card {
+  border-radius: 12px !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+  max-width: 560px !important;
+  margin: 24px !important;
+}
+
+/* Fullscreen modals için özel genişlik */
+.v-dialog[style*="max-width: 1400px"] > .v-card,
+.v-dialog[style*="max-width: 1600px"] > .v-card,
+.v-dialog[style*="max-width: 1000px"] > .v-card {
+  max-width: 90vw !important;
+}
+
+/* Modal Header */
+.v-card-title {
+  padding: 15px 20px 10px!important;
+  border-bottom: 1px solid #e5e7eb!important;
+  display: flex!important;
+  align-items: flex-start!important;
+  justify-content: space-between!important;
+  gap: 16px!important
+}
+
+.v-card-title > div:first-child {
+  flex: 1;
+}
+
+.v-card-title .text-h6 {
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  color: #ffffff !important;
+  line-height: 1.4 !important;
+  margin: 0 !important;
+}
+
+.v-card-title .text-subtitle-1 {
+  font-size: 14px !important;
+  color: #6b7280 !important;
+  font-weight: 400 !important;
+  margin-top: 4px !important;
+  line-height: 1.5 !important;
+}
+
+.v-card-title .v-icon {
+  display: none !important; /* Remove icons from header */
+}
+
+.v-card-title .v-btn {
+  margin: 0 !important;
+  padding: 8px !important;
+  color: #ffffff !important;
+}
+
+.v-card-title .v-btn:hover {
+  background: #f3f4f6 !important;
+  color: #111827 !important;
+}
+
+/* Modal Body */
+.v-card-text {
+  padding: 24px !important;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+
+.v-card-text::-webkit-scrollbar {
+  width: 6px;
+}
+
+.v-card-text::-webkit-scrollbar-track {
+  background: #f9fafb;
+}
+
+.v-card-text::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.v-card-text::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Form Layout - Single Column */
+.v-card-text .v-row {
+  margin: 0 !important;
+}
+
+.v-card-text .v-col {
+  padding: 0 0 20px 0 !important;
+  flex: 0 0 100% !important;
+  max-width: 100% !important;
+}
+
+/* Form Labels - Above Inputs (ONLY for admin-form-scope) */
+.admin-form-scope .v-field-label {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #374151 !important;
+  margin-bottom: 8px !important;
+  display: block !important;
+  position: static !important;
+  transform: none !important;
+  top: auto !important;
+  left: auto !important;
+}
+
+.admin-form-scope .v-field-label--floating {
+  position: static !important;
+  transform: none !important;
+  font-size: 13px !important;
+  margin-bottom: 8px !important;
+}
+
+/* Input Fields - Large and Clean */
+.v-field {
+  margin-bottom: 0 !important;
+}
+
+.v-field__input {
+  min-height: 25px !important;
+  padding: 5px 16px !important;
+  font-size: 14px !important;
+  color: #111827 !important;
+  background: #ffffff !important;
+  border-radius: 8px !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+
+.v-field__input:focus,
+.v-field--focused .v-field__input {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+  outline: none !important;
+}
+
+.v-field--error .v-field__input {
+  border-color: #dc2626 !important;
+}
+
+.v-field--disabled .v-field__input {
+  background: #f9fafb !important;
+  color: #9ca3af !important;
+  cursor: not-allowed !important;
+}
+
+/* Remove prepend icons clutter */
+.v-field__prepend-inner {
+  display: none !important;
+}
+
+/* Select/Dropdown */
+.v-select .v-field__input {
+  cursor: pointer;
+}
+
+.v-select__selection {
+  font-size: 14px !important;
+  color: #111827 !important;
+}
+
+/* Textarea */
+.v-textarea .v-field__input {
+  min-height: 100px !important;
+  padding: 12px 16px !important;
+  resize: vertical;
+}
+
+/* Date Input */
+.v-text-field input[type="date"],
+.v-text-field input[type="datetime-local"] {
+  padding: 12px 16px !important;
+  font-size: 14px !important;
+}
+
+/* Required Field Indicator */
+.v-field--required .v-field-label::after {
+  content: " *" !important;
+  color: #dc2626 !important;
+  font-weight: 500 !important;
+}
+
+/* Validation Messages */
+.v-messages {
+  margin-top: 6px !important;
+  min-height: 0 !important;
+}
+
+.v-messages__message {
+  font-size: 12px !important;
+  color: #dc2626 !important;
+  line-height: 1.4 !important;
+  margin: 0 !important;
+}
+
+/* Modal Footer */
+.v-card-actions {
+  padding: 16px 24px 24px 24px !important;
+  border-top: 1px solid #e5e7eb !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 12px !important;
+  background: #ffffff !important;
+  position: sticky !important;
+  bottom: 0 !important;
+  z-index: 10 !important;
+}
+
+.v-card-actions .v-spacer {
+  display: none !important;
+}
+
+/* Buttons */
+.v-card-actions .v-btn {
+  min-width: 100px !important;
+  height: 40px !important;
+  padding: 0 20px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  border-radius: 8px !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+}
+
+/* Primary Button */
+.v-card-actions .v-btn--variant-flat.v-btn--color-primary,
+.v-card-actions .v-btn--variant-elevated.v-btn--color-primary {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+
+.v-card-actions .v-btn--variant-flat.v-btn--color-primary:hover {
+  background: #1d4ed8 !important;
+}
+
+/* Secondary Button */
+.v-card-actions .v-btn--variant-text {
+  background: transparent !important;
+  color: #6b7280 !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+.v-card-actions .v-btn--variant-text:hover {
+  background: #f9fafb !important;
+  color: #111827 !important;
+  border-color: #d1d5db !important;
+}
+
+/* Disabled Button */
+.v-card-actions .v-btn--disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+
+/* Loading State */
+.v-card-actions .v-btn .v-progress-circular {
+  width: 20px !important;
+  height: 20px !important;
+}
+
+/* Remove Dividers */
+.v-divider {
+  display: none !important;
+}
+
+/* Remove Progress Linear */
+.v-progress-linear {
+  display: none !important;
+}
+
+/* Tabs in Modal */
+.v-tabs {
+  margin-bottom: 0px !important;
+}
+
+.v-tabs .v-tab {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  padding: 8px 16px !important;
+  min-width: auto !important;
+}
+
+/* Alert/Info Boxes */
+.v-alert {
+  border-radius: 8px !important;
+  padding: 12px 16px !important;
+  margin-bottom: 20px !important;
+  border: 1px solid #e5e7eb !important;
+  background: #f9fafb !important;
+}
+
+.v-alert--variant-tonal {
+  background: #eff6ff !important;
+  border-color: #bfdbfe !important;
+  color: #1e40af !important;
+}
+
+/* List Items */
+.v-list-item {
+  padding: 4px 16px !important;
+  border-radius: 8px !important;
+  margin-bottom: 8px !important;
+}
+
+.v-list-item:hover {
+  background: #f9fafb !important;
+}
+
+/* Remove Section Headers */
+.v-card-text h3,
+.v-card-text .text-h6,
+.v-card-text .text-subtitle-1 {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #111827 !important;
+  margin: 0 0 16px 0 !important;
+}
+
+/* Spacing Adjustments */
+.v-card-text > *:first-child {
+  margin-top: 0 !important;
+}
+
+.v-card-text > *:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Autocomplete Append Buttons */
+.v-field__append-inner .v-btn {
+  margin-right: 8px !important;
+  min-width: 32px !important;
+  width: 32px !important;
+  height: 32px !important;
+}
+
+/* Fullscreen Modal Adjustments */
+.v-dialog--fullscreen .v-card {
+  max-width: 100% !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+}
+
+.v-dialog--fullscreen .v-card-text {
+  max-height: calc(100vh - 180px);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .v-dialog > .v-card {
+    margin: 16px !important;
+    max-width: calc(100vw - 32px) !important;
+  }
+
+  .v-card-title {
+    padding: 20px 20px 12px 20px !important;
+  }
+
+  .v-card-text {
+    padding: 20px !important;
+  }
+
+  .v-card-actions {
+    padding: 12px 20px 20px 20px !important;
+    flex-direction: column-reverse !important;
+  }
+
+  .v-card-actions .v-btn {
+    width: 100% !important;
+  }
+}
+
+/* SweetAlert2 Minimalist Styles */
+.swal2-popup {
+  border-radius: 12px !important;
+  padding: 0 !important;
+  max-width: 560px !important;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
+
+.swal2-header {
+  padding: 24px 24px 16px 24px !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  text-align: left !important;
+}
+
+.swal2-title {
+  font-size: 20px !important;
+  font-weight: 600 !important;
+  color: #111827 !important;
+  margin: 0 0 8px 0 !important;
+  line-height: 1.4 !important;
+  padding: 0 !important;
+}
+
+.swal2-html-container {
+  padding: 24px !important;
+  margin: 0 !important;
+  text-align: left !important;
+  color: #374151 !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+.swal2-html-container label {
+  display: block !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #374151 !important;
+  margin-bottom: 8px !important;
+}
+
+.swal2-input,
+.swal2-select {
+  width: 100% !important;
+  min-height: 44px !important;
+  padding: 12px 16px !important;
+  font-size: 14px !important;
+  color: #111827 !important;
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 8px !important;
+  margin: 0 0 16px 0 !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+}
+
+.swal2-input:focus,
+.swal2-select:focus {
+  outline: none !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+}
+
+.swal2-actions {
+  padding: 16px 24px 24px 24px !important;
+  border-top: 1px solid #e5e7eb !important;
+  margin: 0 !important;
+  justify-content: flex-end !important;
+  gap: 12px !important;
+}
+
+.swal2-confirm,
+.swal2-cancel {
+  min-width: 100px !important;
+  height: 40px !important;
+  padding: 0 20px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  border-radius: 8px !important;
+  margin: 0 !important;
+  transition: all 0.2s !important;
+}
+
+.swal2-confirm {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
+.swal2-confirm:hover {
+  background: #1d4ed8 !important;
+}
+
+.swal2-cancel {
+  background: #ffffff !important;
+  color: #6b7280 !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+.swal2-cancel:hover {
+  background: #f9fafb !important;
+  color: #111827 !important;
+  border-color: #d1d5db !important;
+}
+
+.swal2-icon {
+  margin: 0 0 16px 0 !important;
+}
+
+.swal2-icon.swal2-success {
+  border-color: #10b981 !important;
+  color: #10b981 !important;
+}
+
+.swal2-icon.swal2-error {
+  border-color: #dc2626 !important;
+  color: #dc2626 !important;
+}
+
+.swal2-icon.swal2-warning {
+  border-color: #f59e0b !important;
+  color: #f59e0b !important;
+}
+
+.swal2-validation-message {
+  background: transparent !important;
+  color: #dc2626 !important;
+  font-size: 12px !important;
+  margin-top: 6px !important;
+  padding: 0 !important;
+}
+ 

@@ -93,6 +93,108 @@ check_containers_running() {
     echo $all_running
 }
 
+# Agresif container temizleme fonksiyonu
+force_remove_backend_container() {
+    local container_name="saas-tour-backend"
+    local max_attempts=15
+    local attempt=0
+    local current_dir=$(pwd)
+    
+    echo -e "${YELLOW}🔍 Agresif container temizleme başlatılıyor: $container_name${NC}"
+    
+    # Eğer infra dizinindeysek, docker-compose komutlarını orada çalıştır
+    if [ -f "docker-compose.yml" ]; then
+        local compose_dir="."
+    elif [ -d "infra" ] && [ -f "infra/docker-compose.yml" ]; then
+        local compose_dir="infra"
+    else
+        local compose_dir="."
+    fi
+    
+    while [ $attempt -lt $max_attempts ]; do
+        attempt=$((attempt + 1))
+        
+        # 1. Docker Compose down
+        if [ -n "$compose_dir" ] && [ "$compose_dir" != "." ]; then
+            cd "$compose_dir" && docker-compose down --remove-orphans 2>/dev/null || true
+            cd "$current_dir"
+        else
+            docker-compose down --remove-orphans 2>/dev/null || true
+        fi
+        
+        # 2. Tüm container'ları ID ile bul
+        ALL_IDS=$(docker ps -a --format "{{.ID}}" 2>/dev/null || true)
+        if [ -n "$ALL_IDS" ]; then
+            echo "$ALL_IDS" | while IFS= read -r id; do
+                if [ -n "$id" ]; then
+                    # Container ismini kontrol et
+                    name=$(docker inspect --format='{{.Name}}' "$id" 2>/dev/null | sed 's/\///g' || echo "")
+                    if echo "$name" | grep -qi "$container_name"; then
+                        echo "   - Deneme $attempt: Container bulundu ve kaldırılıyor: $id ($name)"
+                        docker stop "$id" 2>/dev/null || true
+                        docker rm -f "$id" 2>/dev/null || true
+                    fi
+                fi
+            done
+        fi
+        
+        # 3. Filter ile kaldır
+        docker ps -a --filter "name=$container_name" --format "{{.ID}}" 2>/dev/null | while IFS= read -r id; do
+            if [ -n "$id" ]; then
+                echo "   - Deneme $attempt: Filter ile kaldırılıyor: $id"
+                docker stop "$id" 2>/dev/null || true
+                docker rm -f "$id" 2>/dev/null || true
+            fi
+        done || true
+        
+        # 4. İsim bazlı kaldır
+        docker stop "$container_name" 2>/dev/null || true
+        docker rm -f "$container_name" 2>/dev/null || true
+        
+        # 5. Tüm container'ları tarayarak bul
+        docker ps -a --format "{{.ID}} {{.Names}}" 2>/dev/null | grep -i "$container_name" | while IFS= read -r line; do
+            if [ -n "$line" ]; then
+                container_id=$(echo "$line" | awk '{print $1}')
+                echo "   - Deneme $attempt: Tarama ile kaldırılıyor: $container_id"
+                docker stop "$container_id" 2>/dev/null || true
+                docker rm -f "$container_id" 2>/dev/null || true
+            fi
+        done || true
+        
+        # 6. Container'ın kaldırıldığını kontrol et
+        REMAINING=$(docker ps -a --filter "name=$container_name" --format "{{.ID}}" | head -1 || true)
+        if [ -z "$REMAINING" ]; then
+            echo -e "${GREEN}✅ Container başarıyla kaldırıldı (Deneme: $attempt)${NC}"
+            return 0
+        else
+            echo "   - Deneme $attempt/$max_attempts: Container hala mevcut: $REMAINING"
+            sleep 1
+        fi
+    done
+    
+    # Son deneme: Zorla kaldır
+    FINAL_ID=$(docker ps -a --filter "name=$container_name" --format "{{.ID}}" | head -1 || true)
+    if [ -n "$FINAL_ID" ]; then
+        echo -e "${RED}⚠️  Son deneme: Container zorla kaldırılıyor: $FINAL_ID${NC}"
+        docker stop "$FINAL_ID" 2>/dev/null || true
+        docker rm -f "$FINAL_ID" 2>/dev/null || true
+        docker stop "$container_name" 2>/dev/null || true
+        docker rm -f "$container_name" 2>/dev/null || true
+        sleep 3
+    fi
+    
+    # Final kontrol
+    FINAL_CHECK=$(docker ps -a --filter "name=$container_name" --format "{{.ID}}" | head -1 || true)
+    if [ -z "$FINAL_CHECK" ]; then
+        echo -e "${GREEN}✅ Container kesinlikle kaldırıldı${NC}"
+        return 0
+    else
+        echo -e "${RED}❌ UYARI: Container hala mevcut olabilir: $FINAL_CHECK${NC}"
+        echo -e "${YELLOW}💡 Manuel olarak kaldırmayı deneyin: docker rm -f $FINAL_CHECK${NC}"
+        return 1
+    fi
+}
+
 # Container durumu kontrolü
 CONTAINERS_RUNNING=$(check_containers_running)
 
@@ -586,39 +688,12 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
         # Graceful restart: Force recreate ile başlat
         echo -e "${YELLOW}🔄 Container'lar graceful restart ile güncelleniyor...${NC}"
         
-        # Son bir kontrol: Container hala var mı?
-        FINAL_CHECK=$(docker ps -a --filter "name=saas-tour-backend" --format "{{.ID}}" | head -1 || true)
-        if [ -n "$FINAL_CHECK" ]; then
-            echo -e "${RED}⚠️  Hala bir container bulundu, zorla kaldırılıyor: $FINAL_CHECK${NC}"
-            docker stop "$FINAL_CHECK" 2>/dev/null || true
-            docker rm -f "$FINAL_CHECK" 2>/dev/null || true
-            # Kısa ID ile de dene
-            if [ ${#FINAL_CHECK} -ge 12 ]; then
-                short_id="${FINAL_CHECK:0:12}"
-                docker stop "$short_id" 2>/dev/null || true
-                docker rm -f "$short_id" 2>/dev/null || true
-            fi
-            sleep 5
-        fi
-        
-        # İsim bazlı son kontrol
-        docker stop saas-tour-backend 2>/dev/null || true
-        docker rm -f saas-tour-backend 2>/dev/null || true
-        
-        # Ekstra güvenlik: Tüm container'ları kontrol et ve saas-tour-backend içerenleri kaldır
-        echo -e "${YELLOW}🔍 Final cleanup: Tüm backend container'ları temizleniyor...${NC}"
-        docker ps -a --format "{{.ID}} {{.Names}}" 2>/dev/null | grep -i "saas-tour-backend" | while IFS= read -r line; do
-            if [ -n "$line" ]; then
-                container_id=$(echo "$line" | awk '{print $1}')
-                echo "   - Force removing: $container_id"
-                docker stop "$container_id" 2>/dev/null || true
-                docker rm -f "$container_id" 2>/dev/null || true
-            fi
-        done || true
-        
-        sleep 3
-        
+        # Agresif container temizleme fonksiyonunu çağır (infra dizininde)
+        cd infra
+        force_remove_backend_container
+        sleep 2
         docker-compose up -d --force-recreate --remove-orphans
+        cd ..
     else
         # Full modunda - container'ları durdur ve yeniden başlat
         echo -e "${YELLOW}🔄 Application stack yeniden başlatılıyor...${NC}"
@@ -817,37 +892,10 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
         # Production'da dikkatli: Bu mod tüm container'ları yeniden başlatır
         echo -e "${YELLOW}⚠️  Full deployment modu: Tüm container'lar yeniden oluşturulacak${NC}"
         
-        # Son bir kontrol: Container hala var mı? (hem tam ID hem kısa ID ile)
-        FINAL_CHECK=$(docker ps -a --filter "name=saas-tour-backend" --format "{{.ID}}" | head -1 || true)
-        if [ -n "$FINAL_CHECK" ]; then
-            echo -e "${RED}⚠️  Hala bir container bulundu, zorla kaldırılıyor: $FINAL_CHECK${NC}"
-            docker stop "$FINAL_CHECK" 2>/dev/null || true
-            docker rm -f "$FINAL_CHECK" 2>/dev/null || true
-            # Kısa ID ile de dene
-            if [ ${#FINAL_CHECK} -ge 12 ]; then
-                short_id="${FINAL_CHECK:0:12}"
-                docker stop "$short_id" 2>/dev/null || true
-                docker rm -f "$short_id" 2>/dev/null || true
-            fi
-            sleep 5
-        fi
+        # Agresif container temizleme fonksiyonunu çağır (infra dizininde)
+        force_remove_backend_container
         
-        # İsim bazlı son kontrol
-        docker stop saas-tour-backend 2>/dev/null || true
-        docker rm -f saas-tour-backend 2>/dev/null || true
-        
-        # Ekstra güvenlik: Tüm container'ları kontrol et ve saas-tour-backend içerenleri kaldır
-        echo -e "${YELLOW}🔍 Final cleanup: Tüm backend container'ları temizleniyor...${NC}"
-        docker ps -a --format "{{.ID}} {{.Names}}" 2>/dev/null | grep -i "saas-tour-backend" | while IFS= read -r line; do
-            if [ -n "$line" ]; then
-                container_id=$(echo "$line" | awk '{print $1}')
-                echo "   - Force removing: $container_id"
-                docker stop "$container_id" 2>/dev/null || true
-                docker rm -f "$container_id" 2>/dev/null || true
-            fi
-        done || true
-        
-        sleep 3
+        sleep 2
         
         docker-compose up -d --build --force-recreate --remove-orphans
     fi

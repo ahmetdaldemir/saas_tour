@@ -4,18 +4,7 @@
       <v-card-title class="d-flex align-center justify-space-between">
         <span class="text-h6 font-weight-bold">Blog Yazıları</span>
         <div class="d-flex align-center gap-2">
-          <v-select
-            v-model="selectedLocationId"
-            :items="locationOptions"
-            item-title="label"
-            item-value="value"
-            label="Lokasyon Filtresi"
-            prepend-inner-icon="mdi-map-marker"
-            style="max-width: 250px;"
-            density="compact"
-            @update:model-value="loadBlogs"
-          />
-          <v-btn icon="mdi-refresh" variant="text" @click="loadBlogs" :loading="loadingBlogs" />
+
           <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreateDialog">
             Yeni Blog Yazısı
           </v-btn>

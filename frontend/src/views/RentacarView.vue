@@ -33,243 +33,240 @@
         <v-window v-model="mainTab" class="window-content">
           <!-- Araçlar Sekmesi -->
           <v-window-item value="vehicles">
-            <!-- Araç Listesi -->
-            <v-card elevation="0" class="mb-4">
-        <v-card-title class="d-flex align-center justify-space-between">
-          <span class="text-h6 font-weight-bold">Araçlar</span>
-          <div class="d-flex align-center gap-2">
-            <v-btn icon="mdi-refresh" variant="text" @click="loadVehicles" :loading="loadingVehicles" />
-            <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreateDialog">
-              Yeni Araç Ekle
-            </v-btn>
-          </div>
-        </v-card-title>
-        <v-divider />
-        <v-card-text class="pa-4">
-          <!-- Filtre Seçici -->
-          <div class="mb-4">
-            <div class="d-flex align-center gap-4 flex-wrap">
-              <div class="flex-grow-1">
-                <v-radio-group v-model="vehicleFilter" inline hide-details>
-                  <v-radio
-                    label="Tüm Araçlar"
-                    value="all"
-                    color="primary"
-                  />
-                  <v-radio
-                    label="Rezervasyondaki Araçlar"
-                    value="reserved"
-                    color="warning"
-                  />
-                  <v-radio
-                    label="Boşta Olan Araçlar"
-                    value="available"
-                    color="success"
-                  />
-                </v-radio-group>
+            <div class="vehicle-list-page">
+              <!-- 1) PAGE HEADER -->
+              <div class="page-header">
+                <div class="header-content">
+                  <div>
+                    <h1 class="page-title">Araçlar</h1>
+                    <p class="page-subtitle">Filo genel bakış ve durum</p>
+                  </div>
+                  <div class="header-actions">
+                    <button class="btn-icon" @click="loadVehicles" :disabled="loadingVehicles" title="Yenile">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                        <path d="M21 3v5h-5"/>
+                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                        <path d="M3 21v-5h5"/>
+                      </svg>
+                    </button>
+                    <button class="btn-primary" @click="openCreateDialog">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="5" x2="12" y2="19"/>
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                      </svg>
+                      Araç Ekle
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div style="min-width: 200px;">
-                <v-select
-                  v-model="selectedBrandFilter"
-                  :items="brandFilterOptions"
-                  item-title="label"
-                  item-value="value"
-                  label="Marka Filtresi"
-                  prepend-inner-icon="mdi-alpha-b-box"
-                  density="compact"
-                  clearable
-                  hide-details
-                />
+
+              <!-- 2) FILTER BAR -->
+              <div class="filter-bar">
+                <div class="filter-group">
+                  <input 
+                    v-model="searchQuery" 
+                    type="text" 
+                    class="filter-input" 
+                    placeholder="Plaka, marka veya model ara..."
+                  />
+                </div>
+                <div class="filter-group">
+                  <select v-model="statusFilter" class="filter-select">
+                    <option value="">Tüm Durumlar</option>
+                    <option value="available">Müsait</option>
+                    <option value="rented">Kiralandı</option>
+                    <option value="inService">Serviste</option>
+                    <option value="maintenance">Bakımda</option>
+                  </select>
+                </div>
+                <div class="filter-group">
+                  <select v-model="locationFilter" class="filter-select">
+                    <option value="">Tüm Lokasyonlar</option>
+                    <option v-for="loc in availableLocations" :key="loc.id" :value="loc.id">
+                      {{ loc.name }}
+                    </option>
+                  </select>
+                </div>
+                <button 
+                  v-if="searchQuery || statusFilter || locationFilter" 
+                  class="btn-clear-filters"
+                  @click="clearFilters"
+                >
+                  Filtreleri Temizle
+                </button>
+              </div>
+
+              <!-- 3) VEHICLE LIST TABLE -->
+              <div class="table-container">
+                <table class="vehicle-table">
+                  <thead class="table-header">
+                    <tr>
+                      <th class="col-vehicle">Araç</th>
+                      <th class="col-plate">Plaka</th>
+                      <th class="col-category">Kategori</th>
+                      <th class="col-location">Lokasyon</th>
+                      <th class="col-status">Durum</th>
+                      <th class="col-km">KM</th>
+                      <th class="col-fuel">Yakıt</th>
+                      <th class="col-actions"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Loading State -->
+                    <tr v-if="loadingVehicles">
+                      <td colspan="8" class="loading-state">
+                        <div class="skeleton-row" v-for="i in 5" :key="i"></div>
+                      </td>
+                    </tr>
+                    <!-- Empty State -->
+                    <tr v-else-if="filteredVehicles.length === 0">
+                      <td colspan="8" class="empty-state">
+                        <div class="empty-content">
+                          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M5 17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-1"/>
+                            <polygon points="12 15 17 21 7 21 12 15"/>
+                          </svg>
+                          <p class="empty-text">Araç bulunamadı</p>
+                        </div>
+                      </td>
+                    </tr>
+                    <!-- Vehicle Rows -->
+                    <tr 
+                      v-else
+                      v-for="item in filteredVehicles" 
+                      :key="item.id"
+                      class="table-row"
+                      @click="viewVehicleDetail(item.id)"
+                    >
+                      <td class="col-vehicle">
+                        <div class="vehicle-info">
+                          <span class="vehicle-name">{{ item.vehicle.name }}</span>
+                          <span class="vehicle-details">
+                            {{ item.vehicle.brand?.name || item.vehicle.brandName || '' }} 
+                            {{ item.vehicle.model?.name || item.vehicle.modelName || '' }}
+                            <span v-if="item.vehicle.year">({{ item.vehicle.year }})</span>
+                          </span>
+                        </div>
+                      </td>
+                      <td class="col-plate">
+                        <div class="plate-list">
+                          <span 
+                            v-for="plate in item.plates" 
+                            :key="plate.id"
+                            class="plate-badge"
+                            @click.stop="openPlateDialog(item.vehicle, plate)"
+                          >
+                            {{ plate.plateNumber }}
+                          </span>
+                          <span v-if="!item.plates || item.plates.length === 0" class="plate-empty">-</span>
+                        </div>
+                      </td>
+                      <td class="col-category">
+                        <span v-if="item.vehicle.category" class="category-badge">
+                          {{ getCategoryName(item.vehicle.category) }}
+                        </span>
+                        <span v-else class="text-muted">-</span>
+                      </td>
+                      <td class="col-location">
+                        <select 
+                          :value="item.vehicle.lastReturnLocationId || ''"
+                          class="location-select"
+                          @change.stop="updateVehicleLastLocation(item.vehicle.id, ($event.target as HTMLSelectElement).value)"
+                          @click.stop
+                        >
+                          <option value="">Lokasyon seçin</option>
+                          <option v-for="loc in availableLocations" :key="loc.id" :value="loc.id">
+                            {{ loc.name }}
+                          </option>
+                        </select>
+                      </td>
+                      <td class="col-status">
+                        <span :class="['status-badge', getVehicleStatusClass(item)]">
+                          {{ getVehicleStatusLabel(item) }}
+                        </span>
+                      </td>
+                      <td class="col-km">
+                        <span class="text-muted">
+                          {{ getVehicleKm(item) }}
+                        </span>
+                      </td>
+                      <td class="col-fuel">
+                        <span class="text-muted">-</span>
+                      </td>
+                      <td class="col-actions" @click.stop>
+                        <div class="action-menu">
+                          <button class="action-menu-btn" @click="toggleActionMenu(item.id)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <circle cx="12" cy="12" r="1"/>
+                              <circle cx="12" cy="5" r="1"/>
+                              <circle cx="12" cy="19" r="1"/>
+                            </svg>
+                          </button>
+                          <div v-if="activeActionMenu === item.id" class="action-menu-dropdown" @click.stop>
+                            <button @click="viewVehicleDetail(item.id); activeActionMenu = null">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                              </svg>
+                              Detayları Görüntüle
+                            </button>
+                            <button @click="editVehicle(item.vehicle); activeActionMenu = null">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                              </svg>
+                              Düzenle
+                            </button>
+                            <button @click="openImageDialog(item.vehicle); activeActionMenu = null">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                <circle cx="8.5" cy="8.5" r="1.5"/>
+                                <polyline points="21 15 16 10 5 21"/>
+                              </svg>
+                              Resimler
+                            </button>
+                            <button @click="openPlateDialog(item.vehicle); activeActionMenu = null">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                              </svg>
+                              Plaka Yönetimi
+                            </button>
+                            <div class="menu-divider"></div>
+                            <button class="menu-danger" @click="deleteVehicle(item.vehicle.id); activeActionMenu = null">
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                              </svg>
+                              Sil
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- 4) BULK ACTIONS (when rows selected) -->
+              <div v-if="selectedVehicles.length > 0" class="bulk-actions-bar">
+                <div class="bulk-actions-content">
+                  <span class="bulk-count">{{ selectedVehicles.length }} araç seçildi</span>
+                  <div class="bulk-buttons">
+                    <button class="btn-secondary" @click="bulkChangeStatus">Durum Değiştir</button>
+                    <button class="btn-secondary" @click="bulkAssignLocation">Lokasyon Ata</button>
+                    <button class="btn-secondary" @click="bulkExport">Dışa Aktar</button>
+                    <button class="btn-icon" @click="selectedVehicles = []">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </v-card-text>
-        <v-divider />
-        <v-card-text class="pa-0">
-          <v-data-table
-            :headers="tableHeaders"
-            :items="filteredVehicles"
-            :loading="loadingVehicles"
-            :expanded="Array.from(expandedVehicles)"
-            item-value="id"
-            class="elevation-0"
-          >
-            <template #item.plate="{ item }">
-              <div class="d-flex align-center flex-wrap gap-1">
-                <template v-if="item.plates && item.plates.length > 0">
-                  <v-chip
-                    v-for="plate in item.plates"
-                    :key="plate.id"
-                    color="info"
-                    variant="flat"
-                    size="small"
-                    prepend-icon="mdi-card-text"
-                    style="cursor: pointer;"
-                    @click="openPlateDialog(item.vehicle, plate)"
-                  >
-                    {{ plate.plateNumber }}
-                  </v-chip>
-                </template>
-                <span v-else class="text-caption text-grey">Plaka yok</span>
-                <v-btn
-                  icon="mdi-plus"
-                  variant="text"
-                  size="small"
-                  color="primary"
-                  @click="openPlateDialog(item.vehicle)"
-                  title="Yeni Plaka Ekle"
-                />
-              </div>
-            </template>
-
-            <template #item.name="{ item }">
-              <div class="d-flex align-center gap-2" style="cursor: pointer;" @click="toggleVehicleDetails(item.id)">
-                <v-icon 
-                  :icon="expandedVehicles.has(item.id) ? 'mdi-chevron-down' : 'mdi-chevron-right'" 
-                  size="16" 
-                  color="primary"
-                />
-                <v-icon icon="mdi-car" size="20" color="primary" />
-                <span class="font-weight-medium">{{ item.vehicle.name }}</span>
-              </div>
-            </template>
-
-            <template #item.category="{ item }">
-              <v-chip v-if="item.vehicle.category" size="small" color="primary" variant="tonal">
-                {{ getCategoryName(item.vehicle.category) }}
-              </v-chip>
-              <span v-else class="text-grey">-</span>
-            </template>
-
-            <template #item.brand="{ item }">
-              <span>{{ item.vehicle.brand?.name || item.vehicle.brandName || '-' }}</span>
-            </template>
-
-            <template #item.model="{ item }">
-              <span>{{ item.vehicle.model?.name || item.vehicle.modelName || '-' }}</span>
-            </template>
-
-            <template #item.year="{ item }">
-              <span>{{ item.vehicle.year || '-' }}</span>
-            </template>
-
-            <template #item.lastReturnLocation="{ item }">
-              <v-select
-                :model-value="item.vehicle.lastReturnLocationId || ''"
-                :items="availableLocations"
-                item-title="name"
-                item-value="id"
-                density="compact"
-                hide-details
-                variant="outlined"
-                style="max-width: 200px;"
-                :placeholder="item.vehicle.lastReturnLocation ? getLocationName(item.vehicle.lastReturnLocation) : 'Lokasyon seçin'"
-                @update:model-value="updateVehicleLastLocation(item.vehicle.id, $event)"
-              >
-                <template #prepend-inner>
-                  <v-icon icon="mdi-map-marker" size="16" />
-                </template>
-              </v-select>
-            </template>
-
-            <template #item.status="{ item }">
-              <v-btn
-                :color="getVehicleStatus(item).color"
-                :icon="getVehicleStatus(item).icon"
-                :variant="getVehicleStatus(item).variant"
-                size="small"
-                :class="getVehicleStatus(item).class"
-              />
-            </template>
-
-            <template #item.actions="{ item }">
-              <v-btn icon="mdi-image-multiple" variant="text" size="small" color="primary" @click="openImageDialog(item.vehicle)" title="Resimler" />
-              <v-btn icon="mdi-pencil" variant="text" size="small" @click="editVehicle(item.vehicle)" />
-              <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="deleteVehicle(item.vehicle.id)" />
-            </template>
-
-            <!-- Expanded Details Row -->
-            <template #expanded-row="{ item }">
-              <tr>
-                <td :colspan="tableHeaders.length" class="pa-4">
-                  <v-card variant="outlined" class="pa-4">
-                    <div class="d-flex flex-column gap-3">
-                      <h4 class="text-subtitle-1 font-weight-bold mb-2">Araç Detayları</h4>
-                      
-                      <!-- Araç Bilgileri -->
-                      <v-row>
-                        <v-col cols="12" md="6">
-                          <div class="d-flex align-center gap-2">
-                            <v-icon icon="mdi-calendar-plus" size="20" color="primary" />
-                            <span class="font-weight-medium">Giriş Tarihi:</span>
-                            <span>{{ item.vehicle.createdAt ? new Date(item.vehicle.createdAt).toLocaleDateString('tr-TR') : '-' }}</span>
-                          </div>
-                        </v-col>
-                        <v-col cols="12" md="6">
-                          <div class="d-flex align-center gap-2">
-                            <v-icon icon="mdi-map-marker" size="20" color="primary" />
-                            <span class="font-weight-medium">Son Şehir:</span>
-                            <span>-</span>
-                          </div>
-                        </v-col>
-                      </v-row>
-
-                      <!-- Plaka Bilgileri -->
-                      <div v-if="item.plates && item.plates.length > 0">
-                        <h5 class="text-subtitle-2 font-weight-bold mb-3">Plaka Bilgileri</h5>
-                        <v-row v-for="(plate, index) in item.plates" :key="plate.id" class="mb-2">
-                          <v-col cols="12">
-                            <v-card variant="outlined" class="pa-3">
-                              <div class="d-flex align-center gap-2 mb-2">
-                                <v-icon icon="mdi-card-text" size="20" color="primary" />
-                                <span class="font-weight-bold">Plaka {{ index + 1 }}: {{ plate.plateNumber }}</span>
-                              </div>
-                              <v-row>
-                                <v-col cols="12" md="6">
-                                  <div class="d-flex align-center gap-2">
-                                    <v-icon icon="mdi-file-document" size="18" color="primary" />
-                                    <span class="font-weight-medium">Belge Seri No:</span>
-                                    <span>{{ plate.documentNumber || plate.serialNumber || '-' }}</span>
-                                  </div>
-                                </v-col>
-                                <v-col cols="12" md="6">
-                                  <div class="d-flex align-center gap-2">
-                                    <v-icon icon="mdi-calendar-check" size="18" color="primary" />
-                                    <span class="font-weight-medium">Tescil Tarihi:</span>
-                                    <span>{{ plate.registrationDate ? new Date(plate.registrationDate).toLocaleDateString('tr-TR') : '-' }}</span>
-                                  </div>
-                                </v-col>
-                                <v-col cols="12" md="6">
-                                  <div class="d-flex align-center gap-2">
-                                    <v-icon icon="mdi-speedometer" size="18" color="primary" />
-                                    <span class="font-weight-medium">Son Km:</span>
-                                    <span>{{ plate.km || '-' }}</span>
-                                  </div>
-                                </v-col>
-                              </v-row>
-                            </v-card>
-                          </v-col>
-                        </v-row>
-                      </div>
-                      <div v-else class="text-grey text-caption">Plaka bilgisi bulunmamaktadır.</div>
-                      
-                      <!-- Vehicle Timeline -->
-                      <v-divider class="my-4" />
-                      <div>
-                        <h5 class="text-subtitle-2 font-weight-bold mb-3">
-                          <v-icon icon="mdi-timeline" size="20" color="primary" class="mr-2" />
-                          Araç Geçmişi (Timeline)
-                        </h5>
-                        <VehicleTimeline :vehicle-id="item.vehicle.id" />
-                      </div>
-                    </div>
-                  </v-card>
-                </td>
-              </tr>
-            </template>
-          </v-data-table>
-        </v-card-text>
-            </v-card>
           </v-window-item>
 
           <!-- Kategoriler Sekmesi -->
@@ -569,44 +566,34 @@
       </v-card>
 
       <!-- Yeni Araç Ekleme/Düzenleme Dialog -->
-      <v-dialog v-model="showVehicleDialog" max-width="1400" fullscreen scrollable>
+      <v-dialog v-model="showVehicleDialog" max-width="1400" fullscreen scrollable @keydown.esc="closeVehicleDialog">
         <v-card>
-          <v-card-title class="d-flex align-center justify-space-between">
-            <div class="d-flex align-center gap-2">
-              <v-icon icon="mdi-car" size="24" />
-              <span class="text-h6">{{ editingVehicle ? 'Araç Düzenle' : 'Yeni Araç Ekle' }}</span>
+          <v-card-title>
+            <div>
+              <div class="text-h6">{{ editingVehicle ? 'Araç Düzenle' : 'Yeni Araç Ekle' }}</div>
+              <div class="text-subtitle-1">Araç bilgilerini girin ve kaydedin</div>
             </div>
             <v-btn icon="mdi-close" variant="text" @click="closeVehicleDialog" />
           </v-card-title>
-          <v-divider />
-          <v-card-text class="pa-0">
-            <v-progress-linear
-              v-if="loadingCategories || loadingBrands"
-              indeterminate
-              color="primary"
-              class="mb-0"
-            />
-            <div class="pa-6">
-
-              <!-- Araç Detay Bilgileri -->
-              <h3 class="text-h6 mb-4">Araç Detay Bilgileri</h3>
-                  
+          <v-card-text>
+            <div class="admin-form-scope">
               <v-form ref="vehicleFormRef" v-model="vehicleFormValid">
-                    <v-row>
-                      <!-- Kategori Seçimi -->
-                      <v-col cols="12" md="4">
+                <v-row>
+                  <!-- Kategori Seçimi -->
+                  <v-col cols="12" md="4">
+                        <label class="form-label">Araç Kategorisi <span class="required">*</span></label>
                         <v-autocomplete
                           v-model="form.categoryId"
                           :items="categoryOptions"
                           item-title="title"
                           item-value="value"
-                          label="Araç Kategorisi *"
                           placeholder="Kategori seçiniz"
                           prepend-inner-icon="mdi-tag"
                           :rules="[rules.required]"
                           clearable
                           variant="outlined"
                           density="comfortable"
+                          hide-details="auto"
                         >
                           <template #append-inner>
                             <v-btn
@@ -622,18 +609,19 @@
 
                       <!-- Marka Seçimi -->
                       <v-col cols="12" md="4">
+                        <label class="form-label">Araç Markası <span class="required">*</span></label>
                         <v-autocomplete
                           v-model="form.brandId"
                           :items="brandOptions"
                           item-title="title"
                           item-value="value"
-                          label="Araç Markası *"
                           placeholder="Marka seçiniz"
                           prepend-inner-icon="mdi-alpha-b-box"
                           :rules="[rules.required]"
                           clearable
                           variant="outlined"
                           density="comfortable"
+                          hide-details="auto"
                           @update:model-value="handleBrandChange"
                         >
                           <template #append-inner>
@@ -650,12 +638,12 @@
 
                       <!-- Model Seçimi -->
                       <v-col cols="12" md="4">
+                        <label class="form-label">Araç Modeli <span class="required">*</span></label>
                         <v-autocomplete
                           v-model="form.modelId"
                           :items="filteredModelOptions"
                           item-title="title"
                           item-value="value"
-                          label="Araç Modeli *"
                           placeholder="Model seçiniz"
                           prepend-inner-icon="mdi-shape"
                           :rules="[rules.required]"
@@ -663,6 +651,7 @@
                           clearable
                           variant="outlined"
                           density="comfortable"
+                          hide-details="auto"
                           :hint="!form.brandId ? 'Önce marka seçiniz' : ''"
                           persistent-hint
                         >
@@ -680,189 +669,267 @@
                       </v-col>
 
                       <v-col cols="12" md="6">
+                        <label class="form-label">Araç Adı</label>
                         <v-text-field
                           v-model="form.name"
-                          label="Araç Adı"
+                          placeholder="Araç adını girin"
                           prepend-inner-icon="mdi-car"
                           required
+                          hide-details="auto"
+                          variant="outlined"
+                          density="comfortable"
                         />
                       </v-col>
                       <v-col cols="12" md="6">
+                        <label class="form-label">Yıl</label>
                         <v-text-field
                           v-model.number="form.year"
-                          label="Yıl"
                           type="number"
+                          placeholder="Yıl girin"
                           prepend-inner-icon="mdi-calendar"
+                          hide-details="auto"
+                          variant="outlined"
+                          density="comfortable"
                         />
                       </v-col>
                       <v-col cols="12" md="6">
+                        <label class="form-label">Vites</label>
                         <v-select
                           v-model="form.transmission"
                           :items="transmissionOptions"
                           item-title="label"
                           item-value="value"
-                          label="Vites"
+                          placeholder="Vites tipi seçin"
                           prepend-inner-icon="mdi-cog"
+                          hide-details="auto"
+                          variant="outlined"
+                          density="comfortable"
                         />
                       </v-col>
                       <v-col cols="12" md="6">
+                        <label class="form-label">Yakıt</label>
                         <v-select
                           v-model="form.fuelType"
                           :items="fuelTypeOptions"
                           item-title="label"
                           item-value="value"
-                          label="Yakıt"
+                          placeholder="Yakıt tipi seçin"
                           prepend-inner-icon="mdi-fuel"
+                          hide-details="auto"
+                          variant="outlined"
+                          density="comfortable"
                         />
                       </v-col>
                       <v-col cols="12" md="4">
+                        <label class="form-label">Yolcu Sayısı</label>
                         <v-text-field
                           v-model.number="form.seats"
-                          label="Yolcu Sayısı"
                           type="number"
+                          placeholder="Yolcu sayısı girin"
                           prepend-inner-icon="mdi-account"
+                          hide-details="auto"
+                          variant="outlined"
+                          density="comfortable"
                         />
                       </v-col>
                       <v-col cols="12" md="4">
+                        <label class="form-label">Büyük Bagaj Adedi</label>
                         <v-text-field
                           v-model.number="form.largeLuggage"
-                          label="Büyük Bagaj Adedi"
                           type="number"
+                          placeholder="Büyük bagaj adedi girin"
                           prepend-inner-icon="mdi-luggage"
+                          hide-details="auto"
+                          variant="outlined"
+                          density="comfortable"
                         />
                       </v-col>
                       <v-col cols="12" md="4">
+                        <label class="form-label">Küçük Bagaj Adedi</label>
                         <v-text-field
                           v-model.number="form.smallLuggage"
-                          label="Küçük Bagaj Adedi"
                           type="number"
+                          placeholder="Küçük bagaj adedi girin"
                           prepend-inner-icon="mdi-luggage"
+                          hide-details="auto"
+                          variant="outlined"
+                          density="comfortable"
                         />
                       </v-col>
                       <v-col cols="12" md="4">
+                        <label class="form-label">Kapı Sayısı</label>
                         <v-text-field
                           v-model.number="form.doors"
-                          label="Kapı Sayısı"
                           type="number"
+                          placeholder="Kapı sayısı girin"
                           prepend-inner-icon="mdi-door"
+                          hide-details="auto"
+                          variant="outlined"
+                          density="comfortable"
                         />
                       </v-col>
                       <v-col cols="12" md="4">
+                        <label class="form-label">Motor</label>
                         <v-select
                           v-model="form.engineSize"
                           :items="engineSizeOptions"
-                          label="Motor"
+                          placeholder="Motor seçin"
                           prepend-inner-icon="mdi-engine"
+                          hide-details="auto"
+                          variant="outlined"
+                          density="comfortable"
                         />
                       </v-col>
                       <v-col cols="12" md="4">
+                        <label class="form-label">Kasa</label>
                         <v-select
                           v-model="form.bodyType"
                           :items="bodyTypeOptions"
-                          label="Kasa"
+                          placeholder="Kasa tipi seçin"
                           prepend-inner-icon="mdi-car-side"
+                          hide-details="auto"
+                          variant="outlined"
+                          density="comfortable"
                         />
                       </v-col>
                       <v-col cols="12" md="4">
+                        <label class="form-label">Beygir</label>
                         <v-select
                           v-model="form.horsepower"
                           :items="horsepowerOptions"
-                          label="Beygir"
+                          placeholder="Beygir gücü seçin"
                           prepend-inner-icon="mdi-lightning-bolt"
+                          hide-details="auto"
+                          variant="outlined"
+                          density="comfortable"
                         />
                       </v-col>
                       <v-col cols="12" md="4">
+                        <label class="form-label">Hidrolik Direksiyon</label>
                         <v-select
                           v-model="form.hasHydraulicSteering"
                           :items="yesNoOptions"
                           item-title="label"
                           item-value="value"
-                          label="Hidrolik Direksiyon"
+                          placeholder="Seçin"
                           prepend-inner-icon="mdi-steering"
+                          hide-details="auto"
+                          variant="outlined"
+                          density="comfortable"
                         />
                       </v-col>
                       <v-col cols="12" md="4">
+                        <label class="form-label">4 Çeker</label>
                         <v-select
                           v-model="form.isFourWheelDrive"
                           :items="yesNoOptions"
                           item-title="label"
                           item-value="value"
-                          label="4 Çeker"
+                          placeholder="Seçin"
                           prepend-inner-icon="mdi-car-multiple"
+                          hide-details="auto"
+                          variant="outlined"
+                          density="comfortable"
                         />
                       </v-col>
                       <v-col cols="12" md="4">
+                        <label class="form-label">Klima</label>
                         <v-select
                           v-model="form.hasAirConditioning"
                           :items="yesNoOptions"
                           item-title="label"
                           item-value="value"
-                          label="Klima"
+                          placeholder="Seçin"
                           prepend-inner-icon="mdi-snowflake"
+                          hide-details="auto"
+                          variant="outlined"
+                          density="comfortable"
                         />
                       </v-col>
                       <v-col cols="12" md="4">
+                        <label class="form-label">ABS</label>
                         <v-select
                           v-model="form.hasAbs"
                           :items="yesNoOptions"
                           item-title="label"
                           item-value="value"
-                          label="ABS"
+                          placeholder="Seçin"
                           prepend-inner-icon="mdi-alert-circle"
+                          hide-details="auto"
+                          variant="outlined"
+                          density="comfortable"
                         />
                       </v-col>
                       <v-col cols="12" md="4">
+                        <label class="form-label">Radio</label>
                         <v-select
                           v-model="form.hasRadio"
                           :items="yesNoOptions"
                           item-title="label"
                           item-value="value"
-                          label="Radio"
+                          placeholder="Seçin"
                           prepend-inner-icon="mdi-radio"
+                          hide-details="auto"
+                          variant="outlined"
+                          density="comfortable"
                         />
                       </v-col>
                       <v-col cols="12" md="4">
+                        <label class="form-label">CD</label>
                         <v-select
                           v-model="form.hasCd"
                           :items="yesNoOptions"
                           item-title="label"
                           item-value="value"
-                          label="CD"
+                          placeholder="Seçin"
                           prepend-inner-icon="mdi-disc"
+                          hide-details="auto"
+                          variant="outlined"
+                          density="comfortable"
                         />
                       </v-col>
                       <v-col cols="12" md="4">
+                        <label class="form-label">Sun Roof</label>
                         <v-select
                           v-model="form.hasSunroof"
                           :items="yesNoOptions"
                           item-title="label"
                           item-value="value"
-                          label="Sun Roof"
+                          placeholder="Seçin"
                           prepend-inner-icon="mdi-car-convertible"
+                          hide-details="auto"
+                          variant="outlined"
+                          density="comfortable"
                         />
                       </v-col>
                       <v-col cols="12" md="4">
+                        <label class="form-label">Resim</label>
                         <v-text-file-input  
                           v-model="form.imageUrl"
-                          label="Resim"
+                          placeholder="Resim URL'i girin"
                           prepend-inner-icon="mdi-image"
+                          hide-details="auto"
+                          variant="outlined"
+                          density="comfortable"
                         />
                       </v-col>
                       <v-col cols="12">
+                        <label class="form-label">Açıklama</label>
                         <v-textarea
                           v-model="form.description"
-                          label="Açıklama"
+                          placeholder="Açıklama girin"
                           prepend-inner-icon="mdi-text"
                           rows="3"
+                          hide-details="auto"
+                          variant="outlined"
+                          density="comfortable"
                         />
                       </v-col>
-                    </v-row>
-                  </v-form>
-                </div>
+              </v-row>
+              </v-form>
+            </div>
           </v-card-text>
-          <v-divider />
           <v-card-actions>
-            <v-spacer />
             <v-btn variant="text" @click="closeVehicleDialog">İptal</v-btn>
             <v-btn color="primary" @click="saveVehicle" :loading="savingVehicle" :disabled="!vehicleFormValid">
               Kaydet
@@ -872,16 +939,19 @@
       </v-dialog>
 
       <!-- Category Add Dialog -->
-      <v-dialog v-model="showCategoryDialog" max-width="600">
+      <v-dialog v-model="showCategoryDialog" max-width="560" @keydown.esc="closeCategoryDialog">
         <v-card>
-          <v-card-title class="d-flex align-center justify-space-between">
-            <span class="text-h6">{{ editingCategory ? 'Kategori Düzenle' : 'Yeni Kategori Ekle' }}</span>
+          <v-card-title>
+            <div>
+              <div class="text-h6">{{ editingCategory ? 'Kategori Düzenle' : 'Yeni Kategori Ekle' }}</div>
+              <div class="text-subtitle-1">Araç kategorisi bilgilerini girin</div>
+            </div>
             <v-btn icon="mdi-close" variant="text" @click="closeCategoryDialog" />
           </v-card-title>
-          <v-divider />
-          <v-card-text class="pa-6">
-            <v-form ref="categoryFormRef" v-model="categoryFormValid">
-              <v-tabs v-model="categoryLanguageTab" density="compact" class="mb-4">
+          <v-card-text>
+            <div class="admin-form-scope">
+              <v-form ref="categoryFormRef" v-model="categoryFormValid">
+                <v-tabs v-model="categoryLanguageTab" density="compact" class="mb-4">
                 <v-tab
                   v-for="lang in availableLanguages"
                   :key="lang.id"
@@ -904,11 +974,10 @@
                   />
                 </v-window-item>
               </v-window>
-            </v-form>
+              </v-form>
+            </div>
           </v-card-text>
-          <v-divider />
           <v-card-actions>
-            <v-spacer />
             <v-btn variant="text" @click="closeCategoryDialog">İptal</v-btn>
             <v-btn color="primary" @click="saveCategoryAndClose" :loading="savingCategory" :disabled="!categoryFormValid">
               Kaydet
@@ -918,26 +987,28 @@
       </v-dialog>
 
       <!-- Brand Add Dialog -->
-      <v-dialog v-model="showBrandDialog" max-width="500">
+      <v-dialog v-model="showBrandDialog" max-width="560" @keydown.esc="closeBrandDialog">
         <v-card>
-          <v-card-title class="d-flex align-center justify-space-between">
-            <span class="text-h6">{{ editingBrand ? 'Marka Düzenle' : 'Yeni Marka Ekle' }}</span>
+          <v-card-title>
+            <div>
+              <div class="text-h6">{{ editingBrand ? 'Marka Düzenle' : 'Yeni Marka Ekle' }}</div>
+              <div class="text-subtitle-1">Araç markası bilgilerini girin</div>
+            </div>
             <v-btn icon="mdi-close" variant="text" @click="closeBrandDialog" />
           </v-card-title>
-          <v-divider />
-          <v-card-text class="pa-6">
-            <v-form ref="brandFormRef" v-model="brandFormValid">
-              <v-text-field
-                v-model="brandForm.name"
-                label="Marka Adı"
-                prepend-inner-icon="mdi-alpha-b-box"
-                required
-              />
-            </v-form>
+          <v-card-text>
+            <div class="admin-form-scope">
+              <v-form ref="brandFormRef" v-model="brandFormValid">
+                <v-text-field
+                  v-model="brandForm.name"
+                  label="Marka Adı"
+                  prepend-inner-icon="mdi-alpha-b-box"
+                  required
+                />
+              </v-form>
+            </div>
           </v-card-text>
-          <v-divider />
           <v-card-actions>
-            <v-spacer />
             <v-btn variant="text" @click="closeBrandDialog">İptal</v-btn>
             <v-btn color="primary" @click="saveBrandAndClose" :loading="savingBrand" :disabled="!brandFormValid">
               Kaydet
@@ -947,18 +1018,21 @@
       </v-dialog>
 
       <!-- Model Add Dialog -->
-      <v-dialog v-model="showModelDialog" max-width="500">
+      <v-dialog v-model="showModelDialog" max-width="560" @keydown.esc="closeModelDialog">
         <v-card>
-          <v-card-title class="d-flex align-center justify-space-between">
-            <span class="text-h6">{{ editingModel ? 'Model Düzenle' : 'Yeni Model Ekle' }}</span>
+          <v-card-title>
+            <div>
+              <div class="text-h6">{{ editingModel ? 'Model Düzenle' : 'Yeni Model Ekle' }}</div>
+              <div class="text-subtitle-1">Araç modeli bilgilerini girin</div>
+            </div>
             <v-btn icon="mdi-close" variant="text" @click="closeModelDialog" />
           </v-card-title>
-          <v-divider />
-          <v-card-text class="pa-6">
+          <v-card-text>
             <v-alert v-if="!form.brandId && !editingModel" type="warning" variant="tonal" class="mb-4">
               Önce bir marka seçmelisiniz.
             </v-alert>
-            <v-form v-if="form.brandId || editingModel" ref="modelFormRef" v-model="modelFormValid">
+            <div class="admin-form-scope">
+              <v-form v-if="form.brandId || editingModel" ref="modelFormRef" v-model="modelFormValid">
               <v-select
                 v-if="editingModel"
                 v-model="form.brandId"
@@ -976,11 +1050,10 @@
                 prepend-inner-icon="mdi-shape"
                 required
               />
-            </v-form>
+              </v-form>
+            </div>
           </v-card-text>
-          <v-divider />
           <v-card-actions>
-            <v-spacer />
             <v-btn variant="text" @click="closeModelDialog">İptal</v-btn>
             <v-btn
               color="primary"
@@ -995,17 +1068,18 @@
       </v-dialog>
 
       <!-- Plaka Ekleme Dialog -->
-      <v-dialog v-model="showPlateDialog" max-width="1000" scrollable>
+      <v-dialog v-model="showPlateDialog" max-width="1000" scrollable @keydown.esc="closePlateDialog">
         <v-card>
-          <v-card-title class="d-flex align-center justify-space-between">
-            <div class="d-flex align-center gap-2">
-              <v-icon icon="mdi-card-text" size="24" />
-              <span class="text-h6">Plakalar</span>
+          <v-card-title>
+            <div>
+              <div class="text-h6">Plaka Yönetimi</div>
+              <div class="text-subtitle-1" v-if="selectedVehicleForPlate">
+                {{ selectedVehicleForPlate.name }} - Plaka bilgilerini yönetin
+              </div>
             </div>
             <v-btn icon="mdi-close" variant="text" @click="closePlateDialog" />
           </v-card-title>
-          <v-divider />
-          <v-card-text class="pa-6">
+          <v-card-text>
             <div v-if="selectedVehicleForPlate" class="mb-4">
               <v-alert type="info" variant="tonal">
                 <div class="d-flex align-center gap-2">
@@ -1080,9 +1154,10 @@
               </div>
             </div>
 
-            <v-form ref="plateFormRef" v-model="plateFormValid">
-              <v-row>
-                <v-col cols="12" md="6">
+            <div class="admin-form-scope">
+              <v-form ref="plateFormRef" v-model="plateFormValid">
+                <v-row>
+                  <v-col cols="12" md="6">
                   <v-text-field
                     v-model="plateForm.plateNumber"
                     label="Plaka"
@@ -1249,17 +1324,16 @@
                   </tr>
                 </tbody>
               </v-table>
-            </v-form>
+              </v-form>
+            </div>
           </v-card-text>
           <v-divider />
           <v-card-actions>
-            <v-spacer />
-            <v-btn variant="text" @click="closePlateDialog">Kapat</v-btn>
+            <v-btn variant="text" @click="closePlateDialog">İptal</v-btn>
             <v-btn 
               v-if="editingPlate"
               color="error"
               variant="text"
-              prepend-icon="mdi-delete"
               @click="deletePlate"
               :loading="deletingPlate"
             >
@@ -1809,20 +1883,20 @@
       </v-dialog>
 
       <!-- Lokasyon Ekleme/Düzenleme Dialog -->
-      <v-dialog v-model="showLocationDialog" scrollable>
+      <v-dialog v-model="showLocationDialog" max-width="560" scrollable @keydown.esc="closeLocationDialog">
         <v-card>
-          <v-card-title class="d-flex align-center justify-space-between">
-            <div class="d-flex align-center gap-2">
-              <v-icon icon="mdi-map-marker" size="24" />
-              <span class="text-h6">{{ editingLocation ? 'Lokasyon Düzenle' : 'Lokasyon Ekle' }}</span>
+          <v-card-title>
+            <div>
+              <div class="text-h6">{{ editingLocation ? 'Lokasyon Düzenle' : 'Lokasyon Ekle' }}</div>
+              <div class="text-subtitle-1">Lokasyon bilgilerini girin ve ayarlarını yapın</div>
             </div>
             <v-btn icon="mdi-close" variant="text" @click="closeLocationDialog" />
           </v-card-title>
-          <v-divider />
-          <v-card-text class="pa-6">
-            <v-form ref="locationFormRef" v-model="locationFormValid">
-              <v-row>
-                <v-col cols="12">
+          <v-card-text>
+            <div class="admin-form-scope">
+              <v-form ref="locationFormRef" v-model="locationFormValid">
+                <v-row>
+                  <v-col cols="12">
                   <v-select
                     v-model="locationForm.locationId"
                     :items="availableMasterLocations"
@@ -1905,12 +1979,11 @@
                   />
                 </v-col>
               </v-row>
-            </v-form>
+              </v-form>
+            </div>
           </v-card-text>
-          <v-divider />
           <v-card-actions>
-            <v-spacer />
-            <v-btn variant="text" @click="closeLocationDialog">Kapat</v-btn>
+            <v-btn variant="text" @click="closeLocationDialog">İptal</v-btn>
             <v-btn color="primary" @click="saveLocation" :loading="savingLocation" :disabled="!locationFormValid">
               Kaydet
             </v-btn>
@@ -2068,11 +2141,14 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref, onMounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { http } from '../modules/http';
 import { useAuthStore } from '../stores/auth';
 import { translateText } from '../services/deepl';
 import { usePricingInsights } from '../composables/usePricingInsights';
 import VehicleTimeline from '../components/VehicleTimeline.vue';
+
+const router = useRouter();
 
 // Interfaces
 interface LanguageDto {
@@ -2237,6 +2313,13 @@ const selectedBrandFilter = ref<string | null>(null);
 const selectedBrandForModels = ref<string | null>(null);
 const expandedVehicles = ref<Set<string>>(new Set());
 const expandedLocations = ref<Set<string>>(new Set());
+
+// New minimalist UI state
+const searchQuery = ref('');
+const statusFilter = ref('');
+const locationFilter = ref('');
+const activeActionMenu = ref<string | null>(null);
+const selectedVehicles = ref<string[]>([]);
 const showVehicleDialog = ref(false);
 const showPlateDialog = ref(false);
 const showLocationDialog = ref(false);
@@ -2800,6 +2883,91 @@ const toggleVehicleDetails = (vehicleId: string) => {
   } else {
     expandedVehicles.value.add(vehicleId);
   }
+};
+
+const viewVehicleDetail = (vehicleId: string) => {
+  router.push({ name: 'vehicle-detail', params: { id: vehicleId } });
+};
+
+// New minimalist status functions
+const getVehicleStatusClass = (row: VehiclePlateRow): string => {
+  // Eğer plaka yoksa, araç boşta sayılır
+  if (!row.plates || row.plates.length === 0) {
+    return 'available';
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Tüm plakaların rezervasyonlarını kontrol et
+  const hasActiveReservation = row.plates.some(plate => {
+    const plateReservations = vehicleReservations.value.filter(
+      r => r.plateId === plate.id
+    );
+
+    return plateReservations.some(reservation => {
+      const startDate = new Date(reservation.startDate);
+      const endDate = new Date(reservation.endDate);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+      
+      return today >= startDate && today <= endDate;
+    });
+  });
+
+  if (hasActiveReservation) {
+    return 'rented';
+  }
+  
+  // TODO: Check for maintenance and in-service status
+  // For now, default to available
+  return 'available';
+};
+
+const getVehicleStatusLabel = (row: VehiclePlateRow): string => {
+  const status = getVehicleStatusClass(row);
+  const labels: Record<string, string> = {
+    available: 'Müsait',
+    rented: 'Kiralandı',
+    inService: 'Serviste',
+    maintenance: 'Bakımda',
+  };
+  return labels[status] || 'Müsait';
+};
+
+const getVehicleKm = (row: VehiclePlateRow): string => {
+  if (!row.plates || row.plates.length === 0) return '-';
+  const latestPlate = row.plates[0]; // Get first plate's KM
+  return latestPlate.km ? `${latestPlate.km.toLocaleString('tr-TR')} km` : '-';
+};
+
+const toggleActionMenu = (vehicleId: string) => {
+  if (activeActionMenu.value === vehicleId) {
+    activeActionMenu.value = null;
+  } else {
+    activeActionMenu.value = vehicleId;
+  }
+};
+
+const clearFilters = () => {
+  searchQuery.value = '';
+  statusFilter.value = '';
+  locationFilter.value = '';
+};
+
+const bulkChangeStatus = () => {
+  // TODO: Implement bulk status change
+  console.log('Bulk change status for:', selectedVehicles.value);
+};
+
+const bulkAssignLocation = () => {
+  // TODO: Implement bulk location assignment
+  console.log('Bulk assign location for:', selectedVehicles.value);
+};
+
+const bulkExport = () => {
+  // TODO: Implement bulk export
+  console.log('Bulk export for:', selectedVehicles.value);
 };
 
 const getVehicleStatus = (row: VehiclePlateRow): { color: string; icon: string; variant: string; class?: string } => {
@@ -4422,6 +4590,16 @@ onMounted(async () => {
       loadLocations(),
       loadDefaultCurrency(), // Load default currency for location fee icons
     ]);
+    
+    // Close action menu when clicking outside
+    document.addEventListener('click', (e) => {
+      if (activeActionMenu.value) {
+        const target = e.target as HTMLElement;
+        if (!target.closest('.action-menu')) {
+          activeActionMenu.value = null;
+        }
+      }
+    });
     console.log('Initial data loaded:', {
       categories: vehicleCategories.value.length,
       brands: vehicleBrands.value.length,
@@ -4475,8 +4653,7 @@ const loadDefaultCurrency = async () => {
 .table-container {
   width: 100%;
   overflow-x: auto;
-  margin: 0 -16px;
-  padding: 0 16px;
+  margin: 0 auto
 }
 
 .location-table {
@@ -4586,5 +4763,589 @@ const loadDefaultCurrency = async () => {
   font-size: 13px !important;
   font-weight: 500 !important;
   color: rgb(var(--v-theme-on-surface)) !important;
+}
+/* Minimalist Vehicle List Styles */
+.vehicle-list-page {
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 24px;
+}
+
+/* 1) PAGE HEADER */
+.page-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 4px 0;
+  line-height: 1.2;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+
+.btn-icon:hover:not(:disabled) {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  color: #111827;
+}
+
+.btn-icon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.btn-secondary {
+  padding: 8px 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+/* 2) FILTER BAR */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  flex: 1;
+  min-width: 200px;
+}
+
+.filter-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #111827;
+  background: #ffffff;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.filter-input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.filter-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #111827;
+  background: #ffffff;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.btn-clear-filters {
+  padding: 10px 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.btn-clear-filters:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  color: #111827;
+}
+
+/* 3) TABLE */
+.table-container {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.vehicle-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table-header {
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.table-header th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.table-header th:first-child {
+  padding-left: 20px;
+}
+
+.table-header th:last-child {
+  padding-right: 20px;
+}
+
+.table-row {
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.table-row:hover {
+  background: #f9fafb;
+}
+
+.table-row:last-child {
+  border-bottom: none;
+}
+
+.table-row td {
+  padding: 5px;
+  font-size: 14px;
+  color: #374151;
+}
+
+.table-row td:first-child {
+  padding-left: 20px;
+}
+
+.table-row td:last-child {
+  padding-right: 20px;
+}
+
+/* Column widths */
+.col-vehicle {
+  width: 25%;
+  min-width: 200px;
+}
+
+.col-plate {
+  width: 12%;
+  min-width: 120px;
+}
+
+.col-category {
+  width: 12%;
+  min-width: 100px;
+}
+
+.col-location {
+  width: 15%;
+  min-width: 150px;
+}
+
+.col-status {
+  width: 10%;
+  min-width: 100px;
+}
+
+.col-km {
+  width: 10%;
+  min-width: 80px;
+}
+
+.col-fuel {
+  width: 8%;
+  min-width: 80px;
+}
+
+.col-actions {
+  width: 8%;
+  min-width: 60px;
+}
+
+/* Vehicle Info */
+.vehicle-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vehicle-name {
+  font-weight: 600;
+  color: #111827;
+  font-size: 14px;
+}
+
+.vehicle-details {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* Plate List */
+.plate-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.plate-badge {
+  padding: 4px 10px;
+  background: #eff6ff;
+  color: #1e40af;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.plate-badge:hover {
+  background: #dbeafe;
+}
+
+.plate-empty {
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+/* Category Badge */
+.category-badge {
+  padding: 4px 10px;
+  background: #f3f4f6;
+  color: #374151;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Location Select */
+.location-select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #374151;
+  background: #ffffff;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.location-select:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+.location-select:hover {
+  border-color: #d1d5db;
+}
+
+/* Status Badge */
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-badge.available {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.rented {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.status-badge.inService {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.status-badge.maintenance {
+  background: #fed7aa;
+  color: #9a3412;
+}
+
+.text-muted {
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+/* Action Menu */
+.action-menu {
+  position: relative;
+}
+
+.action-menu-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #6b7280;
+  transition: background 0.2s;
+}
+
+.action-menu-btn:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.action-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  min-width: 200px;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.action-menu-dropdown button {
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.15s;
+}
+
+.action-menu-dropdown button:hover {
+  background: #f9fafb;
+}
+
+.action-menu-dropdown button.menu-danger {
+  color: #dc2626;
+}
+
+.action-menu-dropdown button.menu-danger:hover {
+  background: #fee2e2;
+}
+
+.menu-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 4px 0;
+}
+
+/* Loading State */
+.loading-state {
+  padding: 40px 20px;
+}
+
+.skeleton-row {
+  height: 56px;
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s ease-in-out infinite;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Empty State */
+.empty-state {
+  padding: 60px 20px;
+}
+
+.empty-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  color: #9ca3af;
+}
+
+.empty-content svg {
+  color: #d1d5db;
+}
+
+.empty-text {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Bulk Actions Bar */
+.bulk-actions-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border-top: 1px solid #e5e7eb;
+  box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1);
+  padding: 16px 24px;
+  z-index: 50;
+}
+
+.bulk-actions-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bulk-count {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.bulk-buttons {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .col-brand,
+  .col-model,
+  .col-year {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .vehicle-list-page {
+    padding: 16px;
+  }
+
+  .header-content {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .filter-bar {
+    flex-direction: column;
+  }
+
+  .filter-group {
+    width: 100%;
+  }
+
+  .table-container {
+    overflow-x: auto;
+  }
+
+  .vehicle-table {
+    min-width: 800px;
+  }
+
+  .col-category,
+  .col-location,
+  .col-km,
+  .col-fuel {
+    display: none;
+  }
 }
 </style>

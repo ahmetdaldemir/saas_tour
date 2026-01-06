@@ -43,7 +43,30 @@ import { TransferReservation } from '../modules/transfer/entities/transfer-reser
 import { ChatRoom, ChatRoomStatus } from '../modules/chat/entities/chat-room.entity';
 import { ChatMessage, ChatMessageType, ChatMessageSenderType } from '../modules/chat/entities/chat-message.entity';
 import { ChatWidgetToken } from '../modules/chat/entities/chat-widget-token.entity';
+import { Customer, CustomerGender, CustomerIdType } from '../modules/shared/entities/customer.entity';
+import { CustomerWallet } from '../modules/shared/entities/customer-wallet.entity';
+import { WalletTransaction, WalletTransactionType, WalletTransactionSource } from '../modules/shared/entities/wallet-transaction.entity';
+import { Coupon, CouponStatus } from '../modules/shared/entities/coupon.entity';
+import { Campaign, DiscountType } from '../modules/rentacar/entities/campaign.entity';
+import { ContractTemplate, ContractSectionType } from '../modules/rentacar/entities/contract-template.entity';
+import { Contract, ContractStatus } from '../modules/rentacar/entities/contract.entity';
+import { VehicleDamage, DamageSeverity, DamageStatus } from '../modules/rentacar/entities/vehicle-damage.entity';
+import { VehicleMaintenance, MaintenanceType, MaintenanceStatus } from '../modules/rentacar/entities/vehicle-maintenance.entity';
+import { VehiclePenalty, PenaltyType, PenaltyStatus } from '../modules/rentacar/entities/vehicle-penalty.entity';
+import { CrmPageCategory } from '../modules/crm/entities/crm-page-category.entity';
+import { CrmPage } from '../modules/crm/entities/crm-page.entity';
+import { MarketplaceListing, ServiceType, CommissionType, ListingStatus } from '../modules/marketplace/entities/marketplace-listing.entity';
+import { FinanceCategory, FinanceCategoryType } from '../modules/finance/entities/finance-category.entity';
+import { FinanceCari, FinanceCariKind } from '../modules/finance/entities/finance-cari.entity';
+import { FinanceTransaction, FinanceTransactionType, FinancePaymentMethod, FinanceTransactionStatus } from '../modules/finance/entities/finance-transaction.entity';
+import { RentalPickup, PickupStatus } from '../modules/rentacar/entities/rental-pickup.entity';
+import { RentalReturn, ReturnStatus } from '../modules/rentacar/entities/rental-return.entity';
+import { VehicleDamageDetection, DetectionStatus } from '../modules/rentacar/entities/vehicle-damage-detection.entity';
+import { PricingInsight, InsightType, InsightSeverity, InsightStatus } from '../modules/rentacar/entities/pricing-insight.entity';
+import { OccupancyAnalytics } from '../modules/rentacar/entities/occupancy-analytics.entity';
+import { ReservationInvoice, InvoiceStatus } from '../modules/shared/entities/reservation-invoice.entity';
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 
 const seedMockData = async () => {
   try {
@@ -168,9 +191,31 @@ const seedMockData = async () => {
     const { DestinationService } = await import('../modules/shared/services/destination.service');
     const { LanguageService } = await import('../modules/shared/services/language.service');
     
-    const defaultLanguage = await LanguageService.getDefault();
+    let defaultLanguage = await LanguageService.getDefault();
     if (!defaultLanguage) {
-      throw new Error('No default language found. Please set a default language first.');
+      console.log('⚠️  No default language found. Creating or updating default language (tr)...');
+      // Check if 'tr' language exists
+      const languageRepo = AppDataSource.getRepository(Language);
+      let trLanguage = await languageRepo.findOne({ where: { code: 'tr' } });
+      
+      if (trLanguage) {
+        // Update existing language to be default
+        trLanguage.isDefault = true;
+        trLanguage.isActive = true;
+        await languageRepo.save(trLanguage);
+        defaultLanguage = trLanguage;
+        console.log('✅ Existing language set as default');
+      } else {
+        // Create new default language
+        defaultLanguage = languageRepo.create({
+          code: 'tr',
+          name: 'Türkçe',
+          isActive: true,
+          isDefault: true,
+        });
+        await languageRepo.save(defaultLanguage);
+        console.log('✅ Default language created');
+      }
     }
 
     const destinationData = [
@@ -243,9 +288,13 @@ const seedMockData = async () => {
 
     // 7. Vehicle Categories, Brands, Models (Rentacar)
     console.log('🚗 Seeding vehicle data...');
+    let categories: VehicleCategory[] = [];
+    let locations: Location[] = [];
+    let vehicles: Vehicle[] = [];
+    
     if (rentacarTenant) {
       // Categories
-      const categories: VehicleCategory[] = [];
+      categories = [];
       const categoryData = [
         { isActive: true, sortOrder: 1, translations: [{ language: trLang, name: 'Ekonomi' }, { language: enLang, name: 'Economy' }] },
         { isActive: true, sortOrder: 2, translations: [{ language: trLang, name: 'Kompakt' }, { language: enLang, name: 'Compact' }] },
@@ -305,7 +354,7 @@ const seedMockData = async () => {
       }
 
       // Locations - Create master locations first, then map to tenant
-      const locations: Location[] = [];
+      locations = [];
       const locationData = [
         { name: 'Istanbul Airport', type: MasterLocationType.HAVALIMANI, sort: 1 },
         { name: 'Antalya Airport', type: MasterLocationType.HAVALIMANI, sort: 2 },
@@ -366,7 +415,7 @@ const seedMockData = async () => {
         { tenant: rentacarTenant, name: 'Mercedes C-Class 2023', category: categories[3], brand: brands[2], model: models[3], year: 2023, transmission: TransmissionType.AUTOMATIC, fuelType: FuelType.GASOLINE, seats: 5, luggage: 2, doors: 4, baseRate: 500, currencyCode: 'TRY', isActive: true },
         { tenant: rentacarTenant, name: 'BMW 3 Series 2023', category: categories[3], brand: brands[3], model: models[4], year: 2023, transmission: TransmissionType.AUTOMATIC, fuelType: FuelType.GASOLINE, seats: 5, luggage: 2, doors: 4, baseRate: 550, currencyCode: 'TRY', isActive: true },
       ];
-      const vehicles: Vehicle[] = [];
+      vehicles = [];
       for (const veh of vehicleData) {
         vehicles.push(await vehicleRepo.save(vehicleRepo.create(veh)));
       }
@@ -688,6 +737,638 @@ const seedMockData = async () => {
           messageType: ChatMessageType.TEXT,
           content: 'Hello, I need help with my reservation.',
           isRead: false,
+        }));
+      }
+    }
+
+    // 19. Customers
+    console.log('👥 Seeding customers...');
+    const customerRepo = AppDataSource.getRepository(Customer);
+    const customerWalletRepo = AppDataSource.getRepository(CustomerWallet);
+    const walletTransactionRepo = AppDataSource.getRepository(WalletTransaction);
+    const customers: Customer[] = [];
+    
+    for (const tenant of tenants) {
+      const existingCustomers = await customerRepo.find({ where: { tenantId: tenant.id } });
+      if (existingCustomers.length === 0) {
+        const customerData = [
+          {
+            tenant,
+            firstName: 'Ahmet',
+            lastName: 'Yılmaz',
+            fullName: 'Ahmet Yılmaz',
+            email: 'ahmet@example.com',
+            mobilePhone: '+905551234567',
+            country: 'TR',
+            language: trLang,
+            gender: CustomerGender.MALE,
+            birthDate: new Date('1990-01-15'),
+            idType: CustomerIdType.TC,
+            idNumber: '12345678901',
+            isActive: true,
+            isBlacklisted: false,
+          },
+          {
+            tenant,
+            firstName: 'John',
+            lastName: 'Doe',
+            fullName: 'John Doe',
+            email: 'john@example.com',
+            mobilePhone: '+1234567890',
+            country: 'US',
+            language: enLang,
+            gender: CustomerGender.MALE,
+            birthDate: new Date('1985-05-20'),
+            idType: CustomerIdType.PASSPORT,
+            idNumber: 'P123456',
+            isActive: true,
+            isBlacklisted: false,
+          },
+          {
+            tenant,
+            firstName: 'Maria',
+            lastName: 'Schmidt',
+            fullName: 'Maria Schmidt',
+            email: 'maria@example.com',
+            mobilePhone: '+49123456789',
+            country: 'DE',
+            language: savedLanguages.find(l => l.code === 'de') || enLang,
+            gender: CustomerGender.FEMALE,
+            birthDate: new Date('1992-08-10'),
+            idType: CustomerIdType.PASSPORT,
+            idNumber: 'P789012',
+            isActive: true,
+            isBlacklisted: false,
+          },
+        ];
+        for (const cust of customerData) {
+          const customer = await customerRepo.save(customerRepo.create(cust));
+          customers.push(customer);
+          
+          // Create wallet for customer
+          const wallet = await customerWalletRepo.save(customerWalletRepo.create({
+            tenant,
+            customer,
+            balance: Math.floor(Math.random() * 1000) + 100,
+            totalEarned: Math.floor(Math.random() * 2000) + 500,
+            totalSpent: Math.floor(Math.random() * 500),
+          }));
+          
+          // Add some wallet transactions
+          for (let i = 0; i < 3; i++) {
+            const amount = Math.floor(Math.random() * 200) + 50;
+            const balanceBefore = wallet.balance;
+            const balanceAfter = i === 0 ? balanceBefore + amount : balanceBefore - amount;
+            
+            await walletTransactionRepo.save(walletTransactionRepo.create({
+              wallet,
+              tenantId: tenant.id,
+              customerId: customer.id,
+              type: i === 0 ? WalletTransactionType.CREDIT : WalletTransactionType.DEBIT,
+              source: i === 0 ? WalletTransactionSource.RESERVATION_COMPLETION : WalletTransactionSource.COUPON_GENERATION,
+              amount,
+              balanceBefore,
+              balanceAfter,
+              description: i === 0 ? 'Points earned from reservation' : 'Points used for coupon',
+              reason: i === 0 ? 'reservation_completion' : 'coupon_generation',
+            }));
+          }
+        }
+      } else {
+        customers.push(...existingCustomers);
+      }
+    }
+
+    // 20. Coupons
+    console.log('🎫 Seeding coupons...');
+    const couponRepo = AppDataSource.getRepository(Coupon);
+    for (const tenant of tenants) {
+      const existingCoupons = await couponRepo.find({ where: { tenantId: tenant.id } });
+      if (existingCoupons.length === 0 && customers.length > 0) {
+        const couponData = [
+          {
+            tenant,
+            code: `COUPON${Date.now()}1`,
+            value: 100,
+            currencyCode: 'TRY',
+            pointsUsed: 100,
+            expiryDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+            isSingleUse: true,
+            isUsed: false,
+            status: CouponStatus.ACTIVE,
+            customer: customers[0],
+            description: 'Test coupon 1',
+          },
+          {
+            tenant,
+            code: `COUPON${Date.now()}2`,
+            value: 200,
+            currencyCode: 'TRY',
+            pointsUsed: 200,
+            expiryDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 days from now
+            isSingleUse: true,
+            isUsed: true,
+            status: CouponStatus.USED,
+            customer: customers[1],
+            description: 'Test coupon 2 (used)',
+          },
+        ];
+        for (const coupon of couponData) {
+          await couponRepo.save(couponRepo.create(coupon));
+        }
+      }
+    }
+
+    // 21. Campaigns (Rentacar)
+    console.log('🎯 Seeding campaigns...');
+    const campaignRepo = AppDataSource.getRepository(Campaign);
+    if (rentacarTenant && locations.length > 0 && vehicles.length > 0) {
+      const existingCampaigns = await campaignRepo.find({ where: { tenantId: rentacarTenant.id } });
+      if (existingCampaigns.length === 0) {
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setMonth(endDate.getMonth() + 3);
+        
+        const campaignData = [
+          {
+            tenant: rentacarTenant,
+            name: 'Yaz Kampanyası',
+            description: 'Yaz ayları için özel indirim',
+            pickupLocation: locations[0],
+            vehicle: null,
+            category: categories[0],
+            minRentalDays: 3,
+            discountType: DiscountType.PERCENTAGE,
+            discountPercent: 15,
+            discountFixed: null,
+            startDate,
+            endDate,
+            priority: 1,
+            isActive: true,
+          },
+          {
+            tenant: rentacarTenant,
+            name: 'Lüks Araç İndirimi',
+            description: 'Lüks araçlar için özel fiyat',
+            pickupLocation: locations[0],
+            vehicle: vehicles[2],
+            category: null,
+            minRentalDays: 5,
+            discountType: DiscountType.PERCENTAGE,
+            discountPercent: 20,
+            discountFixed: null,
+            startDate,
+            endDate,
+            priority: 2,
+            isActive: true,
+          },
+        ];
+        for (const camp of campaignData) {
+          await campaignRepo.save(campaignRepo.create(camp));
+        }
+      }
+    }
+
+    // 22. Contract Templates
+    console.log('📄 Seeding contract templates...');
+    const contractTemplateRepo = AppDataSource.getRepository(ContractTemplate);
+    for (const tenant of tenants) {
+      const existingTemplates = await contractTemplateRepo.find({ where: { tenantId: tenant.id } });
+      if (existingTemplates.length === 0) {
+        const template = await contractTemplateRepo.save(contractTemplateRepo.create({
+          tenant,
+          name: 'Standart Kiralama Sözleşmesi',
+          description: 'Araç kiralama için standart sözleşme şablonu',
+          primaryColor: '#2563EB',
+          secondaryColor: '#10B981',
+          textColor: '#000000',
+          sections: [
+            {
+              id: 'header',
+              type: ContractSectionType.HEADER,
+              title: 'Sözleşme Başlığı',
+              content: 'ARAÇ KİRALAMA SÖZLEŞMESİ',
+              isLocked: false,
+              order: 1,
+              isVisible: true,
+            },
+            {
+              id: 'legal1',
+              type: ContractSectionType.LEGAL_CORE,
+              title: 'Genel Şartlar',
+              content: 'Bu sözleşme, araç kiralama işlemlerini düzenler...',
+              isLocked: true,
+              order: 2,
+              isVisible: true,
+            },
+            {
+              id: 'custom1',
+              type: ContractSectionType.CUSTOM,
+              title: 'Özel Şartlar',
+              content: 'Kiracı, aracı dikkatli kullanmakla yükümlüdür...',
+              isLocked: false,
+              order: 3,
+              isVisible: true,
+            },
+          ],
+          optionalBlocks: [
+            {
+              id: 'opt1',
+              title: 'Ekstra Hizmetler',
+              content: 'GPS, çocuk koltuğu gibi ekstra hizmetler...',
+              isEnabled: true,
+              order: 1,
+            },
+          ],
+          variables: {
+            customerName: { label: 'Müşteri Adı', required: true },
+            vehicleName: { label: 'Araç Adı', required: true },
+            rentalDays: { label: 'Kiralama Günü', required: true },
+            totalPrice: { label: 'Toplam Fiyat', required: true },
+          },
+          isActive: true,
+          isDefault: true,
+        }));
+      }
+    }
+
+    // 23. Vehicle Damages, Maintenances, Penalties
+    console.log('🚗 Seeding vehicle timeline events...');
+    const vehicleDamageRepo = AppDataSource.getRepository(VehicleDamage);
+    const vehicleMaintenanceRepo = AppDataSource.getRepository(VehicleMaintenance);
+    const vehiclePenaltyRepo = AppDataSource.getRepository(VehiclePenalty);
+    const savedReservations = await reservationRepo.find({ take: 2 });
+    
+    if (rentacarTenant && vehicles.length > 0) {
+      // Damages
+      for (let i = 0; i < Math.min(2, vehicles.length); i++) {
+        const existingDamages = await vehicleDamageRepo.find({ where: { vehicleId: vehicles[i].id } });
+        if (existingDamages.length === 0) {
+          await vehicleDamageRepo.save(vehicleDamageRepo.create({
+            tenant: rentacarTenant,
+            vehicle: vehicles[i],
+            reservation: savedReservations[i] || null,
+            date: new Date(),
+            title: 'Ön tampon çizik',
+            description: 'Araç ön tamponunda hafif çizik tespit edildi',
+            severity: DamageSeverity.MINOR,
+            status: DamageStatus.REPORTED,
+            repairCost: 500,
+            currencyCode: 'TRY',
+            reportedBy: 'Ahmet Yılmaz',
+          }));
+        }
+      }
+      
+      // Maintenances
+      for (let i = 0; i < Math.min(2, vehicles.length); i++) {
+        const existingMaintenances = await vehicleMaintenanceRepo.find({ where: { vehicleId: vehicles[i].id } });
+        if (existingMaintenances.length === 0) {
+          await vehicleMaintenanceRepo.save(vehicleMaintenanceRepo.create({
+            tenant: rentacarTenant,
+            vehicle: vehicles[i],
+            date: new Date(),
+            title: 'Periyodik Bakım',
+            description: 'Motor yağı ve filtre değişimi yapıldı',
+            type: MaintenanceType.OIL_CHANGE,
+            status: MaintenanceStatus.COMPLETED,
+            cost: 800,
+            currencyCode: 'TRY',
+            serviceProvider: 'Oto Servis Merkezi',
+            odometerReading: 50000 + i * 1000,
+            performedBy: 'Mehmet Demir',
+          }));
+        }
+      }
+      
+      // Penalties
+      for (let i = 0; i < Math.min(1, vehicles.length); i++) {
+        const existingPenalties = await vehiclePenaltyRepo.find({ where: { vehicleId: vehicles[i].id } });
+        if (existingPenalties.length === 0) {
+          await vehiclePenaltyRepo.save(vehiclePenaltyRepo.create({
+            tenant: rentacarTenant,
+            vehicle: vehicles[i],
+            reservation: savedReservations[0] || null,
+            date: new Date(),
+            title: 'HGS Geçiş Ücreti',
+            description: 'İstanbul-Ankara otoyolu HGS geçiş ücreti',
+            type: PenaltyType.HGS,
+            status: PenaltyStatus.PENDING,
+            amount: 150,
+            currencyCode: 'TRY',
+            location: 'İstanbul-Ankara Otoyolu',
+          }));
+        }
+      }
+    }
+
+    // 24. CRM Pages
+    console.log('📝 Seeding CRM pages...');
+    const crmPageCategoryRepo = AppDataSource.getRepository(CrmPageCategory);
+    const crmPageRepo = AppDataSource.getRepository(CrmPage);
+    
+    for (const tenant of tenants) {
+      const existingCategories = await crmPageCategoryRepo.find({ where: { tenantId: tenant.id } });
+      let category: CrmPageCategory;
+      
+      if (existingCategories.length === 0) {
+        category = await crmPageCategoryRepo.save(crmPageCategoryRepo.create({
+          tenant,
+          slug: 'genel-bilgiler',
+          sortOrder: 1,
+          isActive: true,
+        }));
+        
+        // Add translations for category
+        await translationRepo.save(translationRepo.create({
+          model: 'CrmPageCategory',
+          modelId: category.id,
+          languageId: trLang.id,
+          name: 'Genel Bilgiler',
+        }));
+        await translationRepo.save(translationRepo.create({
+          model: 'CrmPageCategory',
+          modelId: category.id,
+          languageId: enLang.id,
+          name: 'General Information',
+        }));
+      } else {
+        category = existingCategories[0];
+      }
+      
+      const existingPages = await crmPageRepo.find({ where: { tenantId: tenant.id } });
+      if (existingPages.length === 0) {
+        const page = await crmPageRepo.save(crmPageRepo.create({
+          tenant,
+          category,
+          slug: 'gizlilik-politikasi',
+          isActive: true,
+          sortOrder: 1,
+          viewCount: 0,
+        }));
+        
+        // Add translations for page
+        await translationRepo.save(translationRepo.create({
+          model: 'CrmPage',
+          modelId: page.id,
+          languageId: trLang.id,
+          name: 'Gizlilik Politikası',
+          value: JSON.stringify({ description: 'Gizlilik politikamız hakkında bilgiler...' }),
+        }));
+        await translationRepo.save(translationRepo.create({
+          model: 'CrmPage',
+          modelId: page.id,
+          languageId: enLang.id,
+          name: 'Privacy Policy',
+          value: JSON.stringify({ description: 'Information about our privacy policy...' }),
+        }));
+      }
+    }
+
+    // 25. Marketplace Listings
+    console.log('🏪 Seeding marketplace listings...');
+    const marketplaceListingRepo = AppDataSource.getRepository(MarketplaceListing);
+    
+    for (const tenant of tenants) {
+      const existingListings = await marketplaceListingRepo.find({ where: { tenantId: tenant.id } });
+      if (existingListings.length === 0) {
+        const listingData = [
+          {
+            tenant,
+            title: 'VIP Transfer Hizmeti',
+            description: 'Havalimanı transfer hizmeti sunuyoruz',
+            serviceType: ServiceType.TRANSFER,
+            commissionType: CommissionType.PERCENTAGE,
+            commissionRate: 10,
+            commissionFixed: null,
+            basePrice: 500,
+            currencyCode: 'TRY',
+            isAvailable: true,
+            status: ListingStatus.ACTIVE,
+            approvedAt: new Date(),
+            contactEmail: 'transfer@example.com',
+            contactPhone: '+905551234567',
+          },
+          {
+            tenant,
+            title: 'Seyahat Sigortası',
+            description: 'Kapsamlı seyahat sigortası paketi',
+            serviceType: ServiceType.INSURANCE,
+            commissionType: CommissionType.FIXED,
+            commissionRate: null,
+            commissionFixed: 50,
+            basePrice: 200,
+            currencyCode: 'TRY',
+            isAvailable: true,
+            status: ListingStatus.ACTIVE,
+            approvedAt: new Date(),
+            contactEmail: 'insurance@example.com',
+            contactPhone: '+905559876543',
+          },
+        ];
+        for (const listing of listingData) {
+          await marketplaceListingRepo.save(marketplaceListingRepo.create(listing));
+        }
+      }
+    }
+
+    // 26. Finance Data
+    console.log('💰 Seeding finance data...');
+    const financeCategoryRepo = AppDataSource.getRepository(FinanceCategory);
+    const financeCariRepo = AppDataSource.getRepository(FinanceCari);
+    const financeTransactionRepo = AppDataSource.getRepository(FinanceTransaction);
+    
+    for (const tenant of tenants) {
+      // Categories
+      const existingCategories = await financeCategoryRepo.find({ where: { tenantId: tenant.id } });
+      let incomeCategory: FinanceCategory;
+      let expenseCategory: FinanceCategory;
+      
+      if (existingCategories.length === 0) {
+        incomeCategory = await financeCategoryRepo.save(financeCategoryRepo.create({
+          tenant,
+          name: 'Rezervasyon Gelirleri',
+          type: FinanceCategoryType.INCOME,
+          isActive: true,
+        }));
+        expenseCategory = await financeCategoryRepo.save(financeCategoryRepo.create({
+          tenant,
+          name: 'Operasyonel Giderler',
+          type: FinanceCategoryType.EXPENSE,
+          isActive: true,
+        }));
+      } else {
+        incomeCategory = existingCategories.find(c => c.type === FinanceCategoryType.INCOME) || existingCategories[0];
+        expenseCategory = existingCategories.find(c => c.type === FinanceCategoryType.EXPENSE) || existingCategories[0];
+      }
+      
+      // Cari
+      const existingCari = await financeCariRepo.find({ where: { tenantId: tenant.id } });
+      let cari: FinanceCari;
+      
+      if (existingCari.length === 0) {
+        cari = await financeCariRepo.save(financeCariRepo.create({
+          tenant,
+          title: 'Test Müşteri',
+          code: 'CARI001',
+          kind: FinanceCariKind.PERSON,
+          balanceOpening: 0,
+          currency: 'TRY',
+          isActive: true,
+        }));
+      } else {
+        cari = existingCari[0];
+      }
+      
+      // Transactions
+      const existingTransactions = await financeTransactionRepo.find({ where: { tenantId: tenant.id } });
+      if (existingTransactions.length === 0) {
+        const transactionData = [
+          {
+            tenant,
+            type: FinanceTransactionType.INCOME,
+            date: new Date(),
+            amount: 5000,
+            currency: 'TRY',
+            category: incomeCategory,
+            cari: cari,
+            paymentMethod: FinancePaymentMethod.TRANSFER,
+            description: 'Rezervasyon geliri',
+            status: FinanceTransactionStatus.PAID,
+          },
+          {
+            tenant,
+            type: FinanceTransactionType.EXPENSE,
+            date: new Date(),
+            amount: 2000,
+            currency: 'TRY',
+            category: expenseCategory,
+            cari: null,
+            paymentMethod: FinancePaymentMethod.CASH,
+            description: 'Operasyonel gider',
+            status: FinanceTransactionStatus.PAID,
+          },
+        ];
+        for (const trans of transactionData) {
+          await financeTransactionRepo.save(financeTransactionRepo.create(trans));
+        }
+      }
+    }
+
+    // 27. Rental Pickups & Returns
+    console.log('🚙 Seeding rental pickups and returns...');
+    const rentalPickupRepo = AppDataSource.getRepository(RentalPickup);
+    const rentalReturnRepo = AppDataSource.getRepository(RentalReturn);
+    
+    if (rentacarTenant && savedReservations.length > 0) {
+      const existingPickups = await rentalPickupRepo.find({ where: { tenantId: rentacarTenant.id } });
+      if (existingPickups.length === 0) {
+        for (const reservation of savedReservations.slice(0, 2)) {
+          await rentalPickupRepo.save(rentalPickupRepo.create({
+            tenant: rentacarTenant,
+            reservation,
+            odometerKm: 50000 + Math.floor(Math.random() * 1000),
+            fuelLevel: 'full',
+            status: PickupStatus.COMPLETED,
+            completedAt: new Date(),
+          }));
+        }
+      }
+    }
+
+    // 28. Vehicle Damage Detections
+    console.log('🔍 Seeding vehicle damage detections...');
+    const vehicleDamageDetectionRepo = AppDataSource.getRepository(VehicleDamageDetection);
+    
+    if (rentacarTenant && vehicles.length > 0 && savedReservations.length > 0) {
+      const existingDetections = await vehicleDamageDetectionRepo.find({ where: { tenantId: rentacarTenant.id } });
+      if (existingDetections.length === 0) {
+        await vehicleDamageDetectionRepo.save(vehicleDamageDetectionRepo.create({
+          tenant: rentacarTenant,
+          vehicle: vehicles[0],
+          reservation: savedReservations[0],
+          checkinPhotoUrls: ['/photos/checkin1.jpg', '/photos/checkin2.jpg'],
+          checkoutPhotoUrls: ['/photos/checkout1.jpg', '/photos/checkout2.jpg'],
+          damageProbability: 45.5,
+          confidenceScore: 0.78,
+          status: DetectionStatus.COMPLETED,
+          damagedAreas: [{ x: 0.1, y: 0.2, width: 0.05, height: 0.03, confidence: 78, type: 'scratch' }],
+          processingMetadata: {
+            pixelDifference: 0.3,
+            edgeDifference: 0.25,
+            processingTime: 1500,
+            imageDimensions: { width: 1920, height: 1080 },
+          },
+        }));
+      }
+    }
+
+    // 29. Pricing Insights
+    console.log('📊 Seeding pricing insights...');
+    const pricingInsightRepo = AppDataSource.getRepository(PricingInsight);
+    
+    if (rentacarTenant && vehicles.length > 0) {
+      const existingInsights = await pricingInsightRepo.find({ where: { tenantId: rentacarTenant.id } });
+      if (existingInsights.length === 0) {
+        await pricingInsightRepo.save(pricingInsightRepo.create({
+          tenant: rentacarTenant,
+          vehicle: vehicles[0],
+          type: InsightType.UNDERPRICED,
+          severity: InsightSeverity.WARNING,
+          status: InsightStatus.ACTIVE,
+          title: 'Araç Fiyatı Düşük',
+          reasoning: 'Bu araç için önerilen fiyat mevcut fiyattan %15 daha yüksek. Piyasa analizi ve talep verilerine göre fiyat artırılabilir.',
+          currentPrice: 250,
+          recommendedPrice: 287.5,
+          marketAveragePrice: 300,
+        }));
+      }
+    }
+
+    // 30. Occupancy Analytics
+    console.log('📈 Seeding occupancy analytics...');
+    const occupancyAnalyticsRepo = AppDataSource.getRepository(OccupancyAnalytics);
+    
+    if (rentacarTenant && vehicles.length > 0 && locations.length > 0) {
+      const existingAnalytics = await occupancyAnalyticsRepo.find({ where: { tenantId: rentacarTenant.id } });
+      if (existingAnalytics.length === 0) {
+        const date = new Date();
+        date.setDate(date.getDate() - 7); // 7 days ago
+        
+        await occupancyAnalyticsRepo.save(occupancyAnalyticsRepo.create({
+          tenant: rentacarTenant,
+          vehicle: vehicles[0],
+          location: locations[0],
+          date,
+          periodType: 'daily',
+          totalDays: 30,
+          bookedDays: 20,
+          occupancyRate: 66.67,
+          averageDailyPrice: 250,
+          minDailyPrice: 200,
+          maxDailyPrice: 300,
+        }));
+      }
+    }
+
+    // 31. Reservation Invoices
+    console.log('🧾 Seeding reservation invoices...');
+    const reservationInvoiceRepo = AppDataSource.getRepository(ReservationInvoice);
+    
+    if (rentacarTenant && savedReservations.length > 0) {
+      const existingInvoices = await reservationInvoiceRepo.find({ where: { tenantId: rentacarTenant.id } });
+      if (existingInvoices.length === 0) {
+        await reservationInvoiceRepo.save(reservationInvoiceRepo.create({
+          tenant: rentacarTenant,
+          reservation: savedReservations[0],
+          integratorKey: 'mock',
+          status: InvoiceStatus.SENT,
+          vatRateUsed: 20,
+          subtotal: 1000,
+          vatAmount: 200,
+          total: 1200,
+          externalInvoiceId: 'INV-001',
+          pdfUrl: '/invoices/inv-001.pdf',
         }));
       }
     }
