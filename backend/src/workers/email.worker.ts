@@ -1,10 +1,13 @@
 import { QueueService, EmailJob } from '../services/queue.service';
 import { sendCustomerWelcomeEmailDirect } from '../services/customer-email.service';
 import { sendReservationEmail } from '../services/reservation-email.service';
+import { sendPickupEmailDirect } from '../services/pickup-email.service';
 import { EmailTemplateType } from '../modules/shared/entities/email-template.entity';
 import { AppDataSource } from '../config/data-source';
 import { Customer } from '../modules/shared/entities/customer.entity';
 import { Reservation } from '../modules/shared/entities/reservation.entity';
+import { RentalPickup } from '../modules/rentacar/entities/rental-pickup.entity';
+import { RentalInspectionMedia } from '../modules/rentacar/entities/rental-inspection-media.entity';
 
 /**
  * Email job'larını işleyen worker
@@ -42,6 +45,10 @@ export class EmailWorker {
 
         case 'reservation_completed':
           await EmailWorker.handleReservationEmail(job, EmailTemplateType.RESERVATION_COMPLETED);
+          break;
+
+        case 'vehicle_pickup':
+          await EmailWorker.handleVehiclePickup(job);
           break;
 
         case 'survey_invitation':
@@ -105,6 +112,46 @@ export class EmailWorker {
     }
 
     await sendReservationEmail(reservation, templateType);
+  }
+
+  /**
+   * Araç çıkış email'i gönder
+   */
+  private static async handleVehiclePickup(job: EmailJob): Promise<void> {
+    if (!job.data.reservationId || !job.data.pickupId) {
+      throw new Error('Reservation ID and Pickup ID are required for pickup email');
+    }
+
+    const reservationRepo = AppDataSource.getRepository(Reservation);
+    const pickupRepo = AppDataSource.getRepository(RentalPickup);
+    const mediaRepo = AppDataSource.getRepository(RentalInspectionMedia);
+
+    const reservation = await reservationRepo.findOne({
+      where: { id: job.data.reservationId, tenantId: job.tenantId },
+    });
+
+    if (!reservation) {
+      throw new Error(`Reservation not found: ${job.data.reservationId}`);
+    }
+
+    const pickup = await pickupRepo.findOne({
+      where: { id: job.data.pickupId, tenantId: job.tenantId, reservationId: job.data.reservationId },
+    });
+
+    if (!pickup) {
+      throw new Error(`Pickup not found: ${job.data.pickupId}`);
+    }
+
+    const photos = await mediaRepo.find({
+      where: {
+        reservationId: job.data.reservationId,
+        tenantId: job.tenantId,
+        inspectionType: 'pickup' as any,
+      },
+      order: { slotIndex: 'ASC' },
+    });
+
+    await sendPickupEmailDirect(reservation, pickup, photos);
   }
 }
 
