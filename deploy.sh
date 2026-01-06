@@ -336,6 +336,10 @@ if [ "$MODE" = "full" ] || [ "$CONTAINERS_RUNNING" = "false" ]; then
         exit 1
     fi
     
+    if [ ! -d "infra/traefik" ]; then
+        echo -e "${RED}❌ Hata: infra/traefik dizini bulunamadı! Mevcut dizin: $(pwd)${NC}"
+        exit 1
+    fi
     cd infra/traefik
 
     # acme.json dosyası kontrolü
@@ -485,6 +489,10 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${CYAN}🚀 APPLICATION STACK (Backend + Frontend)${NC}"
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+    if [ ! -d "infra" ]; then
+        echo -e "${RED}❌ Hata: infra dizini bulunamadı! Mevcut dizin: $(pwd)${NC}"
+        exit 1
+    fi
     cd infra
 
     # Environment variables ayarla
@@ -689,6 +697,11 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
         echo -e "${YELLOW}🔄 Container'lar graceful restart ile güncelleniyor...${NC}"
         
         # Agresif container temizleme fonksiyonunu çağır (infra dizininde)
+        if [ ! -d "infra" ]; then
+            echo -e "${RED}❌ Hata: infra dizini bulunamadı! Mevcut dizin: $(pwd)${NC}"
+            echo -e "${YELLOW}   Script dizini: $SCRIPT_DIR${NC}"
+            exit 1
+        fi
         cd infra
         force_remove_backend_container
         sleep 2
