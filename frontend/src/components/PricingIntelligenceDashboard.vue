@@ -114,7 +114,7 @@
                 cols="12"
                 md="6"
               >
-                <v-card variant="outlined">
+                <v-card >
                   <v-card-text>
                     <div class="d-flex align-center justify-space-between">
                       <div>

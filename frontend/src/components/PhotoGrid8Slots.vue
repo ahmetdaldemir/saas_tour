@@ -50,7 +50,7 @@
 
     <v-btn
       color="primary"
-      variant="outlined"
+      
       block
       class="mt-4"
       :disabled="filledSlots === 8"

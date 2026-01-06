@@ -408,7 +408,7 @@
                   v-model="reminderForm.title"
                   label="Başlık"
                   placeholder="Hatırlatma başlığı"
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details="auto"
                   class="mb-3"
@@ -417,7 +417,7 @@
                   v-model="reminderForm.description"
                   label="Açıklama (Opsiyonel)"
                   placeholder="Detaylı açıklama..."
-                  variant="outlined"
+                  
                   density="comfortable"
                   rows="3"
                   hide-details
@@ -429,7 +429,7 @@
                       v-model="reminderForm.date"
                       label="Tarih"
                       type="date"
-                      variant="outlined"
+                      
                       density="comfortable"
                       hide-details="auto"
                     />
@@ -439,7 +439,7 @@
                       v-model="reminderForm.time"
                       label="Saat"
                       type="time"
-                      variant="outlined"
+                      
                       density="comfortable"
                       hide-details="auto"
                     />
@@ -449,7 +449,7 @@
                   v-model="reminderForm.priority"
                   :items="priorityOptions"
                   label="Öncelik"
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details="auto"
                   class="mt-3"

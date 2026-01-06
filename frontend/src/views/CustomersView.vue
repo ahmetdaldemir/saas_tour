@@ -23,7 +23,7 @@
               prepend-inner-icon="mdi-email"
               density="compact"
               hide-details
-              variant="outlined"
+              
               @keyup.enter="searchCustomers"
             />
           </v-col>
@@ -34,7 +34,7 @@
               prepend-inner-icon="mdi-account"
               density="compact"
               hide-details
-              variant="outlined"
+              
               @keyup.enter="searchCustomers"
             />
           </v-col>
@@ -45,7 +45,7 @@
               prepend-inner-icon="mdi-phone"
               density="compact"
               hide-details
-              variant="outlined"
+              
               @keyup.enter="searchCustomers"
             />
           </v-col>

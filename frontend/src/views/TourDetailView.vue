@@ -153,7 +153,7 @@
                   md="4"
                 >
                   <v-card
-                    variant="outlined"
+                    
                     class="image-card"
                     @click="openImageDialog(image.url)"
                   >
@@ -335,7 +335,7 @@
                   v-for="feature in tour.features"
                   :key="feature.id"
                   :prepend-icon="feature.icon"
-                  variant="outlined"
+                  
                   size="small"
                 >
                   {{ getFeatureName(feature) }}
@@ -385,7 +385,7 @@
                 block
                 prepend-icon="mdi-delete"
                 @click="deleteTour"
-                variant="outlined"
+                
               >
                 Turu Sil
               </v-btn>

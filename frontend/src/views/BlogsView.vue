@@ -186,7 +186,7 @@
                     v-model="imageFile"
                     label="Görsel Yükle"
                     prepend-inner-icon="mdi-image"
-                    variant="outlined"
+                    
                     density="comfortable"
                     accept="image/*"
                     :rules="[(v: any) => {

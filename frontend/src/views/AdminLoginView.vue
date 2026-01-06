@@ -10,7 +10,7 @@
             <v-text-field
               v-model="username"
               label="Kullanıcı Adı"
-              variant="outlined"
+              
               prepend-inner-icon="mdi-account"
               :rules="usernameRules"
               required
@@ -20,7 +20,7 @@
               v-model="password"
               label="Şifre"
               :type="showPassword ? 'text' : 'password'"
-              variant="outlined"
+              
               prepend-inner-icon="mdi-lock"
               :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
               @click:append-inner="showPassword = !showPassword"

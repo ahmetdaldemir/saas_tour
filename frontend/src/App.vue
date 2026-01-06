@@ -111,6 +111,25 @@
         </div>
       </v-main>
     </v-layout>
+    
+    <!-- Global Toast Snackbar -->
+    <v-snackbar
+      v-model="snackbarState.show"
+      :color="snackbarState.color"
+      :timeout="snackbarState.timeout"
+      location="top right"
+      rounded="lg"
+    >
+      {{ snackbarState.text }}
+      <template v-slot:actions>
+        <v-btn
+          variant="text"
+          @click="snackbarState.show = false"
+          icon="mdi-close"
+          size="small"
+        />
+      </template>
+    </v-snackbar>
   </v-app>
 </template>
 
@@ -120,6 +139,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from './stores/auth';
 import { useAdminAuthStore } from './stores/admin-auth';
 import { useFeaturesStore } from './stores/features';
+import { useSnackbar } from './composables/useSnackbar';
 
 const auth = useAuthStore();
 const adminAuth = useAdminAuthStore();
@@ -127,6 +147,7 @@ const features = useFeaturesStore();
 const router = useRouter();
 const route = useRoute();
 const drawer = ref(true);
+const { snackbarState } = useSnackbar();
 
 /**
  * Check if current hostname is a subdomain

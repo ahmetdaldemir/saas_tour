@@ -6,7 +6,7 @@
         <v-btn
           color="primary"
           prepend-icon="mdi-refresh"
-          variant="outlined"
+          
           @click="loadRooms"
           :loading="loading"
         >
@@ -61,7 +61,7 @@
               density="compact"
               prepend-inner-icon="mdi-magnify"
               placeholder="Ara..."
-              variant="outlined"
+              
               hide-details
               class="mt-2"
               style="max-width: 200px"
@@ -150,7 +150,7 @@
             <v-text-field
               v-model="newMessage"
               placeholder="Mesajınızı yazın..."
-              variant="outlined"
+              
               density="comfortable"
               hide-details
               @keypress.enter="sendMessage"

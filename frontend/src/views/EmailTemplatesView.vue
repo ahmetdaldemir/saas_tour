@@ -41,7 +41,7 @@
               item-title="label"
               item-value="value"
               label="Şablon Tipi"
-              variant="outlined"
+              
               density="comfortable"
               clearable
               @update:model-value="loadTemplates"
@@ -123,7 +123,7 @@
                 label="Şablon Tipi"
                 :rules="[v => !!v || 'Şablon tipi gereklidir']"
                 required
-                variant="outlined"
+                
                 density="comfortable"
               />
             </v-col>
@@ -170,7 +170,7 @@
                       label="Şablon Adı"
                       :rules="[(v: string) => !!v || 'Şablon adı gereklidir']"
                       required
-                      variant="outlined"
+                      
                       density="comfortable"
                     />
                   </v-col>
@@ -181,7 +181,7 @@
                       rows="2"
                       hint="Bu şablonun ne zaman kullanılacağını açıklayın"
                       persistent-hint
-                      variant="outlined"
+                      
                       density="comfortable"
                     />
                   </v-col>
@@ -193,7 +193,7 @@
                       required
                       hint="Değişkenler: {{customerName}}, {{reservationReference}}, vb."
                       persistent-hint
-                      variant="outlined"
+                      
                       density="comfortable"
                     />
                   </v-col>
@@ -212,7 +212,7 @@
                     <v-expand-transition>
                       <v-card
                         v-if="showVariablesHelp"
-                        variant="outlined"
+                        
                         color="info"
                         class="mb-4"
                       >
@@ -241,12 +241,12 @@
                       required
                       hint="HTML formatında e-posta içeriği. Değişkenler {{variableName}} formatında kullanılır."
                       persistent-hint
-                      variant="outlined"
+                      
                       density="comfortable"
                     />
                     <v-btn
                       size="small"
-                      variant="outlined"
+                      
                       prepend-icon="mdi-eye"
                       class="mt-2"
                       @click="showPreview = !showPreview"
@@ -255,7 +255,7 @@
                     </v-btn>
                   </v-col>
                   <v-col cols="12" v-if="showPreview">
-                    <v-card variant="outlined">
+                    <v-card >
                       <v-card-title class="text-subtitle-1">Önizleme - {{ lang.name }}</v-card-title>
                       <v-divider />
                       <v-card-text>

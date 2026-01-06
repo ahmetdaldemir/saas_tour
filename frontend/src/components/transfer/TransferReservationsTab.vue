@@ -122,7 +122,7 @@
                   prepend-inner-icon="mdi-map-marker"
                   :rules="[(v: string) => !!v || 'Rota seçimi gereklidir']"
                   required
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details="auto"
                 />
@@ -138,7 +138,7 @@
                   prepend-inner-icon="mdi-car"
                   :rules="[(v: string) => !!v || 'Araç seçimi gereklidir']"
                   required
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details="auto"
                 />
@@ -153,7 +153,7 @@
                   placeholder="Şoför seçiniz (opsiyonel)"
                   prepend-inner-icon="mdi-account"
                   clearable
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details
                 />
@@ -169,7 +169,7 @@
                   prepend-inner-icon="mdi-information"
                   :rules="[(v: string) => !!v || 'Durum seçimi gereklidir']"
                   required
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details="auto"
                 />
@@ -183,7 +183,7 @@
                   prepend-inner-icon="mdi-calendar"
                   :rules="[(v: string) => !!v || 'Tarih gereklidir']"
                   required
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details="auto"
                 />
@@ -197,7 +197,7 @@
                   prepend-inner-icon="mdi-clock"
                   :rules="[(v: string) => !!v || 'Saat gereklidir']"
                   required
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details="auto"
                 />
@@ -210,7 +210,7 @@
                   prepend-inner-icon="mdi-account"
                   :rules="[(v: string) => !!v || 'Yolcu adı gereklidir']"
                   required
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details="auto"
                 />
@@ -224,7 +224,7 @@
                   prepend-inner-icon="mdi-email"
                   :rules="[(v: string) => !!v || 'E-posta gereklidir']"
                   required
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details="auto"
                 />
@@ -237,7 +237,7 @@
                   prepend-inner-icon="mdi-phone"
                   :rules="[(v: string) => !!v || 'Telefon gereklidir']"
                   required
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details="auto"
                 />
@@ -251,7 +251,7 @@
                   prepend-inner-icon="mdi-account-group"
                   :rules="[(v: number) => (v && v > 0) || 'Yolcu sayısı gereklidir']"
                   required
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details="auto"
                 />
@@ -263,7 +263,7 @@
                   type="number"
                   placeholder="Örn: 1"
                   prepend-inner-icon="mdi-bag-suitcase"
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details
                 />
@@ -277,7 +277,7 @@
                   prepend-inner-icon="mdi-currency-eur"
                   :rules="[(v: number) => (v && v >= 0) || 'Toplam fiyat gereklidir']"
                   required
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details="auto"
                 />
@@ -288,7 +288,7 @@
                   v-model="form.pickupAddress"
                   placeholder="Alış adresi giriniz"
                   prepend-inner-icon="mdi-map-marker"
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details
                 />
@@ -299,7 +299,7 @@
                   v-model="form.dropoffAddress"
                   placeholder="Bırakış adresi giriniz"
                   prepend-inner-icon="mdi-map-marker"
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details
                 />
@@ -310,7 +310,7 @@
                   v-model="form.flightNumber"
                   placeholder="Uçuş numarası giriniz"
                   prepend-inner-icon="mdi-airplane"
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details
                 />
@@ -321,7 +321,7 @@
                   v-model="form.currencyCode"
                   placeholder="EUR, USD, TRY..."
                   prepend-inner-icon="mdi-cash"
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details
                 />
@@ -332,7 +332,7 @@
                   v-model="form.customerNotes"
                   placeholder="Müşteri notları giriniz..."
                   rows="3"
-                  variant="outlined"
+                  
                   density="comfortable"
                   hide-details
                 />

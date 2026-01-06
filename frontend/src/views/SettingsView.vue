@@ -42,7 +42,7 @@
             {{ siteMessage.text }}
           </v-alert>
           <v-form ref="siteFormRef" v-model="siteFormValid" @submit.prevent="saveSiteSettings">
-            <v-card variant="outlined" class="mb-4">
+            <v-card  class="mb-4">
               <v-card-title class="text-h6">Site Genel Ayarları</v-card-title>
               <v-card-text>
                 <v-row>
@@ -51,7 +51,7 @@
                       v-model="siteForm.siteName"
                       label="Site Adı"
                       prepend-inner-icon="mdi-text"
-                      variant="outlined"
+                      
                       density="comfortable"
                       :rules="[v => !!v || 'Site adı gereklidir']"
                     />
@@ -64,7 +64,7 @@
                       item-value="id"
                       label="Varsayılan Para Birimi"
                       prepend-inner-icon="mdi-currency-usd"
-                      variant="outlined"
+                      
                       density="comfortable"
                     >
                       <template #item="{ props, item }">
@@ -89,7 +89,7 @@
                       v-model="siteForm.siteDescription"
                       label="Site Açıklaması"
                       prepend-inner-icon="mdi-text-box"
-                      variant="outlined"
+                      
                       density="comfortable"
                       rows="3"
                     />
@@ -98,7 +98,7 @@
               </v-card-text>
             </v-card>
 
-            <v-card variant="outlined" class="mb-4">
+            <v-card  class="mb-4">
               <v-card-title class="text-h6">Şirket Bilgileri</v-card-title>
               <v-card-text>
                 <v-row>
@@ -107,7 +107,7 @@
                       v-model="siteForm.companyName"
                       label="Şirket Adı"
                       prepend-inner-icon="mdi-office-building"
-                      variant="outlined"
+                      
                       density="comfortable"
                     />
                   </v-col>
@@ -116,7 +116,7 @@
                       v-model="siteForm.companyAddress"
                       label="Şirket Adresi"
                       prepend-inner-icon="mdi-map-marker"
-                      variant="outlined"
+                      
                       density="comfortable"
                       rows="3"
                     />
@@ -126,7 +126,7 @@
                       v-model="siteForm.companyEmail"
                       label="Şirket E-posta"
                       prepend-inner-icon="mdi-email"
-                      variant="outlined"
+                      
                       density="comfortable"
                       type="email"
                     />
@@ -136,7 +136,7 @@
                       v-model="siteForm.companyPhone"
                       label="Şirket Telefon"
                       prepend-inner-icon="mdi-phone"
-                      variant="outlined"
+                      
                       density="comfortable"
                     />
                   </v-col>
@@ -145,7 +145,7 @@
                       v-model="siteForm.companyWebsite"
                       label="Şirket Web Sitesi"
                       prepend-inner-icon="mdi-web"
-                      variant="outlined"
+                      
                       density="comfortable"
                       type="url"
                     />
@@ -155,7 +155,7 @@
                       v-model="siteForm.companyTaxNumber"
                       label="Vergi Numarası"
                       prepend-inner-icon="mdi-receipt"
-                      variant="outlined"
+                      
                       density="comfortable"
                     />
                   </v-col>
@@ -163,7 +163,7 @@
               </v-card-text>
             </v-card>
 
-            <v-card variant="outlined" class="mb-4">
+            <v-card  class="mb-4">
               <v-card-title class="text-h6">Görsel Ayarlar</v-card-title>
               <v-card-text>
                 <v-row>
@@ -173,7 +173,7 @@
                         v-model="logoFile"
                         label="Logo Yükle"
                         prepend-inner-icon="mdi-image"
-                        variant="outlined"
+                        
                         density="comfortable"
                         accept="image/*"
                         :rules="[(v: any) => {
@@ -213,7 +213,7 @@
                         v-model="faviconFile"
                         label="Favicon Yükle"
                         prepend-inner-icon="mdi-image-filter-center-focus"
-                        variant="outlined"
+                        
                         density="comfortable"
                         accept="image/*,.ico"
                         :rules="[(v: any) => {
@@ -268,7 +268,7 @@
         <!-- Mail Ayarları -->
         <v-window-item value="mail">
           <v-form ref="mailFormRef" v-model="mailFormValid" @submit.prevent="saveMailSettings">
-            <v-card variant="outlined" class="mb-4">
+            <v-card  class="mb-4">
               <v-card-title class="text-h6">SMTP Sunucu Ayarları</v-card-title>
               <v-card-text>
                 <v-row>
@@ -277,7 +277,7 @@
                       v-model="mailForm.smtpHost"
                       label="SMTP Sunucu"
                       prepend-inner-icon="mdi-server-network"
-                      variant="outlined"
+                      
                       density="comfortable"
                       :rules="[v => !!v || 'SMTP sunucu gereklidir']"
                     />
@@ -287,7 +287,7 @@
                       v-model="mailForm.smtpPort"
                       label="SMTP Port"
                       prepend-inner-icon="mdi-numeric"
-                      variant="outlined"
+                      
                       density="comfortable"
                       type="number"
                       :rules="[v => !!v || 'Port gereklidir', v => (v > 0 && v < 65536) || 'Geçerli bir port giriniz']"
@@ -298,7 +298,7 @@
                       v-model="mailForm.smtpUser"
                       label="SMTP Kullanıcı Adı"
                       prepend-inner-icon="mdi-account"
-                      variant="outlined"
+                      
                       density="comfortable"
                       :rules="[v => !!v || 'Kullanıcı adı gereklidir']"
                     />
@@ -308,7 +308,7 @@
                       v-model="mailForm.smtpPassword"
                       label="SMTP Şifre"
                       prepend-inner-icon="mdi-lock"
-                      variant="outlined"
+                      
                       density="comfortable"
                       type="password"
                       :rules="[v => !!v || 'Şifre gereklidir']"
@@ -326,7 +326,7 @@
               </v-card-text>
             </v-card>
 
-            <v-card variant="outlined" class="mb-4">
+            <v-card  class="mb-4">
               <v-card-title class="text-h6">Gönderen Bilgileri</v-card-title>
               <v-card-text>
                 <v-row>
@@ -335,7 +335,7 @@
                       v-model="mailForm.fromEmail"
                       label="Gönderen E-posta"
                       prepend-inner-icon="mdi-email"
-                      variant="outlined"
+                      
                       density="comfortable"
                       type="email"
                       :rules="[v => !!v || 'E-posta gereklidir', v => /.+@.+\..+/.test(v) || 'Geçerli bir e-posta adresi giriniz']"
@@ -346,7 +346,7 @@
                       v-model="mailForm.fromName"
                       label="Gönderen Adı"
                       prepend-inner-icon="mdi-account-circle"
-                      variant="outlined"
+                      
                       density="comfortable"
                       :rules="[v => !!v || 'Gönderen adı gereklidir']"
                     />
@@ -372,7 +372,7 @@
         <!-- Ödeme Ayarları -->
         <v-window-item value="payment">
           <v-form ref="paymentFormRef" v-model="paymentFormValid" @submit.prevent="savePaymentSettings">
-            <v-card variant="outlined" class="mb-4">
+            <v-card  class="mb-4">
               <v-card-title class="text-h6">Ödeme Yöntemi Ayarları</v-card-title>
               <v-card-text>
                 <v-row>
@@ -384,7 +384,7 @@
                       item-value="id"
                       label="Varsayılan Ödeme Yöntemi"
                       prepend-inner-icon="mdi-credit-card-multiple"
-                      variant="outlined"
+                      
                       density="comfortable"
                       clearable
                       hint="Rezervasyonlarda varsayılan olarak kullanılacak ödeme yöntemi"
@@ -421,7 +421,7 @@
               </v-card-text>
             </v-card>
 
-            <v-card variant="outlined" class="mb-4">
+            <v-card  class="mb-4">
               <v-card-title class="text-h6">Mevcut Ödeme Yöntemleri</v-card-title>
               <v-card-text>
                 <v-data-table

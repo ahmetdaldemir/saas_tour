@@ -52,6 +52,7 @@ import { LocationVehiclePricing } from '../modules/rentacar/entities/location-ve
 import { LocationDeliveryPricing } from '../modules/rentacar/entities/location-delivery-pricing.entity';
 import { Extra } from '../modules/rentacar/entities/extra.entity';
 import { TenantUser } from '../modules/tenants/entities/tenant-user.entity';
+import { TenantMessage } from '../modules/tenants/entities/tenant-message.entity';
 import { Currency } from '../modules/shared/entities/currency.entity';
 import { TenantSettings } from '../modules/shared/entities/tenant-settings.entity';
 import { Survey } from '../modules/shared/entities/survey.entity';
@@ -155,6 +156,7 @@ export const AppDataSource = new DataSource({
           TenantServiceAgreement,
           CommissionTransaction,
           TenantUser,
+          TenantMessage,
           Currency,
           TenantSettings,
           Customer,

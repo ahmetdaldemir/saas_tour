@@ -66,7 +66,7 @@
                     prepend-inner-icon="mdi-car"
                     :rules="[(v: string) => !!v || 'Araç seçimi gereklidir']"
                     required
-                    variant="outlined"
+                    
                     density="comfortable"
                     hide-details="auto"
                     @update:model-value="loadPricings"
@@ -83,7 +83,7 @@
                     prepend-inner-icon="mdi-map-marker"
                     :rules="[(v: string) => !!v || 'Rota seçimi gereklidir']"
                     required
-                    variant="outlined"
+                    
                     density="comfortable"
                     hide-details="auto"
                   />
@@ -99,7 +99,7 @@
                     prepend-inner-icon="mdi-calculator"
                     :rules="[(v: string) => !!v || 'Fiyatlandırma modeli gereklidir']"
                     required
-                    variant="outlined"
+                    
                     density="comfortable"
                     hide-details="auto"
                   />
@@ -113,7 +113,7 @@
                     prepend-inner-icon="mdi-currency-eur"
                     :rules="[(v: number) => (v && v >= 0) || 'Base fiyat gereklidir']"
                     required
-                    variant="outlined"
+                    
                     density="comfortable"
                     hide-details="auto"
                   />
@@ -127,7 +127,7 @@
                     item-value="value"
                     placeholder="Para birimi seçiniz"
                     prepend-inner-icon="mdi-cash"
-                    variant="outlined"
+                    
                     density="comfortable"
                     hide-details="auto"
                   />
@@ -161,7 +161,7 @@
                     type="number"
                     placeholder="Örn: 20"
                     prepend-inner-icon="mdi-currency-eur"
-                    variant="outlined"
+                    
                     density="comfortable"
                     hide-details="auto"
                   />
@@ -173,7 +173,7 @@
                     type="number"
                     placeholder="Örn: 1"
                     prepend-inner-icon="mdi-account"
-                    variant="outlined"
+                    
                     density="comfortable"
                     hide-details="auto"
                   />
@@ -185,7 +185,7 @@
                     type="number"
                     placeholder="Örn: 8"
                     prepend-inner-icon="mdi-account-group"
-                    variant="outlined"
+                    
                     density="comfortable"
                     hide-details="auto"
                   />
@@ -207,7 +207,7 @@
                     v-model="form.notes"
                     placeholder="Opsiyonel notlar..."
                     rows="3"
-                    variant="outlined"
+                    
                     density="comfortable"
                     hide-details
                   />

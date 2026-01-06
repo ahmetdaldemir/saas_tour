@@ -101,44 +101,47 @@
           <v-btn icon="mdi-close" variant="text" @click="closeDialog" />
         </v-card-title>
         <v-divider />
-        <v-card-text class="pa-6">
+        <v-card-text class="pa-6 admin-form-scope">
           <v-form ref="formRef" v-model="formValid">
             <v-row>
               <v-col cols="12">
+                <label class="form-label">Lokasyon Adı <span class="required">*</span></label>
                 <v-text-field
                   v-model="form.name"
-                  label="Lokasyon Adı *"
-                  prepend-inner-icon="mdi-map-marker"
+                  placeholder="Lokasyon adını giriniz"
+                  hide-details="auto"
                   :rules="[rules.required]"
-                  variant="outlined"
+                  
                   density="comfortable"
                 />
               </v-col>
 
               <v-col cols="12">
+                <label class="form-label">Lokasyon Tipi <span class="required">*</span></label>
                 <v-select
                   v-model="form.type"
                   :items="locationTypeOptions"
                   item-title="label"
                   item-value="value"
-                  label="Lokasyon Tipi *"
-                  prepend-inner-icon="mdi-tag"
+                  placeholder="Tip seçiniz"
+                  hide-details="auto"
                   :rules="[rules.required]"
-                  variant="outlined"
+                  
                   density="comfortable"
                 />
               </v-col>
 
               <v-col cols="12">
+                <label class="form-label">Üst Lokasyon (Opsiyonel)</label>
                 <v-select
                   v-model="form.parentId"
                   :items="parentLocationOptions"
                   item-title="label"
                   item-value="value"
-                  label="Üst Lokasyon (Opsiyonel)"
-                  prepend-inner-icon="mdi-folder-outline"
+                  placeholder="Üst lokasyon seçiniz"
+                  hide-details="auto"
                   clearable
-                  variant="outlined"
+                  
                   density="comfortable"
                   :disabled="!!editingLocation"
                 >

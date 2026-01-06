@@ -8,6 +8,16 @@ dist
 .gitignore
 .vscode
 *.md
+!README.md
 coverage
 .nyc_output
+
+# Scripts
+scripts/
+*.sh
+!deploy.sh
+
+# SQL files
+*.sql
+scripts/sql/
 

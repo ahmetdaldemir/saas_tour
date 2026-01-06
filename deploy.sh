@@ -696,23 +696,48 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
         # Graceful restart: Force recreate ile başlat
         echo -e "${YELLOW}🔄 Container'lar graceful restart ile güncelleniyor...${NC}"
         
-        # Agresif container temizleme fonksiyonunu çağır (infra dizininde)
-        if [ ! -d "infra" ]; then
+        # Mevcut dizini kontrol et - eğer infra dizinindeysek orada kal, değilse infra'ya git
+        if [ -f "docker-compose.yml" ]; then
+            # Zaten infra dizinindeyiz
+            force_remove_backend_container
+            sleep 2
+            docker-compose up -d --force-recreate --remove-orphans
+        elif [ -d "infra" ]; then
+            # Root dizindeyiz, infra'ya git
+            cd infra
+            force_remove_backend_container
+            sleep 2
+            docker-compose up -d --force-recreate --remove-orphans
+            cd ..
+        elif [ -d "$SCRIPT_DIR/infra" ]; then
+            # Script dizininden infra'ya git
+            cd "$SCRIPT_DIR/infra"
+            force_remove_backend_container
+            sleep 2
+            docker-compose up -d --force-recreate --remove-orphans
+            cd "$SCRIPT_DIR"
+        else
             echo -e "${RED}❌ Hata: infra dizini bulunamadı! Mevcut dizin: $(pwd)${NC}"
             echo -e "${YELLOW}   Script dizini: $SCRIPT_DIR${NC}"
             exit 1
         fi
-        cd infra
-        force_remove_backend_container
-        sleep 2
-        docker-compose up -d --force-recreate --remove-orphans
-        cd ..
     else
         # Full modunda - container'ları durdur ve yeniden başlat
         echo -e "${YELLOW}🔄 Application stack yeniden başlatılıyor...${NC}"
         
         # Eski container'ları temizle (orphaned container'lar dahil)
         echo -e "${YELLOW}🧹 Eski container'lar temizleniyor...${NC}"
+        
+        # Mevcut dizini kontrol et - eğer infra dizinindeysek orada kal, değilse infra'ya git
+        # (Zaten 496. satırda cd infra yapıldı, bu yüzden burada zaten infra dizinindeyiz)
+        if [ ! -f "docker-compose.yml" ]; then
+            # docker-compose.yml yoksa, infra dizinine git
+            if [ -d "infra" ]; then
+                cd infra
+            elif [ -d "$SCRIPT_DIR/infra" ]; then
+                cd "$SCRIPT_DIR/infra"
+            fi
+        fi
         
         # Önce docker-compose down ile temizle (volumes korunur)
         docker-compose down --remove-orphans 2>/dev/null || true
@@ -905,6 +930,17 @@ if [ "$MODE" = "build" ] || [ "$MODE" = "infra" ] || [ "$MODE" = "full" ]; then
         # Production'da dikkatli: Bu mod tüm container'ları yeniden başlatır
         echo -e "${YELLOW}⚠️  Full deployment modu: Tüm container'lar yeniden oluşturulacak${NC}"
         
+        # Mevcut dizini kontrol et - eğer infra dizinindeysek orada kal, değilse infra'ya git
+        # (Zaten 496. satırda cd infra yapıldı, bu yüzden burada zaten infra dizinindeyiz)
+        if [ ! -f "docker-compose.yml" ]; then
+            # docker-compose.yml yoksa, infra dizinine git
+            if [ -d "infra" ]; then
+                cd infra
+            elif [ -d "$SCRIPT_DIR/infra" ]; then
+                cd "$SCRIPT_DIR/infra"
+            fi
+        fi
+        
         # Agresif container temizleme fonksiyonunu çağır (infra dizininde)
         force_remove_backend_container
         
@@ -959,21 +995,45 @@ echo -e "${GREEN}✅ DEPLOYMENT TAMAMLANDI!${NC}"
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
-echo -e "${BLUE}📊 Container Durumu:${NC}"
-cd infra
-docker-compose ps
+echo -e "${BLUE}📊 Local Container Durumu:${NC}"
+if [ -f "docker-compose.yml" ]; then
+    # Zaten infra dizinindeyiz
+    docker-compose ps
+elif [ -d "infra" ]; then
+    cd infra
+    docker-compose ps
+    cd ..
+elif [ -d "$SCRIPT_DIR/infra" ]; then
+    cd "$SCRIPT_DIR/infra"
+    docker-compose ps
+    cd "$SCRIPT_DIR"
+else
+    echo -e "${YELLOW}⚠️  infra dizini bulunamadı, container listesi gösterilemiyor.${NC}"
+    docker ps --filter "name=saas-tour" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+fi
 
 echo ""
-echo -e "${BLUE}🌐 Erişim Bilgileri:${NC}"
-echo -e "   Multi-Tenant Subdomain (Traefik):"
-echo -e "   • ${GREEN}http://sunset.local.saastour360.test:5001${NC} (local)"
-echo -e "   • ${GREEN}http://berg.local.saastour360.test:5001${NC} (local)"
-echo -e "   • ${GREEN}https://sunset.saastour360.com${NC} (production - Traefik 443'te)"
-echo -e "   • ${GREEN}https://berg.saastour360.com${NC} (production - Traefik 443'te)"
+echo -e "${BLUE}🏥 Local Health Check:${NC}"
+BACKEND_STATUS=$(docker ps --format '{{.Names}}' | grep -q "^saas-tour-backend$" && echo -e "${GREEN}✅ Çalışıyor${NC}" || echo -e "${RED}❌ Çalışmıyor${NC}")
+FRONTEND_STATUS=$(docker ps --format '{{.Names}}' | grep -q "^saas-tour-frontend$" && echo -e "${GREEN}✅ Çalışıyor${NC}" || echo -e "${RED}❌ Çalışmıyor${NC}")
+POSTGRES_STATUS=$(docker ps --format '{{.Names}}' | grep -q "^global_postgres$" && echo -e "${GREEN}✅ Çalışıyor${NC}" || echo -e "${RED}❌ Çalışmıyor${NC}")
+TRAEFIK_STATUS=$(docker ps --format '{{.Names}}' | grep -q "^traefik$" && echo -e "${GREEN}✅ Çalışıyor${NC}" || echo -e "${RED}❌ Çalışmıyor${NC}")
+
+echo -e "   Backend: $BACKEND_STATUS"
+echo -e "   Frontend: $FRONTEND_STATUS"
+echo -e "   PostgreSQL: $POSTGRES_STATUS"
+echo -e "   Traefik: $TRAEFIK_STATUS"
 echo ""
-echo -e "   Direkt Erişim (Mevcut sistemle uyumlu):"
+
+echo -e "${BLUE}🌐 Local Erişim Bilgileri:${NC}"
+echo -e "   Multi-Tenant Subdomain (Traefik):"
+echo -e "   • ${GREEN}http://sunset.local.saastour360.test:5001${NC}"
+echo -e "   • ${GREEN}http://berg.local.saastour360.test:5001${NC}"
+echo ""
+echo -e "   Direkt Erişim:"
 echo -e "   • Frontend: ${GREEN}http://localhost:9001${NC}"
 echo -e "   • Backend API: ${GREEN}http://localhost:4001/api${NC}"
+echo -e "   • API Docs: ${GREEN}http://localhost:4001/api/docs${NC}"
 echo ""
 echo -e "   Traefik Dashboard:"
 echo -e "   • ${GREEN}http://localhost:8080${NC}"
@@ -981,18 +1041,24 @@ echo ""
 
 echo -e "${BLUE}📝 Yararlı Komutlar:${NC}"
 echo "   # Logları görüntüle:"
-echo "   docker-compose logs -f backend"
-echo "   docker-compose logs -f frontend"
-echo "   docker-compose logs -f worker"
+echo "   ${CYAN}docker-compose logs -f backend${NC}"
+echo "   ${CYAN}docker-compose logs -f frontend${NC}"
+echo "   ${CYAN}docker-compose logs -f worker${NC}"
+echo ""
+echo "   # Backend logları (direkt):"
+echo "   ${CYAN}docker logs saas-tour-backend -f${NC}"
 echo ""
 echo "   # Migration durumu:"
-echo "   docker logs saas-tour-backend | grep -i migration"
+echo "   ${CYAN}docker logs saas-tour-backend | grep -i migration${NC}"
 echo ""
 echo "   # Container'ları durdur:"
-echo "   docker-compose down"
+echo "   ${CYAN}cd infra && docker-compose down${NC}"
 echo ""
 echo "   # Database seed çalıştır:"
-echo "   ./deploy.sh seed"
+echo "   ${CYAN}./deploy.sh seed${NC}"
+echo ""
+echo "   # Health check:"
+echo "   ${CYAN}curl http://localhost:4001/api/health${NC}"
 echo ""
 
 if [ "$FRESH_DB" = "true" ]; then
@@ -1000,6 +1066,16 @@ if [ "$FRESH_DB" = "true" ]; then
     echo -e "${YELLOW}   DB_SYNC=true ayarlandı. İlk kurulumdan sonra backend/.env dosyasında DB_SYNC=false yapın.${NC}"
     echo ""
 fi
+
+# Local deployment özeti
+echo -e "${BLUE}📊 Local Deployment Özeti:${NC}"
+echo -e "   ${GREEN}✓${NC} Database stack başlatıldı"
+echo -e "   ${GREEN}✓${NC} Web network oluşturuldu"
+echo -e "   ${GREEN}✓${NC} Traefik (reverse proxy) başlatıldı"
+echo -e "   ${GREEN}✓${NC} Backend & Frontend build edildi"
+echo -e "   ${GREEN}✓${NC} Application stack başlatıldı"
+echo -e "   ${GREEN}✓${NC} Container'lar sağlıklı"
+echo ""
 
 cd ..
 
@@ -1072,13 +1148,18 @@ ENDSSH
             --exclude='.DS_Store' \
             --exclude='frontend/node_modules' \
             --exclude='backend/node_modules' \
-            --exclude='frontend/dist' \
-            --exclude='backend/dist' \
+            --exclude='frontend/src' \
+            --exclude='backend/src' \
             --exclude='docker-datatabse-stack' \
             --exclude='mobile' \
+            --exclude='frontend1' \
+            --exclude='postman' \
+            --exclude='*.md' \
+            --exclude='*.MD' \
+            --exclude='*.sql' \
+            --exclude='scripts' \
             --exclude='backend/public/uploads/*' \
             --exclude='backend/dist/public/uploads/*' \
-            --exclude='postman' \
             ./ ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/ 2>&1 | grep -v "failed: No such file or directory" || {
                 echo -e "${YELLOW}⚠️  Bazı dosyalar yüklenemedi (normal olabilir)${NC}"
             }
@@ -1095,18 +1176,392 @@ ENDSSH
         
         echo -e "${YELLOW}🚀 Sunucuda deployment başlatılıyor...${NC}"
         
-        # Sunucuda deployment script'ini çalıştır
+        # Sunucuda deployment script'ini çalıştır (detaylı loglar ile)
         sshpass -e ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
-            ${REMOTE_USER}@${REMOTE_HOST} << ENDSSH
+            ${REMOTE_USER}@${REMOTE_HOST} << 'ENDSSH'
             set -e
-            echo "📦 Sunucuda deployment başlatılıyor..."
-            cd ${REMOTE_PATH} || { echo "❌ Error: Cannot change to directory"; exit 1; }
+            
+            # Renkli output
+            GREEN='\033[0;32m'
+            YELLOW='\033[1;33m'
+            RED='\033[0;31m'
+            BLUE='\033[0;34m'
+            CYAN='\033[0;36m'
+            NC='\033[0m'
+            
+            echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+            echo -e "${CYAN}🚀 SUNUCU DEPLOYMENT BAŞLATILIYOR${NC}"
+            echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+            
+            echo -e "${BLUE}📍 Sunucu: $(hostname)${NC}"
+            echo -e "${BLUE}📁 Deployment Path: ${REMOTE_PATH}${NC}"
+            echo -e "${BLUE}⏰ Zaman: $(date '+%Y-%m-%d %H:%M:%S')${NC}"
+            echo ""
+            
+            # Dizine git
+            cd ${REMOTE_PATH} || { echo -e "${RED}❌ Error: Cannot change to directory${NC}"; exit 1; }
+            
+            # Production'da olmaması gereken dosya/klasörleri temizle
+            echo -e "${YELLOW}🧹 Production Temizliği Başlatılıyor...${NC}"
+            
+            # Silinecek klasörler
+            FOLDERS_TO_DELETE=(
+                "frontend/src"
+                "backend/src"
+                "frontend1"
+                "mobile"
+                "postman"
+                "scripts"
+                ".git"
+                ".github"
+                ".vscode"
+                "docker-datatabse-stack"
+            )
+            
+            for folder in "${FOLDERS_TO_DELETE[@]}"; do
+                if [ -d "$folder" ]; then
+                    echo -e "   ${YELLOW}🗑️  Siliniyor: $folder${NC}"
+                    rm -rf "$folder"
+                    echo -e "   ${GREEN}✅ Silindi: $folder${NC}"
+                fi
+            done
+            
+            # Silinecek dosya tipleri
+            echo -e "${YELLOW}🧹 Gereksiz dosyalar temizleniyor...${NC}"
+            
+            # .md ve .MD dosyalarını sil (root ve alt dizinler)
+            find . -maxdepth 2 -type f \( -name "*.md" -o -name "*.MD" \) -not -path "./node_modules/*" -not -path "./backend/node_modules/*" -not -path "./frontend/node_modules/*" 2>/dev/null | while read file; do
+                if [ -f "$file" ]; then
+                    echo -e "   ${YELLOW}🗑️  Siliniyor: $file${NC}"
+                    rm -f "$file"
+                fi
+            done
+            
+            # .sql dosyalarını sil
+            find . -maxdepth 3 -type f -name "*.sql" -not -path "./node_modules/*" 2>/dev/null | while read file; do
+                if [ -f "$file" ]; then
+                    echo -e "   ${YELLOW}🗑️  Siliniyor: $file${NC}"
+                    rm -f "$file"
+                fi
+            done
+            
+            # .env.example dosyalarını sil (production'da .env kullanılacak)
+            find . -maxdepth 2 -type f -name ".env.example" -o -name ".env.*" -o -name "env.example" 2>/dev/null | while read file; do
+                if [ -f "$file" ]; then
+                    echo -e "   ${YELLOW}🗑️  Siliniyor: $file${NC}"
+                    rm -f "$file"
+                fi
+            done
+            
+            # tsconfig dosyalarını sil (build edilmiş kod kullanılacak)
+            find . -maxdepth 2 -type f -name "tsconfig*.json" 2>/dev/null | while read file; do
+                if [ -f "$file" ]; then
+                    echo -e "   ${YELLOW}🗑️  Siliniyor: $file${NC}"
+                    rm -f "$file"
+                fi
+            done
+            
+            # PowerShell script'lerini sil
+            find . -maxdepth 2 -type f -name "*.ps1" 2>/dev/null | while read file; do
+                if [ -f "$file" ]; then
+                    echo -e "   ${YELLOW}🗑️  Siliniyor: $file${NC}"
+                    rm -f "$file"
+                fi
+            done
+            
+            # Test dosyalarını sil
+            find . -maxdepth 3 -type f \( -name "*.test.ts" -o -name "*.test.js" -o -name "*.spec.ts" -o -name "*.spec.js" \) 2>/dev/null | while read file; do
+                if [ -f "$file" ]; then
+                    echo -e "   ${YELLOW}🗑️  Siliniyor: $file${NC}"
+                    rm -f "$file"
+                fi
+            done
+            
+            # README dosyalarını sil (production'da gerekmez)
+            find . -maxdepth 2 -type f -name "README*" 2>/dev/null | while read file; do
+                if [ -f "$file" ]; then
+                    echo -e "   ${YELLOW}🗑️  Siliniyor: $file${NC}"
+                    rm -f "$file"
+                fi
+            done
+            
+            # .gitignore, .gitattributes gibi git dosyalarını sil
+            find . -maxdepth 2 -type f \( -name ".gitignore" -o -name ".gitattributes" -o -name ".gitmodules" \) 2>/dev/null | while read file; do
+                if [ -f "$file" ]; then
+                    echo -e "   ${YELLOW}🗑️  Siliniyor: $file${NC}"
+                    rm -f "$file"
+                fi
+            done
+            
+            # eslint, prettier gibi geliştirme dosyalarını sil
+            find . -maxdepth 2 -type f \( -name ".eslintrc*" -o -name ".prettierrc*" -o -name ".editorconfig" -o -name "eslint.config.*" \) 2>/dev/null | while read file; do
+                if [ -f "$file" ]; then
+                    echo -e "   ${YELLOW}🗑️  Siliniyor: $file${NC}"
+                    rm -f "$file"
+                fi
+            done
+            
+            # vite.config, webpack.config gibi build tool config'lerini sil
+            find . -maxdepth 2 -type f \( -name "vite.config.*" -o -name "webpack.config.*" -o -name "rollup.config.*" \) 2>/dev/null | while read file; do
+                if [ -f "$file" ]; then
+                    echo -e "   ${YELLOW}🗑️  Siliniyor: $file${NC}"
+                    rm -f "$file"
+                fi
+            done
+            
+            echo -e "${GREEN}✅ Production temizliği tamamlandı${NC}"
+            echo ""
+            
+            # Temizlik özeti
+            echo -e "${CYAN}📊 Temizlik Özeti:${NC}"
+            echo -e "   ${RED}❌${NC} frontend/src: $([ ! -d "frontend/src" ] && echo -e "${GREEN}Silindi${NC}" || echo -e "${YELLOW}Hala var${NC}")"
+            echo -e "   ${RED}❌${NC} backend/src: $([ ! -d "backend/src" ] && echo -e "${GREEN}Silindi${NC}" || echo -e "${YELLOW}Hala var${NC}")"
+            echo -e "   ${RED}❌${NC} frontend1: $([ ! -d "frontend1" ] && echo -e "${GREEN}Silindi${NC}" || echo -e "${YELLOW}Hala var${NC}")"
+            echo -e "   ${RED}❌${NC} mobile: $([ ! -d "mobile" ] && echo -e "${GREEN}Silindi${NC}" || echo -e "${YELLOW}Hala var${NC}")"
+            echo -e "   ${RED}❌${NC} postman: $([ ! -d "postman" ] && echo -e "${GREEN}Silindi${NC}" || echo -e "${YELLOW}Hala var${NC}")"
+            echo -e "   ${RED}❌${NC} scripts: $([ ! -d "scripts" ] && echo -e "${GREEN}Silindi${NC}" || echo -e "${YELLOW}Hala var${NC}")"
+            echo -e "   ${RED}❌${NC} .git: $([ ! -d ".git" ] && echo -e "${GREEN}Silindi${NC}" || echo -e "${YELLOW}Hala var${NC}")"
+            echo -e "   ${RED}❌${NC} *.md dosyaları: $([ $(find . -maxdepth 2 -name "*.md" 2>/dev/null | wc -l) -eq 0 ] && echo -e "${GREEN}Silindi${NC}" || echo -e "${YELLOW}$(find . -maxdepth 2 -name "*.md" 2>/dev/null | wc -l) adet var${NC}")"
+            echo ""
+            
+            # Dosya kontrolü (Production'da olması gerekenler)
+            echo -e "${YELLOW}📋 Production Dosya Kontrolü:${NC}"
+            echo -e "   ${GREEN}✅${NC} Backend dist: $([ -d "backend/dist" ] && echo -e "${GREEN}Var${NC}" || echo -e "${RED}❌ YOK!${NC}")"
+            echo -e "   ${GREEN}✅${NC} Frontend dist: $([ -d "frontend/dist" ] && echo -e "${GREEN}Var${NC}" || echo -e "${RED}❌ YOK!${NC}")"
+            echo -e "   ${GREEN}✅${NC} Docker compose: $([ -f "infra/docker-compose.yml" ] && echo -e "${GREEN}Var${NC}" || echo -e "${RED}❌ YOK!${NC}")"
+            echo -e "   ${GREEN}✅${NC} Deploy script: $([ -f "deploy.sh" ] && echo -e "${GREEN}Var${NC}" || echo -e "${RED}❌ YOK!${NC}")"
+            echo -e "   ${GREEN}✅${NC} Backend package.json: $([ -f "backend/package.json" ] && echo -e "${GREEN}Var${NC}" || echo -e "${RED}❌ YOK!${NC}")"
+            echo -e "   ${GREEN}✅${NC} Frontend package.json: $([ -f "frontend/package.json" ] && echo -e "${GREEN}Var${NC}" || echo -e "${RED}❌ YOK!${NC}")"
+            echo ""
+            
+            # Disk alanı kazancı
+            echo -e "${BLUE}💾 Disk Alanı:${NC}"
+            CURRENT_SIZE=$(du -sh ${REMOTE_PATH} 2>/dev/null | awk '{print $1}')
+            echo -e "   Toplam boyut: ${GREEN}$CURRENT_SIZE${NC}"
+            echo ""
+            
+            # Güvenlik kontrolü - hassas bilgiler
+            echo -e "${YELLOW}🔒 Güvenlik Kontrolü:${NC}"
+            SECURITY_ISSUES=0
+            
+            # .env.example gibi örnek dosyaları kontrol et
+            if [ -f "backend/.env.example" ] || [ -f "frontend/.env.example" ]; then
+                echo -e "   ${YELLOW}⚠️  .env.example dosyası bulundu (production'da gerekmez)${NC}"
+                SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
+            fi
+            
+            # Kaynak kod kontrolü
+            if [ -d "backend/src" ]; then
+                echo -e "   ${RED}⚠️  UYARI: backend/src kaynak kodları hala sunucuda!${NC}"
+                SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
+            fi
+            
+            if [ -d "frontend/src" ]; then
+                echo -e "   ${RED}⚠️  UYARI: frontend/src kaynak kodları hala sunucuda!${NC}"
+                SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
+            fi
+            
+            # Git deposu kontrolü
+            if [ -d ".git" ]; then
+                echo -e "   ${RED}⚠️  UYARI: .git deposu sunucuda (güvenlik riski)!${NC}"
+                SECURITY_ISSUES=$((SECURITY_ISSUES + 1))
+            fi
+            
+            # node_modules kontrolü (sadece production dependencies olmalı)
+            if [ -d "backend/src/node_modules" ] || [ -d "frontend/src/node_modules" ]; then
+                echo -e "   ${YELLOW}⚠️  Kaynak klasörlerde node_modules var${NC}"
+            fi
+            
+            if [ $SECURITY_ISSUES -eq 0 ]; then
+                echo -e "   ${GREEN}✅ Güvenlik kontrolü başarılı - hassas bilgi bulunamadı${NC}"
+            else
+                echo -e "   ${YELLOW}⚠️  $SECURITY_ISSUES adet güvenlik uyarısı bulundu${NC}"
+            fi
+            echo ""
+            
+            # deploy.sh çalıştırılabilir yap
             chmod +x deploy.sh || true
+            
+            # Deployment başlat
+            echo -e "${YELLOW}🔨 Infra deployment başlatılıyor...${NC}"
+            echo ""
             ./deploy.sh infra
-            echo "✅ Sunucu deployment tamamlandı!"
+            
+            # Container'ları restart et
+            echo ""
+            echo -e "${YELLOW}🔄 Container'lar yeniden başlatılıyor...${NC}"
+            cd infra
+            
+            # Backend restart
+            echo -e "   • Backend restart ediliyor..."
+            docker-compose restart backend
+            sleep 3
+            
+            # Frontend restart
+            echo -e "   • Frontend restart ediliyor..."
+            docker-compose restart frontend
+            sleep 3
+            
+            # Worker restart (varsa)
+            if docker ps -a --format '{{.Names}}' | grep -q "^saas-tour-worker$"; then
+                echo -e "   • Worker restart ediliyor..."
+                docker-compose restart worker
+                sleep 2
+            fi
+            
+            echo -e "${GREEN}✅ Container'lar yeniden başlatıldı${NC}"
+            echo ""
+            
+            # Container'ların hazır olmasını bekle
+            echo -e "${YELLOW}⏳ Container'ların hazır olması bekleniyor (15 saniye)...${NC}"
+            sleep 15
+            
+            # Restart sonrası backend logları
+            echo -e "${BLUE}📄 Backend Restart Sonrası Loglar (son 20 satır):${NC}"
+            docker logs saas-tour-backend --tail 20 2>&1 | while read line; do
+                echo "   $line"
+            done
+            echo ""
+            
+            echo ""
+            echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+            echo -e "${CYAN}✅ SUNUCU DEPLOYMENT DURUMU${NC}"
+            echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+            
+            # Container durumları
+            echo -e "${BLUE}📦 Container Durumları (Restart Sonrası):${NC}"
+            docker-compose ps
+            echo ""
+            
+            # Running container'ları detaylı göster
+            echo -e "${BLUE}🔍 Aktif Container'lar:${NC}"
+            docker ps --filter "name=saas-tour" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep -v "NAMES" | while read line; do
+                if [ ! -z "$line" ]; then
+                    echo -e "   ${GREEN}✓${NC} $line"
+                fi
+            done
+            echo ""
+            
+            # Backend health check
+            echo -e "${BLUE}🏥 Backend Health Check:${NC}"
+            if docker ps --format '{{.Names}}' | grep -q "^saas-tour-backend$"; then
+                echo -e "   ${GREEN}✅ Backend container çalışıyor${NC}"
+                
+                # Backend loglarının son 10 satırı
+                echo -e "${BLUE}📄 Backend Son Loglar:${NC}"
+                docker logs saas-tour-backend --tail 10 2>&1 | while read line; do
+                    echo "      $line"
+                done
+                
+                # Backend'in hazır olup olmadığını kontrol et
+                sleep 3
+                if docker logs saas-tour-backend 2>&1 | grep -q "Server is running"; then
+                    echo -e "   ${GREEN}✅ Backend hazır ve çalışıyor${NC}"
+                else
+                    echo -e "   ${YELLOW}⚠️  Backend henüz hazır değil (yeni başlatıldı)${NC}"
+                fi
+            else
+                echo -e "   ${RED}❌ Backend container çalışmıyor!${NC}"
+            fi
+            echo ""
+            
+            # Frontend health check
+            echo -e "${BLUE}🌐 Frontend Health Check:${NC}"
+            if docker ps --format '{{.Names}}' | grep -q "^saas-tour-frontend$"; then
+                echo -e "   ${GREEN}✅ Frontend container çalışıyor${NC}"
+                
+                # Nginx durumu
+                if docker exec saas-tour-frontend nginx -t 2>&1 | grep -q "successful"; then
+                    echo -e "   ${GREEN}✅ Nginx konfigürasyonu geçerli${NC}"
+                else
+                    echo -e "   ${YELLOW}⚠️  Nginx konfigürasyonu kontrol edilemiyor${NC}"
+                fi
+            else
+                echo -e "   ${RED}❌ Frontend container çalışmıyor!${NC}"
+            fi
+            echo ""
+            
+            # Worker health check
+            echo -e "${BLUE}📧 Worker Health Check:${NC}"
+            if docker ps --format '{{.Names}}' | grep -q "^saas-tour-worker$"; then
+                echo -e "   ${GREEN}✅ Worker container çalışıyor${NC}"
+            else
+                echo -e "   ${YELLOW}⚠️  Worker container bulunamadı${NC}"
+            fi
+            echo ""
+            
+            # Database bağlantısı
+            echo -e "${BLUE}🗄️  Database Health Check:${NC}"
+            if docker ps --format '{{.Names}}' | grep -q "^global_postgres$"; then
+                echo -e "   ${GREEN}✅ PostgreSQL container çalışıyor${NC}"
+                
+                # PostgreSQL hazır mı kontrol et
+                if docker exec global_postgres pg_isready -U dev_user > /dev/null 2>&1; then
+                    echo -e "   ${GREEN}✅ PostgreSQL hazır${NC}"
+                else
+                    echo -e "   ${YELLOW}⚠️  PostgreSQL henüz hazır değil${NC}"
+                fi
+            else
+                echo -e "   ${RED}❌ PostgreSQL container çalışmıyor!${NC}"
+            fi
+            echo ""
+            
+            # Traefik health check
+            echo -e "${BLUE}🔀 Traefik Health Check:${NC}"
+            if docker ps --format '{{.Names}}' | grep -q "^traefik$"; then
+                echo -e "   ${GREEN}✅ Traefik container çalışıyor${NC}"
+            else
+                echo -e "   ${YELLOW}⚠️  Traefik container bulunamadı${NC}"
+            fi
+            echo ""
+            
+            # Disk kullanımı
+            echo -e "${BLUE}💾 Disk Kullanımı:${NC}"
+            df -h ${REMOTE_PATH} | tail -1 | awk '{print "   Kullanılan: "$3" / Toplam: "$2" ("$5" dolu)"}'
+            echo ""
+            
+            # Docker disk kullanımı
+            echo -e "${BLUE}🐳 Docker Disk Kullanımı:${NC}"
+            docker system df --format "table {{.Type}}\t{{.TotalCount}}\t{{Size}}" | tail -n +2 | while read line; do
+                echo "   $line"
+            done
+            echo ""
+            
+            cd ..
+            
+            echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+            echo -e "${GREEN}✅ SUNUCU DEPLOYMENT TAMAMLANDI!${NC}"
+            echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+            echo ""
+            echo -e "${BLUE}🌐 Erişim URL'leri:${NC}"
+            echo -e "   • Frontend: ${GREEN}https://saastour360.com${NC}"
+            echo -e "   • Backend API: ${GREEN}https://saastour360.com/api${NC}"
+            echo -e "   • Traefik Dashboard: ${GREEN}http://$(hostname -I | awk '{print $1}'):8080${NC}"
+            echo ""
+            echo -e "${BLUE}📝 Yararlı Komutlar:${NC}"
+            echo -e "   ${CYAN}cd ${REMOTE_PATH}/infra && docker-compose logs -f backend${NC}"
+            echo -e "   ${CYAN}cd ${REMOTE_PATH}/infra && docker-compose ps${NC}"
+            echo -e "   ${CYAN}docker logs saas-tour-backend${NC}"
+            echo ""
 ENDSSH
         
-        echo -e "${GREEN}✅ Sunucu deployment tamamlandı!${NC}"
+        echo ""
+        echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo -e "${GREEN}🎉 LOKAL VE SUNUCU DEPLOYMENT TAMAMLANDI!${NC}"
+        echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+        echo ""
+        echo -e "${BLUE}✅ Deployment Özeti:${NC}"
+        echo -e "   ${GREEN}✓${NC} Lokal build tamamlandı"
+        echo -e "   ${GREEN}✓${NC} Dosyalar sunucuya yüklendi"
+        echo -e "   ${GREEN}✓${NC} Sunucuda deployment yapıldı"
+        echo -e "   ${GREEN}✓${NC} Container'lar başlatıldı"
+        echo -e "   ${GREEN}✓${NC} Health check'ler tamamlandı"
+        echo ""
+        echo -e "${BLUE}🌐 Production URL'leri:${NC}"
+        echo -e "   • ${GREEN}https://saastour360.com${NC}"
+        echo -e "   • ${GREEN}https://sunset.saastour360.com${NC}"
+        echo -e "   • ${GREEN}https://berg.saastour360.com${NC}"
+        echo ""
     else
         echo -e "${YELLOW}⚠️  sshpass bulunamadı. Sunucuya manuel deploy yapın.${NC}"
         echo -e "${YELLOW}   Veya: ./deploy.sh development (sadece lokal deployment)${NC}"

@@ -27,7 +27,7 @@
                   v-model="searchQuery"
                   label="Kupon Kodu ile Ara"
                   prepend-inner-icon="mdi-magnify"
-                  variant="outlined"
+                  
                   density="compact"
                   clearable
                   @input="loadCoupons"
@@ -38,7 +38,7 @@
                   v-model="statusFilter"
                   :items="statusOptions"
                   label="Durum"
-                  variant="outlined"
+                  
                   density="compact"
                   clearable
                   @update:model-value="loadCoupons"
@@ -49,7 +49,7 @@
                   v-model="customerFilter"
                   :items="customerOptions"
                   label="Müşteri"
-                  variant="outlined"
+                  
                   density="compact"
                   clearable
                   @update:model-value="loadCoupons"
@@ -138,7 +138,7 @@
               v-model="createForm.customerId"
               :items="customerOptions"
               label="Müşteri (Opsiyonel)"
-              variant="outlined"
+              
               clearable
               class="mb-4"
             />
@@ -159,7 +159,7 @@
               v-model="createForm.currencyCode"
               :items="currencyOptions"
               label="Para Birimi"
-              variant="outlined"
+              
               class="mb-4"
             />
 
@@ -167,7 +167,7 @@
               v-model="createForm.expiryDate"
               label="Son Kullanma Tarihi (Opsiyonel)"
               type="date"
-              variant="outlined"
+              
               class="mb-4"
             />
 
@@ -182,7 +182,7 @@
               v-model="createForm.description"
               label="Açıklama (Opsiyonel)"
               rows="3"
-              variant="outlined"
+              
             />
           </v-form>
         </v-card-text>

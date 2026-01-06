@@ -62,56 +62,109 @@
           <span class="text-h6">{{ dialogTitle }}</span>
           <v-btn icon="mdi-close" variant="text" @click="closeDialog" />
         </v-card-title>
-        <v-card-text>
+        <v-card-text class="admin-form-scope">
           <v-alert v-if="formError" type="error" variant="tonal" class="mb-4">{{ formError }}</v-alert>
           <v-form ref="formRef" v-model="isValid" @submit.prevent="handleSubmit">
             <v-row>
               <v-col cols="12" md="6">
-                <v-text-field v-model="form.name" label="Otel adi" prepend-inner-icon="mdi-hotel" required />
+                <label class="form-label">Otel Adı <span class="required">*</span></label>
+                <v-text-field 
+                  v-model="form.name" 
+                  placeholder="Otel adını giriniz"
+                  hide-details="auto"
+                  
+                  density="comfortable"
+                  required 
+                />
               </v-col>
               <v-col cols="12" md="3">
+                <label class="form-label">Yıldız Sayısı</label>
                 <v-text-field
                   v-model.number="form.starRating"
-                  label="Yildiz"
                   type="number"
                   min="0"
                   max="5"
                   step="0.5"
-                  prepend-inner-icon="mdi-star"
+                  placeholder="0-5"
+                  hide-details="auto"
+                  
+                  density="comfortable"
                 />
               </v-col>
               <v-col cols="12" md="3">
+                <label class="form-label">Destinasyon <span class="required">*</span></label>
                 <v-select
                   v-model="form.destinationId"
                   :items="destinationOptions"
                   item-value="id"
                   item-title="label"
-                  label="Destinasyon"
-                  prepend-inner-icon="mdi-map-marker"
+                  placeholder="Seçiniz"
+                  hide-details="auto"
+                  
+                  density="comfortable"
                   required
                 />
               </v-col>
               <v-col cols="12">
-                <v-text-field v-model="form.address" label="Adres" prepend-inner-icon="mdi-home" required />
+                <label class="form-label">Adres <span class="required">*</span></label>
+                <v-text-field 
+                  v-model="form.address" 
+                  placeholder="Otel adresini giriniz"
+                  hide-details="auto"
+                  
+                  density="comfortable"
+                  required 
+                />
               </v-col>
               <v-col cols="12" md="6">
-                <v-text-field v-model="form.city" label="Sehir" prepend-inner-icon="mdi-city" required />
+                <label class="form-label">Şehir <span class="required">*</span></label>
+                <v-text-field 
+                  v-model="form.city" 
+                  placeholder="Şehir adını giriniz"
+                  hide-details="auto"
+                  
+                  density="comfortable"
+                  required 
+                />
               </v-col>
               <v-col cols="12" md="6">
-                <v-text-field v-model="form.country" label="Ulke" prepend-inner-icon="mdi-earth" required />
+                <label class="form-label">Ülke <span class="required">*</span></label>
+                <v-text-field 
+                  v-model="form.country" 
+                  placeholder="Ülke adını giriniz"
+                  hide-details="auto"
+                  
+                  density="comfortable"
+                  required 
+                />
               </v-col>
               <v-col cols="12">
-                <v-textarea v-model="form.description" label="Aciklama" rows="3" prepend-inner-icon="mdi-text" />
+                <label class="form-label">Açıklama</label>
+                <v-textarea 
+                  v-model="form.description" 
+                  rows="3" 
+                  placeholder="Otel hakkında açıklama giriniz"
+                  hide-details="auto"
+                  
+                  density="comfortable"
+                />
               </v-col>
               <v-col cols="12">
-                <v-text-field v-model="form.locationUrl" label="Konum URL" prepend-inner-icon="mdi-map" />
+                <label class="form-label">Konum URL</label>
+                <v-text-field 
+                  v-model="form.locationUrl" 
+                  placeholder="Google Maps veya benzeri konum URL'si"
+                  hide-details="auto"
+                  
+                  density="comfortable"
+                />
               </v-col>
             </v-row>
 
             <div class="d-flex justify-end gap-3 mt-6">
-              <v-btn variant="text" @click="closeDialog">Iptal</v-btn>
+              <v-btn variant="text" @click="closeDialog">İptal</v-btn>
               <v-btn color="primary" type="submit" :loading="submitting">
-                {{ editingId ? 'Guncelle' : 'Kaydet' }}
+                {{ editingId ? 'Güncelle' : 'Kaydet' }}
               </v-btn>
             </div>
           </v-form>

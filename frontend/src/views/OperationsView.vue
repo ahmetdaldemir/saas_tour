@@ -10,7 +10,7 @@
         v-model="selectedDate"
         :max="new Date().toISOString().split('T')[0]"
         density="compact"
-        variant="outlined"
+        
         hide-header
         @update:model-value="loadOperations"
       />
@@ -223,36 +223,63 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* ============================================
+   CORPORATE OPERATIONS PAGE
+   ============================================ */
+
 .operations-page {
-  padding: 24px;
+  padding: var(--spacing-xl);
   max-width: 1200px;
   margin: 0 auto;
+  background-color: var(--color-background);
 }
 
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 24px;
-  gap: 16px;
+  margin-bottom: var(--spacing-xl);
+  gap: var(--spacing-lg);
+  padding: var(--spacing-xl);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
 }
 
 .page-title {
   font-size: 28px;
   font-weight: 600;
-  color: #111827;
+  color: var(--color-text-primary);
   margin: 0;
   line-height: 1.2;
 }
 
 .page-subtitle {
   font-size: 14px;
-  color: #6b7280;
-  margin: 4px 0 0 0;
+  color: var(--color-text-secondary);
+  margin: var(--spacing-xs) 0 0 0;
 }
 
 .operations-tabs {
-  margin-bottom: 24px;
+  margin-bottom: var(--spacing-xl);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.operations-tabs :deep(.v-tab) {
+  text-transform: none;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--color-text-secondary);
+  transition: all var(--transition-base);
+}
+
+.operations-tabs :deep(.v-tab--selected) {
+  color: var(--color-primary-600);
 }
 
 .operations-content {
@@ -265,39 +292,57 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 64px 24px;
+  padding: var(--spacing-2xl) var(--spacing-xl);
   text-align: center;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+}
+
+.empty-state :deep(.v-icon) {
+  color: var(--color-gray-300);
 }
 
 .operations-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--spacing-md);
 }
 
 .operation-item {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
 }
 
 .operation-item:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border-color: var(--color-primary-500);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.operation-item:active {
+  transform: translateY(0);
 }
 
 .operation-item.completed {
-  opacity: 0.7;
+  opacity: 0.65;
+  background: var(--color-gray-50);
+}
+
+.operation-item.completed:hover {
+  opacity: 0.8;
 }
 
 .operation-item-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px;
-  gap: 16px;
+  padding: var(--spacing-lg);
+  gap: var(--spacing-lg);
 }
 
 .operation-main {
@@ -309,57 +354,102 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
-  gap: 12px;
+  margin-bottom: var(--spacing-sm);
+  gap: var(--spacing-md);
 }
 
 .operation-code {
   font-size: 16px;
   font-weight: 600;
-  color: #111827;
+  color: var(--color-text-primary);
+  letter-spacing: -0.01em;
 }
 
 .operation-customer {
   font-size: 14px;
-  color: #374151;
-  margin: 4px 0 8px 0;
+  color: var(--color-text-primary);
+  margin: var(--spacing-xs) 0 var(--spacing-sm) 0;
   font-weight: 500;
 }
 
 .operation-details {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
-  margin-top: 8px;
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-sm);
 }
 
 .detail-item {
   display: flex;
   align-items: center;
   font-size: 13px;
-  color: #6b7280;
+  color: var(--color-text-secondary);
+  transition: color var(--transition-fast);
 }
 
 .detail-item .v-icon {
-  margin-right: 4px;
+  margin-right: var(--spacing-xs);
+  color: var(--color-primary-500);
 }
 
+.operation-item:hover .detail-item .v-icon {
+  color: var(--color-primary-600);
+}
+
+/* Badge styles */
+.operations-tabs :deep(.v-badge__badge) {
+  background-color: var(--color-primary-600);
+  color: white;
+  font-weight: 500;
+  font-size: 11px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+}
+
+/* Date picker corporate style */
+.page-header :deep(.v-date-picker) {
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
   .operations-page {
-    padding: 16px;
+    padding: var(--spacing-lg);
   }
 
   .page-header {
     flex-direction: column;
+    padding: var(--spacing-lg);
   }
 
   .operation-item-content {
-    padding: 12px;
+    padding: var(--spacing-md);
   }
 
   .operation-details {
     flex-direction: column;
-    gap: 8px;
+    gap: var(--spacing-sm);
+  }
+  
+  .operations-tabs {
+    padding: var(--spacing-xs) var(--spacing-sm);
+  }
+}
+
+@media (max-width: 480px) {
+  .page-title {
+    font-size: 24px;
+  }
+  
+  .operation-code {
+    font-size: 14px;
+  }
+  
+  .operation-customer {
+    font-size: 13px;
   }
 }
 </style>

@@ -76,7 +76,7 @@
           v-model.number="odometerKm"
           type="number"
           placeholder="Örn: 15300"
-          variant="outlined"
+          
           density="comfortable"
           :rules="[rules.required, rules.positive]"
           hide-details="auto"
@@ -134,7 +134,7 @@
         <v-textarea
           v-model="damageNotes"
           placeholder="Varsa hasar notlarını girin..."
-          variant="outlined"
+          
           density="comfortable"
           rows="3"
           hide-details
