@@ -15,11 +15,18 @@ html {
 }
 
 /* B) ADMIN FORM SCOPE - ISOLATION */
-.admin-form-scope {
+.admin-form-scope,
+.admin-form-scope * {
   /* Reset any parent transforms/scales */
   transform: none !important;
   font-size: inherit !important;
   zoom: 1 !important;
+}
+
+/* Force override Vuetify's label positioning */
+.admin-form-scope .v-field {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
 }
 
 /* Manual Form Label (when using <label> tag) */
@@ -55,6 +62,16 @@ html {
   flex-direction: column !important;
   align-items: flex-start !important;
   gap: 6px !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Remove ALL padding/margin from v-input wrapper */
+.admin-form-scope .v-input__details,
+.admin-form-scope .v-input__prepend,
+.admin-form-scope .v-input__append {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
 }
 
 /* Label that's DIRECT child of v-input (this is the one we want to show) */
@@ -161,6 +178,33 @@ html {
   margin-top: 0 !important;
 }
 
+/* Fix prepended icon padding - REMOVE ALL PADDING */
+.admin-form-scope .v-field--prepended {
+  padding-inline-start: 0 !important;
+  padding-left: 0 !important;
+}
+
+.admin-form-scope .v-field--prepended .v-field__input {
+  padding-left: 0 !important;
+  padding-inline-start: 0 !important;
+  padding-right: 16px !important;
+}
+
+.admin-form-scope .v-field--prepended .v-field__field {
+  padding-inline-start: 0 !important;
+  padding-left: 0 !important;
+}
+
+/* Fix appended icon padding */
+.admin-form-scope .v-field--appended {
+  padding-inline-end: 0 !important;
+  padding-right: 0 !important;
+}
+
+.admin-form-scope .v-field--appended .v-field__input {
+  padding-right: 44px !important; /* Space for icon */
+}
+
 /* Remove label from inside input */
 .admin-form-scope .v-field__input::before,
 .admin-form-scope .v-field__input::after {
@@ -207,43 +251,57 @@ html {
   opacity: 1 !important;
 }
 
-/* Force label outside field - STRONG OVERRIDE */
+/* Force label outside field - ULTRA STRONG OVERRIDE */
 .admin-form-scope .v-field__field {
   flex-direction: column !important;
   align-items: flex-start !important;
   position: relative !important;
-}
-
-.admin-form-scope .v-field__field > .v-field-label,
-.admin-form-scope .v-field__field > label {
-  order: -1 !important;
-  margin-bottom: 6px !important;
-  position: static !important;
-  transform: none !important;
-  top: auto !important;
-  left: auto !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  pointer-events: auto !important;
-  opacity: 1 !important;
-  font-size: 13px !important;
-  font-weight: 500 !important;
-  color: #374151 !important;
-  line-height: 1.4 !important;
-  padding: 0 !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
+  padding-top: 0 !important;
   margin-top: 0 !important;
 }
 
-/* Remove label from inside input completely */
-.admin-form-scope .v-field__input .v-field-label,
-.admin-form-scope .v-field__input label {
+/* Hide ALL Vuetify labels inside fields */
+.admin-form-scope .v-field__field > .v-field-label,
+.admin-form-scope .v-field__field > label,
+.admin-form-scope .v-field__field .v-label {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
   position: absolute !important;
   left: -9999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Remove label from inside input completely - AGGRESSIVE */
+.admin-form-scope .v-field__input .v-field-label,
+.admin-form-scope .v-field__input label,
+.admin-form-scope .v-field-label,
+.admin-form-scope .v-field-label--floating,
+.admin-form-scope .v-field-label--active,
+.admin-form-scope .v-field-label--clickable,
+.admin-form-scope .v-label,
+.admin-form-scope .v-label--active,
+.admin-form-scope .v-label--floating {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 /* Fix Vuetify outlined variant - COMPLETE OVERRIDE */
@@ -278,6 +336,16 @@ html {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
+}
+
+/* Remove prepend icon padding */
+.admin-form-scope .v-field--prepended {
+  padding-inline-start: 0 !important;
+}
+
+.admin-form-scope .v-field--prepended .v-field__input {
+  padding-left: 0 !important;
+  padding-inline-start: 0 !important;
 }
 
 .admin-form-scope .v-field--variant-outlined .v-field__outline__end {

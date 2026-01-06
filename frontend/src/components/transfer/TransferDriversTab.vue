@@ -1,7 +1,7 @@
 <template>
-  <div class="pa-4">
-    <div class="d-flex align-center justify-space-between mb-4">
-      <h2 class="text-h5">Transfer Şoförleri</h2>
+  <div class="transfer-drivers-page">
+    <div class="page-header">
+      <h2 class="page-title">Transfer Şoförleri</h2>
       <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreateDialog">
         Yeni Şoför Ekle
       </v-btn>
@@ -12,6 +12,7 @@
       :items="drivers"
       :loading="loading"
       item-value="id"
+      class="drivers-table"
     >
       <template #item.languages="{ item }">
         <v-chip
@@ -43,98 +44,133 @@
 
     <!-- Driver Create/Edit Dialog -->
     <v-dialog v-model="showDialog" max-width="700" scrollable>
-      <v-card>
-        <v-card-title class="d-flex align-center justify-space-between">
-          <span class="text-h6">{{ editingDriver ? 'Şoför Düzenle' : 'Yeni Şoför Ekle' }}</span>
-          <v-btn icon="mdi-close" variant="text" @click="closeDialog" />
+      <v-card class="driver-dialog">
+        <v-card-title class="dialog-header">
+          <span class="dialog-title">{{ editingDriver ? 'Şoför Düzenle' : 'Yeni Şoför Ekle' }}</span>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="closeDialog" />
         </v-card-title>
         <v-divider />
-        <v-card-text class="pa-6">
+        <v-card-text class="dialog-body admin-form-scope">
           <v-form ref="formRef" v-model="formValid">
             <v-row>
               <v-col cols="12" md="6">
+                <label class="form-label">Ad Soyad <span class="required">*</span></label>
                 <v-text-field
                   v-model="form.name"
-                  label="Ad Soyad *"
+                  placeholder="Ad soyad giriniz"
                   prepend-inner-icon="mdi-account"
                   :rules="[(v: string) => !!v || 'Ad soyad gereklidir']"
                   required
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
                 />
               </v-col>
               <v-col cols="12" md="6">
+                <label class="form-label">Telefon <span class="required">*</span></label>
                 <v-text-field
                   v-model="form.phone"
-                  label="Telefon *"
+                  placeholder="Telefon numarası giriniz"
                   prepend-inner-icon="mdi-phone"
                   :rules="[(v: string) => !!v || 'Telefon gereklidir']"
                   required
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
                 />
               </v-col>
               <v-col cols="12" md="6">
+                <label class="form-label">E-posta</label>
                 <v-text-field
                   v-model="form.email"
-                  label="E-posta"
-                  prepend-inner-icon="mdi-email"
+                  placeholder="E-posta adresi giriniz"
                   type="email"
+                  prepend-inner-icon="mdi-email"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
                 />
               </v-col>
               <v-col cols="12" md="6">
+                <label class="form-label">Lisans No <span class="required">*</span></label>
                 <v-text-field
                   v-model="form.licenseNumber"
-                  label="Lisans No *"
+                  placeholder="Lisans numarası giriniz"
                   prepend-inner-icon="mdi-card-account-details"
                   :rules="[(v: string) => !!v || 'Lisans no gereklidir']"
                   required
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
                 />
               </v-col>
               <v-col cols="12" md="6">
+                <label class="form-label">Lisans Geçerlilik Tarihi</label>
                 <v-text-field
                   v-model="form.licenseExpiry"
-                  label="Lisans Geçerlilik Tarihi"
                   type="date"
+                  placeholder="Tarih seçiniz"
                   prepend-inner-icon="mdi-calendar"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
                 />
               </v-col>
               <v-col cols="12" md="6">
+                <label class="form-label">Diller</label>
                 <v-select
                   v-model="form.languages"
                   :items="languageOptions"
-                  label="Diller"
+                  placeholder="Dil seçiniz"
                   multiple
                   chips
                   prepend-inner-icon="mdi-translate"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
                 />
               </v-col>
               <v-col cols="12" md="6">
-                <v-switch
-                  v-model="form.isAvailable"
-                  label="Müsait"
-                  color="success"
-                />
+                <label class="form-label">Durum</label>
+                <div class="switch-group">
+                  <v-switch
+                    v-model="form.isAvailable"
+                    label="Müsait"
+                    color="success"
+                    hide-details
+                  />
+                </div>
               </v-col>
               <v-col cols="12" md="6">
-                <v-switch
-                  v-model="form.isActive"
-                  label="Aktif"
-                  color="success"
-                />
+                <label class="form-label">Aktif</label>
+                <div class="switch-group">
+                  <v-switch
+                    v-model="form.isActive"
+                    label="Aktif"
+                    color="success"
+                    hide-details
+                  />
+                </div>
               </v-col>
               <v-col cols="12">
+                <label class="form-label">Notlar</label>
                 <v-textarea
                   v-model="form.notes"
-                  label="Notlar"
+                  placeholder="Notlar giriniz..."
                   rows="3"
-                  prepend-inner-icon="mdi-text"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
                 />
               </v-col>
             </v-row>
           </v-form>
         </v-card-text>
         <v-divider />
-        <v-card-actions>
+        <v-card-actions class="dialog-actions">
           <v-spacer />
           <v-btn variant="text" @click="closeDialog">İptal</v-btn>
-          <v-btn color="primary" @click="saveDriver" :loading="saving" :disabled="!formValid">
+          <v-btn color="primary" variant="flat" @click="saveDriver" :loading="saving" :disabled="!formValid">
             Kaydet
           </v-btn>
         </v-card-actions>
@@ -147,6 +183,7 @@
 import { ref, reactive, onMounted } from 'vue';
 import { useAuthStore } from '../../stores/auth';
 import { http } from '../../modules/http';
+import Swal from 'sweetalert2';
 
 const auth = useAuthStore();
 const loading = ref(false);
@@ -266,29 +303,69 @@ const saveDriver = async () => {
       await http.put(`/transfer/drivers/${editingDriver.value.id}`, driverData, {
         params: { tenantId: auth.tenant.id },
       });
+      await Swal.fire({
+        icon: 'success',
+        title: 'Başarılı',
+        text: 'Şoför başarıyla güncellendi',
+        timer: 2000,
+        showConfirmButton: false,
+      });
     } else {
       await http.post('/transfer/drivers', driverData);
+      await Swal.fire({
+        icon: 'success',
+        title: 'Başarılı',
+        text: 'Şoför başarıyla eklendi',
+        timer: 2000,
+        showConfirmButton: false,
+      });
     }
     
     await loadDrivers();
     closeDialog();
   } catch (error: any) {
-    alert(error.response?.data?.message || 'Şoför kaydedilirken bir hata oluştu');
+    Swal.fire({
+      icon: 'error',
+      title: 'Hata',
+      text: error.response?.data?.message || 'Şoför kaydedilirken bir hata oluştu',
+    });
   } finally {
     saving.value = false;
   }
 };
 
 const deleteDriver = async (id: string) => {
-  if (!confirm('Bu şoförü silmek istediğinizden emin misiniz?')) return;
+  const result = await Swal.fire({
+    title: 'Emin misiniz?',
+    text: 'Bu şoförü silmek istediğinizden emin misiniz?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Evet, Sil',
+    cancelButtonText: 'İptal',
+    confirmButtonColor: '#dc2626',
+  });
+
+  if (!result.isConfirmed) return;
   if (!auth.tenant) return;
+  
   try {
     await http.delete(`/transfer/drivers/${id}`, {
       params: { tenantId: auth.tenant.id },
     });
+    await Swal.fire({
+      icon: 'success',
+      title: 'Başarılı',
+      text: 'Şoför başarıyla silindi',
+      timer: 2000,
+      showConfirmButton: false,
+    });
     await loadDrivers();
   } catch (error: any) {
-    alert(error.response?.data?.message || 'Şoför silinirken bir hata oluştu');
+    Swal.fire({
+      icon: 'error',
+      title: 'Hata',
+      text: error.response?.data?.message || 'Şoför silinirken bir hata oluştu',
+    });
   }
 };
 
@@ -296,3 +373,92 @@ onMounted(() => {
   loadDrivers();
 });
 </script>
+
+<style scoped>
+.transfer-drivers-page {
+  padding: 24px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.drivers-table {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.driver-dialog {
+  border-radius: 12px;
+}
+
+.dialog-header {
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dialog-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.dialog-body {
+  padding: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.dialog-actions {
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.switch-group {
+  padding: 8px 0;
+}
+
+.switch-group :deep(.v-switch) {
+  margin: 0;
+}
+
+.switch-group :deep(.v-switch .v-label) {
+  font-size: 14px;
+  color: #374151;
+  margin-left: 8px;
+}
+
+@media (max-width: 768px) {
+  .transfer-drivers-page {
+    padding: 16px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .dialog-body {
+    padding: 16px;
+  }
+}
+</style>

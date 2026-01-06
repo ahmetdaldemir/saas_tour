@@ -169,7 +169,12 @@ export const sendPickupEmailDirect = async (
   const htmlBody = EmailLayoutService.wrapContent(templateBody, siteSettings);
 
   // Fotoğrafları attachment olarak ekle (opsiyonel - bazı email client'lar inline image'ları desteklemez)
-  const attachments: nodemailer.Attachment[] = [];
+  const attachments: Array<{
+    filename: string;
+    path?: string;
+    cid?: string;
+    href?: string;
+  }> = [];
   
   // Fotoğrafları attachment olarak ekle (URL'den indirip ekle)
   // Not: Bu işlem zaman alabilir, production'da async yapılmalı
