@@ -1,7 +1,7 @@
 <template>
-  <div class="pa-4">
-    <div class="d-flex align-center justify-space-between mb-4">
-      <h2 class="text-h5">Transfer Fiyatlandırması</h2>
+  <div class="transfer-pricing-page">
+    <div class="page-header">
+      <h2 class="page-title">Transfer Fiyatlandırması</h2>
       <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreateDialog">
         Yeni Fiyatlandırma Ekle
       </v-btn>
@@ -12,6 +12,7 @@
       :items="pricings"
       :loading="loading"
       item-value="id"
+      class="pricing-table"
     >
       <template #item.vehicle="{ item }">
         {{ item.vehicle?.name }}
@@ -45,133 +46,180 @@
 
     <!-- Pricing Create/Edit Dialog -->
     <v-dialog v-model="showDialog" max-width="800" scrollable>
-      <v-card>
-        <v-card-title class="d-flex align-center justify-space-between">
-          <span class="text-h6">{{ editingPricing ? 'Fiyatlandırma Düzenle' : 'Yeni Fiyatlandırma Ekle' }}</span>
-          <v-btn icon="mdi-close" variant="text" @click="closeDialog" />
+      <v-card class="pricing-dialog">
+        <v-card-title class="dialog-header">
+          <span class="dialog-title">{{ editingPricing ? 'Fiyatlandırma Düzenle' : 'Yeni Fiyatlandırma Ekle' }}</span>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="closeDialog" />
         </v-card-title>
         <v-divider />
-        <v-card-text class="pa-6">
+        <v-card-text class="dialog-body admin-form-scope">
           <v-form ref="formRef" v-model="formValid">
             <v-row>
-              <v-col cols="12" md="6">
-                <v-select
-                  v-model="form.vehicleId"
-                  :items="vehicles"
-                  item-title="name"
-                  item-value="id"
-                  label="Araç *"
-                  prepend-inner-icon="mdi-car"
-                  :rules="[(v: string) => !!v || 'Araç seçimi gereklidir']"
-                  required
-                  @update:model-value="loadPricings"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-select
-                  v-model="form.routeId"
-                  :items="routes"
-                  item-title="name"
-                  item-value="id"
-                  label="Rota *"
-                  prepend-inner-icon="mdi-map-marker"
-                  :rules="[(v: string) => !!v || 'Rota seçimi gereklidir']"
-                  required
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-select
-                  v-model="form.pricingModel"
-                  :items="pricingModelOptions"
-                  item-title="label"
-                  item-value="value"
-                  label="Fiyatlandırma Modeli *"
-                  prepend-inner-icon="mdi-calculator"
-                  :rules="[(v: string) => !!v || 'Fiyatlandırma modeli gereklidir']"
-                  required
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model.number="form.basePrice"
-                  label="Base Fiyat *"
-                  type="number"
-                  prepend-inner-icon="mdi-currency-eur"
-                  :rules="[(v: number) => (v && v >= 0) || 'Base fiyat gereklidir']"
-                  required
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-select
-                  v-model="form.currencyCode"
-                  :items="currencyOptions"
-                  item-title="label"
-                  item-value="value"
-                  label="Para Birimi"
-                  prepend-inner-icon="mdi-cash"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-switch
-                  v-model="form.isRoundTrip"
-                  label="Gidiş-Dönüş"
-                  color="success"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-switch
-                  v-model="form.isNightRate"
-                  label="Gece Tarifesi"
-                  color="warning"
-                />
-              </v-col>
-              <v-col v-if="form.isNightRate" cols="12" md="6">
-                <v-text-field
-                  v-model.number="form.nightRateSurcharge"
-                  label="Gece Tarifesi Ek Ücreti"
-                  type="number"
-                  prepend-inner-icon="mdi-currency-eur"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model.number="form.minPassengers"
-                  label="Min. Yolcu Sayısı"
-                  type="number"
-                  prepend-inner-icon="mdi-account"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model.number="form.maxPassengers"
-                  label="Max. Yolcu Sayısı"
-                  type="number"
-                  prepend-inner-icon="mdi-account-group"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-switch
-                  v-model="form.isActive"
-                  label="Aktif"
-                  color="success"
-                />
-              </v-col>
-              <v-col cols="12">
-                <v-textarea
-                  v-model="form.notes"
-                  label="Notlar"
-                  rows="3"
-                  prepend-inner-icon="mdi-text"
-                />
-              </v-col>
-            </v-row>
+                <v-col cols="12" md="6">
+                  <label class="form-label">Araç <span class="required">*</span></label>
+                  <v-select
+                    v-model="form.vehicleId"
+                    :items="vehicles"
+                    item-title="name"
+                    item-value="id"
+                    placeholder="Araç seçiniz"
+                    prepend-inner-icon="mdi-car"
+                    :rules="[(v: string) => !!v || 'Araç seçimi gereklidir']"
+                    required
+                    variant="outlined"
+                    density="comfortable"
+                    hide-details="auto"
+                    @update:model-value="loadPricings"
+                  />
+                </v-col>
+                <v-col cols="12" md="6">
+                  <label class="form-label">Rota <span class="required">*</span></label>
+                  <v-select
+                    v-model="form.routeId"
+                    :items="routes"
+                    item-title="name"
+                    item-value="id"
+                    placeholder="Rota seçiniz"
+                    prepend-inner-icon="mdi-map-marker"
+                    :rules="[(v: string) => !!v || 'Rota seçimi gereklidir']"
+                    required
+                    variant="outlined"
+                    density="comfortable"
+                    hide-details="auto"
+                  />
+                </v-col>
+                <v-col cols="12" md="6">
+                  <label class="form-label">Fiyatlandırma Modeli <span class="required">*</span></label>
+                  <v-select
+                    v-model="form.pricingModel"
+                    :items="pricingModelOptions"
+                    item-title="label"
+                    item-value="value"
+                    placeholder="Model seçiniz"
+                    prepend-inner-icon="mdi-calculator"
+                    :rules="[(v: string) => !!v || 'Fiyatlandırma modeli gereklidir']"
+                    required
+                    variant="outlined"
+                    density="comfortable"
+                    hide-details="auto"
+                  />
+                </v-col>
+                <v-col cols="12" md="6">
+                  <label class="form-label">Base Fiyat <span class="required">*</span></label>
+                  <v-text-field
+                    v-model.number="form.basePrice"
+                    type="number"
+                    placeholder="Örn: 100"
+                    prepend-inner-icon="mdi-currency-eur"
+                    :rules="[(v: number) => (v && v >= 0) || 'Base fiyat gereklidir']"
+                    required
+                    variant="outlined"
+                    density="comfortable"
+                    hide-details="auto"
+                  />
+                </v-col>
+                <v-col cols="12" md="6">
+                  <label class="form-label">Para Birimi</label>
+                  <v-select
+                    v-model="form.currencyCode"
+                    :items="currencyOptions"
+                    item-title="label"
+                    item-value="value"
+                    placeholder="Para birimi seçiniz"
+                    prepend-inner-icon="mdi-cash"
+                    variant="outlined"
+                    density="comfortable"
+                    hide-details="auto"
+                  />
+                </v-col>
+                <v-col cols="12" md="6">
+                  <label class="form-label">Yolculuk Tipi</label>
+                  <div class="switch-group">
+                    <v-switch
+                      v-model="form.isRoundTrip"
+                      label="Gidiş-Dönüş"
+                      color="primary"
+                      hide-details
+                    />
+                  </div>
+                </v-col>
+                <v-col cols="12" md="6">
+                  <label class="form-label">Tarife Tipi</label>
+                  <div class="switch-group">
+                    <v-switch
+                      v-model="form.isNightRate"
+                      label="Gece Tarifesi"
+                      color="warning"
+                      hide-details
+                    />
+                  </div>
+                </v-col>
+                <v-col v-if="form.isNightRate" cols="12" md="6">
+                  <label class="form-label">Gece Tarifesi Ek Ücreti</label>
+                  <v-text-field
+                    v-model.number="form.nightRateSurcharge"
+                    type="number"
+                    placeholder="Örn: 20"
+                    prepend-inner-icon="mdi-currency-eur"
+                    variant="outlined"
+                    density="comfortable"
+                    hide-details="auto"
+                  />
+                </v-col>
+                <v-col cols="12" md="6">
+                  <label class="form-label">Min. Yolcu Sayısı</label>
+                  <v-text-field
+                    v-model.number="form.minPassengers"
+                    type="number"
+                    placeholder="Örn: 1"
+                    prepend-inner-icon="mdi-account"
+                    variant="outlined"
+                    density="comfortable"
+                    hide-details="auto"
+                  />
+                </v-col>
+                <v-col cols="12" md="6">
+                  <label class="form-label">Max. Yolcu Sayısı</label>
+                  <v-text-field
+                    v-model.number="form.maxPassengers"
+                    type="number"
+                    placeholder="Örn: 8"
+                    prepend-inner-icon="mdi-account-group"
+                    variant="outlined"
+                    density="comfortable"
+                    hide-details="auto"
+                  />
+                </v-col>
+                <v-col cols="12" md="6">
+                  <label class="form-label">Durum</label>
+                  <div class="switch-group">
+                    <v-switch
+                      v-model="form.isActive"
+                      label="Aktif"
+                      color="success"
+                      hide-details
+                    />
+                  </div>
+                </v-col>
+                <v-col cols="12">
+                  <label class="form-label">Notlar</label>
+                  <v-textarea
+                    v-model="form.notes"
+                    placeholder="Opsiyonel notlar..."
+                    rows="3"
+                    variant="outlined"
+                    density="comfortable"
+                    hide-details
+                  />
+                </v-col>
+              </v-row>
           </v-form>
         </v-card-text>
         <v-divider />
-        <v-card-actions>
+        <v-card-actions class="dialog-actions">
           <v-spacer />
           <v-btn variant="text" @click="closeDialog">İptal</v-btn>
-          <v-btn color="primary" @click="savePricing" :loading="saving" :disabled="!formValid">
+          <v-btn color="primary" variant="flat" @click="savePricing" :loading="saving" :disabled="!formValid">
             Kaydet
           </v-btn>
         </v-card-actions>
@@ -184,6 +232,7 @@
 import { ref, reactive, onMounted, computed } from 'vue';
 import { useAuthStore } from '../../stores/auth';
 import { http } from '../../modules/http';
+import Swal from 'sweetalert2';
 
 const auth = useAuthStore();
 const loading = ref(false);
@@ -356,29 +405,69 @@ const savePricing = async () => {
       await http.put(`/transfer/pricings/${editingPricing.value.id}`, pricingData, {
         params: { tenantId: auth.tenant.id },
       });
+      await Swal.fire({
+        icon: 'success',
+        title: 'Başarılı',
+        text: 'Fiyatlandırma başarıyla güncellendi',
+        timer: 2000,
+        showConfirmButton: false,
+      });
     } else {
       await http.post('/transfer/pricings', pricingData);
+      await Swal.fire({
+        icon: 'success',
+        title: 'Başarılı',
+        text: 'Fiyatlandırma başarıyla eklendi',
+        timer: 2000,
+        showConfirmButton: false,
+      });
     }
     
     await loadPricings();
     closeDialog();
   } catch (error: any) {
-    alert(error.response?.data?.message || 'Fiyatlandırma kaydedilirken bir hata oluştu');
+    Swal.fire({
+      icon: 'error',
+      title: 'Hata',
+      text: error.response?.data?.message || 'Fiyatlandırma kaydedilirken bir hata oluştu',
+    });
   } finally {
     saving.value = false;
   }
 };
 
 const deletePricing = async (id: string) => {
-  if (!confirm('Bu fiyatlandırmayı silmek istediğinizden emin misiniz?')) return;
+  const result = await Swal.fire({
+    title: 'Emin misiniz?',
+    text: 'Bu fiyatlandırmayı silmek istediğinizden emin misiniz?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Evet, Sil',
+    cancelButtonText: 'İptal',
+    confirmButtonColor: '#dc2626',
+  });
+
+  if (!result.isConfirmed) return;
   if (!auth.tenant) return;
+  
   try {
     await http.delete(`/transfer/pricings/${id}`, {
       params: { tenantId: auth.tenant.id },
     });
+    await Swal.fire({
+      icon: 'success',
+      title: 'Başarılı',
+      text: 'Fiyatlandırma başarıyla silindi',
+      timer: 2000,
+      showConfirmButton: false,
+    });
     await loadPricings();
   } catch (error: any) {
-    alert(error.response?.data?.message || 'Fiyatlandırma silinirken bir hata oluştu');
+    Swal.fire({
+      icon: 'error',
+      title: 'Hata',
+      text: error.response?.data?.message || 'Fiyatlandırma silinirken bir hata oluştu',
+    });
   }
 };
 
@@ -386,3 +475,97 @@ onMounted(() => {
   loadPricings();
 });
 </script>
+
+<style scoped>
+.transfer-pricing-page {
+  padding: 24px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.pricing-table {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Dialog Styles */
+.pricing-dialog {
+  border-radius: 12px;
+}
+
+.dialog-header {
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dialog-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.dialog-body {
+  padding: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.dialog-actions {
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* Form Label Styles - Already handled by admin-forms.css */
+
+/* Switch Group */
+.switch-group {
+  padding: 8px 0;
+}
+
+.switch-group :deep(.v-switch) {
+  margin: 0;
+}
+
+.switch-group :deep(.v-switch .v-label) {
+  font-size: 14px;
+  color: #374151;
+  margin-left: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .transfer-pricing-page {
+    padding: 16px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .dialog-body {
+    padding: 16px;
+  }
+}
+</style>

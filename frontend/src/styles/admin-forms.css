@@ -1,0 +1,702 @@
+/* ============================================
+   ADMIN FORM SCOPE - ISOLATED FIXES
+   ============================================
+   Bu CSS sadece .admin-form-scope içindeki formları etkiler.
+   Diğer sayfaları bozmaz.
+   ============================================ */
+
+/* A) GLOBAL BOX-SIZING FIX (Safe) */
+html {
+  box-sizing: border-box;
+}
+
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+/* B) ADMIN FORM SCOPE - ISOLATION */
+.admin-form-scope,
+.admin-form-scope * {
+  /* Reset any parent transforms/scales */
+  transform: none !important;
+  font-size: inherit !important;
+  zoom: 1 !important;
+}
+
+/* Force override Vuetify's label positioning */
+.admin-form-scope .v-field {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Manual Form Label (when using <label> tag) */
+.admin-form-scope .form-label {
+  display: block !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #374151 !important;
+  margin-bottom: 6px !important;
+  line-height: 1.4 !important;
+}
+
+.admin-form-scope .form-label .required {
+  color: #dc2626 !important;
+}
+
+/* C) FORM INPUTS - STANDARDIZED */
+.admin-form-scope input,
+.admin-form-scope select,
+.admin-form-scope textarea,
+.admin-form-scope button {
+  font: inherit;
+  line-height: 1.5;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+/* VUETIFY INPUT STRUCTURE OVERRIDE - CRITICAL */
+/* Vuetify structure: v-input > v-field-label (outside) + v-field > v-field__field > v-field__input */
+.admin-form-scope .v-input {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 6px !important;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Remove ALL padding/margin from v-input wrapper */
+.admin-form-scope .v-input__details,
+.admin-form-scope .v-input__prepend,
+.admin-form-scope .v-input__append {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+/* Label that's DIRECT child of v-input (this is the one we want to show) */
+.admin-form-scope .v-input > .v-label,
+.admin-form-scope .v-input > .v-field-label {
+  order: -1 !important;
+  position: static !important;
+  transform: none !important;
+  top: auto !important;
+  left: auto !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #374151 !important;
+  margin-bottom: 6px !important;
+  margin-top: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  background: transparent !important;
+  pointer-events: auto !important;
+  opacity: 1 !important;
+  line-height: 1.4 !important;
+  display: block !important;
+}
+
+/* Hide ALL Vuetify labels - ULTRA AGGRESSIVE */
+.admin-form-scope .v-field-label,
+.admin-form-scope .v-label,
+.admin-form-scope label.v-field-label,
+.admin-form-scope label.v-label,
+.admin-form-scope .v-field .v-field-label,
+.admin-form-scope .v-field__field .v-field-label,
+.admin-form-scope .v-field__input .v-field-label,
+.admin-form-scope .v-field__input-wrapper .v-field-label,
+.admin-form-scope .v-input .v-field-label,
+.admin-form-scope .v-input .v-label,
+.admin-form-scope .v-input__wrapper .v-label,
+.admin-form-scope .v-field__overlay .v-field-label {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  pointer-events: none !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  max-width: 0 !important;
+  max-height: 0 !important;
+}
+
+/* BUT show manual form-label */
+.admin-form-scope label.form-label {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: static !important;
+  left: auto !important;
+  width: 100% !important;
+  height: auto !important;
+  margin: 0 0 6px 0 !important;
+  padding: 0 !important;
+  pointer-events: auto !important;
+  font-size: 13px !important;
+  line-height: 1.4 !important;
+  max-width: 100% !important;
+  max-height: none !important;
+}
+
+/* D) VUETIFY FIELD OVERRIDES - FIXED */
+.admin-form-scope .v-field {
+  margin-bottom: 0 !important;
+  min-height: auto !important;
+  padding-top: 0 !important;
+}
+
+/* Field wrapper - ensure label is outside */
+.admin-form-scope .v-input {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+}
+
+.admin-form-scope .v-input__details {
+  order: 2 !important;
+}
+
+/* Field Input Container */
+.admin-form-scope .v-field__input {
+  min-height: 44px !important;
+  height: 44px !important;
+  padding: 12px 16px !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  color: #111827 !important;
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 10px !important;
+  box-sizing: border-box !important;
+  transition: border-color 0.2s, box-shadow 0.2s !important;
+  margin-top: 0 !important;
+}
+
+/* Fix prepended icon padding - REMOVE ALL PADDING */
+.admin-form-scope .v-field--prepended {
+  padding-inline-start: 0 !important;
+  padding-left: 0 !important;
+}
+
+.admin-form-scope .v-field--prepended .v-field__input {
+  padding-left: 0 !important;
+  padding-inline-start: 0 !important;
+  padding-right: 16px !important;
+}
+
+.admin-form-scope .v-field--prepended .v-field__field {
+  padding-inline-start: 0 !important;
+  padding-left: 0 !important;
+}
+
+/* Fix appended icon padding */
+.admin-form-scope .v-field--appended {
+  padding-inline-end: 0 !important;
+  padding-right: 0 !important;
+}
+
+.admin-form-scope .v-field--appended .v-field__input {
+  padding-right: 44px !important; /* Space for icon */
+}
+
+/* Remove label from inside input */
+.admin-form-scope .v-field__input::before,
+.admin-form-scope .v-field__input::after {
+  display: none !important;
+}
+
+.admin-form-scope .v-field__input:focus,
+.admin-form-scope .v-field--focused .v-field__input {
+  outline: none !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1) !important;
+}
+
+.admin-form-scope .v-field--error .v-field__input {
+  border-color: #dc2626 !important;
+}
+
+.admin-form-scope .v-field--disabled .v-field__input {
+  background: #f9fafb !important;
+  color: #9ca3af !important;
+  cursor: not-allowed !important;
+}
+
+/* E) LABEL FIX - ABOVE INPUT (NOT FLOATING) */
+.admin-form-scope .v-field-label,
+.admin-form-scope .v-label,
+.admin-form-scope .v-field-label--floating,
+.admin-form-scope label {
+  position: static !important;
+  transform: none !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: #374151 !important;
+  margin-bottom: 6px !important;
+  display: block !important;
+  line-height: 1.4 !important;
+  padding: 0 !important;
+  top: auto !important;
+  left: auto !important;
+  width: auto !important;
+  height: auto !important;
+  max-width: none !important;
+  pointer-events: auto !important;
+  opacity: 1 !important;
+}
+
+/* Force label outside field - ULTRA STRONG OVERRIDE */
+.admin-form-scope .v-field__field {
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  position: relative !important;
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+/* Hide ALL Vuetify labels inside fields */
+.admin-form-scope .v-field__field > .v-field-label,
+.admin-form-scope .v-field__field > label,
+.admin-form-scope .v-field__field .v-label {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Remove label from inside input completely - AGGRESSIVE */
+.admin-form-scope .v-field__input .v-field-label,
+.admin-form-scope .v-field__input label,
+.admin-form-scope .v-field-label,
+.admin-form-scope .v-field-label--floating,
+.admin-form-scope .v-field-label--active,
+.admin-form-scope .v-field-label--clickable,
+.admin-form-scope .v-label,
+.admin-form-scope .v-label--active,
+.admin-form-scope .v-label--floating {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* Fix Vuetify outlined variant - COMPLETE OVERRIDE */
+.admin-form-scope .v-field--variant-outlined {
+  padding-top: 0 !important;
+}
+
+.admin-form-scope .v-field--variant-outlined .v-field__field {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+  min-height: 44px !important;
+}
+
+.admin-form-scope .v-field--variant-outlined .v-field__overlay {
+  display: none !important;
+}
+
+/* Outlined border - remove label space completely */
+.admin-form-scope .v-field--variant-outlined .v-field__outline {
+  top: 0 !important;
+  bottom: 0 !important;
+  margin-top: 0 !important;
+}
+
+.admin-form-scope .v-field--variant-outlined .v-field__outline__start {
+  border-top: 1px solid #e5e7eb !important;
+  top: 0 !important;
+}
+
+/* Remove label notch from outline completely */
+.admin-form-scope .v-field--variant-outlined .v-field__outline__notch {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Remove prepend icon padding */
+.admin-form-scope .v-field--prepended {
+  padding-inline-start: 0 !important;
+}
+
+.admin-form-scope .v-field--prepended .v-field__input {
+  padding-left: 0 !important;
+  padding-inline-start: 0 !important;
+}
+
+.admin-form-scope .v-field--variant-outlined .v-field__outline__end {
+  border-top: 1px solid #e5e7eb !important;
+  top: 0 !important;
+}
+
+/* Required field indicator */
+.admin-form-scope .v-field--required .v-field-label::after {
+  content: " *" !important;
+  color: #dc2626 !important;
+  font-weight: 500 !important;
+}
+
+/* F) SELECT/DROPDOWN FIX */
+.admin-form-scope .v-select .v-field__input {
+  cursor: pointer;
+  padding-right: 40px !important; /* Space for dropdown icon */
+}
+
+.admin-form-scope .v-select__selection {
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  color: #111827 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Dropdown icon positioning */
+.admin-form-scope .v-field__append-inner {
+  position: absolute !important;
+  right: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  pointer-events: none !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.admin-form-scope .v-field__append-inner .v-icon {
+  color: #6b7280 !important;
+  font-size: 20px !important;
+}
+
+/* Prepend inner (icons) - hidden by default, show if needed */
+.admin-form-scope .v-field__prepend-inner {
+  display: none !important;
+}
+
+/* G) TEXTAREA FIX */
+.admin-form-scope .v-textarea .v-field__input {
+  min-height: 100px !important;
+  height: auto !important;
+  padding: 12px 16px !important;
+  resize: vertical;
+  line-height: 1.5 !important;
+}
+
+/* H) GRID LAYOUT - RESPONSIVE */
+.admin-form-scope .v-row {
+  margin: 0 -8px !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 0 !important;
+}
+
+.admin-form-scope .v-col {
+  padding: 0 8px 20px 8px !important;
+  flex: 0 0 100% !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Desktop: 3 columns */
+@media (min-width: 960px) {
+  .admin-form-scope .v-col[class*="md-4"] {
+    flex: 0 0 calc(33.333% - 16px) !important;
+    max-width: calc(33.333% - 16px) !important;
+    width: calc(33.333% - 16px) !important;
+  }
+  
+  .admin-form-scope .v-col[class*="md-6"] {
+    flex: 0 0 calc(50% - 16px) !important;
+    max-width: calc(50% - 16px) !important;
+    width: calc(50% - 16px) !important;
+  }
+  
+  .admin-form-scope .v-col[class*="md-12"] {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+}
+
+/* Tablet: 2 columns */
+@media (min-width: 600px) and (max-width: 959px) {
+  .admin-form-scope .v-col[class*="md-4"],
+  .admin-form-scope .v-col[class*="md-6"] {
+    flex: 0 0 calc(50% - 16px) !important;
+    max-width: calc(50% - 16px) !important;
+    width: calc(50% - 16px) !important;
+  }
+}
+
+/* Mobile: 1 column */
+@media (max-width: 599px) {
+  .admin-form-scope .v-col {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+}
+
+/* I) VALIDATION MESSAGES */
+.admin-form-scope .v-messages {
+  margin-top: 6px !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+}
+
+.admin-form-scope .v-messages__message {
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+  color: #dc2626 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+/* J) PLACEHOLDER FIX */
+.admin-form-scope .v-field__input::placeholder {
+  color: #9ca3af !important;
+  opacity: 1 !important;
+  font-size: 14px !important;
+}
+
+/* K) AUTocomplete FIX */
+.admin-form-scope .v-autocomplete .v-field__input {
+  padding-right: 40px !important;
+}
+
+/* L) NUMBER INPUT FIX */
+.admin-form-scope input[type="number"] {
+  -moz-appearance: textfield !important;
+}
+
+.admin-form-scope input[type="number"]::-webkit-outer-spin-button,
+.admin-form-scope input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+
+/* M) DATE INPUT FIX */
+.admin-form-scope input[type="date"],
+.admin-form-scope input[type="datetime-local"] {
+  padding: 12px 16px !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+
+/* N) SECTION SPACING */
+.admin-form-scope .form-section {
+  margin-bottom: 24px !important;
+}
+
+.admin-form-scope .form-section:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* O) FIX VUETIFY DENSITY OVERRIDE */
+.admin-form-scope .v-field--density-comfortable {
+  --v-field-input-padding-top: 12px !important;
+  --v-field-input-padding-bottom: 12px !important;
+}
+
+.admin-form-scope .v-field--variant-outlined {
+  --v-field-border-width: 1px !important;
+  --v-field-border-color: #e5e7eb !important;
+}
+
+/* P) FIX VUETIFY FIELD WRAPPER - COMPLETE OVERRIDE */
+.admin-form-scope .v-field__field {
+  min-height: 44px !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  position: relative !important;
+  padding-top: 0 !important;
+}
+
+.admin-form-scope .v-field__input {
+  align-items: center !important;
+  display: flex !important;
+  width: 100% !important;
+  margin-top: 0 !important;
+}
+
+/* Vuetify Input wrapper */
+.admin-form-scope .v-input {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+}
+
+.admin-form-scope .v-input .v-field-label {
+  order: -1 !important;
+  position: static !important;
+  transform: none !important;
+  margin-bottom: 6px !important;
+  width: 100% !important;
+  display: block !important;
+  top: auto !important;
+  left: auto !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+/* Remove any label inside input area */
+.admin-form-scope .v-field__input-wrapper .v-field-label,
+.admin-form-scope .v-field__input-wrapper label {
+  display: none !important;
+}
+
+/* Fix Vuetify density comfortable */
+.admin-form-scope .v-field--density-comfortable .v-field__field {
+  padding-top: 0 !important;
+}
+
+.admin-form-scope .v-field--density-comfortable .v-field-label {
+  position: static !important;
+  transform: none !important;
+  top: auto !important;
+}
+
+/* Q) FIX VUETIFY SELECT MENU */
+.admin-form-scope .v-select__menu {
+  border-radius: 8px !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+}
+
+.admin-form-scope .v-list-item {
+  min-height: 44px !important;
+  padding: 12px 16px !important;
+  font-size: 14px !important;
+}
+
+/* R) FIX HINT TEXT */
+.admin-form-scope .v-field__details {
+  padding: 0 !important;
+  margin-top: 6px !important;
+}
+
+.admin-form-scope .v-field__hint {
+  font-size: 12px !important;
+  color: #6b7280 !important;
+  line-height: 1.4 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* S) FIX CLEAR BUTTON */
+.admin-form-scope .v-field__clearable {
+  position: absolute !important;
+  right: 40px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+.admin-form-scope .v-field__clearable .v-btn {
+  width: 24px !important;
+  height: 24px !important;
+  min-width: 24px !important;
+  padding: 0 !important;
+}
+
+/* T) FIX APPEND INNER (for + buttons in autocomplete) */
+.admin-form-scope .v-field__append-inner {
+  position: absolute !important;
+  right: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  pointer-events: auto !important;
+}
+
+.admin-form-scope .v-field__append-inner .v-btn {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* U) FIX VUETIFY INPUT INSIDE FIELD */
+.admin-form-scope .v-field__input input,
+.admin-form-scope .v-field__input select,
+.admin-form-scope .v-field__input textarea {
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  color: #111827 !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: auto !important;
+}
+
+/* V) FIX VUETIFY SELECTION TEXT */
+.admin-form-scope .v-select__selection-text {
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  color: #111827 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* W) RESPONSIVE FIXES */
+@media (max-width: 599px) {
+  .admin-form-scope .v-field__input {
+    font-size: 16px !important; /* Prevent zoom on iOS */
+  }
+}
+
+/* X) FIX VUETIFY FIELD STATE */
+.admin-form-scope .v-field--active .v-field-label {
+  color: #2563eb !important;
+}
+
+.admin-form-scope .v-field--error .v-field-label {
+  color: #dc2626 !important;
+}
+
+/* Y) FIX VUETIFY DENSITY */
+.admin-form-scope .v-field--density-default,
+.admin-form-scope .v-field--density-comfortable {
+  --v-field-input-padding-top: 12px !important;
+  --v-field-input-padding-bottom: 12px !important;
+  --v-field-input-padding-start: 16px !important;
+  --v-field-input-padding-end: 16px !important;
+}
+
+/* Z) FINAL OVERRIDE - Ensure consistency */
+.admin-form-scope .v-input {
+  margin-bottom: 0 !important;
+}
+
+.admin-form-scope .v-input__details {
+  padding: 0 !important;
+  margin-top: 6px !important;
+}
+

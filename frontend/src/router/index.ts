@@ -10,6 +10,7 @@ import DashboardView from '../views/DashboardView.vue';
 import ToursView from '../views/ToursView.vue';
 import TourDetailView from '../views/TourDetailView.vue';
 import RentacarView from '../views/RentacarView.vue';
+import VehicleDetailView from '../views/VehicleDetailView.vue';
 import CrmView from '../views/CrmView.vue';
 import ReservationsView from '../views/ReservationsView.vue';
 import ReservationDetailView from '../views/ReservationDetailView.vue';
@@ -186,6 +187,12 @@ const routes: RouteRecordRaw[] = [
     path: '/app/rentacar',
     name: 'rentacar',
     component: RentacarView,
+    meta: { requiresAuth: true, layout: 'admin' },
+  },
+  {
+    path: '/app/rentacar/vehicles/:id',
+    name: 'vehicle-detail',
+    component: VehicleDetailView,
     meta: { requiresAuth: true, layout: 'admin' },
   },
   {

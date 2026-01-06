@@ -902,8 +902,7 @@ const viewReservations = (customer: CustomerDto) => {
 };
 
 const viewLoyaltyPoints = (customer: CustomerDto) => {
-  // TODO: ParaPuan görüntüleme özelliği eklenecek
-  alert(`ParaPuan: ${customer.fullName}`);
+  router.push(`/app/customers/${customer.id}`);
 };
 
 // Helper functions for localStorage

@@ -6,6 +6,9 @@ import { vuetify } from './plugins/vuetify';
 import { useAuthStore } from './stores/auth';
 
 import './styles/main.scss';
+import './styles/modal.css';
+import './styles/main.css';
+import './styles/admin-forms.css';
 
 // Set TinyMCE GPL license globally before any TinyMCE initialization
 // This must be set before TinyMCE components are loaded

@@ -178,6 +178,7 @@ export type EmailJobType =
   | 'reservation_confirmation'
   | 'reservation_cancelled'
   | 'reservation_completed'
+  | 'vehicle_pickup'
   | 'survey_invitation';
 
 export interface EmailJob {

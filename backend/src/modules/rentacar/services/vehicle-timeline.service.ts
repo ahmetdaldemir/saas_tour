@@ -277,7 +277,11 @@ export class VehicleTimelineService {
     }
 
     // Sort all events chronologically
-    events.sort((a, b) => a.date.getTime() - b.date.getTime());
+    events.sort((a, b) => {
+      const dateA = a.date instanceof Date ? a.date.getTime() : new Date(a.date).getTime();
+      const dateB = b.date instanceof Date ? b.date.getTime() : new Date(b.date).getTime();
+      return dateA - dateB;
+    });
 
     return events;
   }

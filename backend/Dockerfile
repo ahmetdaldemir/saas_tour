@@ -14,14 +14,12 @@ ENV NODE_ENV=production
 RUN apk add --no-cache docker-cli postgresql-client
 
 COPY package*.json ./
-# Production'da script'lerin çalıştırılabilmesi için ts-node gerekli
-# Bu yüzden dev dependencies'i de yüklüyoruz
-RUN npm install
+# Production dependencies only (dev dependencies excluded for security)
+RUN npm ci --only=production
 COPY --from=builder /app/dist ./dist
-# Script'lerin container içinden npm run ile çalıştırılabilmesi için src'yi de kopyala
-COPY --from=builder /app/src ./src
-COPY --from=builder /app/tsconfig.json ./tsconfig.json
 # Public klasörünü kopyala (widget.js için)
 COPY public ./public
+# Uploads klasörünü oluştur (user-uploaded files için)
+RUN mkdir -p public/uploads
 EXPOSE 3000
 CMD ["node", "dist/server.js"]

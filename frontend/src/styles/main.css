@@ -1,0 +1,24 @@
+.bg-primary {
+    --v-theme-overlay-multiplier: var(--v-theme-primary-overlay-multiplier);
+    background-color: rgb(255 135 16) !important;
+    color: rgb(var(--v-theme-on-primary)) !important;
+}
+
+.v-switch--inset .v-switch__thumb {
+    height: 16px;
+    width: 16px;
+    transform: scale(.6666666667);
+}
+
+.v-input__control {
+    width: 100%;
+    grid-area: control;
+}
+
+.v-field--appended {
+    padding-inline-end: 0 !important;
+}
+
+.v-field--prepended {
+    padding-inline-end: 0 !important;
+}

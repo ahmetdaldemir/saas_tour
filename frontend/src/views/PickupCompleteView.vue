@@ -1,89 +1,113 @@
 <template>
-  <v-container fluid class="pa-4 pb-16">
-    <v-row>
-      <v-col cols="12">
-        <div class="d-flex align-center mb-4">
-          <v-btn
-            icon="mdi-arrow-left"
-            variant="text"
-            @click="$router.back()"
-          />
-          <h1 class="text-h4 ml-2">Çıkış İşlemi</h1>
+  <div class="pickup-page">
+    <!-- Header -->
+    <div class="page-header">
+      <v-btn icon="mdi-arrow-left" variant="text" @click="$router.back()" />
+      <div class="flex-1">
+        <h1 class="page-title">Çıkış İşlemi</h1>
+        <p class="page-subtitle">Rezervasyon: {{ reservation?.reference || 'Yükleniyor...' }}</p>
+      </div>
+    </div>
+
+    <!-- Reservation Info Card -->
+    <div v-if="reservation || vehicleInfo" class="info-card">
+      <div class="info-row">
+        <div class="info-item">
+          <span class="info-label">Müşteri</span>
+          <span class="info-value">{{ reservation?.customerName || '-' }}</span>
         </div>
+        <div v-if="vehicleInfo" class="info-item">
+          <span class="info-label">Araç</span>
+          <span class="info-value">{{ vehicleInfo.plate || '' }} {{ vehicleInfo.model || '' }}</span>
+        </div>
+      </div>
+    </div>
 
-        <v-card class="mb-4">
-          <v-card-title>Rezervasyon Bilgileri</v-card-title>
-          <v-card-text>
-            <div class="text-body-1">
-              <strong>Rezervasyon:</strong> {{ reservation?.reference }}
-            </div>
-            <div class="text-body-1 mt-2">
-              <strong>Müşteri:</strong> {{ reservation?.customerName }}
-            </div>
-            <div class="text-body-1 mt-2" v-if="vehicleInfo">
-              <strong>Araç:</strong> {{ vehicleInfo.plate }} - {{ vehicleInfo.model }}
-            </div>
-          </v-card-text>
-        </v-card>
-
-        <v-card class="mb-4">
-          <v-card-title>Kilometre</v-card-title>
-          <v-card-text>
-            <v-text-field
-              v-model.number="odometerKm"
-              type="number"
-              label="Kilometre"
-              placeholder="Örn: 15000"
-              variant="outlined"
-              density="comfortable"
-              :rules="[rules.required, rules.positive]"
-              prepend-inner-icon="mdi-speedometer"
-            />
-          </v-card-text>
-        </v-card>
-
-        <v-card class="mb-4">
-          <v-card-title>Yakıt Seviyesi</v-card-title>
-          <v-card-text>
-            <div class="fuel-buttons">
-              <v-btn
-                v-for="level in fuelLevels"
-                :key="level.value"
-                :color="fuelLevel === level.value ? 'primary' : 'grey'"
-                :variant="fuelLevel === level.value ? 'flat' : 'outlined'"
-                size="large"
-                class="fuel-btn"
-                @click="fuelLevel = level.value"
-              >
-                <v-icon start>{{ level.icon }}</v-icon>
-                {{ level.label }}
-              </v-btn>
-            </div>
-          </v-card-text>
-        </v-card>
-
-        <v-card class="mb-4">
-          <v-card-title>Fotoğraflar</v-card-title>
-          <v-card-text>
-            <PhotoGrid8Slots
-              v-model="photos"
-              :reservation-id="reservationId"
-              @upload-complete="handlePhotoUpload"
-            />
-          </v-card-text>
-        </v-card>
-
-        <BottomStickyActionBar
-          :can-complete="canComplete"
-          :loading="loading"
-          complete-text="Çıkışı Tamamla"
-          complete-icon="mdi-check-circle"
-          @save-draft="saveDraft"
-          @complete="completePickup"
+    <!-- Form Sections -->
+    <div class="form-sections">
+      <!-- KM Section -->
+      <div class="form-section">
+        <label class="section-label">
+          <v-icon size="20" class="mr-2">mdi-speedometer</v-icon>
+          Kilometre <span class="required">*</span>
+        </label>
+        <v-text-field
+          v-model.number="odometerKm"
+          type="number"
+          placeholder="Örn: 15000"
+          variant="outlined"
+          density="comfortable"
+          :rules="[rules.required, rules.positive]"
+          hide-details="auto"
+          class="mt-2"
         />
-      </v-col>
-    </v-row>
-  </v-container>
+      </div>
+
+      <!-- Fuel Level Section -->
+      <div class="form-section">
+        <label class="section-label">
+          <v-icon size="20" class="mr-2">mdi-gas-station</v-icon>
+          Yakıt Seviyesi <span class="required">*</span>
+        </label>
+        <div class="fuel-buttons mt-2">
+          <v-btn
+            v-for="level in fuelLevels"
+            :key="level.value"
+            :color="fuelLevel === level.value ? 'primary' : 'grey'"
+            :variant="fuelLevel === level.value ? 'flat' : 'outlined'"
+            size="large"
+            class="fuel-btn"
+            @click="fuelLevel = level.value"
+          >
+            <v-icon start>{{ level.icon }}</v-icon>
+            {{ level.label }}
+          </v-btn>
+        </div>
+      </div>
+
+      <!-- Photos Section -->
+      <div class="form-section">
+        <label class="section-label">
+          <v-icon size="20" class="mr-2">mdi-camera</v-icon>
+          Fotoğraflar <span class="required">*</span>
+        </label>
+        <p class="section-hint">8 adet fotoğraf yüklenmelidir</p>
+        <PhotoGrid8Slots
+          v-model="photos"
+          :reservation-id="reservationId"
+          class="mt-2"
+          @upload-complete="handlePhotoUpload"
+        />
+      </div>
+
+      <!-- Damage Notes Section -->
+      <div class="form-section">
+        <label class="section-label">
+          <v-icon size="20" class="mr-2">mdi-alert-circle</v-icon>
+          Hasar Notları
+        </label>
+        <v-textarea
+          v-model="damageNotes"
+          placeholder="Varsa hasar notlarını girin..."
+          variant="outlined"
+          density="comfortable"
+          rows="3"
+          hide-details
+          class="mt-2"
+        />
+      </div>
+    </div>
+
+    <!-- Bottom Action Bar -->
+    <BottomStickyActionBar
+      :can-complete="canComplete"
+      :loading="loading"
+      complete-text="Çıkışı Tamamla"
+      complete-icon="mdi-check-circle"
+      @save-draft="saveDraft"
+      @complete="completePickup"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -92,6 +116,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { http } from '../services/api.service';
 import PhotoGrid8Slots from '../components/PhotoGrid8Slots.vue';
 import BottomStickyActionBar from '../components/BottomStickyActionBar.vue';
+import Swal from 'sweetalert2';
 
 interface PhotoSlot {
   slotIndex: number;
@@ -107,6 +132,7 @@ const vehicleInfo = ref<{ plate?: string; model?: string } | null>(null);
 const odometerKm = ref<number | null>(null);
 const fuelLevel = ref<string>('');
 const photos = ref<PhotoSlot[]>([]);
+const damageNotes = ref('');
 const loading = ref(false);
 
 const fuelLevels = [
@@ -133,11 +159,12 @@ const canComplete = computed(() => {
 
 const loadData = async () => {
   try {
-    // Load reservation info
+    // Load pickup data (draft if exists)
     const resResponse = await http.get(`/api/rentacar/operations/pickup/${reservationId}`);
     if (resResponse.data.pickup) {
       odometerKm.value = resResponse.data.pickup.odometerKm;
       fuelLevel.value = resResponse.data.pickup.fuelLevel || '';
+      damageNotes.value = resResponse.data.pickup.damageNotes || '';
     }
     if (resResponse.data.photos && resResponse.data.photos.length > 0) {
       photos.value = resResponse.data.photos.map((p: any) => ({
@@ -167,6 +194,11 @@ const loadData = async () => {
     }
   } catch (error: any) {
     console.error('Error loading pickup data:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Hata',
+      text: 'Veriler yüklenirken bir hata oluştu',
+    });
   }
 };
 
@@ -186,12 +218,21 @@ const saveDraft = async () => {
       odometerKm: odometerKm.value,
       fuelLevel: fuelLevel.value,
       photos: photos.value,
+      damageNotes: damageNotes.value,
     });
-    // Show success message
-    alert('Taslak kaydedildi');
+    Swal.fire({
+      icon: 'success',
+      title: 'Başarılı',
+      text: 'Taslak kaydedildi',
+      timer: 2000,
+      showConfirmButton: false,
+    });
   } catch (error: any) {
-    console.error('Error saving draft:', error);
-    alert('Taslak kaydedilirken hata oluştu: ' + (error.response?.data?.message || error.message));
+    Swal.fire({
+      icon: 'error',
+      title: 'Hata',
+      text: error.response?.data?.message || 'Taslak kaydedilirken hata oluştu',
+    });
   } finally {
     loading.value = false;
   }
@@ -200,19 +241,42 @@ const saveDraft = async () => {
 const completePickup = async () => {
   if (!canComplete.value) return;
 
+  const result = await Swal.fire({
+    title: 'Çıkışı tamamla?',
+    text: 'Bu işlem geri alınamaz. Devam etmek istediğinize emin misiniz?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Evet, tamamla',
+    cancelButtonText: 'İptal',
+    confirmButtonColor: '#3b82f6',
+  });
+
+  if (!result.isConfirmed) return;
+
   loading.value = true;
   try {
     await http.post(`/api/rentacar/operations/pickup/${reservationId}/complete`, {
       odometerKm: odometerKm.value,
       fuelLevel: fuelLevel.value,
       photos: photos.value,
+      damageNotes: damageNotes.value,
     });
-    // Show success message and redirect
-    alert('Çıkış işlemi tamamlandı');
+    
+    await Swal.fire({
+      icon: 'success',
+      title: 'Başarılı',
+      text: 'Çıkış işlemi tamamlandı',
+      timer: 2000,
+      showConfirmButton: false,
+    });
+    
     router.push('/app/operations');
   } catch (error: any) {
-    console.error('Error completing pickup:', error);
-    alert('Çıkış tamamlanırken hata oluştu: ' + (error.response?.data?.message || error.message));
+    Swal.fire({
+      icon: 'error',
+      title: 'Hata',
+      text: error.response?.data?.message || 'Çıkış tamamlanırken hata oluştu',
+    });
   } finally {
     loading.value = false;
   }
@@ -224,20 +288,120 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.pickup-page {
+  padding: 24px;
+  max-width: 800px;
+  margin: 0 auto;
+  padding-bottom: 100px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 4px 0 0 0;
+}
+
+.info-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.info-row {
+  display: flex;
+  gap: 24px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-label {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.info-value {
+  font-size: 14px;
+  color: #111827;
+  font-weight: 500;
+}
+
+.form-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-section {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.section-label {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.section-label .required {
+  color: #dc2626;
+  margin-left: 4px;
+}
+
+.section-hint {
+  font-size: 12px;
+  color: #6b7280;
+  margin: 4px 0 0 0;
+}
+
 .fuel-buttons {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   gap: 8px;
 }
 
 .fuel-btn {
-  min-height: 56px;
+  min-height: 48px;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
+  .pickup-page {
+    padding: 16px;
+    padding-bottom: 100px;
+  }
+
+  .info-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+
   .fuel-buttons {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 </style>
-

@@ -1,7 +1,7 @@
 <template>
-  <div class="pa-4">
-    <div class="d-flex align-center justify-space-between mb-4">
-      <h2 class="text-h5">Transfer Rezervasyonları</h2>
+  <div class="transfer-reservations-page">
+    <div class="page-header">
+      <h2 class="page-title">Transfer Rezervasyonları</h2>
       <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreateDialog">
         Yeni Rezervasyon
       </v-btn>
@@ -12,6 +12,7 @@
       :items="reservations"
       :loading="loading"
       item-value="id"
+      class="reservations-table"
     >
       <template #item.reference="{ item }">
         <v-chip size="small" color="primary">{{ item.reference }}</v-chip>
@@ -101,182 +102,249 @@
 
     <!-- Reservation Create/Edit Dialog -->
     <v-dialog v-model="showDialog" max-width="900" scrollable>
-      <v-card>
-        <v-card-title class="d-flex align-center justify-space-between">
-          <span class="text-h6">{{ editingReservation ? 'Rezervasyon Düzenle' : 'Yeni Rezervasyon' }}</span>
-          <v-btn icon="mdi-close" variant="text" @click="closeDialog" />
+      <v-card class="reservation-dialog">
+        <v-card-title class="dialog-header">
+          <span class="dialog-title">{{ editingReservation ? 'Rezervasyon Düzenle' : 'Yeni Rezervasyon' }}</span>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="closeDialog" />
         </v-card-title>
         <v-divider />
-        <v-card-text class="pa-6">
+        <v-card-text class="dialog-body admin-form-scope">
           <v-form ref="formRef" v-model="formValid">
             <v-row>
               <v-col cols="12" md="6">
+                <label class="form-label">Rota <span class="required">*</span></label>
                 <v-select
                   v-model="form.routeId"
                   :items="routes"
                   item-title="name"
                   item-value="id"
-                  label="Rota *"
+                  placeholder="Rota seçiniz"
                   prepend-inner-icon="mdi-map-marker"
                   :rules="[(v: string) => !!v || 'Rota seçimi gereklidir']"
                   required
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
                 />
               </v-col>
               <v-col cols="12" md="6">
+                <label class="form-label">Araç <span class="required">*</span></label>
                 <v-select
                   v-model="form.vehicleId"
                   :items="vehicles"
                   item-title="name"
                   item-value="id"
-                  label="Araç *"
+                  placeholder="Araç seçiniz"
                   prepend-inner-icon="mdi-car"
                   :rules="[(v: string) => !!v || 'Araç seçimi gereklidir']"
                   required
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
                 />
               </v-col>
               <v-col cols="12" md="6">
+                <label class="form-label">Şoför</label>
                 <v-select
                   v-model="form.driverId"
                   :items="drivers"
                   item-title="name"
                   item-value="id"
-                  label="Şoför"
+                  placeholder="Şoför seçiniz (opsiyonel)"
                   prepend-inner-icon="mdi-account"
                   clearable
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
                 />
               </v-col>
               <v-col cols="12" md="6">
+                <label class="form-label">Durum <span class="required">*</span></label>
                 <v-select
                   v-model="form.status"
                   :items="statusOptions"
                   item-title="label"
                   item-value="value"
-                  label="Durum *"
+                  placeholder="Durum seçiniz"
                   prepend-inner-icon="mdi-information"
                   :rules="[(v: string) => !!v || 'Durum seçimi gereklidir']"
                   required
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
                 />
               </v-col>
               <v-col cols="12" md="6">
+                <label class="form-label">Transfer Tarihi <span class="required">*</span></label>
                 <v-text-field
                   v-model="form.transferDate"
-                  label="Transfer Tarihi *"
                   type="date"
+                  placeholder="Tarih seçiniz"
                   prepend-inner-icon="mdi-calendar"
                   :rules="[(v: string) => !!v || 'Tarih gereklidir']"
                   required
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
                 />
               </v-col>
               <v-col cols="12" md="6">
+                <label class="form-label">Transfer Saati <span class="required">*</span></label>
                 <v-text-field
                   v-model="form.transferTime"
-                  label="Transfer Saati *"
                   type="time"
+                  placeholder="Saat seçiniz"
                   prepend-inner-icon="mdi-clock"
                   :rules="[(v: string) => !!v || 'Saat gereklidir']"
                   required
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
                 />
               </v-col>
               <v-col cols="12" md="4">
+                <label class="form-label">Yolcu Adı <span class="required">*</span></label>
                 <v-text-field
                   v-model="form.passengerName"
-                  label="Yolcu Adı *"
+                  placeholder="Yolcu adını giriniz"
                   prepend-inner-icon="mdi-account"
                   :rules="[(v: string) => !!v || 'Yolcu adı gereklidir']"
                   required
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
                 />
               </v-col>
               <v-col cols="12" md="4">
+                <label class="form-label">E-posta <span class="required">*</span></label>
                 <v-text-field
                   v-model="form.passengerEmail"
-                  label="E-posta *"
                   type="email"
+                  placeholder="E-posta adresi giriniz"
                   prepend-inner-icon="mdi-email"
                   :rules="[(v: string) => !!v || 'E-posta gereklidir']"
                   required
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
                 />
               </v-col>
               <v-col cols="12" md="4">
+                <label class="form-label">Telefon <span class="required">*</span></label>
                 <v-text-field
                   v-model="form.passengerPhone"
-                  label="Telefon *"
+                  placeholder="Telefon numarası giriniz"
                   prepend-inner-icon="mdi-phone"
                   :rules="[(v: string) => !!v || 'Telefon gereklidir']"
                   required
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
                 />
               </v-col>
               <v-col cols="12" md="4">
+                <label class="form-label">Yolcu Sayısı <span class="required">*</span></label>
                 <v-text-field
                   v-model.number="form.passengerCount"
-                  label="Yolcu Sayısı *"
                   type="number"
+                  placeholder="Örn: 2"
                   prepend-inner-icon="mdi-account-group"
                   :rules="[(v: number) => (v && v > 0) || 'Yolcu sayısı gereklidir']"
                   required
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
                 />
               </v-col>
               <v-col cols="12" md="4">
+                <label class="form-label">Bagaj Sayısı</label>
                 <v-text-field
                   v-model.number="form.luggageCount"
-                  label="Bagaj Sayısı"
                   type="number"
+                  placeholder="Örn: 1"
                   prepend-inner-icon="mdi-bag-suitcase"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
                 />
               </v-col>
               <v-col cols="12" md="4">
+                <label class="form-label">Toplam Fiyat <span class="required">*</span></label>
                 <v-text-field
                   v-model.number="form.totalPrice"
-                  label="Toplam Fiyat *"
                   type="number"
+                  placeholder="Örn: 100"
                   prepend-inner-icon="mdi-currency-eur"
                   :rules="[(v: number) => (v && v >= 0) || 'Toplam fiyat gereklidir']"
                   required
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
                 />
               </v-col>
               <v-col cols="12" md="6">
+                <label class="form-label">Alış Adresi</label>
                 <v-text-field
                   v-model="form.pickupAddress"
-                  label="Alış Adresi"
+                  placeholder="Alış adresi giriniz"
                   prepend-inner-icon="mdi-map-marker"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
                 />
               </v-col>
               <v-col cols="12" md="6">
+                <label class="form-label">Bırakış Adresi</label>
                 <v-text-field
                   v-model="form.dropoffAddress"
-                  label="Bırakış Adresi"
+                  placeholder="Bırakış adresi giriniz"
                   prepend-inner-icon="mdi-map-marker"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
                 />
               </v-col>
               <v-col cols="12" md="6">
+                <label class="form-label">Uçuş Numarası</label>
                 <v-text-field
                   v-model="form.flightNumber"
-                  label="Uçuş Numarası"
+                  placeholder="Uçuş numarası giriniz"
                   prepend-inner-icon="mdi-airplane"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
                 />
               </v-col>
               <v-col cols="12" md="6">
+                <label class="form-label">Para Birimi</label>
                 <v-text-field
                   v-model="form.currencyCode"
-                  label="Para Birimi"
+                  placeholder="EUR, USD, TRY..."
                   prepend-inner-icon="mdi-cash"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
                 />
               </v-col>
               <v-col cols="12">
+                <label class="form-label">Müşteri Notları</label>
                 <v-textarea
                   v-model="form.customerNotes"
-                  label="Müşteri Notları"
+                  placeholder="Müşteri notları giriniz..."
                   rows="3"
-                  prepend-inner-icon="mdi-text"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
                 />
               </v-col>
             </v-row>
           </v-form>
         </v-card-text>
         <v-divider />
-        <v-card-actions>
+        <v-card-actions class="dialog-actions">
           <v-spacer />
           <v-btn variant="text" @click="closeDialog">İptal</v-btn>
-          <v-btn color="primary" @click="saveReservation" :loading="saving" :disabled="!formValid">
+          <v-btn color="primary" variant="flat" @click="saveReservation" :loading="saving" :disabled="!formValid">
             Kaydet
           </v-btn>
         </v-card-actions>
@@ -289,6 +357,7 @@
 import { ref, reactive, onMounted } from 'vue';
 import { useAuthStore } from '../../stores/auth';
 import { http } from '../../modules/http';
+import Swal from 'sweetalert2';
 
 const auth = useAuthStore();
 const loading = ref(false);
@@ -521,24 +590,57 @@ const saveReservation = async () => {
     }
     
     await loadReservations();
+    await Swal.fire({
+      icon: 'success',
+      title: 'Başarılı',
+      text: editingReservation.value ? 'Rezervasyon başarıyla güncellendi' : 'Rezervasyon başarıyla eklendi',
+      timer: 2000,
+      showConfirmButton: false,
+    });
     closeDialog();
   } catch (error: any) {
-    alert(error.response?.data?.message || 'Rezervasyon kaydedilirken bir hata oluştu');
+    Swal.fire({
+      icon: 'error',
+      title: 'Hata',
+      text: error.response?.data?.message || 'Rezervasyon kaydedilirken bir hata oluştu',
+    });
   } finally {
     saving.value = false;
   }
 };
 
 const deleteReservation = async (id: string) => {
-  if (!confirm('Bu rezervasyonu silmek istediğinizden emin misiniz?')) return;
+  const result = await Swal.fire({
+    title: 'Emin misiniz?',
+    text: 'Bu rezervasyonu silmek istediğinizden emin misiniz?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Evet, Sil',
+    cancelButtonText: 'İptal',
+    confirmButtonColor: '#dc2626',
+  });
+
+  if (!result.isConfirmed) return;
   if (!auth.tenant) return;
+  
   try {
     await http.delete(`/transfer/reservations/${id}`, {
       params: { tenantId: auth.tenant.id },
     });
+    await Swal.fire({
+      icon: 'success',
+      title: 'Başarılı',
+      text: 'Rezervasyon başarıyla silindi',
+      timer: 2000,
+      showConfirmButton: false,
+    });
     await loadReservations();
   } catch (error: any) {
-    alert(error.response?.data?.message || 'Rezervasyon silinirken bir hata oluştu');
+    Swal.fire({
+      icon: 'error',
+      title: 'Hata',
+      text: error.response?.data?.message || 'Rezervasyon silinirken bir hata oluştu',
+    });
   }
 };
 
@@ -546,3 +648,78 @@ onMounted(() => {
   loadReservations();
 });
 </script>
+
+<style scoped>
+.transfer-reservations-page {
+  padding: 24px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.reservations-table {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.reservation-dialog {
+  border-radius: 12px;
+}
+
+.dialog-header {
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dialog-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.dialog-body {
+  padding: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.dialog-actions {
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .transfer-reservations-page {
+    padding: 16px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .dialog-body {
+    padding: 16px;
+  }
+}
+</style>

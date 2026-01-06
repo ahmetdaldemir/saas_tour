@@ -10,4 +10,8 @@ dist
 *.md
 coverage
 .nyc_output
+# Note: src and tsconfig.json are needed in builder stage, but not copied to production stage
+# Production stage only gets dist folder
+*.ts
+!*.d.ts
 

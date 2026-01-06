@@ -312,6 +312,9 @@ const currencyOptions = [
 ];
 
 const customerOptions = computed(() => {
+  if (!Array.isArray(customers.value)) {
+    return [];
+  }
   return customers.value.map(c => ({
     title: `${c.fullName}${c.email ? ` (${c.email})` : ''}`,
     value: c.id,
@@ -331,10 +334,23 @@ const loadCoupons = async () => {
     if (statusFilter.value) params.status = statusFilter.value;
     if (customerFilter.value) params.customerId = customerFilter.value;
 
-    const { data } = await http.get('/coupons', { params });
-    coupons.value = data || [];
+    const response = await http.get('/coupons', { params });
+    const data = response.data;
+    
+    // Backend returns { success: true, data: coupons } or direct array
+    // Ensure data is an array
+    if (Array.isArray(data)) {
+      coupons.value = data;
+    } else if (data && Array.isArray(data.data)) {
+      coupons.value = data.data;
+    } else if (data && Array.isArray(data.items)) {
+      coupons.value = data.items;
+    } else {
+      coupons.value = [];
+    }
   } catch (error: any) {
     console.error('Failed to load coupons:', error);
+    coupons.value = []; // Ensure it's always an array
     showSnackbar(error.response?.data?.message || 'Kuponlar yüklenirken bir hata oluştu', 'error');
   } finally {
     loading.value = false;
@@ -343,10 +359,23 @@ const loadCoupons = async () => {
 
 const loadCustomers = async () => {
   try {
-    const { data } = await http.get('/crm/customers');
-    customers.value = data || [];
+    const response = await http.get('/crm/customers');
+    const data = response.data;
+    
+    // Backend returns direct array or { data: customers }
+    // Ensure data is an array
+    if (Array.isArray(data)) {
+      customers.value = data;
+    } else if (data && Array.isArray(data.data)) {
+      customers.value = data.data;
+    } else if (data && Array.isArray(data.items)) {
+      customers.value = data.items;
+    } else {
+      customers.value = [];
+    }
   } catch (error: any) {
     console.error('Failed to load customers:', error);
+    customers.value = []; // Ensure it's always an array
   }
 };
 
@@ -451,6 +480,9 @@ const getStatusLabel = (status: string): string => {
 };
 
 const getCustomerName = (customerId: string): string => {
+  if (!Array.isArray(customers.value)) {
+    return customerId;
+  }
   const customer = customers.value.find(c => c.id === customerId);
   return customer ? customer.fullName : customerId;
 };

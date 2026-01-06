@@ -1,7 +1,7 @@
 <template>
-  <div class="pa-4">
-    <div class="d-flex align-center justify-space-between mb-4">
-      <h2 class="text-h5">Transfer Araçları</h2>
+  <div class="transfer-vehicles-page">
+    <div class="page-header">
+      <h2 class="page-title">Transfer Araçları</h2>
       <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreateDialog">
         Yeni Araç Ekle
       </v-btn>
@@ -12,6 +12,7 @@
       :items="vehicles"
       :loading="loading"
       item-value="id"
+      class="vehicles-table"
     >
       <template #item.type="{ item }">
         <v-chip :color="getTypeColor(item.type)" size="small">
@@ -44,105 +45,140 @@
 
     <!-- Vehicle Create/Edit Dialog -->
     <v-dialog v-model="showDialog" max-width="800" scrollable>
-      <v-card>
-        <v-card-title class="d-flex align-center justify-space-between">
-          <span class="text-h6">{{ editingVehicle ? 'Araç Düzenle' : 'Yeni Araç Ekle' }}</span>
-          <v-btn icon="mdi-close" variant="text" @click="closeDialog" />
+      <v-card class="vehicle-dialog">
+        <v-card-title class="dialog-header">
+          <span class="dialog-title">{{ editingVehicle ? 'Araç Düzenle' : 'Yeni Araç Ekle' }}</span>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="closeDialog" />
         </v-card-title>
         <v-divider />
-        <v-card-text class="pa-6">
+        <v-card-text class="dialog-body admin-form-scope">
           <v-form ref="formRef" v-model="formValid">
             <v-row>
               <v-col cols="12" md="6">
+                <label class="form-label">Araç Adı <span class="required">*</span></label>
                 <v-text-field
                   v-model="form.name"
-                  label="Araç Adı *"
+                  placeholder="Araç adını giriniz"
                   prepend-inner-icon="mdi-car"
                   :rules="[(v: string) => !!v || 'Araç adı gereklidir']"
                   required
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
                 />
               </v-col>
               <v-col cols="12" md="6">
+                <label class="form-label">Araç Tipi <span class="required">*</span></label>
                 <v-select
                   v-model="form.type"
                   :items="typeOptions"
                   item-title="label"
                   item-value="value"
-                  label="Araç Tipi *"
+                  placeholder="Araç tipi seçiniz"
                   prepend-inner-icon="mdi-shape"
                   :rules="[(v: string) => !!v || 'Araç tipi gereklidir']"
                   required
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
                 />
               </v-col>
               <v-col cols="12" md="4">
+                <label class="form-label">Yolcu Kapasitesi <span class="required">*</span></label>
                 <v-text-field
                   v-model.number="form.passengerCapacity"
-                  label="Yolcu Kapasitesi *"
                   type="number"
+                  placeholder="Örn: 4"
                   prepend-inner-icon="mdi-account"
                   :rules="[(v: number) => (v && v > 0) || 'Yolcu kapasitesi gereklidir']"
                   required
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
                 />
               </v-col>
               <v-col cols="12" md="4">
+                <label class="form-label">Bagaj Kapasitesi <span class="required">*</span></label>
                 <v-text-field
                   v-model.number="form.luggageCapacity"
-                  label="Bagaj Kapasitesi *"
                   type="number"
+                  placeholder="Örn: 2"
                   prepend-inner-icon="mdi-bag-suitcase"
                   :rules="[(v: number) => (v && v >= 0) || 'Bagaj kapasitesi gereklidir']"
                   required
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
                 />
               </v-col>
               <v-col cols="12" md="4">
-                <v-switch
-                  v-model="form.hasDriver"
-                  label="Şoförlü"
-                  color="success"
-                />
+                <label class="form-label">Şoför</label>
+                <div class="switch-group">
+                  <v-switch
+                    v-model="form.hasDriver"
+                    label="Şoförlü"
+                    color="success"
+                    hide-details
+                  />
+                </div>
               </v-col>
               <v-col cols="12">
+                <label class="form-label">Özellikler</label>
                 <v-select
                   v-model="form.features"
                   :items="featureOptions"
                   item-title="label"
                   item-value="value"
-                  label="Özellikler"
+                  placeholder="Özellik seçiniz"
                   multiple
                   chips
                   prepend-inner-icon="mdi-star"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
                 />
               </v-col>
               <v-col cols="12" md="6">
+                <label class="form-label">Görsel URL</label>
                 <v-text-field
                   v-model="form.imageUrl"
-                  label="Görsel URL"
+                  placeholder="https://..."
                   prepend-inner-icon="mdi-image"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
                 />
               </v-col>
               <v-col cols="12" md="6">
-                <v-switch
-                  v-model="form.isActive"
-                  label="Aktif"
-                  color="success"
-                />
+                <label class="form-label">Durum</label>
+                <div class="switch-group">
+                  <v-switch
+                    v-model="form.isActive"
+                    label="Aktif"
+                    color="success"
+                    hide-details
+                  />
+                </div>
               </v-col>
               <v-col cols="12">
+                <label class="form-label">Açıklama</label>
                 <v-textarea
                   v-model="form.description"
-                  label="Açıklama"
+                  placeholder="Açıklama giriniz..."
                   rows="3"
-                  prepend-inner-icon="mdi-text"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
                 />
               </v-col>
             </v-row>
           </v-form>
         </v-card-text>
         <v-divider />
-        <v-card-actions>
+        <v-card-actions class="dialog-actions">
           <v-spacer />
           <v-btn variant="text" @click="closeDialog">İptal</v-btn>
-          <v-btn color="primary" @click="saveVehicle" :loading="saving" :disabled="!formValid">
+          <v-btn color="primary" variant="flat" @click="saveVehicle" :loading="saving" :disabled="!formValid">
             Kaydet
           </v-btn>
         </v-card-actions>
@@ -155,6 +191,7 @@
 import { ref, reactive, onMounted } from 'vue';
 import { useAuthStore } from '../../stores/auth';
 import { http } from '../../modules/http';
+import Swal from 'sweetalert2';
 
 const auth = useAuthStore();
 const loading = ref(false);
@@ -301,29 +338,69 @@ const saveVehicle = async () => {
       await http.put(`/transfer/vehicles/${editingVehicle.value.id}`, vehicleData, {
         params: { tenantId: auth.tenant.id },
       });
+      await Swal.fire({
+        icon: 'success',
+        title: 'Başarılı',
+        text: 'Araç başarıyla güncellendi',
+        timer: 2000,
+        showConfirmButton: false,
+      });
     } else {
       await http.post('/transfer/vehicles', vehicleData);
+      await Swal.fire({
+        icon: 'success',
+        title: 'Başarılı',
+        text: 'Araç başarıyla eklendi',
+        timer: 2000,
+        showConfirmButton: false,
+      });
     }
     
     await loadVehicles();
     closeDialog();
   } catch (error: any) {
-    alert(error.response?.data?.message || 'Araç kaydedilirken bir hata oluştu');
+    Swal.fire({
+      icon: 'error',
+      title: 'Hata',
+      text: error.response?.data?.message || 'Araç kaydedilirken bir hata oluştu',
+    });
   } finally {
     saving.value = false;
   }
 };
 
 const deleteVehicle = async (id: string) => {
-  if (!confirm('Bu aracı silmek istediğinizden emin misiniz?')) return;
+  const result = await Swal.fire({
+    title: 'Emin misiniz?',
+    text: 'Bu aracı silmek istediğinizden emin misiniz?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Evet, Sil',
+    cancelButtonText: 'İptal',
+    confirmButtonColor: '#dc2626',
+  });
+
+  if (!result.isConfirmed) return;
   if (!auth.tenant) return;
+  
   try {
     await http.delete(`/transfer/vehicles/${id}`, {
       params: { tenantId: auth.tenant.id },
     });
+    await Swal.fire({
+      icon: 'success',
+      title: 'Başarılı',
+      text: 'Araç başarıyla silindi',
+      timer: 2000,
+      showConfirmButton: false,
+    });
     await loadVehicles();
   } catch (error: any) {
-    alert(error.response?.data?.message || 'Araç silinirken bir hata oluştu');
+    Swal.fire({
+      icon: 'error',
+      title: 'Hata',
+      text: error.response?.data?.message || 'Araç silinirken bir hata oluştu',
+    });
   }
 };
 
@@ -332,3 +409,91 @@ onMounted(() => {
 });
 </script>
 
+<style scoped>
+.transfer-vehicles-page {
+  padding: 24px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.vehicles-table {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.vehicle-dialog {
+  border-radius: 12px;
+}
+
+.dialog-header {
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dialog-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.dialog-body {
+  padding: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.dialog-actions {
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.switch-group {
+  padding: 8px 0;
+}
+
+.switch-group :deep(.v-switch) {
+  margin: 0;
+}
+
+.switch-group :deep(.v-switch .v-label) {
+  font-size: 14px;
+  color: #374151;
+  margin-left: 8px;
+}
+
+@media (max-width: 768px) {
+  .transfer-vehicles-page {
+    padding: 16px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .dialog-body {
+    padding: 16px;
+  }
+}
+</style>

@@ -409,6 +409,21 @@ export class OperationsService {
         await mediaRepo.save(media);
       }
 
+      // Send pickup email to customer (async, don't block)
+      const { sendPickupEmail } = await import('../../../services/pickup-email.service');
+      const savedPhotos = await mediaRepo.find({
+        where: {
+          tenantId,
+          reservationId,
+          inspectionType: InspectionType.PICKUP,
+        },
+        order: { slotIndex: 'ASC' },
+      });
+      
+      sendPickupEmail(reservation, pickup, savedPhotos).catch((error) => {
+        console.error(`Error sending pickup email for reservation ${reservationId}:`, error);
+      });
+
       return pickup;
     });
   }

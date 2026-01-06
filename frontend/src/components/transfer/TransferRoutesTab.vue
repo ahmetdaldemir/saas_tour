@@ -1,7 +1,7 @@
 <template>
-  <div class="pa-4">
-    <div class="d-flex align-center justify-space-between mb-4">
-      <h2 class="text-h5">Transfer Rotaları</h2>
+  <div class="transfer-routes-page">
+    <div class="page-header">
+      <h2 class="page-title">Transfer Rotaları</h2>
       <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreateDialog">
         Yeni Rota Ekle
       </v-btn>
@@ -12,6 +12,7 @@
       :items="routes"
       :loading="loading"
       item-value="id"
+      class="routes-table"
     >
       <template #item.type="{ item }">
         <v-chip size="small" color="primary" variant="tonal">
@@ -37,136 +38,186 @@
 
     <!-- Route Create/Edit Dialog -->
     <v-dialog v-model="showDialog" max-width="800" scrollable>
-      <v-card>
-        <v-card-title class="d-flex align-center justify-space-between">
-          <span class="text-h6">{{ editingRoute ? 'Rota Düzenle' : 'Yeni Rota Ekle' }}</span>
-          <v-btn icon="mdi-close" variant="text" @click="closeDialog" />
+      <v-card class="route-dialog">
+        <v-card-title class="dialog-header">
+          <span class="dialog-title">{{ editingRoute ? 'Rota Düzenle' : 'Yeni Rota Ekle' }}</span>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="closeDialog" />
         </v-card-title>
         <v-divider />
-        <v-card-text class="pa-6">
+        <v-card-text class="dialog-body admin-form-scope">
           <v-form ref="formRef" v-model="formValid">
             <v-row>
               <v-col cols="12" md="6">
+                <label class="form-label">Rota Adı <span class="required">*</span></label>
                 <v-text-field
                   v-model="form.name"
-                  label="Rota Adı *"
+                  placeholder="Rota adını giriniz"
                   prepend-inner-icon="mdi-map-marker"
                   :rules="[(v: string) => !!v || 'Rota adı gereklidir']"
                   required
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
                 />
               </v-col>
               <v-col cols="12" md="6">
+                <label class="form-label">Rota Tipi <span class="required">*</span></label>
                 <v-select
                   v-model="form.type"
                   :items="typeOptions"
                   item-title="label"
                   item-value="value"
-                  label="Rota Tipi *"
+                  placeholder="Rota tipi seçiniz"
                   prepend-inner-icon="mdi-routes"
                   :rules="[(v: string) => !!v || 'Rota tipi gereklidir']"
                   required
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
                 />
               </v-col>
               <v-col cols="12" md="6">
+                <label class="form-label">Mesafe (km)</label>
                 <v-text-field
                   v-model.number="form.distance"
-                  label="Mesafe (km)"
                   type="number"
+                  placeholder="Örn: 50"
                   prepend-inner-icon="mdi-road"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
                 />
               </v-col>
               <v-col cols="12" md="6">
+                <label class="form-label">Ortalama Süre (dakika)</label>
                 <v-text-field
                   v-model.number="form.averageDurationMinutes"
-                  label="Ortalama Süre (dakika)"
                   type="number"
+                  placeholder="Örn: 60"
                   prepend-inner-icon="mdi-clock"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
                 />
               </v-col>
               <v-col cols="12" md="6">
-                <v-switch
-                  v-model="form.isActive"
-                  label="Aktif"
-                  color="success"
-                />
+                <label class="form-label">Durum</label>
+                <div class="switch-group">
+                  <v-switch
+                    v-model="form.isActive"
+                    label="Aktif"
+                    color="success"
+                    hide-details
+                  />
+                </div>
               </v-col>
               <v-col cols="12">
+                <label class="form-label">Açıklama</label>
                 <v-textarea
                   v-model="form.description"
-                  label="Açıklama"
+                  placeholder="Açıklama giriniz..."
                   rows="3"
-                  prepend-inner-icon="mdi-text"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
                 />
               </v-col>
-              <!-- Route Points - Basitleştirilmiş -->
+              
+              <!-- Çıkış Noktası -->
               <v-col cols="12">
                 <v-divider class="my-4" />
-                <h3 class="text-subtitle-1 mb-3">Çıkış Noktası</h3>
+                <h3 class="section-title">Çıkış Noktası</h3>
               </v-col>
               <v-col cols="12" md="6">
+                <label class="form-label">Çıkış Noktası Adı <span class="required">*</span></label>
                 <v-text-field
                   v-model="form.originName"
-                  label="Çıkış Noktası Adı *"
+                  placeholder="Çıkış noktası adını giriniz"
                   prepend-inner-icon="mdi-map-marker"
                   :rules="[(v: string) => !!v || 'Çıkış noktası adı gereklidir']"
                   required
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
                 />
               </v-col>
               <v-col cols="12" md="6">
+                <label class="form-label">Çıkış Noktası Tipi</label>
                 <v-select
                   v-model="form.originType"
                   :items="pointTypeOptions"
                   item-title="label"
                   item-value="value"
-                  label="Çıkış Noktası Tipi"
+                  placeholder="Tip seçiniz"
                   prepend-inner-icon="mdi-shape"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
                 />
               </v-col>
               <v-col cols="12">
+                <label class="form-label">Çıkış Adresi</label>
                 <v-text-field
                   v-model="form.originAddress"
-                  label="Çıkış Adresi"
+                  placeholder="Adres giriniz"
                   prepend-inner-icon="mdi-map"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
                 />
               </v-col>
+              
+              <!-- Varış Noktası -->
               <v-col cols="12">
                 <v-divider class="my-4" />
-                <h3 class="text-subtitle-1 mb-3">Varış Noktası</h3>
+                <h3 class="section-title">Varış Noktası</h3>
               </v-col>
               <v-col cols="12" md="6">
+                <label class="form-label">Varış Noktası Adı <span class="required">*</span></label>
                 <v-text-field
                   v-model="form.destinationName"
-                  label="Varış Noktası Adı *"
+                  placeholder="Varış noktası adını giriniz"
                   prepend-inner-icon="mdi-map-marker"
                   :rules="[(v: string) => !!v || 'Varış noktası adı gereklidir']"
                   required
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details="auto"
                 />
               </v-col>
               <v-col cols="12" md="6">
+                <label class="form-label">Varış Noktası Tipi</label>
                 <v-select
                   v-model="form.destinationType"
                   :items="pointTypeOptions"
                   item-title="label"
                   item-value="value"
-                  label="Varış Noktası Tipi"
+                  placeholder="Tip seçiniz"
                   prepend-inner-icon="mdi-shape"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
                 />
               </v-col>
               <v-col cols="12">
+                <label class="form-label">Varış Adresi</label>
                 <v-text-field
                   v-model="form.destinationAddress"
-                  label="Varış Adresi"
+                  placeholder="Adres giriniz"
                   prepend-inner-icon="mdi-map"
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
                 />
               </v-col>
             </v-row>
           </v-form>
         </v-card-text>
         <v-divider />
-        <v-card-actions>
+        <v-card-actions class="dialog-actions">
           <v-spacer />
           <v-btn variant="text" @click="closeDialog">İptal</v-btn>
-          <v-btn color="primary" @click="saveRoute" :loading="saving" :disabled="!formValid">
+          <v-btn color="primary" variant="flat" @click="saveRoute" :loading="saving" :disabled="!formValid">
             Kaydet
           </v-btn>
         </v-card-actions>
@@ -179,6 +230,7 @@
 import { ref, reactive, onMounted } from 'vue';
 import { useAuthStore } from '../../stores/auth';
 import { http } from '../../modules/http';
+import Swal from 'sweetalert2';
 
 const auth = useAuthStore();
 const loading = ref(false);
@@ -290,7 +342,6 @@ const editRoute = (item: any) => {
   form.description = item.description || '';
   form.isActive = item.isActive ?? true;
   
-  // Route points'leri basit şekilde handle et
   if (item.points && item.points.length > 0) {
     const pickupPoint = item.points.find((p: any) => p.isPickup);
     const dropoffPoint = item.points.find((p: any) => !p.isPickup);
@@ -348,29 +399,69 @@ const saveRoute = async () => {
       await http.put(`/transfer/routes/${editingRoute.value.id}`, routeData, {
         params: { tenantId: auth.tenant.id },
       });
+      await Swal.fire({
+        icon: 'success',
+        title: 'Başarılı',
+        text: 'Rota başarıyla güncellendi',
+        timer: 2000,
+        showConfirmButton: false,
+      });
     } else {
       await http.post('/transfer/routes', routeData);
+      await Swal.fire({
+        icon: 'success',
+        title: 'Başarılı',
+        text: 'Rota başarıyla eklendi',
+        timer: 2000,
+        showConfirmButton: false,
+      });
     }
     
     await loadRoutes();
     closeDialog();
   } catch (error: any) {
-    alert(error.response?.data?.message || 'Rota kaydedilirken bir hata oluştu');
+    Swal.fire({
+      icon: 'error',
+      title: 'Hata',
+      text: error.response?.data?.message || 'Rota kaydedilirken bir hata oluştu',
+    });
   } finally {
     saving.value = false;
   }
 };
 
 const deleteRoute = async (id: string) => {
-  if (!confirm('Bu rotayı silmek istediğinizden emin misiniz?')) return;
+  const result = await Swal.fire({
+    title: 'Emin misiniz?',
+    text: 'Bu rotayı silmek istediğinizden emin misiniz?',
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonText: 'Evet, Sil',
+    cancelButtonText: 'İptal',
+    confirmButtonColor: '#dc2626',
+  });
+
+  if (!result.isConfirmed) return;
   if (!auth.tenant) return;
+  
   try {
     await http.delete(`/transfer/routes/${id}`, {
       params: { tenantId: auth.tenant.id },
     });
+    await Swal.fire({
+      icon: 'success',
+      title: 'Başarılı',
+      text: 'Rota başarıyla silindi',
+      timer: 2000,
+      showConfirmButton: false,
+    });
     await loadRoutes();
   } catch (error: any) {
-    alert(error.response?.data?.message || 'Rota silinirken bir hata oluştu');
+    Swal.fire({
+      icon: 'error',
+      title: 'Hata',
+      text: error.response?.data?.message || 'Rota silinirken bir hata oluştu',
+    });
   }
 };
 
@@ -378,3 +469,99 @@ onMounted(() => {
   loadRoutes();
 });
 </script>
+
+<style scoped>
+.transfer-routes-page {
+  padding: 24px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.routes-table {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.route-dialog {
+  border-radius: 12px;
+}
+
+.dialog-header {
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.dialog-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.dialog-body {
+  padding: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.dialog-actions {
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 16px;
+}
+
+.switch-group {
+  padding: 8px 0;
+}
+
+.switch-group :deep(.v-switch) {
+  margin: 0;
+}
+
+.switch-group :deep(.v-switch .v-label) {
+  font-size: 14px;
+  color: #374151;
+  margin-left: 8px;
+}
+
+@media (max-width: 768px) {
+  .transfer-routes-page {
+    padding: 16px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .dialog-body {
+    padding: 16px;
+  }
+}
+</style>

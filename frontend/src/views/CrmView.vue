@@ -7,10 +7,6 @@
           <v-icon start icon="mdi-package-variant" />
           Ekstralar
         </v-tab>
-        <v-tab value="campaigns">
-          <v-icon start icon="mdi-tag" />
-          Kampanyalar
-        </v-tab>
         <v-tab value="kapis">
           <v-icon start icon="mdi-bell-alert" />
           KAPİS Bildirim
@@ -121,82 +117,6 @@
           </v-card>
         </v-window-item>
 
-        <!-- Kampanyalar Sekmesi -->
-        <v-window-item value="campaigns">
-          <!-- Kampanya Listesi -->
-          <v-card elevation="0" class="mb-4">
-            <v-card-title class="d-flex align-center justify-space-between px-4 py-3">
-              <span class="text-h6 font-weight-bold">Kampanyalar</span>
-              <div class="d-flex align-center gap-2">
-                <v-btn icon="mdi-refresh" variant="text" @click="loadCampaigns" :loading="loadingCampaigns" />
-                <v-btn color="primary" prepend-icon="mdi-plus" @click="openCampaignDialog">
-                  Yeni Kampanya Ekle
-                </v-btn>
-              </div>
-            </v-card-title>
-            <v-divider />
-            <v-card-text class="pa-0">
-              <v-data-table
-                :headers="campaignTableHeaders"
-                :items="campaigns"
-                :loading="loadingCampaigns"
-                item-value="id"
-                class="elevation-0 campaign-table"
-                density="compact"
-              >
-                <template #item.index="{ index }">
-                  <span>{{ index + 1 }}</span>
-                </template>
-
-                <template #item.vehicleName="{ item }">
-                  <span class="font-weight-medium">{{ item.vehicleName || '-' }}</span>
-                </template>
-
-                <template #item.currency="{ item }">
-                  <span>{{ item.currency || '-' }}</span>
-                </template>
-
-                <template #item.startDate="{ item }">
-                  <span>{{ formatDate(item.startDate) }}</span>
-                </template>
-
-                <template #item.endDate="{ item }">
-                  <span>{{ formatDate(item.endDate) }}</span>
-                </template>
-
-                <template #item.status="{ item }">
-                  <v-chip
-                    size="small"
-                    :color="item.isActive ? 'success' : 'error'"
-                    variant="flat"
-                  >
-                    {{ item.isActive ? 'Aktif' : 'Pasif' }}
-                  </v-chip>
-                </template>
-
-                <template #item.actions="{ item }">
-                  <div class="d-flex align-center gap-1" @click.stop>
-                    <v-btn
-                      icon="mdi-pencil"
-                      variant="text"
-                      size="small"
-                      color="primary"
-                      @click.stop="editCampaign(item)"
-                    />
-                    <v-btn
-                      icon="mdi-delete"
-                      variant="text"
-                      size="small"
-                      color="error"
-                      @click.stop="deleteCampaign(item.id)"
-                    />
-                  </div>
-                </template>
-              </v-data-table>
-            </v-card-text>
-          </v-card>
-        </v-window-item>
-
         <!-- KAPİS Bildirim Sekmesi -->
         <v-window-item value="kapis">
           <v-card elevation="0" class="mb-4">
@@ -278,238 +198,6 @@
         </v-window-item>
       </v-window>
     </v-card>
-
-    <!-- Kampanya Ekleme/Düzenleme Dialog -->
-    <v-dialog v-model="showCampaignDialog" max-width="1400" fullscreen scrollable>
-      <v-card>
-        <v-card-title class="d-flex align-center justify-space-between">
-          <div class="d-flex align-center gap-2">
-            <v-icon icon="mdi-tag-plus" size="24" />
-            <span class="text-h6">{{ editingCampaign ? 'Kampanya Düzenle' : 'Kampanya Ekleme Formu' }}</span>
-          </div>
-          <v-btn icon="mdi-close" variant="text" @click="closeCampaignDialog" />
-        </v-card-title>
-        <v-divider />
-        <v-card-text class="pa-0">
-          <v-form ref="campaignFormRef" v-model="campaignFormValid">
-            <div class="pa-6">
-              <v-row>
-                <v-col cols="12" md="4">
-                  <v-select
-                    v-model="campaignForm.vehicleId"
-                    :items="vehicles"
-                    item-title="name"
-                    item-value="id"
-                    label="Araç"
-                    prepend-inner-icon="mdi-car"
-                    :loading="loadingVehicles"
-                    class="mb-2"
-                  >
-                    <template #item="{ item, props }">
-                      <v-list-item v-bind="props">
-                        <template #title>
-                          {{ getVehicleDisplayName(item.raw) }}
-                        </template>
-                      </v-list-item>
-                    </template>
-                    <template #selection="{ item }">
-                      {{ getVehicleDisplayName(item) }}
-                    </template>
-                  </v-select>
-                </v-col>
-                <v-col cols="12" md="4">
-                  <v-select
-                    v-model="campaignForm.currency"
-                    :items="currencyOptions"
-                    item-title="label"
-                    item-value="value"
-                    label="Para Birimi"
-                    prepend-inner-icon="mdi-currency-usd"
-                    class="mb-2"
-                  />
-                </v-col>
-                <v-col cols="12" md="4">
-                  <v-select
-                    v-model="campaignForm.region"
-                    :items="regionOptions"
-                    item-title="label"
-                    item-value="value"
-                    label="Yayınlanacağı Bölge"
-                    prepend-inner-icon="mdi-earth"
-                    class="mb-2"
-                  />
-                </v-col>
-                <v-col cols="12">
-                  <v-select
-                    v-model="campaignForm.validCities"
-                    :items="locationOptions"
-                    item-title="label"
-                    item-value="value"
-                    label="Geçerli Şehirler"
-                    prepend-inner-icon="mdi-map-marker-multiple"
-                    multiple
-                    chips
-                    closable-chips
-                    :loading="loadingLocations"
-                    class="mb-2"
-                  />
-                </v-col>
-                <v-col cols="12" md="3">
-                  <v-text-field
-                    v-model.number="campaignForm.price1to3"
-                    label="1-3 Gün"
-                    type="number"
-                    prepend-inner-icon="mdi-currency-try"
-                    suffix="₺"
-                    class="mb-2"
-                  />
-                </v-col>
-                <v-col cols="12" md="3">
-                  <v-text-field
-                    v-model.number="campaignForm.price4to6"
-                    label="4-6 Gün"
-                    type="number"
-                    prepend-inner-icon="mdi-currency-try"
-                    suffix="₺"
-                    class="mb-2"
-                  />
-                </v-col>
-                <v-col cols="12" md="3">
-                  <v-text-field
-                    v-model.number="campaignForm.price7to13"
-                    label="7-13 Gün"
-                    type="number"
-                    prepend-inner-icon="mdi-currency-try"
-                    suffix="₺"
-                    class="mb-2"
-                  />
-                </v-col>
-                <v-col cols="12" md="3">
-                  <v-text-field
-                    v-model.number="campaignForm.price14to30"
-                    label="14-30 Gün"
-                    type="number"
-                    prepend-inner-icon="mdi-currency-try"
-                    suffix="₺"
-                    class="mb-2"
-                  />
-                </v-col>
-                <v-col cols="12" md="4">
-                  <v-text-field
-                    v-model="campaignForm.startDate"
-                    label="Başlangıç Tarihi"
-                    type="date"
-                    prepend-inner-icon="mdi-calendar"
-                    class="mb-2"
-                  />
-                </v-col>
-                <v-col cols="12" md="4">
-                  <v-text-field
-                    v-model="campaignForm.endDate"
-                    label="Bitiş Tarihi"
-                    type="date"
-                    prepend-inner-icon="mdi-calendar"
-                    class="mb-2"
-                  />
-                </v-col>
-                <v-col cols="12" md="2">
-                  <v-select
-                    v-model="campaignForm.validityDays"
-                    :items="validityDaysOptions"
-                    item-title="label"
-                    item-value="value"
-                    label="Geçerlilik Süresi"
-                    prepend-inner-icon="mdi-calendar-range"
-                    class="mb-2"
-                  />
-                </v-col>
-                <v-col cols="12" md="2">
-                  <v-select
-                    v-model="campaignForm.customerType"
-                    :items="customerTypeOptions"
-                    item-title="label"
-                    item-value="value"
-                    label="Müşteri Tipi"
-                    prepend-inner-icon="mdi-account"
-                    class="mb-2"
-                  />
-                </v-col>
-              </v-row>
-
-              <!-- Dil Sekmeleri -->
-              <div class="mt-4">
-                <label class="text-body-1 font-weight-medium mb-2 d-block">Kampanya Adı</label>
-                <v-tabs v-model="campaignNameLanguageTab" show-arrows>
-                  <v-tab
-                    v-for="lang in availableLanguages"
-                    :key="lang.id"
-                    :value="lang.id"
-                  >
-                    {{ lang.name }}
-                  </v-tab>
-                </v-tabs>
-                <v-window v-model="campaignNameLanguageTab">
-                  <v-window-item
-                    v-for="lang in availableLanguages"
-                    :key="lang.id"
-                    :value="lang.id"
-                  >
-                    <v-text-field
-                      v-model="campaignForm.nameTranslations[lang.id]"
-                      :label="`Kampanya Adı (${lang.name})`"
-                      :placeholder="lang.isDefault ? 'Varsayılan dil - diğer dillere otomatik çevrilecek' : 'Bu dil için kampanya adı'"
-                      prepend-inner-icon="mdi-tag"
-                      :hint="lang.isDefault ? 'Varsayılan dil - diğer dillere otomatik çevrilecek' : 'Bu dil için kampanya adı'"
-                      persistent-hint
-                      class="mt-2"
-                    />
-                  </v-window-item>
-                </v-window>
-              </div>
-
-              <div class="mt-4">
-                <label class="text-body-1 font-weight-medium mb-2 d-block">Kampanya Açıklaması</label>
-                <v-tabs v-model="campaignDescriptionLanguageTab" show-arrows>
-                  <v-tab
-                    v-for="lang in availableLanguages"
-                    :key="lang.id"
-                    :value="lang.id"
-                  >
-                    {{ lang.name }}
-                  </v-tab>
-                </v-tabs>
-                <v-window v-model="campaignDescriptionLanguageTab">
-                  <v-window-item
-                    v-for="lang in availableLanguages"
-                    :key="lang.id"
-                    :value="lang.id"
-                  >
-                    <v-textarea
-                      v-model="campaignForm.descriptionTranslations[lang.id]"
-                      :label="`Kampanya Açıklaması (${lang.name})`"
-                      :placeholder="lang.isDefault ? 'Varsayılan dil - diğer dillere otomatik çevrilecek' : 'Bu dil için kampanya açıklaması'"
-                      prepend-inner-icon="mdi-text"
-                      rows="8"
-                      :hint="lang.isDefault ? 'Varsayılan dil - diğer dillere otomatik çevrilecek' : 'Bu dil için kampanya açıklaması'"
-                      persistent-hint
-                      class="mt-2"
-                    />
-                  </v-window-item>
-                </v-window>
-              </div>
-            </div>
-          </v-form>
-        </v-card-text>
-        <v-divider />
-        <v-card-actions>
-          <v-spacer />
-          <v-btn variant="text" @click="closeCampaignDialog">Kapat</v-btn>
-          <v-btn color="primary" @click="saveCampaign" :loading="savingCampaign" :disabled="!campaignFormValid">
-            Kaydet
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
 
     <!-- Ekstra Ürün Ekleme/Düzenleme Dialog -->
     <v-dialog v-model="showExtraDialog" scrollable>
@@ -663,14 +351,12 @@ const auth = useAuthStore();
 // Data
 const availableLanguages = ref<LanguageDto[]>([]);
 const extras = ref<ExtraDto[]>([]);
-const campaigns = ref<CampaignDto[]>([]);
 const vehicles = ref<VehicleDto[]>([]);
 const locations = ref<LocationDto[]>([]);
 
 // UI State
 const mainTab = ref('extras');
 const loadingExtras = ref(false);
-const loadingCampaigns = ref(false);
 const loadingVehicles = ref(false);
 const loadingLocations = ref(false);
 const kapisUrl = 'https://arackiralama.egm.gov.tr/my.policy';
@@ -681,17 +367,10 @@ const showExtraDialog = ref(false);
 const savingExtra = ref(false);
 const editingExtra = ref<ExtraDto | null>(null);
 const extraLanguageTab = ref('');
-const showCampaignDialog = ref(false);
-const savingCampaign = ref(false);
-const editingCampaign = ref<CampaignDto | null>(null);
-const campaignNameLanguageTab = ref('');
-const campaignDescriptionLanguageTab = ref('');
 
 // Form Refs
 const extraFormRef = ref();
 const extraFormValid = ref(false);
-const campaignFormRef = ref();
-const campaignFormValid = ref(false);
 
 // Options
 const yesNoOptions = [
@@ -750,9 +429,6 @@ const locationOptions = computed(() => {
   });
 });
 
-const campaignDefaultLanguageId = computed(() => {
-  return availableLanguages.value.find(l => l.isDefault)?.id || availableLanguages.value[0]?.id;
-});
 
 // Interfaces
 interface LanguageDto {
@@ -795,25 +471,6 @@ interface LocationDto {
   translations?: Array<{ languageId: string; name: string }>;
 }
 
-interface CampaignDto {
-  id: string;
-  vehicleId: string;
-  vehicleName?: string;
-  currency: string;
-  region: string;
-  validCities: string[];
-  price1to3: number;
-  price4to6: number;
-  price7to13: number;
-  price14to30: number;
-  startDate: string;
-  endDate: string;
-  validityDays: number;
-  customerType: string;
-  nameTranslations: Record<string, string>;
-  descriptionTranslations: Record<string, string>;
-  isActive: boolean;
-}
 
 // Extra Form
 const extraForm = reactive<{
@@ -840,38 +497,6 @@ const extraForm = reactive<{
   salesType: 'daily',
 });
 
-// Campaign Form
-const campaignForm = reactive<{
-  vehicleId: string;
-  currency: string;
-  region: string;
-  validCities: string[];
-  price1to3: number | null;
-  price4to6: number | null;
-  price7to13: number | null;
-  price14to30: number | null;
-  startDate: string;
-  endDate: string;
-  validityDays: number;
-  customerType: string;
-  nameTranslations: Record<string, string>;
-  descriptionTranslations: Record<string, string>;
-}>({
-  vehicleId: '',
-  currency: 'TRY',
-  region: 'domestic',
-  validCities: [],
-  price1to3: null,
-  price4to6: null,
-  price7to13: null,
-  price14to30: null,
-  startDate: '',
-  endDate: '',
-  validityDays: 7,
-  customerType: 'normal',
-  nameTranslations: {},
-  descriptionTranslations: {},
-});
 
 // Table headers
 const extraTableHeaders = [
@@ -879,16 +504,6 @@ const extraTableHeaders = [
   { title: 'Ürün Adı', key: 'name', width: '250px' },
   { title: 'Fiyat', key: 'price', width: '100px' },
   { title: 'Zorunlumu', key: 'isMandatory', sortable: false, width: '120px' },
-  { title: 'Durum', key: 'status', sortable: false, width: '100px' },
-  { title: 'İşlemler', key: 'actions', sortable: false, width: '120px' },
-];
-
-const campaignTableHeaders = [
-  { title: '#', key: 'index', sortable: false, width: '50px' },
-  { title: 'Araç', key: 'vehicleName', width: '200px' },
-  { title: 'Para Birimi', key: 'currency', width: '100px' },
-  { title: 'Başlangıç Tarihi', key: 'startDate', width: '150px' },
-  { title: 'Bitiş Tarihi', key: 'endDate', width: '150px' },
   { title: 'Durum', key: 'status', sortable: false, width: '100px' },
   { title: 'İşlemler', key: 'actions', sortable: false, width: '120px' },
 ];
@@ -1012,65 +627,6 @@ watch(
   }
 );
 
-// Auto-translate campaign name
-watch(
-  () => {
-    const defaultLangId = campaignDefaultLanguageId.value;
-    if (!defaultLangId) return '';
-    return campaignForm.nameTranslations[defaultLangId] || '';
-  },
-  async (newValue, oldValue) => {
-    if (!newValue || newValue === oldValue) return;
-    
-    const defaultLang = availableLanguages.value.find(l => l.id === campaignDefaultLanguageId.value);
-    if (!defaultLang) return;
-    
-    // Debounce translation
-    setTimeout(async () => {
-      for (const lang of availableLanguages.value) {
-        if (lang.id === defaultLang.id) continue;
-        if (campaignForm.nameTranslations[lang.id] && campaignForm.nameTranslations[lang.id] !== '') continue;
-        
-        try {
-          const translated = await translateText(newValue, lang.code, defaultLang.code);
-          campaignForm.nameTranslations[lang.id] = translated;
-        } catch (error) {
-          console.error(`Failed to translate campaign name to ${lang.code}:`, error);
-        }
-      }
-    }, 1500);
-  }
-);
-
-// Auto-translate campaign description
-watch(
-  () => {
-    const defaultLangId = campaignDefaultLanguageId.value;
-    if (!defaultLangId) return '';
-    return campaignForm.descriptionTranslations[defaultLangId] || '';
-  },
-  async (newValue, oldValue) => {
-    if (!newValue || newValue === oldValue) return;
-    
-    const defaultLang = availableLanguages.value.find(l => l.id === campaignDefaultLanguageId.value);
-    if (!defaultLang) return;
-    
-    // Debounce translation
-    setTimeout(async () => {
-      for (const lang of availableLanguages.value) {
-        if (lang.id === defaultLang.id) continue;
-        if (campaignForm.descriptionTranslations[lang.id] && campaignForm.descriptionTranslations[lang.id] !== '') continue;
-        
-        try {
-          const translated = await translateText(newValue, lang.code, defaultLang.code);
-          campaignForm.descriptionTranslations[lang.id] = translated;
-        } catch (error) {
-          console.error(`Failed to translate campaign description to ${lang.code}:`, error);
-        }
-      }
-    }, 1500);
-  }
-);
 
 const openExtraDialog = () => {
   editingExtra.value = null;
@@ -1217,247 +773,6 @@ const openHgsInNewTab = () => {
   window.open(hgsUrl, '_blank', 'noopener,noreferrer');
 };
 
-// Campaign Methods
-const getVehicleDisplayName = (vehicle: VehicleDto): string => {
-  const brand = vehicle.brand?.name || vehicle.brandName || '';
-  const model = vehicle.model?.name || vehicle.modelName || '';
-  const year = vehicle.year || '';
-  if (brand && model && year) {
-    return `${brand} - ${model} - ${year}`;
-  }
-  return vehicle.name || 'Araç';
-};
-
-const formatDate = (date: string | null | undefined): string => {
-  if (!date) return '-';
-  try {
-    const d = new Date(date);
-    return d.toLocaleDateString('tr-TR');
-  } catch {
-    return date;
-  }
-};
-
-const loadVehicles = async () => {
-  if (!auth.tenant) return;
-  loadingVehicles.value = true;
-  try {
-    const { data } = await http.get<VehicleDto[]>('/rentacar/vehicles', {
-      params: { tenantId: auth.tenant.id },
-    });
-    vehicles.value = data;
-  } catch (error) {
-    console.error('Failed to load vehicles:', error);
-  } finally {
-    loadingVehicles.value = false;
-  }
-};
-
-const loadLocations = async () => {
-  if (!auth.tenant) return;
-  loadingLocations.value = true;
-  try {
-    const { data } = await http.get<LocationDto[]>('/rentacar/locations', {
-      params: { tenantId: auth.tenant.id },
-    });
-    locations.value = data.filter(loc => loc.province); // Sadece şehirleri al
-  } catch (error) {
-    console.error('Failed to load locations:', error);
-  } finally {
-    loadingLocations.value = false;
-  }
-};
-
-const loadCampaigns = async () => {
-  if (!auth.tenant) return;
-  loadingCampaigns.value = true;
-  try {
-    // TODO: Backend API endpoint'i eklendiğinde buraya entegre edilecek
-    // const { data } = await http.get<CampaignDto[]>('/crm/campaigns', {
-    //   params: { tenantId: auth.tenant.id },
-    // });
-    // campaigns.value = data;
-    
-    // Örnek veri
-    campaigns.value = [];
-  } catch (error) {
-    console.error('Failed to load campaigns:', error);
-  } finally {
-    loadingCampaigns.value = false;
-  }
-};
-
-const openCampaignDialog = () => {
-  editingCampaign.value = null;
-  resetCampaignForm();
-  showCampaignDialog.value = true;
-  
-  // Set default language tabs
-  const defaultLang = availableLanguages.value.find(l => l.isDefault) || availableLanguages.value[0];
-  if (defaultLang) {
-    campaignNameLanguageTab.value = defaultLang.id;
-    campaignDescriptionLanguageTab.value = defaultLang.id;
-  }
-};
-
-const closeCampaignDialog = () => {
-  showCampaignDialog.value = false;
-  resetCampaignForm();
-};
-
-const resetCampaignForm = () => {
-  campaignForm.vehicleId = '';
-  campaignForm.currency = 'TRY';
-  campaignForm.region = 'domestic';
-  campaignForm.validCities = [];
-  campaignForm.price1to3 = null;
-  campaignForm.price4to6 = null;
-  campaignForm.price7to13 = null;
-  campaignForm.price14to30 = null;
-  campaignForm.startDate = '';
-  campaignForm.endDate = '';
-  campaignForm.validityDays = 7;
-  campaignForm.customerType = 'normal';
-  campaignForm.nameTranslations = {};
-  campaignForm.descriptionTranslations = {};
-  
-  // Initialize translations for all languages
-  availableLanguages.value.forEach(lang => {
-    campaignForm.nameTranslations[lang.id] = '';
-    campaignForm.descriptionTranslations[lang.id] = '';
-  });
-};
-
-const saveCampaign = async () => {
-  if (!auth.tenant) return;
-  
-  const validated = await campaignFormRef.value?.validate();
-  if (!validated?.valid) return;
-  
-  savingCampaign.value = true;
-  try {
-    const defaultLang = availableLanguages.value.find(l => l.isDefault) || availableLanguages.value[0];
-    const defaultName = campaignForm.nameTranslations[defaultLang?.id || ''] || '';
-    
-    if (!defaultName) {
-      alert('Varsayılan dilde kampanya adı girilmelidir');
-      return;
-    }
-    
-    if (!campaignForm.vehicleId) {
-      alert('Araç seçilmelidir');
-      return;
-    }
-    
-    const selectedVehicle = vehicles.value.find(v => v.id === campaignForm.vehicleId);
-    const campaignData = {
-      tenantId: auth.tenant.id,
-      vehicleId: campaignForm.vehicleId,
-      vehicleName: selectedVehicle ? getVehicleDisplayName(selectedVehicle) : '',
-      currency: campaignForm.currency,
-      region: campaignForm.region,
-      validCities: campaignForm.validCities,
-      price1to3: campaignForm.price1to3 || 0,
-      price4to6: campaignForm.price4to6 || 0,
-      price7to13: campaignForm.price7to13 || 0,
-      price14to30: campaignForm.price14to30 || 0,
-      startDate: campaignForm.startDate,
-      endDate: campaignForm.endDate,
-      validityDays: campaignForm.validityDays,
-      customerType: campaignForm.customerType,
-      nameTranslations: availableLanguages.value.map(lang => ({
-        languageId: lang.id,
-        name: campaignForm.nameTranslations[lang.id] || '',
-      })),
-      descriptionTranslations: availableLanguages.value.map(lang => ({
-        languageId: lang.id,
-        description: campaignForm.descriptionTranslations[lang.id] || '',
-      })),
-      isActive: true,
-    };
-    
-    // TODO: Backend API endpoint'i eklendiğinde buraya entegre edilecek
-    // if (editingCampaign.value) {
-    //   await http.put(`/crm/campaigns/${editingCampaign.value.id}`, campaignData);
-    // } else {
-    //   await http.post('/crm/campaigns', campaignData);
-    // }
-    
-    // Örnek veri için local state'e ekleme
-    if (!editingCampaign.value) {
-      const newCampaign: CampaignDto = {
-        id: Date.now().toString(),
-        ...campaignData,
-        nameTranslations: campaignForm.nameTranslations,
-        descriptionTranslations: campaignForm.descriptionTranslations,
-      };
-      campaigns.value.push(newCampaign);
-    } else {
-      const index = campaigns.value.findIndex(c => c.id === editingCampaign.value?.id);
-      if (index !== -1) {
-        campaigns.value[index] = {
-          ...campaigns.value[index],
-          ...campaignData,
-          nameTranslations: campaignForm.nameTranslations,
-          descriptionTranslations: campaignForm.descriptionTranslations,
-        };
-      }
-    }
-    
-    closeCampaignDialog();
-  } catch (error: any) {
-    alert(error.response?.data?.message || 'Kampanya kaydedilirken bir hata oluştu');
-  } finally {
-    savingCampaign.value = false;
-  }
-};
-
-const editCampaign = (campaign: CampaignDto) => {
-  editingCampaign.value = campaign;
-  
-  // Reset form
-  resetCampaignForm();
-  
-  // Set form values
-  campaignForm.vehicleId = campaign.vehicleId;
-  campaignForm.currency = campaign.currency;
-  campaignForm.region = campaign.region;
-  campaignForm.validCities = campaign.validCities;
-  campaignForm.price1to3 = campaign.price1to3;
-  campaignForm.price4to6 = campaign.price4to6;
-  campaignForm.price7to13 = campaign.price7to13;
-  campaignForm.price14to30 = campaign.price14to30;
-  campaignForm.startDate = campaign.startDate;
-  campaignForm.endDate = campaign.endDate;
-  campaignForm.validityDays = campaign.validityDays;
-  campaignForm.customerType = campaign.customerType;
-  campaignForm.nameTranslations = { ...campaign.nameTranslations };
-  campaignForm.descriptionTranslations = { ...campaign.descriptionTranslations };
-  
-  // Set default language tabs
-  const defaultLang = availableLanguages.value.find(l => l.isDefault) || availableLanguages.value[0];
-  if (defaultLang) {
-    campaignNameLanguageTab.value = defaultLang.id;
-    campaignDescriptionLanguageTab.value = defaultLang.id;
-  }
-  
-  showCampaignDialog.value = true;
-};
-
-const deleteCampaign = async (id: string) => {
-  if (!confirm('Bu kampanyayı silmek istediğinizden emin misiniz?')) return;
-  try {
-    // TODO: Backend API endpoint'i eklendiğinde buraya entegre edilecek
-    // await http.delete(`/crm/campaigns/${id}`);
-    
-    const index = campaigns.value.findIndex(c => c.id === id);
-    if (index !== -1) {
-      campaigns.value.splice(index, 1);
-    }
-  } catch (error: any) {
-    alert(error.response?.data?.message || 'Kampanya silinirken bir hata oluştu');
-  }
-};
 
 const loadLanguages = async () => {
   try {
@@ -1498,21 +813,12 @@ onMounted(async () => {
   await Promise.all([
     loadLanguages(),
     loadExtras(),
-    loadCampaigns(),
-    loadVehicles(),
     loadDefaultCurrency(), // Load default currency for location fee icons
-    loadLocations(),
   ]);
   
   // Initialize extra form translations
   availableLanguages.value.forEach(lang => {
     extraForm.translations[lang.id] = '';
-  });
-  
-  // Initialize campaign form translations
-  availableLanguages.value.forEach(lang => {
-    campaignForm.nameTranslations[lang.id] = '';
-    campaignForm.descriptionTranslations[lang.id] = '';
   });
 });
 </script>
@@ -1566,28 +872,5 @@ onMounted(async () => {
   display: inline-block;
 }
 
-.campaign-table {
-  width: 100%;
-}
 
-.campaign-table :deep(th),
-.campaign-table :deep(td) {
-  white-space: nowrap;
-  padding: 10px 12px !important;
-  vertical-align: middle;
-}
-
-.campaign-table :deep(th) {
-  font-weight: 600;
-  font-size: 0.875rem;
-}
-
-.campaign-table :deep(.v-data-table-header) {
-  background-color: rgba(var(--v-theme-surface), 1);
-}
-
-.campaign-table :deep(.v-btn) {
-  font-size: 0.75rem;
-  letter-spacing: 0.5px;
-}
 </style>

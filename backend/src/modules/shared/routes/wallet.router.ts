@@ -30,5 +30,10 @@ router.post('/:customerId/debit', authorize(Permission.CUSTOMER_UPDATE), (req, r
   WalletController.debitPoints(req as AuthenticatedRequest, res).catch(next)
 );
 
+// Adjust wallet (unified credit/debit endpoint)
+router.post('/customers/:customerId/adjust', authorize(Permission.CUSTOMER_UPDATE), (req, res, next) =>
+  WalletController.adjustWallet(req as AuthenticatedRequest, res).catch(next)
+);
+
 export default router;
 
