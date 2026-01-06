@@ -155,7 +155,6 @@ ssh ${REMOTE_USER}@${REMOTE_HOST} << 'ENDSSH'
         ".git"
         ".github"
         ".vscode"
-        "docker-datatabse-stack"
     )
     
     for folder in "${FOLDERS_TO_DELETE[@]}"; do
