@@ -241,7 +241,8 @@ fi
 # ============================================================
 # 1. DATABASE STACK - Verileri koruyarak başlat
 # ============================================================
-if [ "$MODE" = "full" ] || [ "$CONTAINERS_RUNNING" = "false" ]; then
+# NOT: infra modunda (production) database stack kontrol edilir ama tam deploy edilmez
+if [ "$MODE" = "full" ]; then
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${CYAN}🗄️  DATABASE STACK${NC}"
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
@@ -302,8 +303,20 @@ if [ "$MODE" = "full" ] || [ "$CONTAINERS_RUNNING" = "false" ]; then
     echo ""
     echo -e "${GREEN}✅ Database Stack hazır${NC}"
     cd ..
+elif [ "$MODE" = "infra" ] || [ "$MODE" = "build" ]; then
+    echo -e "${BLUE}⏭️  Database Stack kontrolü atlandı${NC}"
+    echo -e "${YELLOW}   (Production modunda - database container'ları kontrol ediliyor)${NC}"
+    
+    # Database container'larının çalışıp çalışmadığını kontrol et
+    if docker ps --format '{{.Names}}' | grep -q "^global_postgres$"; then
+        echo -e "${GREEN}   ✅ PostgreSQL container çalışıyor${NC}"
+    else
+        echo -e "${RED}   ❌ PostgreSQL container çalışmıyor!${NC}"
+        echo -e "${YELLOW}   💡 Database stack'i başlatmak için:${NC}"
+        echo -e "${YELLOW}      cd docker-datatabse-stack && docker-compose up -d${NC}"
+    fi
 else
-    echo -e "${BLUE}⏭️  Database Stack kontrolü atlandı (zaten çalışıyor)${NC}"
+    echo -e "${BLUE}⏭️  Database Stack kontrolü atlandı (container'lar zaten çalışıyor)${NC}"
 fi
 
 # ============================================================
@@ -324,22 +337,11 @@ fi
 # ============================================================
 # 3. TRAEFIK - Reverse proxy ve SSL yönetimi
 # ============================================================
-if [ "$MODE" = "full" ] || [ "$CONTAINERS_RUNNING" = "false" ]; then
+# NOT: infra modunda (production) Traefik atlanır çünkü zaten çalışıyor
+if [ "$MODE" = "full" ] && [ -d "infra/traefik" ]; then
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${CYAN}🔀 TRAEFIK (Reverse Proxy & SSL)${NC}"
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    
-    # infra/traefik dizininin varlığını kontrol et
-    if [ ! -d "infra/traefik" ]; then
-        echo -e "${RED}❌ Hata: infra/traefik dizini bulunamadı!${NC}"
-        echo -e "${YELLOW}💡 infra/traefik dizini deployment için gereklidir.${NC}"
-        exit 1
-    fi
-    
-    if [ ! -d "infra/traefik" ]; then
-        echo -e "${RED}❌ Hata: infra/traefik dizini bulunamadı! Mevcut dizin: $(pwd)${NC}"
-        exit 1
-    fi
     cd infra/traefik
 
     # acme.json dosyası kontrolü
@@ -369,7 +371,12 @@ if [ "$MODE" = "full" ] || [ "$CONTAINERS_RUNNING" = "false" ]; then
     
     cd ../..
 else
-    echo -e "${BLUE}⏭️  Traefik kontrolü atlandı (zaten çalışıyor)${NC}"
+    echo -e "${BLUE}⏭️  Traefik kontrolü atlandı${NC}"
+    if [ "$MODE" = "infra" ]; then
+        echo -e "${YELLOW}   (Production modunda - Traefik zaten çalışıyor olmalı)${NC}"
+    else
+        echo -e "${YELLOW}   (Container'lar zaten çalışıyor)${NC}"
+    fi
 fi
 
 # ============================================================
@@ -468,18 +475,28 @@ echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━�
 
 # global_databases_network kontrolü
 if ! docker network ls | grep -q "global_databases_network"; then
-    echo -e "${YELLOW}⚠️  global_databases_network bulunamadı! Database stack'i çalıştırılıyor...${NC}"
-    cd docker-datatabse-stack
-    docker-compose up -d
-    sleep 5
-    cd ..
+    echo -e "${YELLOW}⚠️  global_databases_network bulunamadı!${NC}"
+    if [ "$MODE" = "full" ] && [ -d "docker-datatabse-stack" ]; then
+        echo -e "${YELLOW}   Database stack'i başlatılıyor...${NC}"
+        cd docker-datatabse-stack
+        docker-compose up -d
+        sleep 5
+        cd ..
+    else
+        echo -e "${YELLOW}   Network elle oluşturuluyor...${NC}"
+        docker network create global_databases_network 2>/dev/null || true
+    fi
 fi
 
 if docker network ls | grep -q "global_databases_network"; then
     echo -e "${GREEN}✅ global_databases_network mevcut${NC}"
 else
     echo -e "${RED}❌ global_databases_network oluşturulamadı!${NC}"
-    exit 1
+    if [ "$MODE" = "full" ]; then
+        exit 1
+    else
+        echo -e "${YELLOW}⚠️  Production modunda - network manuel kontrol edin${NC}"
+    fi
 fi
 
 # ============================================================
@@ -1150,7 +1167,6 @@ ENDSSH
             --exclude='backend/node_modules' \
             --exclude='frontend/src' \
             --exclude='backend/src' \
-            --exclude='docker-datatabse-stack' \
             --exclude='mobile' \
             --exclude='frontend1' \
             --exclude='postman' \
@@ -1215,7 +1231,6 @@ ENDSSH
                 ".git"
                 ".github"
                 ".vscode"
-                "docker-datatabse-stack"
             )
             
             for folder in "${FOLDERS_TO_DELETE[@]}"; do
