@@ -5,14 +5,22 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-# Docker CLI ve PostgreSQL client yükle (Docker socket ve pg_dump için)
-RUN apk add --no-cache docker-cli postgresql-client
+# Docker CLI, PostgreSQL client ve sharp için gerekli build tools yükle
+RUN apk add --no-cache \
+    docker-cli \
+    postgresql-client \
+    python3 \
+    make \
+    g++ \
+    vips-dev
 
 # Package files kopyala
 COPY package*.json ./
 
 # Production dependencies only (dev dependencies excluded for security)
-RUN npm ci --only=production
+# sharp için platform-specific binary yükle
+RUN npm ci --omit=dev && \
+    npm rebuild sharp --platform=linuxmusl --arch=x64
 
 # Önceden build edilmiş dist klasörünü kopyala
 COPY dist ./dist
