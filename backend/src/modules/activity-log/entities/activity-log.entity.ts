@@ -1,7 +1,6 @@
-import { Entity, Column, Index, CreateDateColumn } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { BaseEntity } from '../../shared/entities/base.entity';
 import { Tenant } from '../../tenants/entities/tenant.entity';
-import { ManyToOne, JoinColumn } from 'typeorm';
 
 export enum ActivityLogSeverity {
   DEBUG = 'debug',
@@ -22,19 +21,13 @@ export enum ActorType {
 }
 
 @Entity({ name: 'activity_logs' })
-@Index(['tenantId', 'createdAt'], { where: 'tenant_id IS NOT NULL' })
-@Index(['module', 'createdAt'])
-@Index(['action', 'createdAt'])
-@Index(['severity', 'createdAt'])
-@Index(['status', 'createdAt'])
-@Index(['actorId', 'createdAt'], { where: 'actor_id IS NOT NULL' })
-@Index(['entityType', 'entityId'], { where: 'entity_type IS NOT NULL AND entity_id IS NOT NULL' })
-@Index(['requestId'], { where: 'request_id IS NOT NULL' })
-@Index(['correlationId'], { where: 'correlation_id IS NOT NULL' })
-// GIN index for JSONB metadata (PostgreSQL-specific)
-@Index('IDX_activity_logs_metadata_gin', { synchronize: false }) // Created manually in migration
-// Full-text search on message
-@Index('IDX_activity_logs_message_search', { synchronize: false }) // GIN index with to_tsvector
+@Index(['tenantId', 'createdAt'])
+@Index(['module', 'action'])
+@Index(['severity'])
+@Index(['status'])
+@Index(['actorId'])
+@Index(['entityType', 'entityId'])
+@Index(['requestId'])
 export class ActivityLog extends BaseEntity {
   @ManyToOne(() => Tenant, { nullable: true, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
@@ -43,15 +36,12 @@ export class ActivityLog extends BaseEntity {
   @Column({ name: 'tenant_id', type: 'uuid', nullable: true })
   tenantId?: string | null;
 
-  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
-  createdAt!: Date;
-
   // Module & Action
   @Column({ type: 'varchar', length: 64 })
-  module!: string; // auth, reservations, vehicles, operations, payments, users, settings, integrations, files, api
+  module!: string;
 
   @Column({ type: 'varchar', length: 64 })
-  action!: string; // create, update, delete, checkout, checkin, login, logout, payment_attempt, upload, request
+  action!: string;
 
   // Severity & Status
   @Column({ type: 'varchar', length: 16, default: ActivityLogSeverity.INFO })
@@ -60,7 +50,7 @@ export class ActivityLog extends BaseEntity {
   @Column({ type: 'varchar', length: 16, default: ActivityLogStatus.SUCCESS })
   status!: ActivityLogStatus;
 
-  // Actor (who performed the action)
+  // Actor
   @Column({ name: 'actor_type', type: 'varchar', length: 16, nullable: true })
   actorType?: ActorType | null;
 
@@ -68,17 +58,17 @@ export class ActivityLog extends BaseEntity {
   actorId?: string | null;
 
   @Column({ name: 'actor_label', type: 'varchar', length: 255, nullable: true })
-  actorLabel?: string | null; // Snapshot: name/email
+  actorLabel?: string | null;
 
-  // Entity (what was acted upon)
+  // Entity
   @Column({ name: 'entity_type', type: 'varchar', length: 64, nullable: true })
-  entityType?: string | null; // Reservation, Vehicle, Customer, Payment, etc.
+  entityType?: string | null;
 
   @Column({ name: 'entity_id', type: 'uuid', nullable: true })
   entityId?: string | null;
 
   @Column({ name: 'entity_label', type: 'varchar', length: 255, nullable: true })
-  entityLabel?: string | null; // Snapshot: code, plate, name
+  entityLabel?: string | null;
 
   // Message
   @Column({ type: 'text' })
@@ -91,7 +81,7 @@ export class ActivityLog extends BaseEntity {
   @Column({ name: 'correlation_id', type: 'varchar', length: 64, nullable: true })
   correlationId?: string | null;
 
-  @Column({ type: 'inet', nullable: true })
+  @Column({ type: 'varchar', length: 45, nullable: true })
   ip?: string | null;
 
   @Column({ name: 'user_agent', type: 'text', nullable: true })
@@ -101,7 +91,7 @@ export class ActivityLog extends BaseEntity {
   path?: string | null;
 
   @Column({ type: 'varchar', length: 16, nullable: true })
-  method?: string | null; // GET, POST, PUT, DELETE, PATCH
+  method?: string | null;
 
   @Column({ name: 'http_status', type: 'int', nullable: true })
   httpStatus?: number | null;
@@ -120,7 +110,7 @@ export class ActivityLog extends BaseEntity {
   after?: Record<string, any> | null;
 
   @Column({ type: 'jsonb', nullable: true })
-  diff?: Record<string, any> | null; // Only changed fields
+  diff?: Record<string, any> | null;
 
   // Error Details
   @Column({ name: 'error_code', type: 'varchar', length: 64, nullable: true })
@@ -130,6 +120,5 @@ export class ActivityLog extends BaseEntity {
   errorMessage?: string | null;
 
   @Column({ name: 'stack_trace', type: 'text', nullable: true })
-  stackTrace?: string | null; // Truncated to ~10k chars, admin-only access
+  stackTrace?: string | null;
 }
-
