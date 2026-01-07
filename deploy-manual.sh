@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # SaaS Tour - Manuel Sunucu Deployment
-# Windows/Git Bash üzerinde çalışır - Line endings otomatik düzeltilir
+# Windows/Git Bash üzerinde çalışır
 
 # Renkli output
 GREEN='\033[0;32m'
@@ -25,9 +25,8 @@ echo -e "${YELLOW}📋 Bu script şu adımları gerçekleştirecek:${NC}"
 echo "   1. Backend testleri çalıştır"
 echo "   2. Frontend build (npm run build)"
 echo "   3. Dosyaları sunucuya yükle"
-echo "   4. Line endings düzelt (Windows -> Linux)"
-echo "   5. Container'ları rebuild et"
-echo "   6. Health check yap"
+echo "   4. Container'ları rebuild et"
+echo "   5. Health check yap"
 echo ""
 echo -e "${YELLOW}⚠️  NOT: SSH şifresi istenecek${NC}"
 echo ""
@@ -90,36 +89,25 @@ echo -e "${CYAN}📤 DOSYALAR SUNUCUYA YÜKLENIYOR${NC}"
 echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
-# Backend dist
-echo -e "${YELLOW}1/6 Backend dist yükleniyor...${NC}"
-scp -r backend/dist ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/backend/ || { echo -e "${RED}❌ Hata${NC}"; exit 1; }
-echo -e "${GREEN}✅ Backend dist yüklendi${NC}"
+# Backend (src dahil - Docker içinde build edilecek)
+echo -e "${YELLOW}1/4 Backend yükleniyor...${NC}"
+scp -r backend/src backend/package.json backend/package-lock.json backend/tsconfig.json backend/Dockerfile backend/public ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/backend/ || { echo -e "${RED}❌ Hata${NC}"; exit 1; }
+echo -e "${GREEN}✅ Backend yüklendi${NC}"
 
-# Backend config
-echo -e "${YELLOW}2/6 Backend config yükleniyor...${NC}"
-scp backend/package.json backend/package-lock.json backend/Dockerfile.production ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/backend/ || { echo -e "${RED}❌ Hata${NC}"; exit 1; }
-echo -e "${GREEN}✅ Backend config yüklendi${NC}"
+# Frontend (dist + nginx + Dockerfile)
+echo -e "${YELLOW}2/4 Frontend yükleniyor...${NC}"
+scp -r frontend/dist frontend/nginx frontend/Dockerfile ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/frontend/ || { echo -e "${RED}❌ Hata${NC}"; exit 1; }
+echo -e "${GREEN}✅ Frontend yüklendi${NC}"
 
-# Frontend dist
-echo -e "${YELLOW}3/6 Frontend dist yükleniyor...${NC}"
-scp -r frontend/dist ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/frontend/ || { echo -e "${RED}❌ Hata${NC}"; exit 1; }
-echo -e "${GREEN}✅ Frontend dist yüklendi${NC}"
-
-# Frontend nginx ve config
-echo -e "${YELLOW}4/6 Frontend nginx ve config yükleniyor...${NC}"
-scp -r frontend/nginx ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/frontend/ || { echo -e "${RED}❌ Hata${NC}"; exit 1; }
-scp frontend/Dockerfile.production ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/frontend/ || { echo -e "${RED}❌ Hata${NC}"; exit 1; }
-echo -e "${GREEN}✅ Frontend nginx yüklendi${NC}"
-
-# Infra klasörü
-echo -e "${YELLOW}5/6 Infra klasörü yükleniyor...${NC}"
+# Infra
+echo -e "${YELLOW}3/4 Infra klasörü yükleniyor...${NC}"
 scp -r infra ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/ || { echo -e "${RED}❌ Hata${NC}"; exit 1; }
 echo -e "${GREEN}✅ Infra yüklendi${NC}"
 
-# Worker dist ve config (backend ile aynı)
-echo -e "${YELLOW}6/6 Worker config yükleniyor...${NC}"
-ssh ${REMOTE_USER}@${REMOTE_HOST} "mkdir -p ${REMOTE_PATH}/worker && cp -r ${REMOTE_PATH}/backend/dist ${REMOTE_PATH}/worker/ && cp ${REMOTE_PATH}/backend/package.json ${REMOTE_PATH}/worker/ && cp ${REMOTE_PATH}/backend/package-lock.json ${REMOTE_PATH}/worker/ && cp ${REMOTE_PATH}/backend/Dockerfile.production ${REMOTE_PATH}/worker/"
-echo -e "${GREEN}✅ Worker config yüklendi${NC}"
+# Deploy script
+echo -e "${YELLOW}4/4 Deploy script yükleniyor...${NC}"
+scp deploy.sh ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/ || { echo -e "${RED}❌ Hata${NC}"; exit 1; }
+echo -e "${GREEN}✅ Deploy script yüklendi${NC}"
 
 echo ""
 echo -e "${GREEN}✅ Tüm dosyalar yüklendi${NC}"
@@ -150,8 +138,8 @@ echo ''
 
 # Production temizliği
 echo -e \"\${YELLOW}🧹 Production temizliği...\${NC}\"
-rm -rf frontend/src backend/src frontend1 mobile postman scripts .git .github .vscode 2>/dev/null || true
-find . -maxdepth 2 -type f \\( -name '*.md' -o -name '*.MD' -o -name '*.sql' -o -name '.env.example' -o -name 'tsconfig*.json' -o -name '*.ps1' \\) -delete 2>/dev/null || true
+rm -rf frontend1 mobile postman scripts .git .github .vscode 2>/dev/null || true
+find . -maxdepth 2 -type f \\( -name '*.md' -o -name '*.MD' -o -name '*.sql' -o -name '.env.example' -o -name '*.ps1' \\) -delete 2>/dev/null || true
 echo -e \"\${GREEN}✅ Temizlik tamamlandı\${NC}\"
 echo ''
 
@@ -164,17 +152,13 @@ echo -e \"   • Eski container'lar durduruluyor...\"
 docker-compose stop frontend backend worker 2>/dev/null || true
 docker-compose rm -f frontend backend worker 2>/dev/null || true
 
-# Docker cache temizle (eski image'ları kaldır)
-echo -e \"   • Docker cache temizleniyor...\"
-docker image prune -f 2>/dev/null || true
+# Yeniden build et
+echo -e \"   • Yeni image'lar build ediliyor...\"
+docker-compose build --no-cache frontend backend worker
 
-# Yeniden build et (inline env variables ile)
-echo -e \"   • Yeni image'lar build ediliyor (Dockerfile.production)...\"
-BACKEND_DOCKERFILE=Dockerfile.production FRONTEND_DOCKERFILE=Dockerfile.production docker-compose build --no-cache frontend backend worker
-
-# Container'ları başlat (inline env variables ile)
+# Container'ları başlat
 echo -e \"   • Container'lar başlatılıyor...\"
-BACKEND_DOCKERFILE=Dockerfile.production FRONTEND_DOCKERFILE=Dockerfile.production docker-compose up -d frontend backend worker
+docker-compose up -d frontend backend worker
 
 echo -e \"\${GREEN}✅ Container'lar başlatıldı\${NC}\"
 echo ''
@@ -205,14 +189,6 @@ fi
 # Frontend check
 if docker ps --format '{{.Names}}' | grep -q '^saas-tour-frontend\$'; then
     echo -e \"\${GREEN}✅ Frontend: Çalışıyor\${NC}\"
-    
-    # Assets kontrolü
-    ASSETS_COUNT=\$(docker exec saas-tour-frontend ls /usr/share/nginx/html/assets/ 2>/dev/null | wc -l)
-    if [ \"\$ASSETS_COUNT\" -gt 0 ]; then
-        echo -e \"   \${GREEN}✅ Frontend assets: \$ASSETS_COUNT dosya mevcut\${NC}\"
-    else
-        echo -e \"   \${RED}⚠️  Frontend assets bulunamadı!\${NC}\"
-    fi
 else
     echo -e \"\${RED}❌ Frontend: Çalışmıyor!\${NC}\"
 fi
@@ -233,11 +209,6 @@ fi
 
 echo ''
 
-# Disk kullanımı
-echo -e \"\${BLUE}💾 Disk Kullanımı:\${NC}\"
-df -h \${REMOTE_PATH} | tail -1 | awk '{print \"   Kullanılan: \"\$3\" / Toplam: \"\$2\" (\"\$5\" dolu)\"}'
-echo ''
-
 echo -e \"\${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\${NC}\"
 echo -e \"\${GREEN}✅ DEPLOYMENT TAMAMLANDI!\${NC}\"
 echo -e \"\${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\${NC}\"
@@ -252,6 +223,4 @@ echo -e "${BLUE}🌐 Production URL'leri:${NC}"
 echo -e "   • ${GREEN}https://saastour360.com${NC}"
 echo -e "   • ${GREEN}https://sunset.saastour360.com${NC}"
 echo -e "   • ${GREEN}https://berg.saastour360.com${NC}"
-echo ""
-echo -e "${YELLOW}⚠️  NOT: Cloudflare cache'ini temizlemeyi unutmayın!${NC}"
 echo ""
