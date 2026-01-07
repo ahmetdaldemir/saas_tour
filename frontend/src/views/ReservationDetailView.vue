@@ -923,7 +923,7 @@ const savePickup = async () => {
         // Önce mevcut sözleşmeyi kontrol et
         let contractId: string | null = null;
         try {
-          const contractsRes = await http.get('/api/rentacar/contracts');
+          const contractsRes = await http.get('/rentacar/contracts');
           const contracts = contractsRes.data?.data || contractsRes.data || [];
           const existingContract = contracts.find((c: any) => c.reservationId === reservation.value.id);
           if (existingContract) {
@@ -936,12 +936,12 @@ const savePickup = async () => {
         // Sözleşme yoksa oluştur
         if (!contractId) {
           // Varsayılan template'i al
-          const templatesRes = await http.get('/api/rentacar/contracts/templates');
+          const templatesRes = await http.get('/rentacar/contracts/templates');
           const templates = templatesRes.data?.data || templatesRes.data || [];
           const defaultTemplate = templates.find((t: any) => t.isDefault) || templates[0];
           
           if (defaultTemplate) {
-            const createRes = await http.post('/api/rentacar/contracts', {
+            const createRes = await http.post('/rentacar/contracts', {
               reservationId: reservation.value.id,
               vehicleId: vehicleId,
               templateId: defaultTemplate.id,
@@ -960,7 +960,7 @@ const savePickup = async () => {
             window.open(pdfUrl, '_blank');
           } else {
             // PDF URL yoksa endpoint'den direkt aç
-            const pdfEndpoint = `/api/rentacar/contracts/${contractId}/pdf`;
+            const pdfEndpoint = `/rentacar/contracts/${contractId}/pdf`;
             window.open(pdfEndpoint, '_blank');
           }
         }
@@ -1022,7 +1022,7 @@ const saveReturn = async () => {
       if (vehicleId) {
         // Hasar tespit analizini başlat
         const detectionRes = await http.post(
-          `/api/rentacar/vehicles/${vehicleId}/reservations/${reservation.value.id}/damage-detection`
+          `/rentacar/vehicles/${vehicleId}/reservations/${reservation.value.id}/damage-detection`
         );
         
         const detection = detectionRes.data?.data || detectionRes.data;
@@ -1397,7 +1397,7 @@ const exportPDF = async () => {
   
   try {
     // PDF export endpoint'i yoksa, yeni bir tab'da rezervasyon detayını aç
-    const url = `/api/reservations/${reservation.value.id}/pdf`;
+    const url = `/reservations/${reservation.value.id}/pdf`;
     window.open(url, '_blank');
   } catch (error: any) {
     showSnackbar(`PDF indirilemedi: ${error.message}`, 'error');
@@ -1505,7 +1505,7 @@ const changeVehicle = async () => {
           return { '': 'Tenant bilgisi bulunamadı' };
         }
         
-        const vehiclesRes = await http.get('/api/rentacar/vehicles/search', {
+        const vehiclesRes = await http.get('/rentacar/vehicles/search', {
           params: {
             tenantId,
             pickupLocationId,
@@ -1527,7 +1527,7 @@ const changeVehicle = async () => {
         const availableVehicleIds = new Set(availableVehicles.map((v: any) => v.id));
         
         // Tüm plakaları getir
-        const platesRes = await http.get('/api/rentacar/plates');
+        const platesRes = await http.get('/rentacar/plates');
         const allPlates = platesRes.data || [];
         
         // Sadece müsait araçların plakalarını filtrele
@@ -1674,7 +1674,7 @@ const changeLocation = async () => {
   
   try {
     // Lokasyonları yükle
-    const locationsRes = await http.get('/api/rentacar/locations');
+    const locationsRes = await http.get('/rentacar/locations');
     const locations = locationsRes.data?.data || locationsRes.data || [];
     
     const { value: formValues } = await Swal.fire({

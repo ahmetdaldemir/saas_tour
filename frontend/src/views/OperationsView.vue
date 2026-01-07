@@ -197,7 +197,7 @@ const formatDateTime = (dateTime: string): string => {
 const loadOperations = async () => {
   loading.value = true;
   try {
-    const response = await http.get('/api/rentacar/operations', {
+    const response = await http.get('/rentacar/operations', {
       params: { date: selectedDate.value },
     });
     pickups.value = response.data.pickups || [];

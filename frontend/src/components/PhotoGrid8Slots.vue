@@ -151,7 +151,7 @@ const handleFileSelect = async (event: Event, slotIndex: number) => {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await http.post('/api/settings/upload', formData, {
+    const response = await http.post('/settings/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

@@ -181,7 +181,7 @@ const loadData = async () => {
     if (reservationResponse.data.metadata?.vehicleId) {
       try {
         const vehicleResponse = await http.get(
-          `/api/rentacar/vehicles/${reservationResponse.data.metadata.vehicleId}`
+          `/rentacar/vehicles/${reservationResponse.data.metadata.vehicleId}`
         );
         const vehicle = vehicleResponse.data;
         vehicleInfo.value = {

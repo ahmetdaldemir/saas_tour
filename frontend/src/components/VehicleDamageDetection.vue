@@ -384,7 +384,7 @@ const processDetection = async () => {
     // First, try to load photos from operations system
     try {
       const damageCompareResponse = await http.get(
-        `/api/rentacar/operations/damage-compare/${props.reservationId}`
+        `/rentacar/operations/damage-compare/${props.reservationId}`
       );
       const damageCompare = damageCompareResponse.data;
       
@@ -447,7 +447,7 @@ const processDetection = async () => {
     }
 
     const response = await http.post(
-      `/api/rentacar/vehicles/${vehicleId}/reservations/${props.reservationId}/damage-detection`,
+      `/rentacar/vehicles/${vehicleId}/reservations/${props.reservationId}/damage-detection`,
       {
         checkinPhotoUrls: checkinUrls,
         checkoutPhotoUrls: checkoutUrls,

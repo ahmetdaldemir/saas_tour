@@ -750,7 +750,7 @@ const loadStats = async () => {
     }
 
     // Load vehicle count
-    const vehiclesRes = await http.get('/api/rentacar/vehicles', {
+    const vehiclesRes = await http.get('/rentacar/vehicles', {
       params: { limit: 1 },
     });
     stats.value.activeVehicles = vehiclesRes.data?.total || 0;
@@ -843,7 +843,7 @@ const checkUpcomingReturns = (reservations: any[]) => {
 
 const loadVehicleStats = async () => {
   try {
-    const res = await http.get('/api/rentacar/vehicles', {
+    const res = await http.get('/rentacar/vehicles', {
       params: { limit: 1000 },
     });
     const vehicles = res.data?.data || res.data || [];
@@ -900,7 +900,7 @@ const viewPayment = (reservationId: string) => {
 
 const loadCurrencies = async () => {
   try {
-    const res = await http.get('/api/currency');
+    const res = await http.get('/currency');
     currencies.value = (res.data?.data || res.data || []).filter((c: any) => c.isActive);
   } catch (error) {
     console.error('Failed to load currencies:', error);
@@ -1040,7 +1040,7 @@ const loadPaymentReminders = async () => {
 const loadMaintenanceVehicles = async () => {
   try {
     // Load vehicles that need maintenance
-    const res = await http.get('/api/rentacar/vehicles', {
+    const res = await http.get('/rentacar/vehicles', {
       params: { limit: 1000 },
     });
     
@@ -1078,7 +1078,7 @@ const loadMaintenanceVehicles = async () => {
 const loadInspectionVehicles = async () => {
   try {
     // Load vehicles that need inspection
-    const res = await http.get('/api/rentacar/vehicles', {
+    const res = await http.get('/rentacar/vehicles', {
       params: { limit: 1000 },
     });
     
