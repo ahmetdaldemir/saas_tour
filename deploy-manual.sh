@@ -94,9 +94,9 @@ echo -e "${YELLOW}1/4 Backend yükleniyor...${NC}"
 scp -r backend/src backend/package.json backend/package-lock.json backend/tsconfig.json backend/Dockerfile backend/public ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/backend/ || { echo -e "${RED}❌ Hata${NC}"; exit 1; }
 echo -e "${GREEN}✅ Backend yüklendi${NC}"
 
-# Frontend (dist + nginx + Dockerfile)
+# Frontend (src + config + nginx + Dockerfile)
 echo -e "${YELLOW}2/4 Frontend yükleniyor...${NC}"
-scp -r frontend/dist frontend/nginx frontend/Dockerfile ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/frontend/ || { echo -e "${RED}❌ Hata${NC}"; exit 1; }
+scp -r frontend/src frontend/nginx frontend/Dockerfile frontend/package.json frontend/package-lock.json frontend/tsconfig.json frontend/tsconfig.node.json frontend/vite.config.ts frontend/index.html ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/frontend/ || { echo -e "${RED}❌ Hata${NC}"; exit 1; }
 echo -e "${GREEN}✅ Frontend yüklendi${NC}"
 
 # Infra
