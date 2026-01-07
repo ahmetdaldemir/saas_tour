@@ -97,7 +97,7 @@ echo -e "${GREEN}✅ Backend dist yüklendi${NC}"
 
 # Backend config
 echo -e "${YELLOW}2/6 Backend config yükleniyor...${NC}"
-scp backend/package.json backend/Dockerfile.production ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/backend/ || { echo -e "${RED}❌ Hata${NC}"; exit 1; }
+scp backend/package.json backend/package-lock.json backend/Dockerfile.production ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/backend/ || { echo -e "${RED}❌ Hata${NC}"; exit 1; }
 echo -e "${GREEN}✅ Backend config yüklendi${NC}"
 
 # Frontend dist
@@ -118,7 +118,7 @@ echo -e "${GREEN}✅ Infra yüklendi${NC}"
 
 # Worker dist ve config (backend ile aynı)
 echo -e "${YELLOW}6/6 Worker config yükleniyor...${NC}"
-ssh ${REMOTE_USER}@${REMOTE_HOST} "mkdir -p ${REMOTE_PATH}/worker && cp -r ${REMOTE_PATH}/backend/dist ${REMOTE_PATH}/worker/ && cp ${REMOTE_PATH}/backend/package.json ${REMOTE_PATH}/worker/ && cp ${REMOTE_PATH}/backend/Dockerfile.production ${REMOTE_PATH}/worker/"
+ssh ${REMOTE_USER}@${REMOTE_HOST} "mkdir -p ${REMOTE_PATH}/worker && cp -r ${REMOTE_PATH}/backend/dist ${REMOTE_PATH}/worker/ && cp ${REMOTE_PATH}/backend/package.json ${REMOTE_PATH}/worker/ && cp ${REMOTE_PATH}/backend/package-lock.json ${REMOTE_PATH}/worker/ && cp ${REMOTE_PATH}/backend/Dockerfile.production ${REMOTE_PATH}/worker/"
 echo -e "${GREEN}✅ Worker config yüklendi${NC}"
 
 echo ""
