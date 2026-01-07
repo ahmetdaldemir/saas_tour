@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev && npm install sharp@0.34.5 --os=linux --cpu=x64
 
 COPY --from=builder /app/dist ./dist
 COPY public ./public
