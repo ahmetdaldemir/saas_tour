@@ -159,22 +159,22 @@ echo ''
 echo -e \"\${YELLOW}🔨 Container'lar rebuild ediliyor...\${NC}\"
 cd infra
 
-# Environment variables
-export FRONTEND_DOCKERFILE=Dockerfile.production
-export BACKEND_DOCKERFILE=Dockerfile.production
-
 # Container'ları durdur ve kaldır
 echo -e \"   • Eski container'lar durduruluyor...\"
 docker-compose stop frontend backend worker 2>/dev/null || true
 docker-compose rm -f frontend backend worker 2>/dev/null || true
 
-# Yeniden build et
-echo -e \"   • Yeni image'lar build ediliyor...\"
-docker-compose build --no-cache frontend backend worker
+# Docker cache temizle (eski image'ları kaldır)
+echo -e \"   • Docker cache temizleniyor...\"
+docker image prune -f 2>/dev/null || true
 
-# Container'ları başlat
+# Yeniden build et (inline env variables ile)
+echo -e \"   • Yeni image'lar build ediliyor (Dockerfile.production)...\"
+BACKEND_DOCKERFILE=Dockerfile.production FRONTEND_DOCKERFILE=Dockerfile.production docker-compose build --no-cache frontend backend worker
+
+# Container'ları başlat (inline env variables ile)
 echo -e \"   • Container'lar başlatılıyor...\"
-docker-compose up -d frontend backend worker
+BACKEND_DOCKERFILE=Dockerfile.production FRONTEND_DOCKERFILE=Dockerfile.production docker-compose up -d frontend backend worker
 
 echo -e \"\${GREEN}✅ Container'lar başlatıldı\${NC}\"
 echo ''
