@@ -6,7 +6,10 @@ import path from 'path';
 import fs from 'fs';
 import { registerRoutes } from './routes';
 import { requestLogger } from './middleware/request-logger.middleware';
+import { requestIdMiddleware } from './middleware/request-id.middleware';
 import { tenantMiddleware } from './middleware/tenant.middleware';
+import { activityLogMiddleware } from './middleware/activity-log.middleware';
+import { errorLogMiddleware } from './middleware/error-log.middleware';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.middleware';
 import { logger } from './utils/logger';
 
@@ -107,6 +110,9 @@ export const createApp = (): Express => {
   }));
   
   app.use(json());
+
+  // Request ID middleware (must be first for tracing)
+  app.use(requestIdMiddleware);
 
   // Request logging middleware (should be early in the chain)
   // Skip Socket.io requests (they're logged by Socket.io itself)
@@ -225,11 +231,17 @@ export const createApp = (): Express => {
   // Must be AFTER public routes like /widget.js and Socket.io skip
   app.use(tenantMiddleware);
 
+  // Activity log middleware (logs selected routes automatically)
+  app.use(activityLogMiddleware);
+
   // Register all routes
   registerRoutes(app);
 
   // 404 handler (must be after all routes)
   app.use(notFoundHandler);
+
+  // Error log middleware (logs unhandled errors)
+  app.use(errorLogMiddleware);
 
   // Global error handler (must be last)
   app.use(errorHandler);

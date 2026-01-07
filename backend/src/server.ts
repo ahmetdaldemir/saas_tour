@@ -5,6 +5,7 @@ import { loadEnv } from './config/env';
 import { startCurrencyScheduler } from './services/currency-scheduler.service';
 import { startFinanceReminderScheduler } from './services/finance-reminder-scheduler.service';
 import { startDatabaseBackupScheduler } from './services/database-backup.service';
+import { startActivityLogCleanupScheduler } from './services/activity-log-cleanup.service';
 import { ChatSocketServer } from './modules/chat/websocket/chat-socket.server';
 import { logger } from './utils/logger';
 import { getRedisClient } from './config/redis.config';
@@ -79,6 +80,7 @@ const start = async () => {
     startCurrencyScheduler();
     startFinanceReminderScheduler();
     startDatabaseBackupScheduler();
+    startActivityLogCleanupScheduler();
   }
 
   // Listen on all network interfaces (0.0.0.0) to allow connections from emulators and other devices

@@ -6,8 +6,17 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../utils/logger';
 
+declare global {
+  namespace Express {
+    interface Request {
+      requestStartTime?: number;
+    }
+  }
+}
+
 export const requestLogger = (req: Request, res: Response, next: NextFunction): void => {
   const startTime = Date.now();
+  req.requestStartTime = startTime;
 
   // Log request start
   logger.info(`${req.method} ${req.path}`, {

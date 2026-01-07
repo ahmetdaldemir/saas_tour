@@ -838,7 +838,7 @@ const loadReservation = async () => {
 const loadOperationsData = async (reservationId: string) => {
   try {
     // Load pickup data
-    const pickupResponse = await http.get(`/api/rentacar/operations/pickup/${reservationId}`);
+    const pickupResponse = await http.get(`/rentacar/operations/pickup/${reservationId}`);
     if (pickupResponse.data) {
       pickupData.value.odometerKm = pickupResponse.data.odometerKm;
       pickupData.value.fuelLevel = pickupResponse.data.fuelLevel || '';
@@ -846,14 +846,14 @@ const loadOperationsData = async (reservationId: string) => {
     }
     
     // Load return data
-    const returnResponse = await http.get(`/api/rentacar/operations/return/${reservationId}`);
+    const returnResponse = await http.get(`/rentacar/operations/return/${reservationId}`);
     if (returnResponse.data) {
       returnData.value.odometerKm = returnResponse.data.odometerKm;
       returnData.value.fuelLevel = returnResponse.data.fuelLevel || '';
     }
     
     // Load damage comparison
-    const damageResponse = await http.get(`/api/rentacar/operations/damage-compare/${reservationId}`);
+    const damageResponse = await http.get(`/rentacar/operations/damage-compare/${reservationId}`);
     if (damageResponse.data) {
       damageComparison.value = {
         before: damageResponse.data.pickupPhotos?.[0]?.url || null,
@@ -907,7 +907,7 @@ const savePickup = async () => {
       .map((photo, index) => photo ? { slotIndex: index, mediaUrl: photo } : null)
       .filter((p): p is { slotIndex: number; mediaUrl: string } => p !== null);
     
-    await http.post(`/api/rentacar/operations/pickup/${reservation.value.id}/complete`, {
+    await http.post(`/rentacar/operations/pickup/${reservation.value.id}/complete`, {
       odometerKm: pickupData.value.odometerKm,
       fuelLevel: pickupData.value.fuelLevel,
       photos,
@@ -952,7 +952,7 @@ const savePickup = async () => {
         
         // PDF oluştur ve yazdır
         if (contractId) {
-          const pdfRes = await http.post(`/api/rentacar/contracts/${contractId}/generate-pdf`);
+          const pdfRes = await http.post(`/rentacar/contracts/${contractId}/generate-pdf`);
           const pdfUrl = pdfRes.data?.data?.pdfUrl || pdfRes.data?.pdfUrl;
           
           if (pdfUrl) {
@@ -1008,7 +1008,7 @@ const saveReturn = async () => {
       }
     }
     
-    await http.post(`/api/rentacar/operations/return/${reservation.value.id}/complete`, {
+    await http.post(`/rentacar/operations/return/${reservation.value.id}/complete`, {
       odometerKm: returnData.value.odometerKm,
       fuelLevel: returnData.value.fuelLevel,
       photos,

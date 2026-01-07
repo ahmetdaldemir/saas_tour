@@ -235,7 +235,7 @@ const formatFuelLevel = (level: string): string => {
 const loadData = async () => {
   try {
     // Load return data (draft if exists)
-    const returnResponse = await http.get(`/api/rentacar/operations/return/${reservationId}`);
+    const returnResponse = await http.get(`/rentacar/operations/return/${reservationId}`);
     if (returnResponse.data.return) {
       odometerKm.value = returnResponse.data.return.odometerKm;
       fuelLevel.value = returnResponse.data.return.fuelLevel || '';
@@ -255,14 +255,14 @@ const loadData = async () => {
     }
 
     // Load pickup data for comparison
-    const pickupResponse = await http.get(`/api/rentacar/operations/pickup/${reservationId}`);
+    const pickupResponse = await http.get(`/rentacar/operations/pickup/${reservationId}`);
     if (pickupResponse.data.pickup) {
       pickupKm.value = pickupResponse.data.pickup.odometerKm;
       pickupFuel.value = pickupResponse.data.pickup.fuelLevel;
     }
 
     // Load reservation details
-    const reservationResponse = await http.get(`/api/reservations/${reservationId}`);
+    const reservationResponse = await http.get(`/reservations/${reservationId}`);
     reservation.value = reservationResponse.data;
 
     // Load vehicle info if available
@@ -348,7 +348,7 @@ const handlePhotoUpload = (slotIndex: number, url: string) => {
 const saveDraft = async () => {
   loading.value = true;
   try {
-    await http.post(`/api/rentacar/operations/return/${reservationId}/draft`, {
+    await http.post(`/rentacar/operations/return/${reservationId}/draft`, {
       odometerKm: odometerKm.value,
       fuelLevel: fuelLevel.value,
       photos: photos.value,
@@ -396,7 +396,7 @@ const completeReturn = async () => {
 
   loading.value = true;
   try {
-    const response = await http.post(`/api/rentacar/operations/return/${reservationId}/complete`, {
+    const response = await http.post(`/rentacar/operations/return/${reservationId}/complete`, {
       odometerKm: odometerKm.value,
       fuelLevel: fuelLevel.value,
       photos: photos.value,

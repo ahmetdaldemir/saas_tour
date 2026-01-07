@@ -87,6 +87,7 @@ import { OpsTask } from '../modules/ops/entities/ops-task.entity';
 import { CrmPageCategory } from '../modules/crm/entities/crm-page-category.entity';
 import { CrmPage } from '../modules/crm/entities/crm-page.entity';
 import { AdminUser } from '../modules/admin/entities/admin-user.entity';
+import { ActivityLog } from '../modules/activity-log/entities/activity-log.entity';
 
 const env = loadEnv();
 
@@ -191,6 +192,7 @@ export const AppDataSource = new DataSource({
           CrmPageCategory,
           CrmPage,
           AdminUser,
+          ActivityLog,
   ],
   // Migrations disabled - using TypeORM synchronize instead
   // migrations: ['dist/migrations/*.js'],

@@ -434,7 +434,7 @@ const processDetection = async () => {
     let vehicleId = props.vehicleId;
     if (!vehicleId) {
       try {
-        const reservationResponse = await http.get(`/api/reservations/${props.reservationId}`);
+        const reservationResponse = await http.get(`/reservations/${props.reservationId}`);
         vehicleId = reservationResponse.data.metadata?.vehicleId;
         if (!vehicleId) {
           throw new Error('Vehicle ID not found in reservation');

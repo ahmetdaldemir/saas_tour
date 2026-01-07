@@ -740,7 +740,7 @@ const loadStats = async () => {
 
     // Load today's operations
     const today = new Date().toISOString().split('T')[0];
-    const operationsRes = await http.get(`/api/rentacar/operations/list`, {
+    const operationsRes = await http.get(`/rentacar/operations/list`, {
       params: { date: today },
     });
     
@@ -766,7 +766,7 @@ const loadStats = async () => {
 const loadOperations = async () => {
   try {
     const today = new Date().toISOString().split('T')[0];
-    const res = await http.get(`/api/rentacar/operations/list`, {
+    const res = await http.get(`/rentacar/operations/list`, {
       params: { date: today },
     });
     

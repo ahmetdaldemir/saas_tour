@@ -49,6 +49,8 @@ import marketplaceRouter from '../modules/marketplace/routes/marketplace.router'
 import walletRouter from '../modules/shared/routes/wallet.router';
 import couponRouter from '../modules/shared/routes/coupon.router';
 import invoiceRouter from '../modules/shared/routes/invoice.router';
+import customerAuthRouter from '../modules/shared/routes/customer-auth.router';
+import activityLogRouter from '../modules/activity-log/routes/activity-log.router';
 
 export const registerRoutes = (app: Express) => {
   app.get('/health', (_req, res) => {
@@ -62,6 +64,7 @@ export const registerRoutes = (app: Express) => {
   app.use('/api/chat/widget', chatWidgetRouter);
 
   app.use('/api/auth', authRouter);
+  app.use('/api/customers/auth', customerAuthRouter);
   app.use('/api/languages', languageRouter);
   app.use('/api/destinations', destinationRouter);
   app.use('/api/hotels', hotelRouter);
@@ -111,6 +114,7 @@ export const registerRoutes = (app: Express) => {
   app.use('/api/admin/monitoring', monitoringRouter);
   app.use('/api/admin', tenantMonitoringRouter);
   app.use('/api/admin/auth', adminAuthRouter);
+  app.use('/api/admin/activity-logs', activityLogRouter);
   app.use('/api/marketplace', marketplaceRouter);
   app.use('/api/wallet', walletRouter);
   app.use('/api/coupons', couponRouter);

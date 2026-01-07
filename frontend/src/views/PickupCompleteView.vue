@@ -160,7 +160,7 @@ const canComplete = computed(() => {
 const loadData = async () => {
   try {
     // Load pickup data (draft if exists)
-    const resResponse = await http.get(`/api/rentacar/operations/pickup/${reservationId}`);
+    const resResponse = await http.get(`/rentacar/operations/pickup/${reservationId}`);
     if (resResponse.data.pickup) {
       odometerKm.value = resResponse.data.pickup.odometerKm;
       fuelLevel.value = resResponse.data.pickup.fuelLevel || '';
@@ -174,7 +174,7 @@ const loadData = async () => {
     }
 
     // Load reservation details
-    const reservationResponse = await http.get(`/api/reservations/${reservationId}`);
+    const reservationResponse = await http.get(`/reservations/${reservationId}`);
     reservation.value = reservationResponse.data;
 
     // Load vehicle info if available
@@ -214,7 +214,7 @@ const handlePhotoUpload = (slotIndex: number, url: string) => {
 const saveDraft = async () => {
   loading.value = true;
   try {
-    await http.post(`/api/rentacar/operations/pickup/${reservationId}/draft`, {
+    await http.post(`/rentacar/operations/pickup/${reservationId}/draft`, {
       odometerKm: odometerKm.value,
       fuelLevel: fuelLevel.value,
       photos: photos.value,
@@ -255,7 +255,7 @@ const completePickup = async () => {
 
   loading.value = true;
   try {
-    await http.post(`/api/rentacar/operations/pickup/${reservationId}/complete`, {
+    await http.post(`/rentacar/operations/pickup/${reservationId}/complete`, {
       odometerKm: odometerKm.value,
       fuelLevel: fuelLevel.value,
       photos: photos.value,
