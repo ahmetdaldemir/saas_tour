@@ -1,4 +1,4 @@
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
@@ -6,17 +6,18 @@ COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
 
-FROM node:20-alpine
+FROM node:20-slim
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Docker CLI, PostgreSQL client ve sharp için gerekli native dependencies
-RUN apk add --no-cache docker-cli postgresql-client vips-dev
+# Docker CLI ve PostgreSQL client
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    docker.io \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY package*.json ./
-
-# Production dependencies - sharp için platform-spesifik install
-RUN npm ci --omit=dev --include=optional
+RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
 COPY public ./public
