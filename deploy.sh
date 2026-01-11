@@ -1148,7 +1148,24 @@ if [ "$DEPLOY_TO_SERVER" = "true" ] && [ "$MODE" != "seed" ] && [ "$MODE" != "se
     fi
     
     if command -v sshpass &> /dev/null; then
+        # SSHPASS environment variable'ını set et (tüm sshpass komutları için gerekli)
+        export SSHPASS="$SFTP_PASSWORD"
+        
+        # Güvenlik: Proje root dizinine geç ve doğrula
+        cd "$SCRIPT_DIR" || {
+            echo -e "${RED}❌ HATA: Proje dizinine geçilemedi!${NC}"
+            exit 1
+        }
+        
+        # Proje dizini doğrulaması (backend ve frontend klasörleri olmalı)
+        if [ ! -d "backend" ] || [ ! -d "frontend" ]; then
+            echo -e "${RED}❌ HATA: Geçersiz proje dizini! (backend/ veya frontend/ bulunamadı)${NC}"
+            echo -e "${RED}   Mevcut dizin: $(pwd)${NC}"
+            exit 1
+        fi
+        
         echo -e "${YELLOW}📤 Sunucuya dosyalar yükleniyor...${NC}"
+        echo -e "${BLUE}   Kaynak dizin: $(pwd)${NC}"
         
         # Önce hedef dizinleri oluştur
         echo -e "${YELLOW}📁 Hedef dizinler oluşturuluyor...${NC}"
@@ -1163,7 +1180,7 @@ if [ "$DEPLOY_TO_SERVER" = "true" ] && [ "$MODE" != "seed" ] && [ "$MODE" != "se
 ENDSSH
         
         # RSync ile dosyaları yükle (exclude listesi ile, hata toleransı ile)
-        export SSHPASS="$SFTP_PASSWORD"
+        # ÖNEMLİ: $SCRIPT_DIR kullanarak kesinlikle proje dizininden yükle
         sshpass -e rsync -avz --partial --inplace --delete \
             -e "ssh -p 22 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
             --exclude='.git' \
@@ -1189,16 +1206,16 @@ ENDSSH
             --exclude='backend/dist/public/uploads/*' \
             --include='backend/Dockerfile.production' \
             --include='frontend/Dockerfile.production' \
-            ./ ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/ 2>&1 | grep -v "failed: No such file or directory" || {
+            "$SCRIPT_DIR/" ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/ 2>&1 | grep -v "failed: No such file or directory" || {
                 echo -e "${YELLOW}⚠️  Bazı dosyalar yüklenemedi (normal olabilir)${NC}"
             }
         
         # postman dizinini ayrı olarak yükle (varsa)
-        if [ -d "postman" ]; then
+        if [ -d "$SCRIPT_DIR/postman" ]; then
             echo -e "${YELLOW}📤 Postman dosyaları yükleniyor...${NC}"
             sshpass -e rsync -avz --partial --inplace \
                 -e "ssh -p 22 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null" \
-                postman/ ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/postman/ 2>&1 | grep -v "failed: No such file or directory" || true
+                "$SCRIPT_DIR/postman/" ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}/postman/ 2>&1 | grep -v "failed: No such file or directory" || true
         fi
         
         echo -e "${GREEN}✅ Dosyalar sunucuya yüklendi${NC}"

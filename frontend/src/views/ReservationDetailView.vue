@@ -1,602 +1,676 @@
 <template>
-  <div class="reservation-detail-page">
+  <v-container fluid class="pa-0">
     <!-- Loading State -->
-    <div v-if="loading" class="loading-container">
-      <div class="spinner"></div>
-      <p>Yükleniyor...</p>
-    </div>
+    <v-container v-if="loading" class="d-flex flex-column align-center justify-center" style="min-height: 400px;">
+      <v-progress-circular indeterminate color="primary" size="48" />
+      <p class="text-body-1 text-medium-emphasis mt-4">Yükleniyor...</p>
+    </v-container>
 
     <!-- Error State -->
-    <div v-else-if="!reservation" class="error-container">
-      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="12" y1="8" x2="12" y2="12"/>
-        <line x1="12" y1="16" x2="12.01" y2="16"/>
-      </svg>
-      <p>Rezervasyon bulunamadı</p>
-    </div>
+    <v-container v-else-if="!reservation" class="d-flex flex-column align-center justify-center" style="min-height: 400px;">
+      <v-icon icon="mdi-alert-circle-outline" size="64" color="grey" />
+      <p class="text-body-1 text-medium-emphasis mt-4">Rezervasyon bulunamadı</p>
+    </v-container>
 
     <!-- Main Content -->
-    <div v-else>
+    <template v-else>
       <!-- 1. STICKY TOP HEADER -->
-      <header class="sticky-header">
-        <div class="header-left">
-          <button class="back-btn" @click="goBack">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
-            <span>Rezervasyonlar</span>
-          </button>
-          <div class="header-info">
-            <h1 class="reservation-code">{{ reservation.reference }}</h1>
-            <span class="created-date">{{ formatDate(reservation.createdAt) }}</span>
+      <v-app-bar flat color="surface" class="border-b">
+        <v-btn variant="text" @click="goBack" class="mr-2">
+          <v-icon start>mdi-arrow-left</v-icon>
+          Rezervasyonlar
+        </v-btn>
+        
+        <div class="d-flex flex-column">
+          <span class="text-h6 font-weight-bold">{{ reservation.reference }}</span>
+          <span class="text-caption text-medium-emphasis">{{ formatDate(reservation.createdAt) }}</span>
           </div>
-        </div>
-        <div class="header-center">
-          <div class="status-chips">
-            <span :class="['status-chip', `chip-${getPaymentStatus()}`]">
+        
+        <v-spacer />
+        
+        <div class="d-flex ga-2 mr-4">
+          <v-chip :color="getPaymentStatusColor()" size="small" variant="tonal">
               {{ getPaymentStatusLabel() }}
-            </span>
-            <span :class="['status-chip', `chip-${reservation.status}`]">
+          </v-chip>
+          <v-chip :color="getStatusColor(reservation.status)" size="small" variant="tonal">
               {{ getStatusLabel(reservation.status) }}
-            </span>
-            <span v-if="reservation.type === 'rentacar'" class="status-chip chip-vehicle">
+          </v-chip>
+          <v-chip v-if="reservation.type === 'rentacar'" color="grey" size="small" variant="tonal">
               Araç
-            </span>
+          </v-chip>
           </div>
-        </div>
-        <div class="header-actions">
-          <button class="action-btn" @click="editReservation" :disabled="isReadOnly || isCancelled || hasCheckout">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
+        
+        <v-btn variant="outlined" size="small" class="mr-2" @click="editReservation" :disabled="isReadOnly || isCancelled || hasCheckout">
+          <v-icon start size="16">mdi-pencil</v-icon>
             Düzenle
-          </button>
-          <button class="action-btn" @click="exportPDF">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
+        </v-btn>
+        
+        <v-btn variant="outlined" size="small" class="mr-2" @click="exportPDF">
+          <v-icon start size="16">mdi-download</v-icon>
             PDF İndir
-          </button>
-          <div class="send-menu">
-            <button class="action-btn" @click="showSendMenu = !showSendMenu" :disabled="isReadOnly || isCancelled">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                <polyline points="22,6 12,13 2,6"/>
-              </svg>
+        </v-btn>
+        
+        <v-menu>
+          <template v-slot:activator="{ props }">
+            <v-btn variant="outlined" size="small" class="mr-2" v-bind="props" :disabled="isReadOnly || isCancelled">
+              <v-icon start size="16">mdi-email</v-icon>
               Gönder
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 4px;">
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </button>
-            <div v-if="showSendMenu" class="dropdown-menu send-dropdown">
-              <button 
+              <v-icon end size="16">mdi-chevron-down</v-icon>
+            </v-btn>
+          </template>
+          <v-list density="compact">
+            <v-list-item 
                 v-if="reservation?.status === 'pending'" 
                 @click="sendConfirmationEmail"
                 :disabled="sendingEmail"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                  <polyline points="22,6 12,13 2,6"/>
-                </svg>
-                Onay Maili Gönder
-              </button>
-              <button 
+              <template v-slot:prepend>
+                <v-icon size="16">mdi-email-check</v-icon>
+              </template>
+              <v-list-item-title>Onay Maili Gönder</v-list-item-title>
+            </v-list-item>
+            <v-list-item 
                 v-if="reservation?.status === 'confirmed' || reservation?.status === 'pending'" 
                 @click="sendCancellationEmail"
                 :disabled="sendingEmail"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="15" y1="9" x2="9" y2="15"/>
-                  <line x1="9" y1="9" x2="15" y2="15"/>
-                </svg>
-                İptal Maili Gönder
-              </button>
-            </div>
-          </div>
-          <div class="more-menu">
-            <button class="action-btn" @click="showMoreMenu = !showMoreMenu">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="1"/>
-                <circle cx="12" cy="5" r="1"/>
-                <circle cx="12" cy="19" r="1"/>
-              </svg>
-            </button>
-            <div v-if="showMoreMenu" class="dropdown-menu">
-              <button @click="cancelReservation">Rezervasyonu İptal Et</button>
-              <button @click="duplicateReservation">Kopyala</button>
-              <button @click="archiveReservation">Arşivle</button>
-            </div>
-          </div>
-        </div>
-      </header>
+              <template v-slot:prepend>
+                <v-icon size="16">mdi-email-off</v-icon>
+              </template>
+              <v-list-item-title>İptal Maili Gönder</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+        
+        <v-menu>
+          <template v-slot:activator="{ props }">
+            <v-btn variant="outlined" size="small" icon v-bind="props">
+              <v-icon size="16">mdi-dots-vertical</v-icon>
+            </v-btn>
+          </template>
+          <v-list density="compact">
+            <v-list-item @click="cancelReservation">
+              <v-list-item-title>Rezervasyonu İptal Et</v-list-item-title>
+            </v-list-item>
+            <v-list-item @click="duplicateReservation">
+              <v-list-item-title>Kopyala</v-list-item-title>
+            </v-list-item>
+            <v-list-item @click="archiveReservation">
+              <v-list-item-title>Arşivle</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-menu>
+      </v-app-bar>
 
       <!-- 2. MAIN GRID (3 Columns) -->
-      <div class="main-grid">
+      <v-container fluid class="pa-6">
+        <v-row>
         <!-- LEFT COLUMN - OPERATIONS -->
-        <aside class="left-column">
+          <v-col cols="12" lg="3">
           <!-- A) Timeline Card -->
-          <div class="card">
-            <h3 class="card-title">Zaman Çizelgesi</h3>
-            <div class="timeline">
-              <div v-for="(event, index) in timelineEvents" :key="index" class="timeline-item">
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                  <div class="timeline-time">{{ formatTime(event.time) }}</div>
-                  <div class="timeline-text">{{ event.text }}</div>
-                </div>
-              </div>
-            </div>
-          </div>
+            <v-card class="mb-4" variant="outlined">
+              <v-card-title class="text-subtitle-1 font-weight-bold pb-0">Zaman Çizelgesi</v-card-title>
+              <v-card-text>
+                <v-timeline density="compact" side="end">
+                  <v-timeline-item
+                    v-for="(event, index) in timelineEvents"
+                    :key="index"
+                    dot-color="primary"
+                    size="small"
+                  >
+                    <div class="text-caption text-medium-emphasis">{{ formatTime(event.time) }}</div>
+                    <div class="text-body-2">{{ event.text }}</div>
+                  </v-timeline-item>
+                </v-timeline>
+              </v-card-text>
+            </v-card>
 
           <!-- B) Pickup / Return Summary -->
-          <div class="card">
-            <h3 class="card-title">Alış & İade</h3>
-            <div class="summary-section">
-              <div class="summary-item">
-                <span class="summary-label">Alış</span>
-                <div class="summary-value">
-                  <div>{{ formatDateTime(reservation.checkIn) }}</div>
-                  <div class="summary-meta">{{ getPickupLocation() }}</div>
-                </div>
-              </div>
-              <div class="summary-item">
-                <span class="summary-label">İade</span>
-                <div class="summary-value">
-                  <div>{{ formatDateTime(reservation.checkOut) }}</div>
-                  <div class="summary-meta">{{ getReturnLocation() }}</div>
-                </div>
-              </div>
-              <div v-if="assignedStaff" class="summary-item">
-                <span class="summary-label">Personel</span>
-                <div class="summary-value">{{ assignedStaff }}</div>
-              </div>
-            </div>
-          </div>
+            <v-card class="mb-4" variant="outlined">
+              <v-card-title class="text-subtitle-1 font-weight-bold pb-0">Alış & İade</v-card-title>
+              <v-card-text>
+                <v-list density="compact" class="bg-transparent">
+                  <v-list-item>
+                    <template v-slot:prepend>
+                      <span class="text-body-2 text-medium-emphasis" style="min-width: 60px;">Alış</span>
+                    </template>
+                    <v-list-item-title class="text-body-2">{{ formatDateTime(reservation.checkIn) }}</v-list-item-title>
+                    <v-list-item-subtitle class="text-caption">{{ getPickupLocation() }}</v-list-item-subtitle>
+                  </v-list-item>
+                  <v-list-item>
+                    <template v-slot:prepend>
+                      <span class="text-body-2 text-medium-emphasis" style="min-width: 60px;">İade</span>
+                    </template>
+                    <v-list-item-title class="text-body-2">{{ formatDateTime(reservation.checkOut) }}</v-list-item-title>
+                    <v-list-item-subtitle class="text-caption">{{ getReturnLocation() }}</v-list-item-subtitle>
+                  </v-list-item>
+                  <v-list-item v-if="assignedStaff">
+                    <template v-slot:prepend>
+                      <span class="text-body-2 text-medium-emphasis" style="min-width: 60px;">Personel</span>
+                    </template>
+                    <v-list-item-title class="text-body-2">{{ assignedStaff }}</v-list-item-title>
+                  </v-list-item>
+                </v-list>
+              </v-card-text>
+            </v-card>
 
           <!-- C) Pickup / Return Control (Tabs) -->
-          <div class="card">
-            <div class="tabs">
-              <button 
-                :class="['tab', { active: activeTab === 'pickup' }]"
-                @click="activeTab = 'pickup'"
-              >
-                Alış
-              </button>
-              <button 
-                :class="['tab', { active: activeTab === 'return' }]"
-                @click="activeTab = 'return'"
-              >
-                İade
-              </button>
-            </div>
-
+            <v-card variant="outlined">
+              <v-tabs v-model="activeTab" grow>
+                <v-tab value="pickup">Alış</v-tab>
+                <v-tab value="return">İade</v-tab>
+              </v-tabs>
+              
+              <v-card-text>
+                <v-window v-model="activeTab">
             <!-- Pickup Tab -->
-            <div v-if="activeTab === 'pickup'" class="tab-content">
-              <div class="form-group">
-                <label>KM <span class="required">*</span></label>
-                <input 
+                  <v-window-item value="pickup">
+                    <v-text-field
                   v-model.number="pickupData.odometerKm" 
+                      label="KM"
                   type="number" 
-                  class="input"
+                      variant="outlined"
+                      density="compact"
                   placeholder="Kilometre girin"
                   :disabled="!canEditPickup && !(!isCancelled && !hasCheckout)"
-                />
-              </div>
-              <div class="form-group">
-                <label>Yakıt Seviyesi <span class="required">*</span></label>
-                <select 
+                      class="mb-3"
+                    >
+                      <template v-slot:label>
+                        KM <span class="text-error">*</span>
+                      </template>
+                    </v-text-field>
+                    
+                    <v-select
                   v-model="pickupData.fuelLevel" 
-                  class="input"
+                      :items="fuelLevelOptions"
+                      item-title="label"
+                      item-value="value"
+                      label="Yakıt Seviyesi"
+                      variant="outlined"
+                      density="compact"
                   :disabled="!canEditPickup && !(!isCancelled && !hasCheckout)"
+                      class="mb-3"
                 >
-                  <option value="">Yakıt seviyesi seçin</option>
-                  <option value="full">Dolu</option>
-                  <option value="3/4">3/4</option>
-                  <option value="1/2">1/2</option>
-                  <option value="1/4">1/4</option>
-                  <option value="empty">Boş</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Photos (8 required) <span class="required">*</span></label>
-                <div class="photo-grid">
-                  <div 
-                    v-for="(photo, index) in pickupData.photos" 
-                    :key="index"
-                    class="photo-slot"
-                    :class="{ 'disabled': !canEditPickup && !(!isCancelled && !hasCheckout) }"
+                      <template v-slot:label>
+                        Yakıt Seviyesi <span class="text-error">*</span>
+                      </template>
+                    </v-select>
+                    
+                    <div class="mb-3">
+                      <label class="text-body-2 text-medium-emphasis mb-2 d-block">
+                        Fotoğraflar (8 gerekli) <span class="text-error">*</span>
+                      </label>
+                      <v-row dense>
+                        <v-col v-for="(photo, index) in pickupData.photos" :key="index" cols="3">
+                          <v-card
+                            variant="outlined"
+                            class="photo-slot-card"
+                            :class="{ 'photo-slot-disabled': !canEditPickup && !(!isCancelled && !hasCheckout) }"
                     @click="canEditPickup || (!isCancelled && !hasCheckout) ? uploadPhoto('pickup', index) : null"
                   >
-                    <img v-if="photo" :src="photo" alt="" />
-                    <div v-else class="photo-placeholder">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                        <circle cx="8.5" cy="8.5" r="1.5"/>
-                        <polyline points="21 15 16 10 5 21"/>
-                      </svg>
-                      <span>{{ index + 1 }}</span>
+                            <v-img v-if="photo" :src="photo" aspect-ratio="1" cover />
+                            <div v-else class="d-flex flex-column align-center justify-center pa-2" style="aspect-ratio: 1;">
+                              <v-icon color="grey-lighten-1">mdi-image</v-icon>
+                              <span class="text-caption text-grey">{{ index + 1 }}</span>
                     </div>
+                          </v-card>
+                        </v-col>
+                      </v-row>
                   </div>
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Video (İsteğe Bağlı)</label>
-                <div 
-                  class="video-upload" 
-                  :class="{ 'disabled': !canEditPickup && !(!isCancelled && !hasCheckout) }"
+                    
+                    <div class="mb-3">
+                      <label class="text-body-2 text-medium-emphasis mb-2 d-block">Video (İsteğe Bağlı)</label>
+                      <v-card
+                        variant="outlined"
+                        class="pa-4 text-center cursor-pointer"
+                        :class="{ 'opacity-50': !canEditPickup && !(!isCancelled && !hasCheckout) }"
                   @click="canEditPickup || (!isCancelled && !hasCheckout) ? uploadVideo('pickup') : null"
                 >
-                  <svg v-if="!pickupData.video" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polygon points="23 7 16 12 23 17 23 7"/>
-                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-                  </svg>
-                  <span v-else>Video yüklendi</span>
+                        <v-icon v-if="!pickupData.video" color="grey">mdi-video</v-icon>
+                        <span v-else class="text-body-2">Video yüklendi</span>
+                      </v-card>
                 </div>
-              </div>
-              <div class="form-group">
-                <label>Hasar Notları</label>
-                <textarea 
+                    
+                    <v-textarea
                   v-model="pickupData.damageNotes" 
-                  class="textarea"
+                      label="Hasar Notları"
+                      variant="outlined"
+                      density="compact"
                   rows="3"
                   placeholder="Mevcut hasarları not edin..."
                   :disabled="!canEditPickup && !(!isCancelled && !hasCheckout)"
-                />
-              </div>
-              <!-- Plaka uyarısı -->
-              <div v-if="!hasPlate" class="warning-banner" style="margin-bottom: 16px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                  <line x1="12" y1="9" x2="12" y2="13"/>
-                  <line x1="12" y1="17" x2="12.01" y2="17"/>
-                </svg>
+                      class="mb-3"
+                    />
+                    
+                    <v-alert v-if="!hasPlate" type="warning" variant="tonal" density="compact" class="mb-3">
+                      <template v-slot:prepend>
+                        <v-icon>mdi-alert</v-icon>
+                      </template>
                 Plaka atanmamış rezervasyon çıkış yapılamaz. Önce rezervasyona plaka atayın.
-              </div>
-              <button 
-                class="btn-primary"
+                    </v-alert>
+                    
+                    <v-btn
+                      color="primary"
+                      block
                 :disabled="!canSavePickup || (!canEditPickup && !(!isCancelled && !hasCheckout))"
                 @click="savePickup"
               >
                 Alışı Kaydet
-              </button>
-            </div>
+                    </v-btn>
+                  </v-window-item>
 
             <!-- Return Tab -->
-            <div v-if="activeTab === 'return'" class="tab-content">
-              <!-- Pickup uyarısı -->
-              <div v-if="!hasPickupCompleted" class="warning-banner" style="margin-bottom: 16px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                  <line x1="12" y1="9" x2="12" y2="13"/>
-                  <line x1="12" y1="17" x2="12.01" y2="17"/>
-                </svg>
+                  <v-window-item value="return">
+                    <v-alert v-if="!hasPickupCompleted" type="warning" variant="tonal" density="compact" class="mb-3">
+                      <template v-slot:prepend>
+                        <v-icon>mdi-alert</v-icon>
+                      </template>
                 Çıkış yapılamayan rezervasyon dönüş yapılamaz. Önce alış işlemini tamamlayın.
-              </div>
-              <!-- Warnings -->
-              <div v-if="returnWarnings.length > 0" class="warnings">
-                <div 
+                    </v-alert>
+                    
+                    <v-alert
                   v-for="(warning, index) in returnWarnings" 
                   :key="index"
-                  class="warning-banner"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                    <line x1="12" y1="9" x2="12" y2="13"/>
-                    <line x1="12" y1="17" x2="12.01" y2="17"/>
-                  </svg>
+                      type="warning"
+                      variant="tonal"
+                      density="compact"
+                      class="mb-3"
+                    >
+                      <template v-slot:prepend>
+                        <v-icon>mdi-alert</v-icon>
+                      </template>
                   {{ warning }}
-                </div>
-              </div>
+                    </v-alert>
 
-              <div class="form-group">
-                <label>KM <span class="required">*</span></label>
-                <input 
+                    <v-text-field
                   v-model.number="returnData.odometerKm" 
+                      label="KM"
                   type="number" 
-                  class="input"
+                      variant="outlined"
+                      density="compact"
                   placeholder="Kilometre girin"
                   :disabled="isReadOnly || isCancelled || hasCheckout"
-                />
-              </div>
-              <div class="form-group">
-                <label>Fuel Level <span class="required">*</span></label>
-                <select 
+                      class="mb-3"
+                    >
+                      <template v-slot:label>
+                        KM <span class="text-error">*</span>
+                      </template>
+                    </v-text-field>
+                    
+                    <v-select
                   v-model="returnData.fuelLevel" 
-                  class="input"
+                      :items="fuelLevelOptions"
+                      item-title="label"
+                      item-value="value"
+                      label="Yakıt Seviyesi"
+                      variant="outlined"
+                      density="compact"
                   :disabled="isReadOnly || isCancelled || hasCheckout"
+                      class="mb-3"
                 >
-                  <option value="">Yakıt seviyesi seçin</option>
-                  <option value="full">Dolu</option>
-                  <option value="3/4">3/4</option>
-                  <option value="1/2">1/2</option>
-                  <option value="1/4">1/4</option>
-                  <option value="empty">Boş</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Photos (8 required) <span class="required">*</span></label>
-                <div class="photo-grid">
-                  <div 
-                    v-for="(photo, index) in returnData.photos" 
-                    :key="index"
-                    class="photo-slot"
-                    :class="{ 'disabled': isReadOnly || isCancelled || hasCheckout }"
+                      <template v-slot:label>
+                        Yakıt Seviyesi <span class="text-error">*</span>
+                      </template>
+                    </v-select>
+                    
+                    <div class="mb-3">
+                      <label class="text-body-2 text-medium-emphasis mb-2 d-block">
+                        Fotoğraflar (8 gerekli) <span class="text-error">*</span>
+                      </label>
+                      <v-row dense>
+                        <v-col v-for="(photo, index) in returnData.photos" :key="index" cols="3">
+                          <v-card
+                            variant="outlined"
+                            class="photo-slot-card"
+                            :class="{ 'photo-slot-disabled': isReadOnly || isCancelled || hasCheckout }"
                     @click="!(isReadOnly || isCancelled || hasCheckout) ? uploadPhoto('return', index) : null"
                   >
-                    <img v-if="photo" :src="photo" alt="" />
-                    <div v-else class="photo-placeholder">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                        <circle cx="8.5" cy="8.5" r="1.5"/>
-                        <polyline points="21 15 16 10 5 21"/>
-                      </svg>
-                      <span>{{ index + 1 }}</span>
+                            <v-img v-if="photo" :src="photo" aspect-ratio="1" cover />
+                            <div v-else class="d-flex flex-column align-center justify-center pa-2" style="aspect-ratio: 1;">
+                              <v-icon color="grey-lighten-1">mdi-image</v-icon>
+                              <span class="text-caption text-grey">{{ index + 1 }}</span>
                     </div>
+                          </v-card>
+                        </v-col>
+                      </v-row>
                   </div>
+                    
+                    <div class="mb-3">
+                      <label class="text-body-2 text-medium-emphasis mb-2 d-block">Hasar Karşılaştırması</label>
+                      <v-row dense>
+                        <v-col cols="6">
+                          <v-card variant="outlined">
+                            <v-card-subtitle class="text-center py-1">Önce</v-card-subtitle>
+                            <v-img v-if="damageComparison.before" :src="damageComparison.before" aspect-ratio="1.33" cover />
+                            <div v-else class="d-flex align-center justify-center bg-grey-lighten-4" style="aspect-ratio: 1.33;">
+                              <v-icon color="grey">mdi-image-off</v-icon>
                 </div>
+                          </v-card>
+                        </v-col>
+                        <v-col cols="6">
+                          <v-card variant="outlined">
+                            <v-card-subtitle class="text-center py-1">Sonra</v-card-subtitle>
+                            <v-img v-if="damageComparison.after" :src="damageComparison.after" aspect-ratio="1.33" cover />
+                            <div v-else class="d-flex align-center justify-center bg-grey-lighten-4" style="aspect-ratio: 1.33;">
+                              <v-icon color="grey">mdi-image-off</v-icon>
               </div>
-              <div class="form-group">
-                <label>Hasar Karşılaştırması</label>
-                <div class="damage-comparison">
-                  <div class="comparison-before">
-                    <span>Önce</span>
-                    <img v-if="damageComparison.before" :src="damageComparison.before" alt="" />
+                          </v-card>
+                        </v-col>
+                      </v-row>
                   </div>
-                  <div class="comparison-after">
-                    <span>Sonra</span>
-                    <img v-if="damageComparison.after" :src="damageComparison.after" alt="" />
-                  </div>
-                </div>
-              </div>
-              <div class="form-group">
-                <label>Ekstra Ücretler</label>
-                <button class="btn-secondary" @click="addExtraCharge">Ekstra Ücret Ekle</button>
-              </div>
-              <button 
-                class="btn-primary"
+                    
+                    <v-btn
+                      variant="outlined"
+                      block
+                      class="mb-3"
+                      @click="addExtraCharge"
+                    >
+                      Ekstra Ücret Ekle
+                    </v-btn>
+                    
+                    <v-btn
+                      color="primary"
+                      block
                 :disabled="!canSaveReturn || isReadOnly || isCancelled || hasCheckout || !hasPickupCompleted"
                 @click="saveReturn"
               >
                 İadeyi Tamamla
-              </button>
-            </div>
-          </div>
-        </aside>
+                    </v-btn>
+                  </v-window-item>
+                </v-window>
+              </v-card-text>
+            </v-card>
+          </v-col>
 
         <!-- CENTER COLUMN - RESERVATION DETAILS -->
-        <main class="center-column">
+          <v-col cols="12" lg="6">
           <!-- D) Customer Card -->
-          <div class="card">
-            <h3 class="card-title">Müşteri</h3>
-            <div class="info-list">
-              <div class="info-item">
-                <span class="info-label">Ad</span>
-                <span class="info-value">{{ reservation.customerName }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Telefon</span>
-                <a :href="`tel:${reservation.customerPhone}`" class="info-value link">
+            <v-card class="mb-4" variant="outlined">
+              <v-card-title class="text-subtitle-1 font-weight-bold pb-0">Müşteri</v-card-title>
+              <v-card-text>
+                <v-list density="compact" class="bg-transparent">
+                  <v-list-item>
+                    <template v-slot:prepend>
+                      <span class="text-body-2 text-medium-emphasis" style="min-width: 100px;">Ad</span>
+                    </template>
+                    <v-list-item-title class="text-body-2">{{ reservation.customerName }}</v-list-item-title>
+                  </v-list-item>
+                  <v-list-item>
+                    <template v-slot:prepend>
+                      <span class="text-body-2 text-medium-emphasis" style="min-width: 100px;">Telefon</span>
+                    </template>
+                    <v-list-item-title>
+                      <a :href="`tel:${reservation.customerPhone}`" class="text-primary text-body-2">
                   {{ reservation.customerPhone || '-' }}
                 </a>
-              </div>
-              <div class="info-item">
-                <span class="info-label">E-posta</span>
-                <a :href="`mailto:${reservation.customerEmail}`" class="info-value link">
+                    </v-list-item-title>
+                  </v-list-item>
+                  <v-list-item>
+                    <template v-slot:prepend>
+                      <span class="text-body-2 text-medium-emphasis" style="min-width: 100px;">E-posta</span>
+                    </template>
+                    <v-list-item-title>
+                      <a :href="`mailto:${reservation.customerEmail}`" class="text-primary text-body-2">
                   {{ reservation.customerEmail }}
                 </a>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Ülke / Dil</span>
-                <span class="info-value">
-                  {{ getCountry() }} / {{ getLanguage() }}
-                </span>
-              </div>
-            </div>
-          </div>
+                    </v-list-item-title>
+                  </v-list-item>
+                  <v-list-item>
+                    <template v-slot:prepend>
+                      <span class="text-body-2 text-medium-emphasis" style="min-width: 100px;">Ülke / Dil</span>
+                    </template>
+                    <v-list-item-title class="text-body-2">{{ getCountry() }} / {{ getLanguage() }}</v-list-item-title>
+                  </v-list-item>
+                </v-list>
+              </v-card-text>
+            </v-card>
 
           <!-- E) Reservation Details Card -->
-          <div class="card">
-            <h3 class="card-title">Rezervasyon Detayları</h3>
-            <div class="info-list">
-              <div class="info-item">
-                <span class="info-label">Ürün Tipi</span>
-                <span class="info-value">{{ getReservationTypeLabel(reservation.type) }}</span>
-              </div>
-              <div v-if="reservation.type === 'rentacar'" class="info-item">
-                <span class="info-label">Araç</span>
-                <span class="info-value">{{ getVehicleName() }}</span>
-              </div>
-              <div v-if="reservation.type === 'rentacar'" class="info-item">
-                <span class="info-label">Plaka</span>
-                <span class="info-value">{{ getPlateNumber() }}</span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Süre</span>
-                <span class="info-value">{{ getRentalDuration() }}</span>
-              </div>
-              <div v-if="getExtraServices().length > 0" class="info-item">
-                <span class="info-label">Ekstra Hizmetler</span>
-                <div class="info-value">
-                  <span v-for="(service, index) in getExtraServices()" :key="index" class="service-tag">
+            <v-card class="mb-4" variant="outlined">
+              <v-card-title class="text-subtitle-1 font-weight-bold pb-0">Rezervasyon Detayları</v-card-title>
+              <v-card-text>
+                <v-list density="compact" class="bg-transparent">
+                  <v-list-item>
+                    <template v-slot:prepend>
+                      <span class="text-body-2 text-medium-emphasis" style="min-width: 120px;">Ürün Tipi</span>
+                    </template>
+                    <v-list-item-title class="text-body-2">{{ getReservationTypeLabel(reservation.type) }}</v-list-item-title>
+                  </v-list-item>
+                  <v-list-item v-if="reservation.type === 'rentacar'">
+                    <template v-slot:prepend>
+                      <span class="text-body-2 text-medium-emphasis" style="min-width: 120px;">Araç</span>
+                    </template>
+                    <v-list-item-title class="text-body-2">{{ getVehicleName() }}</v-list-item-title>
+                  </v-list-item>
+                  <v-list-item v-if="reservation.type === 'rentacar'">
+                    <template v-slot:prepend>
+                      <span class="text-body-2 text-medium-emphasis" style="min-width: 120px;">Plaka</span>
+                    </template>
+                    <v-list-item-title class="text-body-2">{{ getPlateNumber() }}</v-list-item-title>
+                  </v-list-item>
+                  <v-list-item>
+                    <template v-slot:prepend>
+                      <span class="text-body-2 text-medium-emphasis" style="min-width: 120px;">Süre</span>
+                    </template>
+                    <v-list-item-title class="text-body-2">{{ getRentalDuration() }}</v-list-item-title>
+                  </v-list-item>
+                  <v-list-item v-if="getExtraServices().length > 0">
+                    <template v-slot:prepend>
+                      <span class="text-body-2 text-medium-emphasis" style="min-width: 120px;">Ekstra Hizmetler</span>
+                    </template>
+                    <v-list-item-title>
+                      <v-chip v-for="(service, index) in getExtraServices()" :key="index" size="small" variant="tonal" class="mr-1 mb-1">
                     {{ service }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+                      </v-chip>
+                    </v-list-item-title>
+                  </v-list-item>
+                </v-list>
+              </v-card-text>
+            </v-card>
 
           <!-- F) Documents -->
-          <div class="card">
-            <h3 class="card-title">Belgeler</h3>
-            <div class="info-list">
-              <div class="info-item">
-                <span class="info-label">Ehliyet</span>
-                <span :class="['doc-status', getDocStatus('license')]">
+            <v-card class="mb-4" variant="outlined">
+              <v-card-title class="text-subtitle-1 font-weight-bold pb-0">Belgeler</v-card-title>
+              <v-card-text>
+                <v-list density="compact" class="bg-transparent">
+                  <v-list-item>
+                    <template v-slot:prepend>
+                      <span class="text-body-2 text-medium-emphasis" style="min-width: 100px;">Ehliyet</span>
+                    </template>
+                    <v-list-item-title>
+                      <v-chip :color="getDocStatusColor('license')" size="small" variant="tonal">
                   {{ getDocStatusLabel('license') }}
-                </span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Pasaport</span>
-                <span :class="['doc-status', getDocStatus('passport')]">
+                      </v-chip>
+                    </v-list-item-title>
+                  </v-list-item>
+                  <v-list-item>
+                    <template v-slot:prepend>
+                      <span class="text-body-2 text-medium-emphasis" style="min-width: 100px;">Pasaport</span>
+                    </template>
+                    <v-list-item-title>
+                      <v-chip :color="getDocStatusColor('passport')" size="small" variant="tonal">
                   {{ getDocStatusLabel('passport') }}
-                </span>
-              </div>
-              <div class="info-item">
-                <span class="info-label">Doğrulama</span>
-                <span :class="['doc-status', getDocStatus('verification')]">
+                      </v-chip>
+                    </v-list-item-title>
+                  </v-list-item>
+                  <v-list-item>
+                    <template v-slot:prepend>
+                      <span class="text-body-2 text-medium-emphasis" style="min-width: 100px;">Doğrulama</span>
+                    </template>
+                    <v-list-item-title>
+                      <v-chip :color="getDocStatusColor('verification')" size="small" variant="tonal">
                   {{ getDocStatusLabel('verification') }}
-                </span>
-              </div>
-            </div>
-          </div>
+                      </v-chip>
+                    </v-list-item-title>
+                  </v-list-item>
+                </v-list>
+              </v-card-text>
+            </v-card>
 
           <!-- G) Notes -->
-          <div class="card">
-            <h3 class="card-title">Notlar</h3>
-            <div class="notes-section">
-              <div class="note-group">
-                <label>İç Admin Notu</label>
-                <textarea 
+            <v-card variant="outlined">
+              <v-card-title class="text-subtitle-1 font-weight-bold pb-0">Notlar</v-card-title>
+              <v-card-text>
+                <v-textarea
                   v-model="internalNote" 
-                  class="textarea"
+                  label="İç Admin Notu"
+                  variant="outlined"
+                  density="compact"
                   rows="3"
                   placeholder="İç not ekle..."
                   :disabled="!canEditNotes"
                   @blur="saveNote('internal')"
+                  class="mb-3"
                 />
-              </div>
-              <div class="note-group">
-                <label>Müşteri Notu</label>
-                <textarea 
+                <v-textarea
                   v-model="customerNote" 
-                  class="textarea"
+                  label="Müşteri Notu"
+                  variant="outlined"
+                  density="compact"
                   rows="3"
                   placeholder="Müşteri notu ekle..."
                   :disabled="!canEditNotes"
                   @blur="saveNote('customer')"
                 />
-              </div>
-            </div>
-          </div>
-        </main>
+              </v-card-text>
+            </v-card>
+          </v-col>
 
         <!-- RIGHT SIDEBAR - FINANCIAL -->
-        <aside class="right-sidebar">
+          <v-col cols="12" lg="3">
           <!-- H) Price Summary Card -->
-          <div class="card">
-            <h3 class="card-title">Fiyat Özeti</h3>
-            <div class="price-breakdown">
-              <div class="price-row">
-                <span>Temel Fiyat</span>
+            <v-card class="mb-4" variant="outlined">
+              <v-card-title class="text-subtitle-1 font-weight-bold pb-0">Fiyat Özeti</v-card-title>
+              <v-card-text>
+                <div class="d-flex justify-space-between text-body-2 mb-2">
+                  <span class="text-medium-emphasis">Temel Fiyat</span>
                 <span>{{ formatPrice(getBasePrice()) }}</span>
               </div>
-              <div class="price-row">
-                <span>Ekstralar</span>
+                <div class="d-flex justify-space-between text-body-2 mb-2">
+                  <span class="text-medium-emphasis">Ekstralar</span>
                 <span>{{ formatPrice(getExtrasPrice()) }}</span>
               </div>
-              <div class="price-row">
-                <span>İndirim</span>
-                <span class="discount">-{{ formatPrice(getDiscount()) }}</span>
+                <div class="d-flex justify-space-between text-body-2 mb-2">
+                  <span class="text-medium-emphasis">İndirim</span>
+                  <span class="text-success">-{{ formatPrice(getDiscount()) }}</span>
               </div>
-              <div class="price-row">
-                <span>Vergi</span>
+                <div class="d-flex justify-space-between text-body-2 mb-2">
+                  <span class="text-medium-emphasis">Vergi</span>
                 <span>{{ formatPrice(getTax()) }}</span>
               </div>
-              <div class="price-divider"></div>
-              <div class="price-row total">
+                <v-divider class="my-3" />
+                <div class="d-flex justify-space-between text-subtitle-1 font-weight-bold mb-2">
                 <span>Toplam</span>
                 <span>{{ formatPrice(getTotalPrice()) }}</span>
               </div>
-              <div class="price-row payment">
-                <span>Ödenen</span>
+                <div class="d-flex justify-space-between text-body-2 mb-2">
+                  <span class="text-medium-emphasis">Ödenen</span>
                 <span>{{ formatPrice(getPaidAmount()) }}</span>
               </div>
-              <div class="price-row payment">
-                <span>Kalan</span>
-                <span class="remaining">{{ formatPrice(getRemainingAmount()) }}</span>
+                <div class="d-flex justify-space-between text-body-2">
+                  <span class="text-medium-emphasis">Kalan</span>
+                  <span class="text-error font-weight-bold">{{ formatPrice(getRemainingAmount()) }}</span>
               </div>
-            </div>
-          </div>
+              </v-card-text>
+            </v-card>
 
           <!-- I) Deposit & Extras -->
-          <div class="card">
-            <h3 class="card-title">Depozito & Ekstralar</h3>
-            <div class="deposit-section">
-              <div class="deposit-status">
-                <span>Depozito Durumu</span>
-                <span :class="['status-badge', getDepositStatus()]">
+            <v-card class="mb-4" variant="outlined">
+              <v-card-title class="text-subtitle-1 font-weight-bold pb-0">Depozito & Ekstralar</v-card-title>
+              <v-card-text>
+                <div class="d-flex justify-space-between align-center mb-3">
+                  <span class="text-body-2 text-medium-emphasis">Depozito Durumu</span>
+                  <v-chip :color="getDepositStatusColor()" size="small" variant="tonal">
                   {{ getDepositStatusLabel() }}
-                </span>
+                  </v-chip>
               </div>
-              <div v-if="extraCharges.length > 0" class="extra-charges">
-                <div v-for="(charge, index) in extraCharges" :key="charge.id || index" class="charge-item">
-                  <div class="charge-info">
-                    <span class="charge-description">{{ charge.description || charge.name }}</span>
-                    <span class="charge-currency">{{ charge.currencyCode || 'TRY' }}</span>
-                  </div>
-                  <span class="charge-amount">{{ formatPrice(charge.amount || 0) }}</span>
-                  <button 
-                    v-if="!isCancelled"
-                    class="charge-delete"
-                    @click="removeExtraCharge(index)"
-                    title="Sil"
+                
+                <div v-if="extraCharges.length > 0" class="mb-3">
+                  <v-card
+                    v-for="(charge, index) in extraCharges"
+                    :key="charge.id || index"
+                    variant="tonal"
+                    color="grey-lighten-4"
+                    class="mb-2 pa-3"
                   >
-                    ×
-                  </button>
+                    <div class="d-flex justify-space-between align-center">
+                      <div>
+                        <div class="text-body-2 font-weight-medium">{{ charge.description || charge.name }}</div>
+                        <div class="text-caption text-medium-emphasis">{{ charge.currencyCode || 'TRY' }}</div>
+                  </div>
+                      <div class="d-flex align-center ga-2">
+                        <span class="text-body-2 font-weight-bold">{{ formatPrice(charge.amount || 0) }}</span>
+                        <v-btn
+                    v-if="!isCancelled"
+                          icon
+                          size="x-small"
+                          color="error"
+                          variant="text"
+                    @click="removeExtraCharge(index)"
+                  >
+                          <v-icon size="16">mdi-close</v-icon>
+                        </v-btn>
                 </div>
               </div>
-              <button 
+                  </v-card>
+                </div>
+                
+                <v-btn
                 v-if="!isReadOnly && !isCancelled"
-                class="btn-secondary" 
+                  variant="outlined"
+                  block
                 @click="addExtraCharge"
               >
                 Ekstra Ücret Ekle
-              </button>
-            </div>
-          </div>
+                </v-btn>
+              </v-card-text>
+            </v-card>
 
           <!-- J) Quick Actions -->
-          <div class="card">
-            <h3 class="card-title">Hızlı İşlemler</h3>
-            <div class="quick-actions">
-              <button 
-                class="action-link" 
+            <v-card variant="outlined">
+              <v-card-title class="text-subtitle-1 font-weight-bold pb-0">Hızlı İşlemler</v-card-title>
+              <v-card-text>
+                <v-btn
+                  variant="outlined"
+                  block
+                  class="mb-2"
                 @click="changeVehicle"
                 :disabled="!canChangeVehicle && !(!isCancelled && !hasCheckout)"
               >
                 Araç Değiştir
-              </button>
-              <button 
-                class="action-link" 
+                </v-btn>
+                <v-btn
+                  variant="outlined"
+                  block
+                  class="mb-2"
                 @click="changeDate"
                 :disabled="isReadOnly || isCancelled"
               >
                 Tarih Değiştir
-              </button>
-              <button 
-                class="action-link" 
+                </v-btn>
+                <v-btn
+                  variant="outlined"
+                  block
+                  class="mb-2"
                 @click="changeLocation"
                 :disabled="isReadOnly || isCancelled"
               >
                 Lokasyon Değiştir
-              </button>
-              <button 
-                class="action-link" 
+                </v-btn>
+                <v-btn
+                  variant="outlined"
+                  block
                 @click="updateStatus"
                 :disabled="isReadOnly || isCancelled"
               >
                 Durum Güncelle
-              </button>
-            </div>
-          </div>
-        </aside>
-      </div>
-    </div>
+                </v-btn>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
+      </v-container>
+    </template>
 
     <!-- Hidden file input -->
     <input 
@@ -607,7 +681,301 @@
       style="display: none"
       @change="handleFileUpload"
     />
-  </div>
+
+    <!-- Ekstra Ücret Dialog -->
+    <v-dialog v-model="showExtraChargeDialog" max-width="500">
+      <v-card>
+        <v-card-title class="text-h6 font-weight-bold">
+          Ekstra Ücret Ekle
+        </v-card-title>
+        <v-card-text>
+          <v-text-field
+            v-model="extraChargeForm.description"
+            label="Açıklama"
+            variant="outlined"
+            density="compact"
+            placeholder="Ekstra ücret açıklaması"
+            :rules="[v => !!v || 'Açıklama gereklidir']"
+            class="mb-3"
+          />
+          <v-text-field
+            v-model.number="extraChargeForm.amount"
+            :label="`Ücret (${extraChargeForm.currencyCode})`"
+            type="number"
+            variant="outlined"
+            density="compact"
+            placeholder="0.00"
+            step="0.01"
+            min="0"
+            :rules="[v => v > 0 || 'Ücret 0\'dan büyük olmalıdır']"
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showExtraChargeDialog = false">
+            İptal
+          </v-btn>
+          <v-btn 
+            color="primary" 
+            variant="flat"
+            @click="saveExtraCharge"
+            :disabled="!extraChargeForm.description || extraChargeForm.amount <= 0"
+          >
+            Ekle
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Araç Değiştir Dialog -->
+    <v-dialog v-model="showVehicleDialog" max-width="600">
+      <v-card>
+        <v-card-title class="text-h6 font-weight-bold">
+          Araç Değiştir
+        </v-card-title>
+        <v-card-text>
+          <p class="text-body-2 text-medium-emphasis mb-4">Müsait plakalardan birini seçin</p>
+          <v-select
+            v-model="selectedVehiclePlateId"
+            :items="availableVehicles"
+            label="Araç Seçin"
+            variant="outlined"
+            density="compact"
+            :loading="loadingVehicles"
+            :disabled="loadingVehicles"
+            :rules="[v => !!v || 'Lütfen bir araç seçin']"
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showVehicleDialog = false">
+            İptal
+          </v-btn>
+          <v-btn 
+            color="primary" 
+            variant="flat"
+            @click="saveVehicleChange"
+            :disabled="!selectedVehiclePlateId || loadingVehicles"
+          >
+            Değiştir
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Tarih Değiştir Dialog -->
+    <v-dialog v-model="showDateDialog" max-width="600">
+      <v-card>
+        <v-card-title class="text-h6 font-weight-bold">
+          Tarih Değiştir
+        </v-card-title>
+        <v-card-text>
+          <v-text-field
+            v-model="dateForm.checkIn"
+            label="Alış Tarihi"
+            type="datetime-local"
+            variant="outlined"
+            density="compact"
+            class="mb-3"
+            :rules="[v => !!v || 'Alış tarihi gereklidir']"
+          />
+          <v-text-field
+            v-model="dateForm.checkOut"
+            label="Dönüş Tarihi"
+            type="datetime-local"
+            variant="outlined"
+            density="compact"
+            :rules="[v => !!v || 'Dönüş tarihi gereklidir']"
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showDateDialog = false">
+            İptal
+          </v-btn>
+          <v-btn 
+            color="primary" 
+            variant="flat"
+            @click="saveDateChange"
+            :disabled="!dateForm.checkIn || !dateForm.checkOut"
+          >
+            Değiştir
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Lokasyon Değiştir Dialog -->
+    <v-dialog v-model="showLocationDialog" max-width="600">
+      <v-card>
+        <v-card-title class="text-h6 font-weight-bold">
+          Lokasyon Değiştir
+        </v-card-title>
+        <v-card-text>
+          <v-select
+            v-model="locationForm.pickupLocationId"
+            :items="availableLocations"
+            item-title="name"
+            item-value="id"
+            label="Alış Lokasyonu"
+            variant="outlined"
+            density="compact"
+            class="mb-3"
+            :loading="loadingLocations"
+            :disabled="loadingLocations"
+            :rules="[v => !!v || 'Alış lokasyonu gereklidir']"
+          />
+          <v-select
+            v-model="locationForm.dropoffLocationId"
+            :items="availableLocations"
+            item-title="name"
+            item-value="id"
+            label="Dönüş Lokasyonu"
+            variant="outlined"
+            density="compact"
+            :loading="loadingLocations"
+            :disabled="loadingLocations"
+            :rules="[v => !!v || 'Dönüş lokasyonu gereklidir']"
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showLocationDialog = false">
+            İptal
+          </v-btn>
+          <v-btn 
+            color="primary" 
+            variant="flat"
+            @click="saveLocationChange"
+            :disabled="!locationForm.pickupLocationId || !locationForm.dropoffLocationId || loadingLocations"
+          >
+            Değiştir
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Durum Güncelle Dialog -->
+    <v-dialog v-model="showStatusDialog" max-width="500">
+      <v-card>
+        <v-card-title class="text-h6 font-weight-bold">
+          Durum Güncelle
+        </v-card-title>
+        <v-card-text>
+          <v-select
+            v-model="selectedStatus"
+            :items="statusOptions"
+            label="Durum Seçin"
+            variant="outlined"
+            density="compact"
+            :rules="[v => !!v || 'Lütfen bir durum seçin']"
+          />
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showStatusDialog = false">
+            İptal
+          </v-btn>
+          <v-btn 
+            color="primary" 
+            variant="flat"
+            @click="saveStatusChange"
+            :disabled="!selectedStatus"
+          >
+            Güncelle
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Silme Onay Dialog -->
+    <v-dialog v-model="showDeleteDialog" max-width="500">
+      <v-card>
+        <v-card-title class="text-h6 font-weight-bold">
+          <v-icon color="warning" class="mr-2">mdi-alert</v-icon>
+          Emin misiniz?
+        </v-card-title>
+        <v-card-text>
+          <p class="text-body-1">{{ deleteDialogMessage }}</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showDeleteDialog = false">
+            Hayır
+          </v-btn>
+          <v-btn 
+            color="error" 
+            variant="flat"
+            @click="confirmDelete"
+          >
+            Evet, Sil
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- İptal Onay Dialog -->
+    <v-dialog v-model="showCancelDialog" max-width="500">
+      <v-card>
+        <v-card-title class="text-h6 font-weight-bold">
+          <v-icon color="warning" class="mr-2">mdi-alert</v-icon>
+          Rezervasyon İptali
+        </v-card-title>
+        <v-card-text>
+          <p class="text-body-1">Rezervasyonu iptal etmek istediğinize emin misiniz?</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showCancelDialog = false">
+            Hayır
+          </v-btn>
+          <v-btn 
+            color="error" 
+            variant="flat"
+            @click="confirmCancellation"
+          >
+            Evet, İptal Et
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Return Uyarı Dialog -->
+    <v-dialog v-model="showReturnWarningDialog" max-width="600">
+      <v-card>
+        <v-card-title class="text-h6 font-weight-bold">
+          <v-icon color="warning" class="mr-2">mdi-alert</v-icon>
+          Uyarılar
+        </v-card-title>
+        <v-card-text>
+          <v-alert
+            v-for="(warning, index) in returnWarnings"
+            :key="index"
+            type="warning"
+            variant="tonal"
+            density="compact"
+            class="mb-2"
+          >
+            {{ warning }}
+          </v-alert>
+          <p class="text-body-2 text-medium-emphasis mt-4">Yine de devam etmek istiyor musunuz?</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="showReturnWarningDialog = false">
+            İptal
+          </v-btn>
+          <v-btn 
+            color="error" 
+            variant="flat"
+            @click="confirmReturnWithWarnings"
+          >
+            Devam Et
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </v-container>
 </template>
 
 <script setup lang="ts">
@@ -616,7 +984,6 @@ import { useRoute, useRouter } from 'vue-router';
 import { http } from '../modules/http';
 import { useSnackbar } from '../composables/useSnackbar';
 import { useAuthStore } from '../stores/auth';
-import Swal from 'sweetalert2';
 
 const auth = useAuthStore();
 const { showSnackbar } = useSnackbar();
@@ -656,10 +1023,49 @@ const currentUploadContext = ref<{ type: 'pickup' | 'return'; index: number } | 
 
 // Modal states
 const showEditModal = ref(false);
-const showVehicleModal = ref(false);
-const showDateModal = ref(false);
-const showLocationModal = ref(false);
-const showStatusModal = ref(false);
+const showVehicleDialog = ref(false);
+const showDateDialog = ref(false);
+const showLocationDialog = ref(false);
+const showStatusDialog = ref(false);
+const showExtraChargeDialog = ref(false);
+const showDeleteDialog = ref(false);
+const showCancelDialog = ref(false);
+const showReturnWarningDialog = ref(false);
+
+// Dialog data
+const extraChargeForm = ref({
+  description: '',
+  amount: 0,
+  currencyCode: 'TRY'
+});
+
+const selectedVehiclePlateId = ref('');
+const availableVehicles = ref<Array<{value: string, title: string}>>([]);
+const loadingVehicles = ref(false);
+
+const dateForm = ref({
+  checkIn: '',
+  checkOut: ''
+});
+
+const locationForm = ref({
+  pickupLocationId: '',
+  dropoffLocationId: ''
+});
+const availableLocations = ref<Array<{id: string, name: string}>>([]);
+const loadingLocations = ref(false);
+
+const selectedStatus = ref('');
+const statusOptions = ref([
+  { value: 'pending', title: 'Beklemede' },
+  { value: 'confirmed', title: 'Onaylandı' },
+  { value: 'rejected', title: 'Reddedildi' },
+  { value: 'cancelled', title: 'İptal Edildi' },
+  { value: 'completed', title: 'Tamamlandı' }
+]);
+
+const deleteDialogMessage = ref('');
+const deleteDialogCallback = ref<(() => void) | null>(null);
 
 const pickupData = ref({
   odometerKm: null as number | null,
@@ -983,30 +1389,28 @@ const savePickup = async () => {
 const saveReturn = async () => {
   if (!reservation.value || !canSaveReturn.value) return;
   
+  // Uyarıları kontrol et ve kullanıcıdan onay al
+  if (returnWarnings.value.length > 0) {
+    showReturnWarningDialog.value = true;
+    return;
+  }
+  
+  await processReturn();
+};
+
+const confirmReturnWithWarnings = async () => {
+  showReturnWarningDialog.value = false;
+  await processReturn();
+};
+
+const processReturn = async () => {
+  if (!reservation.value) return;
+  
   try {
     // Fotoğrafları backend formatına çevir (slotIndex ile)
     const photos = returnData.value.photos
       .map((photo, index) => photo ? { slotIndex: index, mediaUrl: photo } : null)
       .filter((p): p is { slotIndex: number; mediaUrl: string } => p !== null);
-    
-    // Uyarıları kontrol et ve kullanıcıdan onay al
-    if (returnWarnings.value.length > 0) {
-      const warningText = returnWarnings.value.join('\n');
-      const result = await Swal.fire({
-        icon: 'warning',
-        title: 'Uyarılar',
-        html: `<div style="text-align: left;">${warningText.split('\n').map(w => `<p>${w}</p>`).join('')}</div>`,
-        showCancelButton: true,
-        confirmButtonText: 'Devam Et',
-        cancelButtonText: 'İptal',
-        confirmButtonColor: '#dc2626',
-        cancelButtonColor: '#6b7280',
-      });
-      
-      if (!result.isConfirmed) {
-        return;
-      }
-    }
     
     await http.post(`/rentacar/operations/return/${reservation.value.id}/complete`, {
       odometerKm: returnData.value.odometerKm,
@@ -1136,96 +1540,62 @@ const addExtraCharge = async () => {
   const metadata = reservation.value.metadata as any;
   const currencyCode = metadata?.currencyCode || 'TRY';
   
-  const { value: formValues } = await Swal.fire({
-    title: '<span style="font-size: 20px; font-weight: 600; color: #111827;">Ekstra Ücret Ekle</span>',
-    html: `
-      <div style="text-align: left; margin: 20px 0;">
-        <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 8px;">Açıklama:</label>
-        <input id="description" class="swal2-input" placeholder="Ekstra ücret açıklaması" style="width: 100%; margin-bottom: 20px;">
-        <label style="display: block; font-size: 13px; font-weight: 500; color: #374151; margin-bottom: 8px;">Ücret (${currencyCode}):</label>
-        <input id="amount" type="number" step="0.01" min="0" class="swal2-input" placeholder="0.00" style="width: 100%;">
-      </div>
-    `,
-    showCancelButton: true,
-    confirmButtonText: 'Ekle',
-    cancelButtonText: 'İptal',
-    confirmButtonColor: '#2563eb',
-    cancelButtonColor: '#6b7280',
-    buttonsStyling: true,
-    customClass: {
-      popup: 'swal-popup-minimal',
-      title: 'swal-title-minimal',
-      htmlContainer: 'swal-html-minimal',
-      input: 'swal-input-minimal',
-      confirmButton: 'swal-confirm-minimal',
-      cancelButton: 'swal-cancel-minimal',
-    },
-    preConfirm: () => {
-      const description = (document.getElementById('description') as HTMLInputElement)?.value?.trim();
-      const amount = parseFloat((document.getElementById('amount') as HTMLInputElement)?.value || '0');
-      
-      if (!description) {
-        Swal.showValidationMessage('Lütfen açıklama girin');
-        return false;
-      }
-      if (amount <= 0) {
-        Swal.showValidationMessage('Ücret 0\'dan büyük olmalıdır');
-        return false;
-      }
-      return { description, amount, currencyCode };
-    },
-  });
+  // Reset form
+  extraChargeForm.value = {
+    description: '',
+    amount: 0,
+    currencyCode
+  };
   
-  if (formValues) {
-    try {
-      // Yeni ekstra ücreti ekle
-      const newCharge = {
-        id: Date.now().toString(),
-        description: formValues.description,
-        amount: formValues.amount,
-        currencyCode: formValues.currencyCode,
-        addedAt: new Date().toISOString(),
-      };
-      
-      extraCharges.value.push(newCharge);
-      
-      // Metadata'yı güncelle
-      const updatedMetadata = {
-        ...metadata,
-        extraCharges: extraCharges.value,
-      };
-      
-      // Toplam ekstra ücretleri hesapla
-      const totalExtraCharges = extraCharges.value.reduce((sum, charge) => {
-        // Sadece aynı currency'deki ücretleri topla
-        if (charge.currencyCode === currencyCode) {
-          return sum + (charge.amount || 0);
-        }
-        return sum;
-      }, 0);
-      
-      // Extras price'ı güncelle (sadece aynı currency için)
-      const currentExtrasPrice = metadata?.extrasPrice || 0;
-      updatedMetadata.extrasPrice = currentExtrasPrice + formValues.amount;
-      
-      // Total price'ı güncelle
-      const currentTotalPrice = metadata?.totalPrice || 0;
-      updatedMetadata.totalPrice = currentTotalPrice + formValues.amount;
-      
-      // Backend'e kaydet
-      await http.put(`/reservations/${reservation.value.id}`, {
-        metadata: updatedMetadata,
-        recalculatePrice: false, // Manuel eklediğimiz için recalculate yapma
-      });
-      
-      showSnackbar('Ekstra ücret başarıyla eklendi', 'success');
-      
-      // Rezervasyonu yeniden yükle
-      await loadReservation();
-    } catch (error: any) {
-      console.error('Failed to add extra charge:', error);
-      showSnackbar(`Ekstra ücret eklenemedi: ${error.response?.data?.message || error.message}`, 'error');
-    }
+  // Show dialog
+  showExtraChargeDialog.value = true;
+};
+
+const saveExtraCharge = async () => {
+  if (!reservation.value || !extraChargeForm.value.description || extraChargeForm.value.amount <= 0) return;
+  
+  try {
+    const metadata = reservation.value.metadata as any;
+    
+    // Yeni ekstra ücreti ekle
+    const newCharge = {
+      id: Date.now().toString(),
+      description: extraChargeForm.value.description,
+      amount: extraChargeForm.value.amount,
+      currencyCode: extraChargeForm.value.currencyCode,
+      addedAt: new Date().toISOString(),
+    };
+    
+    extraCharges.value.push(newCharge);
+    
+    // Metadata'yı güncelle
+    const updatedMetadata = {
+      ...metadata,
+      extraCharges: extraCharges.value,
+    };
+    
+    // Extras price'ı güncelle
+    const currentExtrasPrice = metadata?.extrasPrice || 0;
+    updatedMetadata.extrasPrice = currentExtrasPrice + extraChargeForm.value.amount;
+    
+    // Total price'ı güncelle
+    const currentTotalPrice = metadata?.totalPrice || 0;
+    updatedMetadata.totalPrice = currentTotalPrice + extraChargeForm.value.amount;
+    
+    // Backend'e kaydet
+    await http.put(`/reservations/${reservation.value.id}`, {
+      metadata: updatedMetadata,
+      recalculatePrice: false,
+    });
+    
+    showSnackbar('Ekstra ücret başarıyla eklendi', 'success');
+    showExtraChargeDialog.value = false;
+    
+    // Rezervasyonu yeniden yükle
+    await loadReservation();
+  } catch (error: any) {
+    console.error('Failed to add extra charge:', error);
+    showSnackbar(`Ekstra ücret eklenemedi: ${error.response?.data?.message || error.message}`, 'error');
   }
 };
 
@@ -1237,63 +1607,50 @@ const removeExtraCharge = async (index: number) => {
   const charge = extraCharges.value[index];
   if (!charge) return;
   
-  const result = await Swal.fire({
-    icon: 'warning',
-    title: 'Emin misiniz?',
-    text: 'Bu ekstra ücreti silmek istediğinize emin misiniz?',
-    showCancelButton: true,
-    confirmButtonText: 'Evet, Sil',
-    cancelButtonText: 'İptal',
-    confirmButtonColor: '#dc2626',
-    cancelButtonColor: '#6b7280',
-  });
+  deleteDialogMessage.value = 'Bu ekstra ücreti silmek istediğinize emin misiniz?';
+  deleteDialogCallback.value = async () => {
+    try {
+      // Ekstra ücreti listeden çıkar
+      const removedCharge = extraCharges.value.splice(index, 1)[0];
+      
+      // Metadata'yı güncelle
+      const metadata = reservation.value!.metadata as any;
+      const updatedMetadata = {
+        ...metadata,
+        extraCharges: extraCharges.value,
+      };
+      
+      // Extras price ve total price'ı güncelle
+      const removedAmount = removedCharge.amount || 0;
+      const currentExtrasPrice = metadata?.extrasPrice || 0;
+      updatedMetadata.extrasPrice = Math.max(0, currentExtrasPrice - removedAmount);
+      
+      const currentTotalPrice = metadata?.totalPrice || 0;
+      updatedMetadata.totalPrice = Math.max(0, currentTotalPrice - removedAmount);
+      
+      // Backend'e kaydet
+      await http.put(`/reservations/${reservation.value!.id}`, {
+        metadata: updatedMetadata,
+        recalculatePrice: false,
+      });
+      
+      showSnackbar('Ekstra ücret başarıyla silindi', 'success');
+      showDeleteDialog.value = false;
+      
+      // Rezervasyonu yeniden yükle
+      await loadReservation();
+    } catch (error: any) {
+      console.error('Failed to remove extra charge:', error);
+      showSnackbar(`Ekstra ücret silinemedi: ${error.response?.data?.message || error.message}`, 'error');
+    }
+  };
   
-  if (!result.isConfirmed) return;
-  
-  try {
-    // Ekstra ücreti listeden çıkar
-    const removedCharge = extraCharges.value.splice(index, 1)[0];
-    
-    // Metadata'yı güncelle
-    const metadata = reservation.value.metadata as any;
-    const updatedMetadata = {
-      ...metadata,
-      extraCharges: extraCharges.value,
-    };
-    
-    // Extras price ve total price'ı güncelle
-    const removedAmount = removedCharge.amount || 0;
-    const currentExtrasPrice = metadata?.extrasPrice || 0;
-    updatedMetadata.extrasPrice = Math.max(0, currentExtrasPrice - removedAmount);
-    
-    const currentTotalPrice = metadata?.totalPrice || 0;
-    updatedMetadata.totalPrice = Math.max(0, currentTotalPrice - removedAmount);
-    
-    // Backend'e kaydet
-    await http.put(`/reservations/${reservation.value.id}`, {
-      metadata: updatedMetadata,
-      recalculatePrice: false,
-    });
-    
-    await Swal.fire({
-      icon: 'success',
-      title: 'Başarılı',
-      text: 'Ekstra ücret başarıyla silindi',
-      confirmButtonText: 'Tamam',
-      confirmButtonColor: '#2563eb',
-    });
-    
-    // Rezervasyonu yeniden yükle
-    await loadReservation();
-  } catch (error: any) {
-    console.error('Failed to remove extra charge:', error);
-    await Swal.fire({
-      icon: 'error',
-      title: 'Hata',
-      text: `Ekstra ücret silinemedi: ${error.response?.data?.message || error.message}`,
-      confirmButtonText: 'Tamam',
-      confirmButtonColor: '#dc2626',
-    });
+  showDeleteDialog.value = true;
+};
+
+const confirmDelete = () => {
+  if (deleteDialogCallback.value) {
+    deleteDialogCallback.value();
   }
 };
 
@@ -1330,8 +1687,20 @@ const getStatusLabel = (status?: string) => {
   return labels[status || ''] || status || '-';
 };
 
+const getStatusColor = (status?: string) => {
+  const colors: Record<string, string> = {
+    pending: 'warning',
+    confirmed: 'info',
+    rejected: 'error',
+    cancelled: 'error',
+    completed: 'success',
+  };
+  return colors[status || ''] || 'grey';
+};
+
 const getPaymentStatus = () => 'paid'; // Implement based on actual payment data
 const getPaymentStatusLabel = () => 'Ödendi';
+const getPaymentStatusColor = () => 'success';
 const getReservationTypeLabel = (type: string) => type === 'rentacar' ? 'Araç Kiralama' : 'Transfer';
 const getPickupLocation = () => (reservation.value?.metadata as any)?.pickupLocationName || '-';
 const getReturnLocation = () => (reservation.value?.metadata as any)?.dropoffLocationName || '-';
@@ -1360,6 +1729,15 @@ const getExtraServices = () => {
 };
 const getDocStatus = (doc: string) => 'verified'; // Implement based on actual data
 const getDocStatusLabel = (doc: string) => 'Doğrulandı';
+const getDocStatusColor = (doc: string) => {
+  const status = getDocStatus(doc);
+  const colors: Record<string, string> = {
+    verified: 'success',
+    pending: 'warning',
+    rejected: 'error',
+  };
+  return colors[status] || 'grey';
+};
 const getBasePrice = () => (reservation.value?.metadata as any)?.vehiclePrice || 0;
 const getExtrasPrice = () => {
   if (!reservation.value) return 0;
@@ -1386,6 +1764,24 @@ const getPaidAmount = () => 0; // Implement based on actual data
 const getRemainingAmount = () => getTotalPrice() - getPaidAmount();
 const getDepositStatus = () => 'held';
 const getDepositStatusLabel = () => 'Tutuldu';
+const getDepositStatusColor = () => {
+  const status = getDepositStatus();
+  const colors: Record<string, string> = {
+    held: 'info',
+    returned: 'success',
+    forfeited: 'error',
+  };
+  return colors[status] || 'grey';
+};
+
+const fuelLevelOptions = [
+  { label: 'Yakıt seviyesi seçin', value: '' },
+  { label: 'Dolu', value: 'full' },
+  { label: '3/4', value: '3/4' },
+  { label: '1/2', value: '1/2' },
+  { label: '1/4', value: '1/4' },
+  { label: 'Boş', value: 'empty' },
+];
 
 const editReservation = () => {
   if (isReadOnly.value || isCancelled.value || hasCheckout.value) return;
@@ -1426,23 +1822,15 @@ const sendConfirmationEmail = async () => {
 const sendCancellationEmail = async () => {
   if (!reservation.value || sendingEmail.value) return;
   
-  const result = await Swal.fire({
-    icon: 'warning',
-    title: 'Emin misiniz?',
-    text: 'Rezervasyonu iptal etmek istediğinize emin misiniz?',
-    showCancelButton: true,
-    confirmButtonText: 'Evet, İptal Et',
-    cancelButtonText: 'Hayır',
-    confirmButtonColor: '#dc2626',
-    cancelButtonColor: '#6b7280',
-  });
-  
-  if (!result.isConfirmed) {
-    return;
-  }
+  showCancelDialog.value = true;
+};
+
+const confirmCancellation = async () => {
+  if (!reservation.value) return;
   
   sendingEmail.value = true;
   showSendMenu.value = false;
+  showCancelDialog.value = false;
   
   try {
     await http.post(`/reservations/${reservation.value.id}/send-cancellation-email`);
@@ -1794,839 +2182,20 @@ const updateStatus = async () => {
 </script>
 
 <style scoped>
-/* Reset & Base */
-* {
-  box-sizing: border-box;
-}
-
-.reservation-detail-page {
-  min-height: 100vh;
-  background: #ffffff;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  color: #111827;
-  line-height: 1.5;
-}
-
-/* Loading & Error States */
-.loading-container,
-.error-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 64px 24px;
-  text-align: center;
-  color: #6b7280;
-}
-
-.spinner {
-  width: 48px;
-  height: 48px;
-  border: 3px solid #e5e7eb;
-  border-top-color: #2563eb;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin-bottom: 16px;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* 1. STICKY HEADER */
-.sticky-header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: #ffffff;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 16px 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex: 1;
-}
-
-.back-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  border-radius: 8px;
-  color: #6b7280;
-  font-size: 14px;
+/* Photo slot card styles */
+.photo-slot-card {
   cursor: pointer;
   transition: all 0.2s;
 }
 
-.back-btn:hover {
-  background: #f9fafb;
-  border-color: #d1d5db;
-  color: #111827;
+.photo-slot-card:hover {
+  border-color: rgb(var(--v-theme-primary));
 }
 
-.header-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.reservation-code {
-  font-size: 20px;
-  font-weight: 700;
-  color: #111827;
-  margin: 0;
-}
-
-.created-date {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.header-center {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-}
-
-.status-chips {
-  display: flex;
-  gap: 8px;
-}
-
-.status-chip {
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.chip-paid { background: #d1fae5; color: #065f46; }
-.chip-pending { background: #fef3c7; color: #92400e; }
-.chip-confirmed { background: #dbeafe; color: #1e40af; }
-.chip-cancelled { background: #fee2e2; color: #991b1b; }
-.chip-completed { background: #e0e7ff; color: #3730a3; }
-.chip-vehicle { background: #f3f4f6; color: #374151; }
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.action-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  border-radius: 8px;
-  color: #374151;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.action-btn:hover {
-  background: #f9fafb;
-  border-color: #d1d5db;
-}
-
-.more-menu {
-  position: relative;
-}
-
-.dropdown-menu {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 8px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  min-width: 180px;
-  overflow: hidden;
-}
-
-.dropdown-menu button,
-.send-dropdown button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 12px 16px;
-  text-align: left;
-  border: none;
-  background: #ffffff;
-  color: #374151;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.dropdown-menu button:hover:not(:disabled),
-.send-dropdown button:hover:not(:disabled) {
-  background: #f9fafb;
-}
-
-.dropdown-menu button:disabled,
-.send-dropdown button:disabled {
+.photo-slot-disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.action-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.send-menu {
-  position: relative;
-}
-
-.send-dropdown {
-  position: absolute;
-  top: 100%;
-  right: 0;
-  margin-top: 8px;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  min-width: 200px;
-  z-index: 1000;
-  overflow: hidden;
-}
-
-/* 2. MAIN GRID */
-.main-grid {
-  display: grid;
-  grid-template-columns: 360px 1fr 320px;
-  gap: 24px;
-  padding: 24px;
-  max-width: 1600px;
-  margin: 0 auto;
-}
-
-@media (max-width: 1400px) {
-  .main-grid {
-    grid-template-columns: 320px 1fr 300px;
-  }
-}
-
-@media (max-width: 1024px) {
-  .main-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-/* CARD */
-.card {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 24px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.card-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #111827;
-  margin: 0 0 16px 0;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-/* LEFT COLUMN - OPERATIONS */
-.timeline {
-  position: relative;
-  padding-left: 24px;
-}
-
-.timeline::before {
-  content: '';
-  position: absolute;
-  left: 7px;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: #e5e7eb;
-}
-
-.timeline-item {
-  position: relative;
-  padding-bottom: 20px;
-}
-
-.timeline-dot {
-  position: absolute;
-  left: -20px;
-  top: 4px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #2563eb;
-  border: 2px solid #ffffff;
-  box-shadow: 0 0 0 2px #e5e7eb;
-}
-
-.timeline-content {
-  padding-left: 8px;
-}
-
-.timeline-time {
-  font-size: 12px;
-  color: #6b7280;
-  margin-bottom: 4px;
-}
-
-.timeline-text {
-  font-size: 14px;
-  color: #374151;
-}
-
-.summary-section {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.summary-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.summary-label {
-  font-size: 13px;
-  color: #6b7280;
-  font-weight: 500;
-}
-
-.summary-value {
-  text-align: right;
-  font-size: 14px;
-  color: #111827;
-}
-
-.summary-meta {
-  font-size: 12px;
-  color: #6b7280;
-  margin-top: 4px;
-}
-
-/* TABS */
-.tabs {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 20px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.tab {
-  padding: 10px 16px;
-  border: none;
-  background: transparent;
-  color: #6b7280;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  transition: all 0.2s;
-}
-
-.tab:hover {
-  color: #374151;
-}
-
-.tab.active {
-  color: #2563eb;
-  border-bottom-color: #2563eb;
-}
-
-.tab-content {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.form-group label {
-  font-size: 13px;
-  font-weight: 500;
-  color: #374151;
-}
-
-.required {
-  color: #ef4444;
-}
-
-.input,
-.textarea {
-  padding: 10px 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: inherit;
-  color: #111827;
-  transition: all 0.2s;
-}
-
-.input:focus,
-.textarea:focus {
-  outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-.textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-/* PHOTO GRID */
-.photo-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-}
-
-.photo-slot {
-  aspect-ratio: 1;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  overflow: hidden;
-  cursor: pointer;
-  transition: all 0.2s;
-  background: #f9fafb;
-}
-
-.photo-slot:hover {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-.photo-slot img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.photo-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  color: #9ca3af;
-}
-
-.photo-placeholder svg {
-  opacity: 0.5;
-}
-
-.video-upload {
-  padding: 24px;
-  border: 2px dashed #e5e7eb;
-  border-radius: 8px;
-  text-align: center;
-  cursor: pointer;
-  color: #6b7280;
-  transition: all 0.2s;
-}
-
-.video-upload:hover {
-  border-color: #2563eb;
-  background: #f9fafb;
-}
-
-/* WARNINGS */
-.warnings {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.warning-banner {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px;
-  background: #fef3c7;
-  border: 1px solid #fde68a;
-  border-radius: 8px;
-  color: #92400e;
-  font-size: 13px;
-}
-
-/* DAMAGE COMPARISON */
-.damage-comparison {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.comparison-before,
-.comparison-after {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.comparison-before span,
-.comparison-after span {
-  font-size: 12px;
-  color: #6b7280;
-  font-weight: 500;
-}
-
-.comparison-before img,
-.comparison-after img {
-  width: 100%;
-  aspect-ratio: 4/3;
-  object-fit: cover;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-}
-
-/* CENTER COLUMN */
-.info-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.info-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #f3f4f6;
-}
-
-.info-item:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.info-label {
-  font-size: 13px;
-  color: #6b7280;
-  font-weight: 500;
-}
-
-.info-value {
-  font-size: 14px;
-  color: #111827;
-  text-align: right;
-  max-width: 60%;
-}
-
-.info-value.link {
-  color: #2563eb;
-  text-decoration: none;
-}
-
-.info-value.link:hover {
-  text-decoration: underline;
-}
-
-.service-tag {
-  display: inline-block;
-  padding: 4px 8px;
-  background: #f3f4f6;
-  border-radius: 4px;
-  font-size: 12px;
-  color: #374151;
-  margin-left: 4px;
-}
-
-.doc-status {
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.doc-status.verified {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.doc-status.pending {
-  background: #fef3c7;
-  color: #92400e;
-}
-
-.doc-status.rejected {
-  background: #fee2e2;
-  color: #991b1b;
-}
-
-.notes-section {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.note-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.note-group label {
-  font-size: 13px;
-  font-weight: 500;
-  color: #374151;
-}
-
-/* RIGHT SIDEBAR - FINANCIAL */
-.price-breakdown {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.price-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 14px;
-  color: #374151;
-}
-
-.price-row.total {
-  padding-top: 12px;
-  border-top: 1px solid #e5e7eb;
-  margin-top: 4px;
-  font-weight: 600;
-  font-size: 16px;
-  color: #111827;
-}
-
-.price-row.payment {
-  font-size: 13px;
-  color: #6b7280;
-}
-
-.price-divider {
-  height: 1px;
-  background: #e5e7eb;
-  margin: 4px 0;
-}
-
-.discount {
-  color: #10b981;
-}
-
-.remaining {
-  color: #ef4444;
-  font-weight: 600;
-}
-
-.deposit-section {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.deposit-status {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 14px;
-}
-
-.status-badge {
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.status-badge.held {
-  background: #dbeafe;
-  color: #1e40af;
-}
-
-.status-badge.returned {
-  background: #d1fae5;
-  color: #065f46;
-}
-
-.extra-charges {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.charge-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  gap: 12px;
-}
-
-.charge-info {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  gap: 4px;
-}
-
-.charge-description {
-  font-size: 14px;
-  color: #374151;
-  font-weight: 500;
-}
-
-.charge-currency {
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.charge-amount {
-  font-size: 14px;
-  font-weight: 600;
-  color: #111827;
-}
-
-.charge-delete {
-  width: 24px;
-  height: 24px;
-  border: none;
-  background: #fee2e2;
-  color: #dc2626;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 18px;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-  flex-shrink: 0;
-}
-
-.charge-delete:hover {
-  background: #fecaca;
-}
-
-.quick-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.action-link {
-  padding: 10px 12px;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  border-radius: 8px;
-  text-align: left;
-  color: #374151;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.action-link:hover {
-  background: #f9fafb;
-  border-color: #d1d5db;
-}
-
-/* BUTTONS */
-.btn-primary {
-  padding: 12px 20px;
-  background: #2563eb;
-  color: #ffffff;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #1d4ed8;
-  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
-}
-
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-secondary {
-  padding: 10px 16px;
-  background: #ffffff;
-  color: #374151;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-secondary:hover {
-  background: #f9fafb;
-  border-color: #d1d5db;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-  .sticky-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 16px;
-  }
-
-  .header-center {
-    width: 100%;
-    justify-content: flex-start;
-  }
-
-  .main-grid {
-    padding: 16px;
-  }
-
-  .photo-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  pointer-events: none;
 }
 
 /* SweetAlert2 Minimal Styles */
@@ -2678,8 +2247,8 @@ const updateStatus = async () => {
 
 :deep(.swal-input-minimal:focus) {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  border-color: rgb(var(--v-theme-primary));
+  box-shadow: 0 0 0 3px rgba(var(--v-theme-primary), 0.1);
 }
 
 :deep(.swal-input-minimal:disabled) {
@@ -2689,7 +2258,7 @@ const updateStatus = async () => {
 }
 
 :deep(.swal-confirm-minimal) {
-  background: #2563eb;
+  background: rgb(var(--v-theme-primary));
   border: none;
   border-radius: 8px;
   padding: 10px 20px;
@@ -2700,7 +2269,7 @@ const updateStatus = async () => {
 }
 
 :deep(.swal-confirm-minimal:hover) {
-  background: #1d4ed8;
+  filter: brightness(0.9);
 }
 
 :deep(.swal-cancel-minimal) {
@@ -2732,25 +2301,7 @@ const updateStatus = async () => {
 
 :deep(.swal2-select:focus) {
   outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-.photo-slot.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-.video-upload.disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-.action-link:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  pointer-events: none;
+  border-color: rgb(var(--v-theme-primary));
+  box-shadow: 0 0 0 3px rgba(var(--v-theme-primary), 0.1);
 }
 </style>
